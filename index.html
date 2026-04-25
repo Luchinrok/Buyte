@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#639922">
+  <title>EatMeFirst</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- PANTALLA PRINCIPAL: LA NEVERA -->
+  <div id="screen-home" class="screen active">
+    <header class="top-bar">
+      <div class="top-info">
+        <h1>EatMeFirst</h1>
+        <p id="top-summary">...</p>
+      </div>
+      <button id="menu-btn" class="icon-btn" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="4" y1="7" x2="20" y2="7"></line>
+          <line x1="4" y1="12" x2="20" y2="12"></line>
+          <line x1="4" y1="17" x2="20" y2="17"></line>
+        </svg>
+      </button>
+    </header>
+
+    <div class="fridge">
+      <div class="shelf shelf-green" data-level="green">
+        <div class="shelf-text">
+          <p class="shelf-title" data-i18n="shelfGreen"></p>
+          <p class="shelf-sub" data-i18n="shelfGreenSub"></p>
+        </div>
+        <div class="shelf-count">
+          <span id="count-green">0</span>
+          <span class="shelf-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="shelf shelf-yellow" data-level="yellow">
+        <div class="shelf-text">
+          <p class="shelf-title" data-i18n="shelfYellow"></p>
+          <p class="shelf-sub" data-i18n="shelfYellowSub"></p>
+        </div>
+        <div class="shelf-count">
+          <span id="count-yellow">0</span>
+          <span class="shelf-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="shelf shelf-orange" data-level="orange">
+        <div class="shelf-text">
+          <p class="shelf-title" data-i18n="shelfOrange"></p>
+          <p class="shelf-sub" data-i18n="shelfOrangeSub"></p>
+        </div>
+        <div class="shelf-count">
+          <span id="count-orange">0</span>
+          <span class="shelf-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="shelf shelf-red" data-level="red">
+        <div class="shelf-text">
+          <p class="shelf-title" data-i18n="shelfRed"></p>
+          <p class="shelf-sub" data-i18n="shelfRedSub"></p>
+        </div>
+        <div class="shelf-count">
+          <span id="count-red">0</span>
+          <span class="shelf-arrow">›</span>
+        </div>
+      </div>
+    </div>
+
+    <button id="add-btn" class="primary-btn" data-i18n="addProduct"></button>
+  </div>
+
+  <!-- PANTALLA LLISTA DE PRODUCTES -->
+  <div id="screen-list" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
+      <h1 id="list-title">-</h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="nevi-container">
+      <svg class="nevi" viewBox="0 0 70 80" xmlns="http://www.w3.org/2000/svg">
+        <rect id="nevi-body" x="10" y="5" width="50" height="70" rx="8" fill="#C0DD97" stroke="#639922" stroke-width="2.5"/>
+        <line id="nevi-divider" x1="10" y1="30" x2="60" y2="30" stroke="#639922" stroke-width="2.5"/>
+        <circle id="nevi-eye-left" cx="25" cy="45" r="3" fill="#173404"/>
+        <circle id="nevi-eye-right" cx="45" cy="45" r="3" fill="#173404"/>
+        <path id="nevi-mouth" d="M 25 56 Q 35 68 45 56" stroke="#173404" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <p id="nevi-message"></p>
+    </div>
+
+    <div id="product-list" class="product-list"></div>
+    <div id="empty-list" class="empty-state" style="display:none" data-i18n="empty"></div>
+  </div>
+
+  <!-- PANTALLA DETALL DE PRODUCTE -->
+  <div id="screen-product" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="list" aria-label="Back">‹</button>
+      <h1 data-i18n="product"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="product-card">
+      <p id="product-emoji" class="product-emoji">🥛</p>
+      <p id="product-name" class="product-name">-</p>
+      <p id="product-days" class="product-days">-</p>
+    </div>
+
+    <p class="section-label" data-i18n="whatToDo"></p>
+
+    <div class="actions">
+      <button class="action-btn action-consumed" data-action="consumed">
+        <span class="action-icon">✓</span>
+        <span data-i18n="consumed"></span>
+      </button>
+      <button class="action-btn action-trashed" data-action="trashed">
+        <span class="action-icon">🗑</span>
+        <span data-i18n="trashed"></span>
+      </button>
+      <button class="action-btn action-delete" data-action="deleted">
+        <span class="action-icon">✕</span>
+        <span data-i18n="deleteError"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA TRIAR COM AFEGIR -->
+  <div id="screen-add-choice" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
+      <h1 data-i18n="addProductTitle"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="add-choices">
+      <button class="big-choice" id="choice-scan">
+        <span class="big-choice-emoji">📷</span>
+        <span class="big-choice-text" data-i18n="scanBarcode"></span>
+      </button>
+      <button class="big-choice" id="choice-manual">
+        <span class="big-choice-emoji">✍️</span>
+        <span class="big-choice-text" data-i18n="manual"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA ESCÀNER -->
+  <div id="screen-scan" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="add-choice" aria-label="Back">‹</button>
+      <h1 data-i18n="scanning"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="scanner-container">
+      <div class="scanner-frame">
+        <div id="scanner-video-container"></div>
+      </div>
+      <p class="scanner-hint" data-i18n="pointCamera"></p>
+      <p id="scanner-status" class="scanner-status"></p>
+
+      <div class="scanner-fallbacks">
+        <button id="manual-code-btn" class="fallback-btn">
+          <span class="fallback-emoji">⌨️</span>
+          <span data-i18n="manualCode"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA INTRODUIR CODI A MÀ -->
+  <div id="screen-manual-code" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="scan" aria-label="Back">‹</button>
+      <h1 data-i18n="manualCode"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <p class="section-hint" data-i18n="manualCodeHint"></p>
+
+    <div class="form-group">
+      <label data-i18n="barcodeLabel" for="input-barcode"></label>
+      <input type="text" id="input-barcode" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="8410014006288" autocomplete="off">
+    </div>
+
+    <button id="search-barcode-btn" class="primary-btn" data-i18n="searchProduct"></button>
+  </div>
+
+  <!-- PANTALLA AFEGIR PRODUCTE (manual o després d'escanejar) -->
+  <div id="screen-add" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="add-choice" aria-label="Back">‹</button>
+      <h1 data-i18n="addProductTitle"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div id="scan-warning" class="scan-warning" style="display:none">
+      <span class="scan-warning-icon">⚠️</span>
+      <span data-i18n="scanWarning"></span>
+    </div>
+
+    <button id="popular-btn" class="popular-btn">
+      <span style="font-size:22px">⭐</span>
+      <span data-i18n="popularProducts"></span>
+    </button>
+
+    <div class="form-group">
+      <label data-i18n="productName" for="input-name"></label>
+      <input type="text" id="input-name" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="location"></label>
+      <div class="location-picker" id="location-picker"></div>
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="emoji"></label>
+      <div class="emoji-picker" id="emoji-picker"></div>
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="expiryDate" for="input-date"></label>
+      <input type="date" id="input-date">
+      <div class="quick-dates">
+        <button class="quick-date" data-days="3">+3</button>
+        <button class="quick-date" data-days="7">+7</button>
+        <button class="quick-date" data-days="14">+14</button>
+        <button class="quick-date" data-days="30">+30</button>
+      </div>
+    </div>
+
+    <button id="save-btn" class="primary-btn" data-i18n="save"></button>
+  </div>
+
+  <!-- PANTALLA UBICACIONS (gestió) -->
+  <div id="screen-locations" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="add" aria-label="Back">‹</button>
+      <h1 data-i18n="locations"></h1>
+      <div style="width:40px"></div>
+    </header>
+    <p class="section-hint" data-i18n="locationsHint"></p>
+    <div id="locations-list" class="locations-list"></div>
+    <button id="new-location-btn" class="primary-btn" data-i18n="newLocation"></button>
+  </div>
+
+  <!-- PANTALLA EDITAR UBICACIÓ -->
+  <div id="screen-location-edit" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="locations" aria-label="Back">‹</button>
+      <h1 id="loc-edit-title" data-i18n="editLocation"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div style="text-align:center;font-size:64px;line-height:1;margin:10px 0 20px">
+      <span id="loc-edit-emoji">📍</span>
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="locationName" for="loc-edit-name"></label>
+      <input type="text" id="loc-edit-name" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="emoji"></label>
+      <div class="emoji-picker" id="loc-edit-emoji-picker"></div>
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="storageType"></label>
+      <div class="storage-type-picker" id="storage-type-picker"></div>
+      <p class="form-hint" data-i18n="storageTypeHint"></p>
+    </div>
+
+    <button id="save-location-btn" class="primary-btn" data-i18n="save"></button>
+    <button id="loc-edit-delete" class="danger-btn" data-i18n="delete" style="display:none;margin-top:10px"></button>
+  </div>
+
+  <!-- PANTALLA PRODUCTES POPULARS -->
+  <div id="screen-popular" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="add" aria-label="Back">‹</button>
+      <h1 data-i18n="popularProducts"></h1>
+      <div style="width:40px"></div>
+    </header>
+    <p class="section-hint" data-i18n="popularHint"></p>
+    <div id="popular-list" class="popular-list"></div>
+  </div>
+
+  <!-- PANTALLA CONFIGURACIÓ -->
+  <div id="screen-settings" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
+      <h1 data-i18n="menu"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="settings-list">
+      <div class="settings-item">
+        <div>
+          <p class="settings-title" data-i18n="notifications"></p>
+          <p class="settings-sub" data-i18n="comingSoon"></p>
+        </div>
+      </div>
+      <div class="settings-item" id="settings-language">
+        <div>
+          <p class="settings-title" data-i18n="language"></p>
+          <p class="settings-sub" id="language-status">-</p>
+        </div>
+      </div>
+      <div class="settings-item" id="settings-theme">
+        <div>
+          <p class="settings-title" data-i18n="appearance"></p>
+          <p class="settings-sub" id="theme-status">-</p>
+        </div>
+      </div>
+      <div class="settings-item" id="settings-stats">
+        <div>
+          <p class="settings-title" data-i18n="stats"></p>
+          <p class="settings-sub" id="stats-sub" data-i18n="statsEmpty"></p>
+        </div>
+      </div>
+      <div class="settings-item settings-danger" id="settings-reset">
+        <div>
+          <p class="settings-title danger-text" data-i18n="resetAll"></p>
+          <p class="settings-sub" data-i18n="resetSub"></p>
+        </div>
+      </div>
+    </div>
+
+    <p class="app-version">EatMeFirst · v2.0</p>
+  </div>
+
+  <!-- PANTALLA IDIOMES -->
+  <div id="screen-language" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <h1 data-i18n="language"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="lang-list" id="lang-list"></div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
