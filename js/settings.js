@@ -644,15 +644,36 @@ function showStats() {
 }
 
 function resetAll() {
-  if (confirm(t('resetConfirm'))) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">🗑️</div>
+      <p class="modal-title">${t('resetAll')}</p>
+      <p class="modal-sub">${t('resetConfirm')}</p>
+      <div class="modal-buttons">
+        <button class="modal-cancel" id="modal-no-btn">${t('cancel')}</button>
+        <button class="modal-confirm modal-confirm-danger" id="modal-yes-btn">${t('delete')}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#modal-no-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
     products = [];
     stats = { consumed: 0, trashed: 0 };
     saveData();
     renderHome();
     updateStatsSub();
-    showScreen('home');
     showToast(t('resetDone'));
-  }
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
 }
 
 
