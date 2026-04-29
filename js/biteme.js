@@ -831,3 +831,370 @@ function searchProductHistory(query) {
 
   return result.slice(0, 6);
 }
+
+function renderLocationPicker() {
+  const container = document.getElementById('location-picker');
+  if (!container) return;
+  container.innerHTML = '';
+
+  locations.forEach(loc => {
+    const btn = document.createElement('button');
+    btn.className = 'loc-option' + (loc.id === selectedLocation ? ' selected' : '');
+    btn.type = 'button';
+    btn.innerHTML = '<span class="loc-option-emoji"></span><span class="loc-option-name"></span>';
+    btn.querySelector('.loc-option-emoji').textContent = loc.emoji;
+    btn.querySelector('.loc-option-name').textContent = getLocationName(loc);
+    btn.addEventListener('click', () => {
+      selectedLocation = loc.id;
+      renderLocationPicker();
+      recalcDateByLocation();
+    });
+    container.appendChild(btn);
+  });
+
+  // Botó "edita ubicacions"
+  const editBtn = document.createElement('button');
+  editBtn.className = 'loc-option loc-edit';
+  editBtn.type = 'button';
+  editBtn.innerHTML = '<span class="loc-option-emoji">⚙️</span><span class="loc-option-name"></span>';
+  editBtn.querySelector('.loc-option-name').textContent = t('editLocations');
+  editBtn.addEventListener('click', () => openLocations('add'));
+  container.appendChild(editBtn);
+}
+
+
+function renderEmojiPicker() {
+  // Actualitza només el botó (mostra l'emoji actual)
+  const btn = document.getElementById('emoji-button-current');
+  if (btn) btn.textContent = selectedEmoji;
+}
+
+
+let emojiPickerTarget = null; // 'product', 'supermarket', 'shopping'
+let emojiPickerOrigin = null; // pantalla a la qual tornar
+
+function openEmojiPicker(target, origin) {
+  emojiPickerTarget = target;
+  emojiPickerOrigin = origin;
+  const backBtn = document.getElementById('emoji-picker-back-btn');
+  if (backBtn) backBtn.dataset.back = origin;
+
+  // Tria quina llista d'emojis mostrar
+  let emojisToShow = EMOJIS;
+  let currentEmoji = selectedEmoji;
+  if (target === 'supermarket') {
+    emojisToShow = SUPERMARKET_EMOJIS;
+    currentEmoji = selectedSupermarketEmoji;
+  } else if (target === 'shopping') {
+    currentEmoji = selectedShoppingEmoji;
+  } else if (target === 'popular') {
+    currentEmoji = selectedPopularEmoji;
+  } else if (target === 'special-item') {
+    currentEmoji = selectedSpecialItemEmoji;
+  }
+
+  const container = document.getElementById('emoji-picker-full');
+  if (!container) return;
+  container.innerHTML = '';
+  emojisToShow.forEach(e => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'emoji-option-big' + (e === currentEmoji ? ' selected' : '');
+    btn.textContent = e;
+    btn.addEventListener('click', () => {
+      // Aplica la selecció segons el target
+      if (target === 'supermarket') {
+        selectedSupermarketEmoji = e;
+        renderSupermarketEmojiPickerBtn();
+      } else if (target === 'shopping') {
+        selectedShoppingEmoji = e;
+        renderShoppingEmojiPickerBtn();
+      } else if (target === 'popular') {
+        selectedPopularEmoji = e;
+        const btn = document.getElementById('popular-emoji-current');
+        if (btn) btn.textContent = e;
+      } else if (target === 'special-item') {
+        selectedSpecialItemEmoji = e;
+        const btn = document.getElementById('special-item-emoji-current');
+        if (btn) btn.textContent = e;
+      } else {
+        selectedEmoji = e;
+        renderEmojiPicker();
+      }
+      // Torna a la pantalla anterior
+      showScreen(origin);
+    });
+    container.appendChild(btn);
+  });
+  showScreen('emoji-picker');
+}
+
+
+
+
+
+// ============ ESCÀNER DE CODI DE BARRES (html5-qrcode) ============
+let html5QrScanner = null;
+let lastScannedCode = null;
+let lastScanTime = 0;
+
+async function startScanner() {
+  const status = document.getElementById('scanner-status');
+  status.textContent = '';
+
+  if (!('mediaDevices' in navigator) || !navigator.mediaDevices.getUserMedia) {
+    status.textContent = t('cameraError');
+    return;
+  }
+
+  if (typeof Html5Qrcode === 'undefined') {
+    status.textContent = t('cameraError');
+    return;
+  }
+
+  // Netejar instàncies anteriors
+  await stopScanner();
+
+  try {
+    html5QrScanner = new Html5Qrcode('scanner-video-container');
+
+    const config = {
+      fps: 15,
+      qrbox: function(viewfinderWidth, viewfinderHeight) {
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const qrboxSize = Math.floor(minEdge * 0.85);
+        return { width: qrboxSize, height: Math.floor(qrboxSize * 0.55) };
+      },
+      aspectRatio: 1.0,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39
+      ]
+    };
+
+    await html5QrScanner.start(
+      { facingMode: 'environment' },
+      config,
+      onScanSuccess,
+      onScanFailure
+    );
+
+    lastScannedCode = null;
+  } catch (e) {
+    console.error('Scanner error:', e);
+    status.textContent = t('cameraError');
+  }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+  // Evita dobles deteccions del mateix codi
+  const now = Date.now();
+  if (decodedText === lastScannedCode && (now - lastScanTime) < 2000) return;
+  lastScannedCode = decodedText;
+  lastScanTime = now;
+
+  if (navigator.vibrate) navigator.vibrate(100);
+
+  stopScanner();
+  onBarcodeDetected(decodedText);
+}
+
+function onScanFailure(error) {
+  // Errors normals durant l'escaneig: ignorem (busca cada frame)
+}
+
+async function stopScanner() {
+  if (html5QrScanner) {
+    try {
+      if (html5QrScanner.isScanning) {
+        await html5QrScanner.stop();
+      }
+      await html5QrScanner.clear();
+    } catch (e) { console.warn('Stop scanner:', e); }
+    html5QrScanner = null;
+  }
+}
+
+// Cerca a múltiples bases de dades
+async function fetchProductByBarcode(barcode) {
+  // Primer intent: Open Food Facts (gratis, sense límits, principalment menjar)
+  try {
+    const res = await fetch('https://world.openfoodfacts.org/api/v2/product/' + encodeURIComponent(barcode) + '.json');
+    if (res.ok) {
+      const json = await res.json();
+      if (json.status === 1 && json.product) {
+        return parseOpenFoodFactsProduct(json.product);
+      }
+    }
+  } catch (e) { console.warn('OFF error:', e); }
+
+  // Segon intent: UPCitemdb (cobreix més productes no-menjar)
+  try {
+    const res = await fetch('https://api.upcitemdb.com/prod/trial/lookup?upc=' + encodeURIComponent(barcode));
+    if (res.ok) {
+      const json = await res.json();
+      if (json.code === 'OK' && json.items && json.items.length > 0) {
+        const item = json.items[0];
+        return {
+          name: (item.title || '').slice(0, 50),
+          emoji: '🥫',
+          days: 30
+        };
+      }
+    }
+  } catch (e) { console.warn('UPCitemdb error:', e); }
+
+  return null;
+}
+
+function parseOpenFoodFactsProduct(p) {
+  const lang = getCurrentLang();
+  let name = p['product_name_' + lang] || p.product_name || p.generic_name || '';
+  if (p.brands && name) {
+    if (!name.toLowerCase().includes(p.brands.toLowerCase().split(',')[0])) {
+      name = p.brands.split(',')[0].trim() + ' - ' + name;
+    }
+  }
+  if (!name) return null;
+
+  // Recopilem TOTS els tags i text de categoria com a array net
+  // categories_tags ve com ['en:spreads', 'en:hazelnut-spreads', ...]
+  const tagsArr = (p.categories_tags || []).map(x => String(x).toLowerCase());
+  const catText = (p.categories || '').toLowerCase();
+
+  // Funció que mira si una paraula clau apareix en CATEGORIES o TAGS
+  function categoryMatches(key) {
+    const k = key.toLowerCase();
+    // Mira en text de categories
+    if (catText.includes(k)) return true;
+    // Mira en cada tag
+    for (const tag of tagsArr) {
+      if (tag.includes(k)) return true;
+    }
+    return false;
+  }
+
+  // Per a l'emoji: ordre normal (es queda amb el primer match)
+  let emoji = '🥫';
+  for (const key in CATEGORY_TO_EMOJI) {
+    if (categoryMatches(key)) { emoji = CATEGORY_TO_EMOJI[key]; break; }
+  }
+
+  // Per als dies: agafem el VALOR MÉS GRAN dels matches.
+  // Així si un producte té tags "fresh-foods" (poc) i "spreads" (molt),
+  // ens quedem amb el de més vida útil (que és el correcte per al producte tancat).
+  let days = 0;
+  for (const key in CATEGORY_DEFAULT_DAYS) {
+    if (categoryMatches(key)) {
+      const d = CATEGORY_DEFAULT_DAYS[key];
+      if (d > days) days = d;
+    }
+  }
+  if (days === 0) days = 14; // fallback raonable per producte envasat
+
+  return {
+    name: name.trim().slice(0, 50),
+    emoji: emoji,
+    days: days,
+    categories: tagsArr.concat([catText]) // per usar a la taula de congelació
+  };
+}
+
+async function onBarcodeDetected(code) {
+  const status = document.getElementById('scanner-status');
+  if (status) status.textContent = t('searching');
+
+  // Detectem si veníem de la llista de la compra
+  const isShoppingScan = pendingShoppingScanContext;
+  pendingShoppingScanContext = false;
+
+  try {
+    const data = await fetchProductByBarcode(code);
+
+    if (data) {
+      if (status) status.textContent = t('productFound');
+      setTimeout(() => {
+        if (isShoppingScan) {
+          // Obrim el formulari de BuyMe amb el producte trobat
+          openShoppingItemEdit(null);
+          setTimeout(() => {
+            const ni = document.getElementById('input-shopping-name');
+            if (ni) ni.value = data.name;
+            selectedShoppingEmoji = data.emoji || '🥛';
+            renderShoppingEmojiPickerBtn();
+          }, 100);
+        } else {
+          openAddForm({
+            name: data.name,
+            emoji: data.emoji,
+            days: data.days,
+            categories: data.categories || [],
+            fromScan: true
+          });
+        }
+      }, 500);
+    } else {
+      if (status) status.textContent = t('productNotFound');
+      setTimeout(() => {
+        if (isShoppingScan) openShoppingItemEdit(null);
+        else openAddForm({});
+      }, 1200);
+    }
+  } catch (e) {
+    console.error(e);
+    if (status) status.textContent = t('productNotFound');
+    setTimeout(() => {
+      if (isShoppingScan) openShoppingItemEdit(null);
+      else openAddForm({});
+    }, 1200);
+  }
+}
+
+// Cercar producte per codi escrit a mà
+async function searchManualBarcode() {
+  const code = document.getElementById('input-barcode').value.trim();
+  if (!code || code.length < 6) {
+    showToast(t('invalidCode'));
+    return;
+  }
+  showToast(t('searching'));
+  await onBarcodeDetected(code);
+}
+
+// EVENTS
+
+function setupSwipeNavigation() {
+  const screen = document.getElementById('screen-section');
+  if (!screen) return;
+
+  let startX = 0;
+  let startY = 0;
+  let isTracking = false;
+  const MIN_DISTANCE = 60;   // Mínim de píxels horitzontals per detectar swipe
+  const MAX_VERTICAL = 50;   // Màxim moviment vertical (perquè no es confongui amb scroll)
+
+  screen.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { isTracking = false; return; }
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isTracking = true;
+  }, { passive: true });
+
+  screen.addEventListener('touchend', (e) => {
+    if (!isTracking) return;
+    isTracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = Math.abs(t.clientY - startY);
+
+    if (dy > MAX_VERTICAL) return; // moviment massa vertical → ignorem
+    if (Math.abs(dx) < MIN_DISTANCE) return; // moviment massa curt
+
+    if (dx > 0) navigateSection(-1); // swipe dreta = anterior
+    else navigateSection(+1);         // swipe esquerra = següent
+  }, { passive: true });
+}

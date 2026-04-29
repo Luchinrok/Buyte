@@ -656,3 +656,22 @@ function resetAll() {
 }
 
 
+
+// TRADUCCIONS - actualitzar tots els textos
+function translatePage() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+
+  const nameInput = document.getElementById('input-name');
+  if (nameInput) nameInput.placeholder = t('productNamePlaceholder');
+
+  document.documentElement.lang = getCurrentLang();
+  renderHome();
+  updateThemeStatus();
+  updateLangStatus();
+  updateStatsSub();
+  updateLocationsCount();
+  updatePopularCount();
+}

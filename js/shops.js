@@ -420,3 +420,18 @@ function askDeleteSupermarket(sm) {
     if (e.target === overlay) document.body.removeChild(overlay);
   });
 }
+
+let supermarkets = []; // Array de {id, name, emoji}
+
+let currentSupermarketId = null;
+let editingSupermarket = null; // null = nou, objecte = editant
+
+let selectedSupermarketEmoji = '🛒';
+
+let currentCountry = 'ES'; // país actual de l'usuari
+
+function renderSupermarketEmojiPickerBtn() {
+  const btn = document.getElementById('supermarket-emoji-current');
+  if (btn) btn.textContent = selectedSupermarketEmoji;
+}
+

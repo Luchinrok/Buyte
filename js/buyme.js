@@ -672,3 +672,16 @@ function showSupermarketPicker(product) {
   });
 }
 
+
+let shoppingItems = []; // Array de {id, supermarketId, name, emoji, qty, notes, addedAt}
+
+let editingShoppingItem = null;
+
+let selectedShoppingEmoji = '🥛';
+
+function renderShoppingEmojiPickerBtn() {
+  const btn = document.getElementById('shopping-emoji-current');
+  if (btn) btn.textContent = selectedShoppingEmoji;
+}
+
+// Variables per saber quin camp està seleccionant emoji
