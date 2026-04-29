@@ -4116,86 +4116,39 @@ function updatePopularCount() {
 function renderLangList() {
   const container = document.getElementById('lang-list');
   container.innerHTML = '';
-  const currentLang = getCurrentLang();
 
-  // Banderes SVG (es veuen a TOTS els dispositius, inclòs Windows)
-  const FLAGS = {
-    ca: '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="6" fill="#FCDD09"/><rect y="0.67" width="9" height="0.67" fill="#DA121A"/><rect y="2" width="9" height="0.67" fill="#DA121A"/><rect y="3.33" width="9" height="0.67" fill="#DA121A"/><rect y="4.67" width="9" height="0.67" fill="#DA121A"/></svg>',
-    en: '<svg viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg"><clipPath id="t"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#t)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></svg>',
-    ja: '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="6" fill="#fff"/><circle cx="4.5" cy="3" r="1.8" fill="#BC002D"/></svg>',
-    zh: '<svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg"><rect width="30" height="20" fill="#DE2910"/><polygon points="5,2 5.6,3.8 7.5,3.8 6,4.9 6.6,6.7 5,5.6 3.4,6.7 4,4.9 2.5,3.8 4.4,3.8" fill="#FFDE00"/><polygon points="10,1 10.2,1.6 10.8,1.6 10.3,2 10.5,2.6 10,2.2 9.5,2.6 9.7,2 9.2,1.6 9.8,1.6" fill="#FFDE00"/><polygon points="12,3 12.2,3.6 12.8,3.6 12.3,4 12.5,4.6 12,4.2 11.5,4.6 11.7,4 11.2,3.6 11.8,3.6" fill="#FFDE00"/><polygon points="12,6 12.2,6.6 12.8,6.6 12.3,7 12.5,7.6 12,7.2 11.5,7.6 11.7,7 11.2,6.6 11.8,6.6" fill="#FFDE00"/><polygon points="10,8 10.2,8.6 10.8,8.6 10.3,9 10.5,9.6 10,9.2 9.5,9.6 9.7,9 9.2,8.6 9.8,8.6" fill="#FFDE00"/></svg>',
-    ko: '<svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg"><rect width="30" height="20" fill="#fff"/><g transform="translate(15,10) rotate(-56.31)"><circle r="4" fill="#fff" stroke="#000" stroke-width="0.05"/><path d="M-4,0 a4,4 0 0,1 8,0 a2,2 0 0,1 -4,0 a2,2 0 0,0 -4,0z" fill="#CD2E3A"/><path d="M-4,0 a4,4 0 0,0 8,0 a2,2 0 0,0 -4,0 a2,2 0 0,1 -4,0z" fill="#0047A0"/></g><g fill="#000" stroke="none"><g transform="translate(15,10) rotate(33.69) translate(7.5,0)"><rect x="-1.4" y="-0.4" width="2.8" height="0.5"/><rect x="-1.4" y="0.3" width="2.8" height="0.5"/><rect x="-1.4" y="-1.1" width="2.8" height="0.5"/></g><g transform="translate(15,10) rotate(33.69) translate(-7.5,0)"><rect x="-1.4" y="-1.1" width="2.8" height="0.5"/><rect x="-1.4" y="-0.4" width="1.2" height="0.5"/><rect x="0.2" y="-0.4" width="1.2" height="0.5"/><rect x="-1.4" y="0.3" width="1.2" height="0.5"/><rect x="0.2" y="0.3" width="1.2" height="0.5"/></g><g transform="translate(15,10) rotate(-33.69) translate(7.5,0)"><rect x="-1.4" y="-1.1" width="2.8" height="0.5"/><rect x="-1.4" y="-0.4" width="1.2" height="0.5"/><rect x="0.2" y="-0.4" width="1.2" height="0.5"/><rect x="-1.4" y="0.3" width="2.8" height="0.5"/></g><g transform="translate(15,10) rotate(-33.69) translate(-7.5,0)"><rect x="-1.4" y="-1.1" width="1.2" height="0.5"/><rect x="0.2" y="-1.1" width="1.2" height="0.5"/><rect x="-1.4" y="-0.4" width="1.2" height="0.5"/><rect x="0.2" y="-0.4" width="1.2" height="0.5"/><rect x="-1.4" y="0.3" width="1.2" height="0.5"/><rect x="0.2" y="0.3" width="1.2" height="0.5"/></g></g></svg>',
-    de: '<svg viewBox="0 0 5 3" xmlns="http://www.w3.org/2000/svg"><rect width="5" height="1" y="0" fill="#000"/><rect width="5" height="1" y="1" fill="#DD0000"/><rect width="5" height="1" y="2" fill="#FFCE00"/></svg>',
-    fr: '<svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="2" x="0" fill="#0055A4"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#EF4135"/></svg>',
-    es: '<svg viewBox="0 0 5 3" xmlns="http://www.w3.org/2000/svg"><rect width="5" height="3" fill="#AA151B"/><rect width="5" height="1.5" y="0.75" fill="#F1BF00"/></svg>',
-    it: '<svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="2" x="0" fill="#009246"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#CE2B37"/></svg>',
-    pt: '<svg viewBox="0 0 6 4" xmlns="http://www.w3.org/2000/svg"><rect width="6" height="4" fill="#FF0000"/><rect width="2.4" height="4" fill="#006600"/><circle cx="2.4" cy="2" r="0.7" fill="#FFE500" stroke="#000" stroke-width="0.05"/><circle cx="2.4" cy="2" r="0.4" fill="#FF0000"/></svg>',
-    nl: '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="2" y="0" fill="#AE1C28"/><rect width="9" height="2" y="2" fill="#fff"/><rect width="9" height="2" y="4" fill="#21468B"/></svg>'
-  };
+  // Mentre fem el refactor només deixem català.
+  // La resta d'idiomes tornaran un cop polida l'app.
+  const FLAG_CA = '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="6" fill="#FCDD09"/><rect y="0.67" width="9" height="0.67" fill="#DA121A"/><rect y="2" width="9" height="0.67" fill="#DA121A"/><rect y="3.33" width="9" height="0.67" fill="#DA121A"/><rect y="4.67" width="9" height="0.67" fill="#DA121A"/></svg>';
 
-  const NATIVE = {
-    ca: 'Català', en: 'English', ja: '日本語', zh: '中文', ko: '한국어',
-    de: 'Deutsch', fr: 'Français', es: 'Español', it: 'Italiano',
-    pt: 'Português', nl: 'Nederlands'
-  };
+  const btn = document.createElement('button');
+  btn.className = 'lang-item active';
 
-  const LANG_LABELS = {
-    ca: { ca: 'Català', en: 'Anglès', ja: 'Japonès', zh: 'Xinès', ko: 'Coreà', de: 'Alemany', fr: 'Francès', es: 'Espanyol', it: 'Italià', pt: 'Portuguès', nl: 'Neerlandès' },
-    en: { ca: 'Catalan', en: 'English', ja: 'Japanese', zh: 'Chinese', ko: 'Korean', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian', pt: 'Portuguese', nl: 'Dutch' },
-    es: { ca: 'Catalán', en: 'Inglés', ja: 'Japonés', zh: 'Chino', ko: 'Coreano', de: 'Alemán', fr: 'Francés', es: 'Español', it: 'Italiano', pt: 'Portugués', nl: 'Neerlandés' },
-    fr: { ca: 'Catalan', en: 'Anglais', ja: 'Japonais', zh: 'Chinois', ko: 'Coréen', de: 'Allemand', fr: 'Français', es: 'Espagnol', it: 'Italien', pt: 'Portugais', nl: 'Néerlandais' },
-    de: { ca: 'Katalanisch', en: 'Englisch', ja: 'Japanisch', zh: 'Chinesisch', ko: 'Koreanisch', de: 'Deutsch', fr: 'Französisch', es: 'Spanisch', it: 'Italienisch', pt: 'Portugiesisch', nl: 'Niederländisch' },
-    it: { ca: 'Catalano', en: 'Inglese', ja: 'Giapponese', zh: 'Cinese', ko: 'Coreano', de: 'Tedesco', fr: 'Francese', es: 'Spagnolo', it: 'Italiano', pt: 'Portoghese', nl: 'Olandese' },
-    pt: { ca: 'Catalão', en: 'Inglês', ja: 'Japonês', zh: 'Chinês', ko: 'Coreano', de: 'Alemão', fr: 'Francês', es: 'Espanhol', it: 'Italiano', pt: 'Português', nl: 'Holandês' },
-    nl: { ca: 'Catalaans', en: 'Engels', ja: 'Japans', zh: 'Chinees', ko: 'Koreaans', de: 'Duits', fr: 'Frans', es: 'Spaans', it: 'Italiaans', pt: 'Portugees', nl: 'Nederlands' },
-    ja: { ca: 'カタルーニャ語', en: '英語', ja: '日本語', zh: '中国語', ko: '韓国語', de: 'ドイツ語', fr: 'フランス語', es: 'スペイン語', it: 'イタリア語', pt: 'ポルトガル語', nl: 'オランダ語' },
-    zh: { ca: '加泰罗尼亚语', en: '英语', ja: '日语', zh: '中文', ko: '韩语', de: '德语', fr: '法语', es: '西班牙语', it: '意大利语', pt: '葡萄牙语', nl: '荷兰语' },
-    ko: { ca: '카탈루냐어', en: '영어', ja: '일본어', zh: '중국어', ko: '한국어', de: '독일어', fr: '프랑스어', es: '스페인어', it: '이탈리아어', pt: '포르투갈어', nl: '네덜란드어' }
-  };
+  const flag = document.createElement('span');
+  flag.className = 'lang-flag';
+  flag.innerHTML = FLAG_CA;
 
-  const labels = LANG_LABELS[currentLang] || LANG_LABELS.en;
+  const info = document.createElement('div');
+  info.className = 'lang-info';
 
-  Object.keys(NATIVE).forEach(code => {
-    const btn = document.createElement('button');
-    btn.className = 'lang-item' + (code === currentLang ? ' active' : '');
+  const name = document.createElement('div');
+  name.className = 'lang-name';
+  name.textContent = 'Català';
 
-    const flag = document.createElement('span');
-    flag.className = 'lang-flag';
-    flag.innerHTML = FLAGS[code];
+  const check = document.createElement('span');
+  check.className = 'lang-check';
+  check.textContent = '✓';
 
-    const info = document.createElement('div');
-    info.className = 'lang-info';
+  info.appendChild(name);
+  btn.appendChild(flag);
+  btn.appendChild(info);
+  btn.appendChild(check);
 
-    const name = document.createElement('div');
-    name.className = 'lang-name';
-    name.textContent = NATIVE[code];
-
-    const sub = document.createElement('div');
-    sub.className = 'lang-native';
-    if (code !== currentLang && NATIVE[code] !== labels[code]) {
-      sub.textContent = labels[code];
-    }
-
-    const check = document.createElement('span');
-    check.className = 'lang-check';
-    check.textContent = '✓';
-
-    info.appendChild(name);
-    if (sub.textContent) info.appendChild(sub);
-    btn.appendChild(flag);
-    btn.appendChild(info);
-    btn.appendChild(check);
-
-    btn.addEventListener('click', () => {
-      localStorage.setItem('eatmefirst_lang', code);
-      translatePage();
-      renderLangList();
-      showToast('✓ ' + NATIVE[code]);
-      setTimeout(() => showScreen('settings'), 400);
-    });
-
-    container.appendChild(btn);
+  btn.addEventListener('click', () => {
+    showToast('✓ Català');
   });
+
+  container.appendChild(btn);
 }
 
 function showStats() {
