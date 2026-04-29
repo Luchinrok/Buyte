@@ -290,6 +290,8 @@ const TRANSLATIONS = {
     items: 'productes',
     itemsAdded: 'productes afegits',
     whichSupermarket: 'Tria on vols afegir aquests productes',
+    preferredShops: 'Preferides',
+    otherShops: 'Altres botigues',
     shoppingDone: 'Enhorabona, ja has acabat!',
     shoppingDoneSub: 'Necessites res més?',
     alreadyHaveTitle: 'Atenció: ja en tens a casa!',

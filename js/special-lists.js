@@ -386,9 +386,8 @@ function showSpecialSelectionStep() {
     }
     document.body.removeChild(overlay);
     // Pas 2: triar el supermercat
-    const enabled = getEnabledSupermarkets();
-    if (enabled.length === 1) {
-      addSpecialListToSupermarket(enabled[0].id);
+    if (supermarkets.length === 1) {
+      addSpecialListToSupermarket(supermarkets[0].id);
     } else {
       showSupermarketPickerForSpecial();
     }
@@ -424,19 +423,35 @@ function showSupermarketPickerForSpecial() {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   const enabled = getEnabledSupermarkets();
-  const list = enabled.map(sm => `
+  const enabledIds = new Set(enabled.map(s => s.id));
+  const others = supermarkets.filter(s => !enabledIds.has(s.id));
+
+  const renderRow = (sm) => `
     <button class="modal-supermarket-option" data-id="${sm.id}">
       <span style="font-size:24px;margin-right:10px">${sm.emoji}</span>
       <span>${escapeHtml(sm.name)}</span>
     </button>
-  `).join('');
+  `;
+  const sectionHeader = (label) => `
+    <p class="modal-sub" style="margin:10px 0 6px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7">${label}</p>
+  `;
+
+  let listHtml = '';
+  if (enabled.length > 0) {
+    listHtml += sectionHeader(t('preferredShops'));
+    listHtml += enabled.map(renderRow).join('');
+  }
+  if (others.length > 0) {
+    listHtml += sectionHeader(t('otherShops'));
+    listHtml += others.map(renderRow).join('');
+  }
 
   overlay.innerHTML = `
     <div class="modal-content">
       <div class="modal-emoji-big">🛒</div>
       <p class="modal-title">${t('chooseSupermarket')}</p>
       <p class="modal-sub">${t('whichSupermarket')}</p>
-      <div class="modal-supermarket-list">${list}</div>
+      <div class="modal-supermarket-list">${listHtml}</div>
       <button class="modal-cancel" id="modal-no-btn" style="margin-top:10px">${t('cancel')}</button>
     </div>
   `;
