@@ -683,6 +683,15 @@ function getEnabledSupermarkets() {
   return supermarkets.filter(s => s.enabled !== false);
 }
 
+// Retorna els supermercats que cal mostrar a la pantalla del BuyMe:
+// els actius/preferits + qualsevol altre que tingui productes pendents.
+function getBuyMeVisibleSupermarkets() {
+  const enabled = getEnabledSupermarkets();
+  const enabledIds = new Set(enabled.map(s => s.id));
+  const withItems = supermarkets.filter(s => !enabledIds.has(s.id) && getShoppingItemsBySupermarket(s.id).length > 0);
+  return enabled.concat(withItems);
+}
+
 function saveShoppingData() {
   localStorage.setItem('eatmefirst_supermarkets', JSON.stringify(supermarkets));
   localStorage.setItem('eatmefirst_shopping_items', JSON.stringify(shoppingItems));
@@ -1540,7 +1549,7 @@ function renderSupermarkets() {
   if (!container) return;
   container.innerHTML = '';
 
-  const visibleSupermarkets = getEnabledSupermarkets();
+  const visibleSupermarkets = getBuyMeVisibleSupermarkets();
 
   if (visibleSupermarkets.length === 0) {
     const empty = document.createElement('p');
@@ -1609,8 +1618,8 @@ function renderSupermarketDots() {
   const dotsContainer = document.getElementById('supermarket-dots');
   if (!dotsContainer) return;
   dotsContainer.innerHTML = '';
-  const enabled = getEnabledSupermarkets();
-  enabled.forEach(sm => {
+  const visible = getBuyMeVisibleSupermarkets();
+  visible.forEach(sm => {
     const dot = document.createElement('div');
     dot.className = 'sm-dot' + (sm.id === currentSupermarketId ? ' active' : '');
     dotsContainer.appendChild(dot);
@@ -1664,16 +1673,16 @@ function setupSupermarketSwipe() {
 
     if (Math.abs(dx) < 80) return;
 
-    const enabled = getEnabledSupermarkets();
-    const idx = enabled.findIndex(s => s.id === currentSupermarketId);
+    const visible = getBuyMeVisibleSupermarkets();
+    const idx = visible.findIndex(s => s.id === currentSupermarketId);
     if (idx < 0) return;
 
-    if (dx < 0 && idx < enabled.length - 1) {
+    if (dx < 0 && idx < visible.length - 1) {
       // Swipe esquerra → següent: animació d'entrada des de la dreta
-      animateScreenSlide(screen, 'left', () => openSupermarket(enabled[idx + 1].id));
+      animateScreenSlide(screen, 'left', () => openSupermarket(visible[idx + 1].id));
     } else if (dx > 0 && idx > 0) {
       // Swipe dreta → anterior: animació d'entrada des de l'esquerra
-      animateScreenSlide(screen, 'right', () => openSupermarket(enabled[idx - 1].id));
+      animateScreenSlide(screen, 'right', () => openSupermarket(visible[idx - 1].id));
     }
   });
 
@@ -1967,7 +1976,8 @@ function buyShoppingItem(item) {
     emoji: item.emoji,
     qty: item.qty,
     days: (fromPopular && fromPopular.days) || (fromHistory && fromHistory.days) || null,
-    location: (fromPopular && fromPopular.location) || (fromHistory && fromHistory.location) || null
+    location: (fromPopular && fromPopular.location) || (fromHistory && fromHistory.location) || null,
+    noExpiry: !!((fromPopular && fromPopular.noExpiry) || (fromHistory && fromHistory.noExpiry))
   };
 
   if (typeof openAddForm === 'function') {
@@ -2095,6 +2105,16 @@ function showScreen(name) {
 
   // Aturar escàner si no som a la pantalla d'escaneig
   if (name !== 'scan') stopScanner();
+
+  // Engranatge del launcher: gira un cop quan s'entra a la pantalla inicial
+  if (name === 'launcher') {
+    const gear = document.querySelector('#launcher-menu-btn .gear-spin');
+    if (gear) {
+      gear.classList.remove('gear-spin-once');
+      void gear.offsetWidth;
+      gear.classList.add('gear-spin-once');
+    }
+  }
 }
 
 // TRADUCCIONS - actualitzar tots els textos
@@ -2647,7 +2667,7 @@ function renderAlerts() {
     item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div></div><span class="product-item-arrow">›</span>';
     item.querySelector('.product-item-name').textContent = p.name;
     item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
-    item.addEventListener('click', () => openProduct(p.id));
+    item.addEventListener('click', () => { productDetailBack = 'alerts'; openProduct(p.id); });
     list.appendChild(item);
   });
 }
@@ -2684,7 +2704,7 @@ function openShelf(level) {
       item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div></div><span class="product-item-arrow">›</span>';
       item.querySelector('.product-item-name').textContent = p.name;
       item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
-      item.addEventListener('click', () => openProduct(p.id));
+      item.addEventListener('click', () => { productDetailBack = 'list'; openProduct(p.id); });
       listEl.appendChild(item);
     });
   }
@@ -2694,6 +2714,8 @@ function openShelf(level) {
 }
 
 // DETALL
+let productDetailBack = 'list';
+
 function openProduct(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
@@ -2705,7 +2727,15 @@ function openProduct(id) {
   const locStr = loc ? loc.emoji + ' ' + getLocationName(loc) + ' · ' : '';
   const qtyStr = p.qty ? ' · ' + p.qty : '';
   document.getElementById('product-days').textContent = locStr + daysText(days) + qtyStr;
+  const backBtn = document.querySelector('#screen-product .back-btn');
+  if (backBtn) backBtn.dataset.back = productDetailBack;
   showScreen('product');
+}
+
+// Obre el detall del producte des de la pantalla "Veure-ho tot" (BuyTe)
+function openProductDetail(p) {
+  productDetailBack = 'view-all';
+  openProduct(p.id);
 }
 
 // ACCIONS
@@ -2778,17 +2808,76 @@ function showAddToShoppingModal(product) {
   });
 }
 
-function addToShoppingList(supermarketId, product) {
+function addToShoppingList(supermarketId, product, qty) {
   const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
   shoppingItems.push({
     id, supermarketId,
     name: product.name,
     emoji: product.emoji,
-    qty: '',
+    qty: qty || '',
     notes: '',
     addedAt: Date.now()
   });
   saveShoppingData();
+}
+
+// Flux manual: pregunta quantitat i supermercat per afegir al BuyMe
+function manualAddToBuyMe(product) {
+  if (!supermarkets || supermarkets.length === 0) {
+    showToast(t('noActiveSupermarkets'));
+    return;
+  }
+  showManualAddToBuyMeModal(product);
+}
+
+function showManualAddToBuyMeModal(product) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const gradients = [
+    ['#42A5F5', '#1565C0'], ['#26A69A', '#00695C'], ['#FFA726', '#E65100'],
+    ['#AB47BC', '#7B1FA2'], ['#EF5350', '#C62828'], ['#66BB6A', '#388E3C'],
+    ['#5C6BC0', '#3949AB']
+  ];
+  const smButtons = supermarkets.map((sm, idx) => {
+    const [c1, c2] = gradients[idx % gradients.length];
+    return `
+      <button class="modal-supermarket-btn" data-id="${sm.id}" style="background:linear-gradient(135deg, ${c1} 0%, ${c2} 100%)">
+        <span class="modal-sm-emoji">${sm.emoji}</span>
+        <span class="modal-sm-name">${escapeHtml(sm.name)}</span>
+      </button>
+    `;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">🛒</div>
+      <p class="modal-title">${t('addToList')}</p>
+      <p class="modal-product-name">${escapeHtml(product.emoji + ' ' + product.name)}</p>
+      <input type="text" id="modal-qty-input" class="select-input" placeholder="${t('quantityPlaceholder')}" value="${escapeHtml(product.qty || '')}" style="margin:12px 0">
+      <div class="modal-options">${smButtons}</div>
+      <button class="modal-cancel" id="modal-cancel-btn" style="margin-top:10px">${t('cancel')}</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelectorAll('.modal-supermarket-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const smId = btn.dataset.id;
+      const qty = (overlay.querySelector('#modal-qty-input').value || '').trim();
+      const sm = getSupermarketById(smId);
+      addToShoppingList(smId, product, qty);
+      document.body.removeChild(overlay);
+      showToast('🛒 ' + t('addedToShopping', sm ? sm.name : ''));
+    });
+  });
+
+  overlay.querySelector('#modal-cancel-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
 }
 
 function showChangeDateModal(product) {
@@ -3061,9 +3150,9 @@ function openAddForm(prefill) {
   const qtyInput = document.getElementById('input-qty');
   if (qtyInput) qtyInput.value = (prefill && prefill.qty) ? prefill.qty : '';
 
-  // Reset checkbox "sense data"
+  // Reset checkbox "sense data" — restaurat si el prefill ho indica (popular/historial)
   const noExpiry = document.getElementById('input-no-expiry');
-  if (noExpiry) noExpiry.checked = false;
+  if (noExpiry) noExpiry.checked = !!(prefill && prefill.noExpiry);
 
   // Amaga els suggeriments
   const suggBox = document.getElementById('name-suggestions');
@@ -3093,10 +3182,16 @@ function openAddForm(prefill) {
   // Calculem dies finals segons el tipus d'ubicació
   const finalDays = computeDaysForLocation(selectedLocation, baseDays, currentCategories);
 
-  const d = new Date();
-  d.setDate(d.getDate() + finalDays);
-  document.getElementById('input-date').value = formatDateForInput(d);
-  document.getElementById('input-date').dataset.baseDays = baseDays;
+  const dateInputEl = document.getElementById('input-date');
+  if (prefill && prefill.noExpiry) {
+    dateInputEl.value = '';
+    dateInputEl.dataset.baseDays = '';
+  } else {
+    const d = new Date();
+    d.setDate(d.getDate() + finalDays);
+    dateInputEl.value = formatDateForInput(d);
+    dateInputEl.dataset.baseDays = baseDays;
+  }
 
   selectedEmoji = prefill && prefill.emoji ? prefill.emoji : '🥛';
   renderEmojiPicker();
@@ -3155,12 +3250,24 @@ function setupAutocompleteFor(input, suggBox, mode) {
         } else {
           selectedEmoji = m.emoji;
           renderEmojiPicker();
-          // Si ve d'un popular, també prefillem la data
-          if (m.isPopular && m.days) {
-            const d = new Date();
-            d.setDate(d.getDate() + m.days);
-            const dateInput = document.getElementById('input-date');
-            if (dateInput) {
+          // Recupera el flag "no caduca" si el tenim guardat al popular o l'historial
+          const noExpiryInput = document.getElementById('input-no-expiry');
+          const dateInput = document.getElementById('input-date');
+          if (m.noExpiry) {
+            if (noExpiryInput) {
+              noExpiryInput.checked = true;
+              noExpiryInput.dispatchEvent(new Event('change'));
+            }
+            if (dateInput) dateInput.value = '';
+          } else {
+            if (noExpiryInput && noExpiryInput.checked) {
+              noExpiryInput.checked = false;
+              noExpiryInput.dispatchEvent(new Event('change'));
+            }
+            // Si ve d'un popular o de l'historial, prefillem la data
+            if (m.days && dateInput) {
+              const d = new Date();
+              d.setDate(d.getDate() + m.days);
               dateInput.value = formatDateForInput(d);
               dateInput.dataset.baseDays = m.days;
             }
@@ -3552,7 +3659,7 @@ function saveNewProduct() {
     approxDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
   }
 
-  recordProductInHistory(name, selectedEmoji, selectedLocation, approxDays);
+  recordProductInHistory(name, selectedEmoji, selectedLocation, approxDays, noExpiryChecked);
 
   products.push({
     id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
@@ -3606,7 +3713,7 @@ function loadProductHistory() {
 }
 
 // Endevina la zona d'emmagatzematge segons el nom del producte
-function recordProductInHistory(name, emoji, location, days) {
+function recordProductInHistory(name, emoji, location, days, noExpiry) {
   const key = name.toLowerCase().trim();
   const existing = productHistory.find(p => p.name.toLowerCase() === key);
   if (existing) {
@@ -3615,36 +3722,40 @@ function recordProductInHistory(name, emoji, location, days) {
     if (emoji) existing.emoji = emoji;
     if (location) existing.location = location;
     if (days) existing.days = days;
+    existing.noExpiry = !!noExpiry;
   } else {
-    productHistory.push({ name, emoji: emoji || '🥛', location, days, count: 1, lastUsed: Date.now() });
+    productHistory.push({ name, emoji: emoji || '🥛', location, days, noExpiry: !!noExpiry, count: 1, lastUsed: Date.now() });
   }
   productHistory.sort((a, b) => b.count - a.count || b.lastUsed - a.lastUsed);
   if (productHistory.length > 50) productHistory = productHistory.slice(0, 50);
   localStorage.setItem('eatmefirst_product_history', JSON.stringify(productHistory));
 
   // APRENENTATGE: cada cop que es desa un producte, l'afegim als populars
-  // (o actualitzem l'entrada existent amb l'emoji, la zona i els dies més recents)
-  addToCustomPopular(name, emoji, days, location);
+  // (o actualitzem l'entrada existent amb l'emoji, la zona, els dies i si caduca)
+  addToCustomPopular(name, emoji, days, location, noExpiry);
 }
 
-function addToCustomPopular(name, emoji, days, location) {
+function addToCustomPopular(name, emoji, days, location, noExpiry) {
   const list = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
   const safeEmoji = emoji || '🥛';
   const safeDays = (typeof days === 'number' && days > 0) ? days : 7;
   const safeLoc = location || (typeof guessLocationFromName === 'function' ? guessLocationFromName(name) : null) || 'pantry';
+  const noExp = !!noExpiry;
 
   const existing = list.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (existing) {
     existing.emoji = safeEmoji;
     existing.days = safeDays;
     existing.location = safeLoc;
+    existing.noExpiry = noExp;
   } else {
     list.push({
       id: 'pop-learned-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
       name,
       emoji: safeEmoji,
       days: safeDays,
-      location: safeLoc
+      location: safeLoc,
+      noExpiry: noExp
     });
   }
   if (typeof savePopularProducts === 'function') savePopularProducts(list);
@@ -3697,7 +3808,7 @@ function searchProductHistory(query) {
   const fromHistory = productHistory.filter(p => p.name.toLowerCase().includes(q));
   const fromPopular = getPopularProducts()
     .filter(p => p.name.toLowerCase().includes(q))
-    .map(p => ({ name: p.name, emoji: p.emoji, days: p.days, isPopular: true }));
+    .map(p => ({ name: p.name, emoji: p.emoji, days: p.days, noExpiry: !!p.noExpiry, isPopular: true }));
 
   // Combinem sense duplicats (mateix nom)
   const result = [...fromHistory];
@@ -4160,6 +4271,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   translatePage();
 
+  // Anima l'engranatge del launcher un cop a l'arrencada
+  const initialGear = document.querySelector('#launcher-menu-btn .gear-spin');
+  if (initialGear) initialGear.classList.add('gear-spin-once');
+
   // Mostra la pantalla de benvinguda si no l'hem fet servir mai
   showWelcomeIfNeeded();
 
@@ -4170,7 +4285,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnAddToBuyMe = document.getElementById('btn-add-to-buyme');
   if (btnAddToBuyMe) btnAddToBuyMe.addEventListener('click', () => {
     if (!currentProduct) return;
-    askAddToShoppingList(currentProduct);
+    manualAddToBuyMe(currentProduct);
   });
 
   // Botó "Editar quantitat" del detall del producte

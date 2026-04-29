@@ -2810,10 +2810,13 @@ h1 {
   height: 26px;
 }
 
-/* Engranatge gira lentament */
+/* Engranatge: gira un moment quan s'entra al launcher i després es queda quiet */
 .gear-spin {
   transform-origin: 16px 16px;
-  animation: gearRotate 8s linear infinite;
+}
+
+.gear-spin-once {
+  animation: gearRotate 1.6s ease-out 1;
 }
 
 @keyframes gearRotate {
@@ -2821,9 +2824,9 @@ h1 {
   to { transform: rotate(360deg); }
 }
 
-/* Quan el premes, accelera momentàniament */
+/* Quan el premes, gira ràpidament un cop */
 .icon-btn-fun:active .gear-spin {
-  animation-duration: 0.5s;
+  animation: gearRotate 0.5s linear 1;
 }
 
 /* Llista idiomes - BONICS */
