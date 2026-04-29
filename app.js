@@ -548,6 +548,11 @@ function loadLocations() {
       migrated = true;
     }
   });
+  // Migració: afegir Farmaciola si no existeix
+  if (!locations.find(l => l.id === 'medicine')) {
+    locations.push({ id: 'medicine', emoji: '💊', nameKey: 'locMedicine', category: 'pantry' });
+    migrated = true;
+  }
   if (migrated) saveLocations();
 }
 
@@ -570,10 +575,25 @@ function loadShoppingData() {
       supermarkets = JSON.parse(sm);
       // Migració: si els supermercats antics no tenen 'enabled', els marquem tots com a true
       let needsSave = false;
+      const SHOP_NAME_KEYS = {
+        'sm-shop-butcher': 'shopButcher',
+        'sm-shop-fishmonger': 'shopFishmonger',
+        'sm-shop-greengrocer': 'shopGreengrocer',
+        'sm-shop-pharmacy': 'shopPharmacy',
+        'sm-shop-bakery': 'shopBakery'
+      };
       supermarkets.forEach(s => {
         if (typeof s.enabled === 'undefined') {
           s.enabled = true;
           needsSave = true;
+        }
+        // Migració: actualitzar nom de botigues bàsiques amb la traducció actual
+        if (SHOP_NAME_KEYS[s.id]) {
+          const correctName = t(SHOP_NAME_KEYS[s.id]);
+          if (s.name !== correctName) {
+            s.name = correctName;
+            needsSave = true;
+          }
         }
       });
       if (needsSave) saveShoppingData();
@@ -762,126 +782,285 @@ function buildViewAllRow(p) {
 
 // ============ LLISTES ESPECIALS ============
 
-const SPECIAL_LISTS = [
+// Llistes especials per defecte (es poden editar i guardar a localStorage)
+const DEFAULT_SPECIAL_LISTS = [
   {
     id: 'picnic', emoji: '🧺', nameKey: 'listPicnic',
     items: [
-      { name: 'Pa', emoji: '🥖' },
-      { name: 'Embotit', emoji: '🥓' },
-      { name: 'Formatge', emoji: '🧀' },
-      { name: 'Tomàquet', emoji: '🍅' },
-      { name: 'Aigua', emoji: '💧' },
-      { name: 'Fruita', emoji: '🍎' },
-      { name: 'Galetes', emoji: '🍪' },
-      { name: 'Suc', emoji: '🧃' },
-      { name: 'Tovalloletes', emoji: '🧻' }
+      { name: 'Pa', emoji: '🥖', qty: '' },
+      { name: 'Embotit', emoji: '🥓', qty: '' },
+      { name: 'Formatge', emoji: '🧀', qty: '' },
+      { name: 'Tomàquet', emoji: '🍅', qty: '' },
+      { name: 'Aigua', emoji: '💧', qty: '' },
+      { name: 'Fruita', emoji: '🍎', qty: '' },
+      { name: 'Galetes', emoji: '🍪', qty: '' },
+      { name: 'Suc', emoji: '🧃', qty: '' },
+      { name: 'Tovalloletes', emoji: '🧻', qty: '' }
     ]
   },
   {
     id: 'birthday', emoji: '🎂', nameKey: 'listBirthday',
     items: [
-      { name: 'Pastís', emoji: '🎂' },
-      { name: 'Espelmes', emoji: '🕯️' },
-      { name: 'Globus', emoji: '🎈' },
-      { name: 'Aperitius', emoji: '🥨' },
-      { name: 'Refrescos', emoji: '🥤' },
-      { name: 'Patates', emoji: '🍟' },
-      { name: 'Olives', emoji: '🫒' },
-      { name: 'Plats i gots', emoji: '🍽️' },
-      { name: 'Regal', emoji: '🎁' }
+      { name: 'Pastís', emoji: '🎂', qty: '' },
+      { name: 'Espelmes', emoji: '🕯️', qty: '' },
+      { name: 'Globus', emoji: '🎈', qty: '' },
+      { name: 'Aperitius', emoji: '🥨', qty: '' },
+      { name: 'Refrescos', emoji: '🥤', qty: '' },
+      { name: 'Patates', emoji: '🍟', qty: '' },
+      { name: 'Olives', emoji: '🫒', qty: '' },
+      { name: 'Plats i gots', emoji: '🍽️', qty: '' },
+      { name: 'Regal', emoji: '🎁', qty: '' }
     ]
   },
   {
     id: 'calcotada', emoji: '🌱', nameKey: 'listCalcotada',
     items: [
-      { name: 'Calçots', emoji: '🌱' },
-      { name: 'Salsa romesco', emoji: '🥫' },
-      { name: 'Carn brasa', emoji: '🥩' },
-      { name: 'Botifarra', emoji: '🌭' },
-      { name: 'Pa', emoji: '🥖' },
-      { name: 'Vi', emoji: '🍷' },
-      { name: 'Mongetes', emoji: '🫘' },
-      { name: 'Crema catalana', emoji: '🍮' }
+      { name: 'Calçots', emoji: '🌱', qty: '' },
+      { name: 'Salsa romesco', emoji: '🥫', qty: '' },
+      { name: 'Carn brasa', emoji: '🥩', qty: '' },
+      { name: 'Botifarra', emoji: '🌭', qty: '' },
+      { name: 'Pa', emoji: '🥖', qty: '' },
+      { name: 'Vi', emoji: '🍷', qty: '' },
+      { name: 'Mongetes', emoji: '🫘', qty: '' },
+      { name: 'Crema catalana', emoji: '🍮', qty: '' }
     ]
   },
   {
     id: 'breakfast', emoji: '☕', nameKey: 'listBreakfast',
     items: [
-      { name: 'Llet', emoji: '🥛' },
-      { name: 'Cafè', emoji: '☕' },
-      { name: 'Pa de motlle', emoji: '🍞' },
-      { name: 'Mantega', emoji: '🧈' },
-      { name: 'Melmelada', emoji: '🍓' },
-      { name: 'Cereals', emoji: '🥣' },
-      { name: 'Suc taronja', emoji: '🧃' }
+      { name: 'Llet', emoji: '🥛', qty: '' },
+      { name: 'Cafè', emoji: '☕', qty: '' },
+      { name: 'Pa de motlle', emoji: '🍞', qty: '' },
+      { name: 'Mantega', emoji: '🧈', qty: '' },
+      { name: 'Melmelada', emoji: '🍓', qty: '' },
+      { name: 'Cereals', emoji: '🥣', qty: '' },
+      { name: 'Suc taronja', emoji: '🧃', qty: '' }
     ]
   },
   {
     id: 'bbq', emoji: '🔥', nameKey: 'listBBQ',
     items: [
-      { name: 'Carn vermella', emoji: '🥩' },
-      { name: 'Pollastre', emoji: '🍗' },
-      { name: 'Salsitxes', emoji: '🌭' },
-      { name: 'Hamburgueses', emoji: '🍔' },
-      { name: 'Carbó', emoji: '⚫' },
-      { name: 'Cervesa', emoji: '🍺' },
-      { name: 'Amanida', emoji: '🥗' },
-      { name: 'Pa', emoji: '🥖' }
+      { name: 'Carn vermella', emoji: '🥩', qty: '' },
+      { name: 'Pollastre', emoji: '🍗', qty: '' },
+      { name: 'Salsitxes', emoji: '🌭', qty: '' },
+      { name: 'Hamburgueses', emoji: '🍔', qty: '' },
+      { name: 'Carbó', emoji: '⚫', qty: '' },
+      { name: 'Cervesa', emoji: '🍺', qty: '' },
+      { name: 'Amanida', emoji: '🥗', qty: '' },
+      { name: 'Pa', emoji: '🥖', qty: '' }
     ]
   },
   {
     id: 'pasta', emoji: '🍝', nameKey: 'listPasta',
     items: [
-      { name: 'Espaguetis', emoji: '🍝' },
-      { name: 'Tomàquet fregit', emoji: '🥫' },
-      { name: 'Carn picada', emoji: '🥩' },
-      { name: 'Formatge ratllat', emoji: '🧀' },
-      { name: 'All', emoji: '🧄' },
-      { name: 'Ceba', emoji: '🧅' },
-      { name: 'Vi negre', emoji: '🍷' }
+      { name: 'Espaguetis', emoji: '🍝', qty: '' },
+      { name: 'Tomàquet fregit', emoji: '🥫', qty: '' },
+      { name: 'Carn picada', emoji: '🥩', qty: '' },
+      { name: 'Formatge ratllat', emoji: '🧀', qty: '' },
+      { name: 'All', emoji: '🧄', qty: '' },
+      { name: 'Ceba', emoji: '🧅', qty: '' },
+      { name: 'Vi negre', emoji: '🍷', qty: '' }
     ]
   }
 ];
 
+let specialListsData = null;
+let specialListsMode = 'view'; // 'view' o 'edit'
 let currentSpecialList = null;
+let specialListItemMode = 'view';
+
+function loadSpecialLists() {
+  const saved = localStorage.getItem('eatmefirst_special_lists');
+  if (saved) {
+    try { specialListsData = JSON.parse(saved); }
+    catch(e) { specialListsData = JSON.parse(JSON.stringify(DEFAULT_SPECIAL_LISTS)); }
+  } else {
+    specialListsData = JSON.parse(JSON.stringify(DEFAULT_SPECIAL_LISTS));
+  }
+  specialListsData.forEach(list => {
+    if (typeof list.enabled === 'undefined') list.enabled = true;
+    if (!Array.isArray(list.items)) list.items = [];
+    list.items.forEach(it => {
+      if (typeof it.qty === 'undefined') it.qty = '';
+    });
+  });
+}
+
+function saveSpecialLists() {
+  localStorage.setItem('eatmefirst_special_lists', JSON.stringify(specialListsData));
+  if (typeof pushToServer === 'function') pushToServer();
+}
 
 function openSpecialLists() {
+  if (!specialListsData) loadSpecialLists();
+  specialListsMode = 'view';
   renderSpecialLists();
   showScreen('special-lists');
 }
 
 function renderSpecialLists() {
+  if (!specialListsData) loadSpecialLists();
   const container = document.getElementById('special-lists-grid');
   if (!container) return;
   container.innerHTML = '';
-  SPECIAL_LISTS.forEach(list => {
-    const btn = document.createElement('button');
-    btn.className = 'special-list-card';
-    btn.innerHTML = `
-      <span class="special-list-emoji">${list.emoji}</span>
-      <span class="special-list-name">${t(list.nameKey)}</span>
-      <span class="special-list-count">${list.items.length} ${t('items')}</span>
-    `;
-    btn.addEventListener('click', () => openSpecialDetail(list));
-    container.appendChild(btn);
+
+  specialListsData.forEach((list, idx) => {
+    if (specialListsMode === 'view' && list.enabled === false) return;
+
+    const isFirst = idx === 0;
+    const isLast = idx === specialListsData.length - 1;
+    const card = document.createElement('div');
+    card.className = 'special-list-card';
+    const displayName = list.nameKey ? t(list.nameKey) : (list.name || '-');
+
+    if (specialListsMode === 'edit') {
+      card.style.position = 'relative';
+      card.innerHTML = '<label class="manage-sm-checkbox" style="position:absolute;top:6px;left:6px"><input type="checkbox" data-idx="' + idx + '" ' + (list.enabled !== false ? 'checked' : '') + '><span class="checkmark"></span></label>'
+        + '<span class="special-list-emoji">' + list.emoji + '</span>'
+        + '<span class="special-list-name">' + escapeHtml(displayName) + '</span>'
+        + '<span class="special-list-count">' + list.items.length + ' ' + t('items') + '</span>'
+        + '<div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;justify-content:center">'
+        + '<button class="arrow-btn ' + (isFirst ? 'arrow-disabled' : '') + '" data-action="up" ' + (isFirst ? 'disabled' : '') + '>▲</button>'
+        + '<button class="arrow-btn ' + (isLast ? 'arrow-disabled' : '') + '" data-action="down" ' + (isLast ? 'disabled' : '') + '>▼</button>'
+        + '<button class="popular-edit-btn" data-action="edit-list">✏️</button>'
+        + (list.id.startsWith('custom-') ? '<button class="popular-delete-btn" data-action="del-list">✕</button>' : '')
+        + '</div>';
+      const cb = card.querySelector('input[type="checkbox"]');
+      if (cb) cb.addEventListener('change', (e) => {
+        list.enabled = e.target.checked;
+        saveSpecialLists();
+      });
+      const upBtn = card.querySelector('[data-action="up"]');
+      const downBtn = card.querySelector('[data-action="down"]');
+      if (upBtn && !isFirst) upBtn.addEventListener('click', (e) => { e.stopPropagation(); moveSpecialList(idx, -1); });
+      if (downBtn && !isLast) downBtn.addEventListener('click', (e) => { e.stopPropagation(); moveSpecialList(idx, 1); });
+      card.querySelector('[data-action="edit-list"]').addEventListener('click', (e) => { e.stopPropagation(); openSpecialDetail(list, true); });
+      const delBtn = card.querySelector('[data-action="del-list"]');
+      if (delBtn) delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteSpecialList(idx); });
+    } else {
+      card.innerHTML = '<span class="special-list-emoji">' + list.emoji + '</span>'
+        + '<span class="special-list-name">' + escapeHtml(displayName) + '</span>'
+        + '<span class="special-list-count">' + list.items.length + ' ' + t('items') + '</span>';
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => openSpecialDetail(list, false));
+    }
+    container.appendChild(card);
   });
+
+  updateSpecialListsButtons();
 }
 
-function openSpecialDetail(list) {
+function updateSpecialListsButtons() {
+  const editBtn = document.getElementById('btn-toggle-edit-special-lists');
+  const addBtn = document.getElementById('btn-add-custom-special-list');
+  const saveBtn = document.getElementById('btn-save-special-lists');
+  if (specialListsMode === 'edit') {
+    if (editBtn) editBtn.style.display = 'none';
+    if (addBtn) addBtn.style.display = 'flex';
+    if (saveBtn) saveBtn.style.display = 'block';
+  } else {
+    if (editBtn) editBtn.style.display = 'flex';
+    if (addBtn) addBtn.style.display = 'none';
+    if (saveBtn) saveBtn.style.display = 'none';
+  }
+}
+
+function toggleEditSpecialListsMode() {
+  specialListsMode = specialListsMode === 'view' ? 'edit' : 'view';
+  renderSpecialLists();
+}
+
+function moveSpecialList(idx, dir) {
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= specialListsData.length) return;
+  [specialListsData[idx], specialListsData[newIdx]] = [specialListsData[newIdx], specialListsData[idx]];
+  saveSpecialLists();
+  renderSpecialLists();
+}
+
+function deleteSpecialList(idx) {
+  if (!confirm(t('confirmDeleteList') || 'Esborrar?')) return;
+  specialListsData.splice(idx, 1);
+  saveSpecialLists();
+  renderSpecialLists();
+}
+
+function addCustomSpecialList() {
+  const name = prompt(t('newListName') || 'Nom de la nova llista:');
+  if (!name || !name.trim()) return;
+  specialListsData.push({
+    id: 'custom-' + Date.now(),
+    emoji: '📋',
+    name: name.trim(),
+    enabled: true,
+    items: []
+  });
+  saveSpecialLists();
+  renderSpecialLists();
+}
+
+function openSpecialDetail(list, editMode) {
   currentSpecialList = list;
-  document.getElementById('special-detail-title').textContent = list.emoji + ' ' + t(list.nameKey);
+  specialListItemMode = editMode ? 'edit' : 'view';
+  const displayName = list.nameKey ? t(list.nameKey) : (list.name || '-');
+  document.getElementById('special-detail-title').textContent = list.emoji + ' ' + displayName;
+  renderSpecialDetail();
+  showScreen('special-detail');
+}
+
+function renderSpecialDetail() {
+  if (!currentSpecialList) return;
   const container = document.getElementById('special-detail-list');
   container.innerHTML = '';
-  list.items.forEach(item => {
+
+  currentSpecialList.items.forEach((item, idx) => {
     const row = document.createElement('div');
     row.className = 'special-detail-item';
-    row.innerHTML = `
-      <span class="special-item-emoji">${item.emoji}</span>
-      <span class="special-item-name">${escapeHtml(item.name)}</span>
-    `;
+
+    if (specialListItemMode === 'edit') {
+      row.style.gridTemplateColumns = 'auto 1fr 80px auto';
+      row.innerHTML = '<span class="special-item-emoji">' + item.emoji + '</span>'
+        + '<span class="special-item-name">' + escapeHtml(item.name) + '</span>'
+        + '<input type="text" class="special-qty-input" placeholder="' + (t('quantity') || 'Qty') + '" value="' + escapeHtml(item.qty || '') + '" maxlength="15">'
+        + '<button class="popular-delete-btn">✕</button>';
+      row.querySelector('.special-qty-input').addEventListener('input', (e) => {
+        item.qty = e.target.value.trim();
+        saveSpecialLists();
+      });
+      row.querySelector('.popular-delete-btn').addEventListener('click', () => {
+        currentSpecialList.items.splice(idx, 1);
+        saveSpecialLists();
+        renderSpecialDetail();
+      });
+    } else {
+      row.innerHTML = '<span class="special-item-emoji">' + item.emoji + '</span>'
+        + '<span class="special-item-name">' + escapeHtml(item.name) + (item.qty ? ' · ' + escapeHtml(item.qty) : '') + '</span>';
+    }
     container.appendChild(row);
   });
-  showScreen('special-detail');
+
+  const addItemBtn = document.getElementById('btn-add-list-item');
+  const addAllBtn = document.getElementById('btn-add-all-to-shopping');
+  if (specialListItemMode === 'edit') {
+    if (addItemBtn) addItemBtn.style.display = 'flex';
+    if (addAllBtn) addAllBtn.style.display = 'none';
+  } else {
+    if (addItemBtn) addItemBtn.style.display = 'none';
+    if (addAllBtn) addAllBtn.style.display = 'flex';
+  }
+}
+
+function toggleEditListItems() {
+  specialListItemMode = specialListItemMode === 'view' ? 'edit' : 'view';
+  renderSpecialDetail();
+}
+
+function addItemToCurrentList() {
+  const name = prompt(t('newItemName') || 'Nom del producte:');
+  if (!name || !name.trim()) return;
+  currentSpecialList.items.push({ name: name.trim(), emoji: '🥛', qty: '' });
+  saveSpecialLists();
+  renderSpecialDetail();
 }
 
 function addAllSpecialToShopping() {
@@ -970,7 +1149,7 @@ function showSpecialSelectionStep() {
 function addSpecialListToSupermarket(supermarketId) {
   const items = (specialSelectedItems && specialSelectedItems.length > 0)
     ? specialSelectedItems.filter(it => it.selected)
-    : currentSpecialList.items.map(it => ({ ...it, qty: '' }));
+    : currentSpecialList.items.map(it => ({ ...it, qty: it.qty || '' }));
 
   if (items.length === 0) {
     showToast(t('noItemsSelected') || 'Cap producte seleccionat');
@@ -987,10 +1166,9 @@ function addSpecialListToSupermarket(supermarketId) {
     });
   });
   saveShoppingData();
-  specialSelectedItems = []; // reset
+  specialSelectedItems = [];
   showToast('🎉 ' + items.length + ' ' + t('itemsAdded'));
-  showScreen('shopping');
-  renderSupermarkets();
+  // Quedar-se a la pantalla del detall de la llista (no anar al super)
 }
 
 function showSupermarketPickerForSpecial() {
@@ -1649,6 +1827,7 @@ function saveShoppingItem() {
   const notes = document.getElementById('input-shopping-notes').value.trim();
 
   if (editingShoppingItem) {
+    const originalSupermarketId = editingShoppingItem.supermarketId;
     editingShoppingItem.name = name;
     editingShoppingItem.emoji = selectedShoppingEmoji;
     editingShoppingItem.qty = qty;
@@ -1660,7 +1839,8 @@ function saveShoppingItem() {
     }
     saveShoppingData();
     showToast(t('saved'));
-    openSupermarket(editingShoppingItem.supermarketId);
+    // Tornem al super ORIGINAL (no al nou)
+    openSupermarket(originalSupermarketId);
     return;
   }
 
@@ -2246,6 +2426,15 @@ function testNotificationNow() {
 }
 
 function renderHome() {
+  // Activar animació de la campana un sol cop
+  const bell = document.getElementById('bell-icon');
+  if (bell) {
+    bell.classList.remove('bell-shake');
+    // Force reflow per reiniciar l'animació
+    void bell.offsetWidth;
+    bell.classList.add('bell-shake');
+  }
+
   const counts = { fridge: 0, freezer: 0, pantry: 0 };
   const alerts = { fridge: 0, freezer: 0, pantry: 0, total: 0 };
 
@@ -2564,6 +2753,61 @@ function addToShoppingList(supermarketId, product) {
     addedAt: Date.now()
   });
   saveShoppingData();
+}
+
+function showChangeDateModal(product) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const currentDate = product.date || '';
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">📅</div>
+      <p class="modal-title">${t('editDate')}</p>
+      <p class="modal-product-name">${escapeHtml(product.emoji + ' ' + product.name)}</p>
+      <input type="date" id="modal-date-input" class="select-input" value="${currentDate}" style="margin:12px 0">
+      <label class="no-expiry-label" style="margin:0">
+        <input type="checkbox" id="modal-no-expiry" ${product.noExpiry ? 'checked' : ''}>
+        <span data-i18n="noExpiry">${t('noExpiry')}</span>
+      </label>
+      <div class="modal-buttons" style="margin-top:14px">
+        <button class="modal-cancel" id="modal-no-btn">${t('cancel')}</button>
+        <button class="modal-confirm" id="modal-yes-btn">${t('save')}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#modal-no-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
+    const newDate = document.getElementById('modal-date-input').value;
+    const noExp = document.getElementById('modal-no-expiry').checked;
+    const p = products.find(x => x.id === product.id);
+    if (!p) {
+      document.body.removeChild(overlay);
+      return;
+    }
+    if (noExp) {
+      p.noExpiry = true;
+      p.date = null;
+    } else if (newDate) {
+      p.noExpiry = false;
+      p.date = newDate;
+    } else {
+      showToast(t('needDate'));
+      return;
+    }
+    saveData();
+    document.body.removeChild(overlay);
+    openProductDetail(p);
+    showToast(t('saved'));
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
 }
 
 function showChangeZoneModal(product) {
@@ -3646,22 +3890,25 @@ async function searchManualBarcode() {
 // CONFIGURACIÓ
 function applyTheme(mode) {
   const root = document.documentElement;
-  if (mode === 'auto') root.removeAttribute('data-theme');
-  else root.setAttribute('data-theme', mode);
+  // Si rebem 'auto' (de versions anteriors), forcem 'light'
+  if (mode === 'auto') mode = 'light';
+  root.setAttribute('data-theme', mode);
   localStorage.setItem('eatmefirst_theme', mode);
   updateThemeStatus();
 }
 
 function updateThemeStatus() {
-  const mode = localStorage.getItem('eatmefirst_theme') || 'auto';
-  const key = mode === 'auto' ? 'themeAuto' : mode === 'light' ? 'themeLight' : 'themeDark';
+  let mode = localStorage.getItem('eatmefirst_theme') || 'light';
+  if (mode === 'auto') mode = 'light';
+  const key = mode === 'light' ? 'themeLight' : 'themeDark';
   const el = document.getElementById('theme-status');
   if (el) el.textContent = t(key);
 }
 
 function cycleTheme() {
-  const current = localStorage.getItem('eatmefirst_theme') || 'auto';
-  const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
+  let current = localStorage.getItem('eatmefirst_theme') || 'light';
+  if (current === 'auto') current = 'light';
+  const next = current === 'light' ? 'dark' : 'light';
   applyTheme(next);
 }
 
@@ -3843,9 +4090,10 @@ document.addEventListener('DOMContentLoaded', () => {
   loadData();
   loadLocations();
   loadShoppingData();
+  if (typeof loadSpecialLists === 'function') loadSpecialLists();
   loadProductHistory();
 
-  const savedTheme = localStorage.getItem('eatmefirst_theme') || 'auto';
+  const savedTheme = localStorage.getItem('eatmefirst_theme') || 'light';
   applyTheme(savedTheme);
 
   translatePage();
@@ -3875,6 +4123,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnChangeZone) btnChangeZone.addEventListener('click', () => {
     if (!currentProduct) return;
     showChangeZoneModal(currentProduct);
+  });
+
+  // Botó "Editar data de caducitat"
+  const btnChangeDate = document.getElementById('btn-change-date');
+  if (btnChangeDate) btnChangeDate.addEventListener('click', () => {
+    if (!currentProduct) return;
+    showChangeDateModal(currentProduct);
   });
 
   // Botons de selector d'emoji
@@ -4019,6 +4274,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const btnAddAllSpecial = document.getElementById('btn-add-all-to-shopping');
   if (btnAddAllSpecial) btnAddAllSpecial.addEventListener('click', addAllSpecialToShopping);
+
+  // Llistes especials: edit mode
+  const btnToggleEditSpecial = document.getElementById('btn-toggle-edit-special-lists');
+  if (btnToggleEditSpecial) btnToggleEditSpecial.addEventListener('click', toggleEditSpecialListsMode);
+
+  const btnAddCustomSpecial = document.getElementById('btn-add-custom-special-list');
+  if (btnAddCustomSpecial) btnAddCustomSpecial.addEventListener('click', addCustomSpecialList);
+
+  const btnSaveSpecial = document.getElementById('btn-save-special-lists');
+  if (btnSaveSpecial) btnSaveSpecial.addEventListener('click', () => {
+    specialListsMode = 'view';
+    renderSpecialLists();
+    showToast(t('saved'));
+  });
+
+  // Edició d'una llista (items)
+  const btnToggleEditListItems = document.getElementById('btn-toggle-edit-list-items');
+  if (btnToggleEditListItems) btnToggleEditListItems.addEventListener('click', toggleEditListItems);
+
+  const btnAddListItem = document.getElementById('btn-add-list-item');
+  if (btnAddListItem) btnAddListItem.addEventListener('click', addItemToCurrentList);
 
   // Botó Veure-ho tot
   const btnViewAll = document.getElementById('btn-view-all');
@@ -4203,8 +4479,12 @@ let popularOrigin = 'home'; // d'on s'ha obert: 'home', 'shopping', 'settings'
 function openPopular(origin) {
   popularOrigin = origin || 'home';
   popularMode = 'view';
+  // Reset back-button: per defecte 'add', des de configuració 'settings'
   const backBtn = document.querySelector('#screen-popular .back-btn');
-  if (backBtn) backBtn.dataset.back = popularOrigin === 'settings' ? 'settings' : 'home';
+  if (backBtn) {
+    if (popularOrigin === 'settings') backBtn.dataset.back = 'settings';
+    else backBtn.dataset.back = 'add';
+  }
   renderPopularList();
   showScreen('popular');
 }

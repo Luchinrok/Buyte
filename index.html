@@ -111,7 +111,7 @@
             <rect x="78" y="60" width="4" height="50" rx="2" fill="#1976D2"/>
             <!-- Llumeta verda (signe que funciona) -->
             <circle cx="22" cy="14" r="2.5" fill="#4CAF50">
-              <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="3"/>
+              
             </circle>
             <!-- CONGELADOR DE DALT -->
             <rect x="22" y="20" width="50" height="18" rx="3" fill="#E3F2FD" stroke="#90CAF9" stroke-width="1"/>
@@ -253,22 +253,22 @@
       </button>
 
       <button class="section-btn section-alerts" data-cat="alerts">
-        <div class="section-icon section-icon-alert">
+        <div class="section-icon section-icon-alert" id="bell-icon">
           <!-- ALERTES: campana vermella cridanera amb ones d'avís -->
           <svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
             <!-- Ones d'alarma (de fons, animades) -->
             <g stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.5">
               <path d="M 8 50 Q 0 65 8 80">
-                <animate attributeName="opacity" values="0.2;0.7;0.2" dur="1.5s" repeatCount="3"/>
+                
               </path>
               <path d="M 92 50 Q 100 65 92 80">
-                <animate attributeName="opacity" values="0.2;0.7;0.2" dur="1.5s" repeatCount="3"/>
+                
               </path>
               <path d="M 4 40 Q -4 65 4 90">
-                <animate attributeName="opacity" values="0.1;0.5;0.1" dur="2s" repeatCount="3"/>
+                
               </path>
               <path d="M 96 40 Q 104 65 96 90">
-                <animate attributeName="opacity" values="0.1;0.5;0.1" dur="2s" repeatCount="3"/>
+                
               </path>
             </g>
             <!-- Botó al damunt de la campana -->
@@ -437,6 +437,10 @@
       <button id="btn-edit-product-qty" class="edit-qty-btn">
         <span style="margin-right:6px">✏️</span>
         <span data-i18n="editQty"></span>
+      </button>
+      <button id="btn-change-date" class="edit-qty-btn">
+        <span style="margin-right:6px">📅</span>
+        <span data-i18n="editDate"></span>
       </button>
       <button id="btn-change-zone" class="edit-qty-btn">
         <span style="margin-right:6px">📍</span>
@@ -962,6 +966,20 @@
     </header>
     <p class="section-hint" data-i18n="specialListsHint"></p>
     <div class="special-lists-grid" id="special-lists-grid"></div>
+
+    <button class="add-supermarket-btn" id="btn-toggle-edit-special-lists" style="margin-top:14px">
+      <span style="font-size:20px;margin-right:8px">✏️</span>
+      <span data-i18n="editSpecialLists"></span>
+    </button>
+
+    <button class="add-supermarket-btn" id="btn-add-custom-special-list" style="display:none;margin-top:8px">
+      <span style="font-size:20px;margin-right:8px">➕</span>
+      <span data-i18n="addCustomList"></span>
+    </button>
+
+    <button class="primary-btn" id="btn-save-special-lists" style="display:none;margin-top:10px">
+      <span data-i18n="saveChanges"></span>
+    </button>
   </div>
 
   <!-- PANTALLA DETALL D'UNA LLISTA ESPECIAL -->
@@ -969,9 +987,15 @@
     <header class="top-bar">
       <button class="back-btn" data-back="special-lists" aria-label="Back">‹</button>
       <h1 id="special-detail-title">-</h1>
-      <div style="width:40px"></div>
+      <button id="btn-toggle-edit-list-items" class="icon-btn" aria-label="Edit" style="font-size:18px">✏️</button>
     </header>
     <div id="special-detail-list"></div>
+
+    <button class="add-supermarket-btn" id="btn-add-list-item" style="display:none;margin-top:8px">
+      <span style="font-size:20px;margin-right:8px">➕</span>
+      <span data-i18n="addItem"></span>
+    </button>
+
     <button class="primary-btn" id="btn-add-all-to-shopping" style="margin-top:14px">
       <span data-i18n="addAllToShopping"></span>
     </button>
