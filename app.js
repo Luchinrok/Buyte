@@ -116,6 +116,8 @@ function openPopularEdit(idx) {
   document.getElementById('popular-edit-title').textContent = isNew ? t('newPopular') : t('editPopular');
   document.getElementById('input-popular-name').value = isNew ? '' : item.name;
   document.getElementById('input-popular-days').value = isNew ? '7' : item.days;
+  const noExpInput = document.getElementById('input-popular-no-expiry');
+  if (noExpInput) noExpInput.checked = !!(item && item.noExpiry);
   selectedPopularEmoji = isNew ? '🥛' : item.emoji;
   document.getElementById('popular-emoji-current').textContent = selectedPopularEmoji;
 
@@ -128,18 +130,21 @@ function openPopularEdit(idx) {
 function savePopularEdit() {
   const name = document.getElementById('input-popular-name').value.trim();
   const days = parseInt(document.getElementById('input-popular-days').value, 10) || 7;
+  const noExpInput = document.getElementById('input-popular-no-expiry');
+  const noExpiry = !!(noExpInput && noExpInput.checked);
   if (!name) { showToast(t('needName')); return; }
 
   const list = getPopularProducts();
   if (editingPopularIdx === null) {
     list.push({
       id: 'pop-custom-' + Date.now(),
-      name, emoji: selectedPopularEmoji, days
+      name, emoji: selectedPopularEmoji, days, noExpiry
     });
   } else {
     list[editingPopularIdx].name = name;
     list[editingPopularIdx].emoji = selectedPopularEmoji;
     list[editingPopularIdx].days = days;
+    list[editingPopularIdx].noExpiry = noExpiry;
   }
   savePopularProducts(list);
   showToast(t('saved'));
@@ -2853,7 +2858,9 @@ function showManualAddToBuyMeModal(product) {
       <div class="modal-emoji-big">🛒</div>
       <p class="modal-title">${t('addToList')}</p>
       <p class="modal-product-name">${escapeHtml(product.emoji + ' ' + product.name)}</p>
-      <input type="text" id="modal-qty-input" class="select-input" placeholder="${t('quantityPlaceholder')}" value="${escapeHtml(product.qty || '')}" style="margin:12px 0">
+      <label style="display:block;text-align:left;font-size:13px;color:var(--text-muted);margin:14px 0 4px">${t('quantity')}</label>
+      <input type="text" id="modal-qty-input" class="select-input" placeholder="${t('quantityPlaceholder')}" value="${escapeHtml(product.qty || '')}" style="margin-bottom:14px">
+      <p class="modal-sub" style="margin:0 0 6px">${t('chooseSupermarket')}</p>
       <div class="modal-options">${smButtons}</div>
       <button class="modal-cancel" id="modal-cancel-btn" style="margin-top:10px">${t('cancel')}</button>
     </div>
@@ -2926,7 +2933,8 @@ function showChangeDateModal(product) {
     }
     saveData();
     document.body.removeChild(overlay);
-    openProductDetail(p);
+    // Refresca el detall mantenint la navegació enrere actual
+    openProduct(p.id);
     showToast(t('saved'));
   });
 
@@ -3016,8 +3024,8 @@ function askRecalcExpiry(product, newZone) {
       p.date = formatDateForInput(d);
     }
     saveData();
-    // Refresc del detall
-    openProductDetail(p);
+    // Refresc del detall mantenint la navegació enrere actual
+    openProduct(p.id);
     showToast('✓ ' + t('movedToZone') + ' ' + getLocationName(getLocationById(newZone)));
   };
 
