@@ -1096,6 +1096,19 @@ h1 {
   font-size: 32px;
   line-height: 1;
   flex-shrink: 0;
+  width: 44px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.country-flag svg {
+  width: 40px;
+  height: 26px;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  display: block;
 }
 
 .country-name {
@@ -1643,31 +1656,53 @@ h1 {
   grid-template-columns: auto 1fr auto auto auto !important;
 }
 
-/* ===== INDICADORS SLIDER SUPERMERCATS ===== */
+/* ===== INDICADORS SLIDER SUPERMERCATS (estil Instagram Stories) ===== */
 .sm-dots-container {
   display: flex;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px 8px 4px 8px;
-  flex-wrap: wrap;
-  max-width: 100%;
+  justify-content: stretch;
+  gap: 5px;
+  padding: 10px 12px 8px 12px;
+  flex-wrap: nowrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* Estil Stories d'Instagram: barres horizontals plenes */
+/* Barres horizontals amples i prominents, com Instagram Stories */
 .sm-dots-container .sm-dot {
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.4);
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.35);
   flex: 1;
-  min-width: 12px;
-  max-width: 60px;
-  transition: background 0.3s, transform 0.2s;
+  min-width: 8px;
+  max-width: none;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+  transition: background 0.25s ease;
 }
 
-.sm-dots-container .sm-dot.active {
+.sm-dots-container .sm-dot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  border-radius: 3px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.35s ease-out;
+}
+
+.sm-dots-container .sm-dot.active::before {
+  transform: scaleX(1);
+}
+
+/* Tema clar: fons subtilment més fosc per veure les barres */
+:root[data-theme="light"] .sm-dots-container .sm-dot {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="light"] .sm-dots-container .sm-dot::before {
   background: var(--primary);
-  width: auto;
-  border-radius: 2px;
 }
 
 /* ===== BOTÓ "VEURE-HO TOT" + LLISTA ===== */
@@ -1767,6 +1802,7 @@ h1 {
 
 /* ===== LLISTES ESPECIALS ===== */
 .special-lists-btn {
+  position: relative;
   width: 100%;
   background: linear-gradient(135deg, #FF7043 0%, #E64A19 100%);
   color: white;
@@ -1780,6 +1816,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
   margin: 0 0 10px 0;
   box-shadow: 0 3px 10px rgba(255, 87, 34, 0.35);
   transition: transform 0.1s;
@@ -2184,6 +2221,19 @@ h1 {
   line-height: 1;
 }
 
+.modal-flag-big {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.modal-flag-big svg {
+  width: 72px;
+  height: 48px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
 .modal-product-name {
   font-size: 20px;
   font-weight: 700;
@@ -2442,6 +2492,7 @@ h1 {
 }
 
 .add-supermarket-btn {
+  position: relative;
   width: 100%;
   background: linear-gradient(135deg, var(--primary) 0%, #3D8C20 100%);
   color: white;
@@ -2461,10 +2512,21 @@ h1 {
   margin-top: 8px;
 }
 
-.add-supermarket-btn > span {
+.add-supermarket-btn > span,
+.special-lists-btn > span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* L'emoji a l'esquerra es posa absolut perquè el text quedi visualment centrat al botó */
+.add-supermarket-btn > span:first-child,
+.special-lists-btn > span:first-child {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 0 !important;
 }
 
 .add-supermarket-btn:active {
@@ -3220,8 +3282,9 @@ h1 {
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
+/* L'animació contínua s'ha retirat: ara la campana només es mou un cop quan s'entra a l'inici (classe .bell-shake afegida des de JS) */
 .section-icon-alert svg {
-  animation: alertWiggle 1.2s ease-in-out infinite;
+  transform-origin: center top;
 }
 
 @keyframes alertWiggle {

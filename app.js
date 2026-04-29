@@ -1055,12 +1055,35 @@ function toggleEditListItems() {
   renderSpecialDetail();
 }
 
+let selectedSpecialItemEmoji = '🥛';
+
 function addItemToCurrentList() {
-  const name = prompt(t('newItemName') || 'Nom del producte:');
-  if (!name || !name.trim()) return;
-  currentSpecialList.items.push({ name: name.trim(), emoji: '🥛', qty: '' });
+  openSpecialItemEdit();
+}
+
+function openSpecialItemEdit() {
+  selectedSpecialItemEmoji = '🥛';
+  const titleEl = document.getElementById('special-item-edit-title');
+  if (titleEl) titleEl.textContent = t('addItem');
+  const nameInput = document.getElementById('input-special-item-name');
+  if (nameInput) nameInput.value = '';
+  const qtyInput = document.getElementById('input-special-item-qty');
+  if (qtyInput) qtyInput.value = '';
+  const emojiCurrent = document.getElementById('special-item-emoji-current');
+  if (emojiCurrent) emojiCurrent.textContent = selectedSpecialItemEmoji;
+  showScreen('special-item-edit');
+  setTimeout(() => { if (nameInput) nameInput.focus(); }, 100);
+}
+
+function saveSpecialItem() {
+  const name = (document.getElementById('input-special-item-name').value || '').trim();
+  if (!name) { showToast(t('nameRequired') || t('needName')); return; }
+  const qty = (document.getElementById('input-special-item-qty').value || '').trim();
+  if (!currentSpecialList) return;
+  currentSpecialList.items.push({ name, emoji: selectedSpecialItemEmoji, qty });
   saveSpecialLists();
   renderSpecialDetail();
+  showScreen('special-detail');
 }
 
 function addAllSpecialToShopping() {
@@ -1078,8 +1101,8 @@ let specialSelectedItems = []; // items seleccionats abans d'afegir
 
 function showSpecialSelectionStep() {
   const list = currentSpecialList;
-  // Per defecte tots seleccionats
-  specialSelectedItems = list.items.map(it => ({ ...it, selected: true, qty: '' }));
+  // Per defecte tots seleccionats; mantenim la quantitat existent perquè es pugui editar
+  specialSelectedItems = list.items.map(it => ({ ...it, selected: true, qty: it.qty || '' }));
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -1091,7 +1114,7 @@ function showSpecialSelectionStep() {
       </label>
       <span class="special-item-emoji">${it.emoji}</span>
       <span class="special-item-name">${escapeHtml(it.name)}</span>
-      <input type="text" class="special-qty-input" data-idx="${idx}" placeholder="${t('quantity') || 'Qty'}" maxlength="15">
+      <input type="text" class="special-qty-input" data-idx="${idx}" placeholder="${t('quantity') || 'Qty'}" value="${escapeHtml(it.qty || '')}" maxlength="15">
     </div>
   `).join('');
 
@@ -1257,6 +1280,21 @@ function openCountryScreen() {
   showScreen('country');
 }
 
+// Banderes SVG per al picker de país (es veuen a tots els dispositius, inclòs Windows)
+const COUNTRY_FLAG_SVG = {
+  ES: '<svg viewBox="0 0 5 3" xmlns="http://www.w3.org/2000/svg"><rect width="5" height="3" fill="#AA151B"/><rect width="5" height="1.5" y="0.75" fill="#F1BF00"/></svg>',
+  FR: '<svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="2" x="0" fill="#0055A4"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#EF4135"/></svg>',
+  IT: '<svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="2" x="0" fill="#009246"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#CE2B37"/></svg>',
+  DE: '<svg viewBox="0 0 5 3" xmlns="http://www.w3.org/2000/svg"><rect width="5" height="1" y="0" fill="#000"/><rect width="5" height="1" y="1" fill="#DD0000"/><rect width="5" height="1" y="2" fill="#FFCE00"/></svg>',
+  PT: '<svg viewBox="0 0 6 4" xmlns="http://www.w3.org/2000/svg"><rect width="6" height="4" fill="#FF0000"/><rect width="2.4" height="4" fill="#006600"/><circle cx="2.4" cy="2" r="0.7" fill="#FFE500" stroke="#000" stroke-width="0.05"/><circle cx="2.4" cy="2" r="0.4" fill="#FF0000"/></svg>',
+  NL: '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="2" y="0" fill="#AE1C28"/><rect width="9" height="2" y="2" fill="#fff"/><rect width="9" height="2" y="4" fill="#21468B"/></svg>',
+  GB: '<svg viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg"><clipPath id="t-gb"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath><path d="M0,0 v30 h60 v-30 z" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#t-gb)" stroke="#C8102E" stroke-width="4"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#C8102E" stroke-width="6"/></svg>',
+  US: '<svg viewBox="0 0 19 10" xmlns="http://www.w3.org/2000/svg"><rect width="19" height="10" fill="#FFFFFF"/><rect width="19" height="0.77" y="0" fill="#B22234"/><rect width="19" height="0.77" y="1.54" fill="#B22234"/><rect width="19" height="0.77" y="3.08" fill="#B22234"/><rect width="19" height="0.77" y="4.62" fill="#B22234"/><rect width="19" height="0.77" y="6.15" fill="#B22234"/><rect width="19" height="0.77" y="7.69" fill="#B22234"/><rect width="19" height="0.77" y="9.23" fill="#B22234"/><rect width="7.6" height="5.38" fill="#3C3B6E"/></svg>',
+  JP: '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="6" fill="#fff"/><circle cx="4.5" cy="3" r="1.8" fill="#BC002D"/></svg>',
+  CN: '<svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg"><rect width="30" height="20" fill="#DE2910"/><polygon points="5,2 5.6,3.8 7.5,3.8 6,4.9 6.6,6.7 5,5.6 3.4,6.7 4,4.9 2.5,3.8 4.4,3.8" fill="#FFDE00"/><polygon points="10,1 10.2,1.6 10.8,1.6 10.3,2 10.5,2.6 10,2.2 9.5,2.6 9.7,2 9.2,1.6 9.8,1.6" fill="#FFDE00"/><polygon points="12,3 12.2,3.6 12.8,3.6 12.3,4 12.5,4.6 12,4.2 11.5,4.6 11.7,4 11.2,3.6 11.8,3.6" fill="#FFDE00"/><polygon points="12,6 12.2,6.6 12.8,6.6 12.3,7 12.5,7.6 12,7.2 11.5,7.6 11.7,7 11.2,6.6 11.8,6.6" fill="#FFDE00"/><polygon points="10,8 10.2,8.6 10.8,8.6 10.3,9 10.5,9.6 10,9.2 9.5,9.6 9.7,9 9.2,8.6 9.8,8.6" fill="#FFDE00"/></svg>',
+  KR: '<svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg"><rect width="30" height="20" fill="#fff"/><g transform="translate(15,10) rotate(-56.31)"><circle r="4" fill="#fff" stroke="#000" stroke-width="0.05"/><path d="M-4,0 a4,4 0 0,1 8,0 a2,2 0 0,1 -4,0 a2,2 0 0,0 -4,0z" fill="#CD2E3A"/><path d="M-4,0 a4,4 0 0,0 8,0 a2,2 0 0,0 -4,0 a2,2 0 0,1 -4,0z" fill="#0047A0"/></g><g fill="#000" stroke="none"><g transform="translate(15,10) rotate(33.69) translate(7.5,0)"><rect x="-1.4" y="-0.4" width="2.8" height="0.5"/><rect x="-1.4" y="0.3" width="2.8" height="0.5"/><rect x="-1.4" y="-1.1" width="2.8" height="0.5"/></g><g transform="translate(15,10) rotate(33.69) translate(-7.5,0)"><rect x="-1.4" y="-1.1" width="2.8" height="0.5"/><rect x="-1.4" y="-0.4" width="1.2" height="0.5"/><rect x="0.2" y="-0.4" width="1.2" height="0.5"/><rect x="-1.4" y="0.3" width="1.2" height="0.5"/><rect x="0.2" y="0.3" width="1.2" height="0.5"/></g><g transform="translate(15,10) rotate(-33.69) translate(7.5,0)"><rect x="-1.4" y="-1.1" width="2.8" height="0.5"/><rect x="-1.4" y="-0.4" width="1.2" height="0.5"/><rect x="0.2" y="-0.4" width="1.2" height="0.5"/><rect x="-1.4" y="0.3" width="2.8" height="0.5"/></g><g transform="translate(15,10) rotate(-33.69) translate(-7.5,0)"><rect x="-1.4" y="-1.1" width="1.2" height="0.5"/><rect x="0.2" y="-1.1" width="1.2" height="0.5"/><rect x="-1.4" y="-0.4" width="1.2" height="0.5"/><rect x="0.2" y="-0.4" width="1.2" height="0.5"/><rect x="-1.4" y="0.3" width="1.2" height="0.5"/><rect x="0.2" y="0.3" width="1.2" height="0.5"/></g></g></svg>'
+};
+
 function renderCountryList() {
   const container = document.getElementById('country-list');
   if (!container) return;
@@ -1265,8 +1303,9 @@ function renderCountryList() {
   COUNTRIES.forEach(c => {
     const btn = document.createElement('button');
     btn.className = 'country-card' + (c.code === currentCountry ? ' selected' : '');
+    const flagSvg = COUNTRY_FLAG_SVG[c.code] || c.flag;
     btn.innerHTML = `
-      <span class="country-flag">${c.flag}</span>
+      <span class="country-flag">${flagSvg}</span>
       <span class="country-name">${t(c.nameKey)}</span>
       ${c.code === currentCountry ? '<span class="country-check">✓</span>' : ''}
     `;
@@ -1290,9 +1329,12 @@ function showCountryChangeModal(countryCode) {
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
+  const flagMarkup = COUNTRY_FLAG_SVG[country.code]
+    ? `<div class="modal-flag-big">${COUNTRY_FLAG_SVG[country.code]}</div>`
+    : `<div class="modal-emoji-big">${country.flag}</div>`;
   overlay.innerHTML = `
     <div class="modal-content">
-      <div class="modal-emoji-big">${country.flag}</div>
+      ${flagMarkup}
       <p class="modal-title">${t('changeCountryTitle')}</p>
       <p class="modal-product-name">${t(country.nameKey)}</p>
       <p class="modal-sub">${t('changeCountrySub')}</p>
@@ -1323,7 +1365,7 @@ function updateCountryStatus() {
   const el = document.getElementById('country-status');
   if (!el) return;
   const c = COUNTRIES.find(c => c.code === currentCountry);
-  if (c) el.textContent = c.flag + ' ' + t(c.nameKey);
+  if (c) el.textContent = t(c.nameKey);
 }
 
 // ============ PANTALLA GESTIÓ DE SUPERMERCATS ============
@@ -1602,13 +1644,11 @@ function setupSupermarketSwipe() {
     if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 20) {
       isSwiping = false;
       screen.style.transform = '';
-      screen.style.opacity = '';
       return;
     }
-    // Mou la pantalla amb el dit
-    if (Math.abs(dx) > 10) {
-      screen.style.transform = `translateX(${dx * 0.5}px)`;
-      screen.style.opacity = `${1 - Math.abs(dx) / 800}`;
+    // Segueix el dit horitzontalment (estil Instagram Stories)
+    if (Math.abs(dx) > 8) {
+      screen.style.transform = `translateX(${dx * 0.85}px)`;
     }
   }, { passive: true });
 
@@ -1617,10 +1657,9 @@ function setupSupermarketSwipe() {
     isSwiping = false;
     const dx = currentX - startX;
 
-    // Animació de retorn suau
-    screen.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
+    // Animació de retorn suau (només transform, sense fade)
+    screen.style.transition = 'transform 0.25s cubic-bezier(0.0, 0.0, 0.2, 1)';
     screen.style.transform = '';
-    screen.style.opacity = '';
     setTimeout(() => { screen.style.transition = ''; }, 250);
 
     if (Math.abs(dx) < 80) return;
@@ -1640,32 +1679,28 @@ function setupSupermarketSwipe() {
 
   screen.addEventListener('touchcancel', () => {
     isSwiping = false;
-    screen.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+    screen.style.transition = 'transform 0.22s cubic-bezier(0.0, 0.0, 0.2, 1)';
     screen.style.transform = '';
-    screen.style.opacity = '';
-    setTimeout(() => { screen.style.transition = ''; }, 200);
+    setTimeout(() => { screen.style.transition = ''; }, 220);
   });
 }
 
 function animateScreenSlide(screen, direction, callback) {
   const distance = direction === 'left' ? -100 : 100;
-  screen.style.transition = 'transform 0.2s ease-in, opacity 0.2s ease-in';
+  screen.style.transition = 'transform 0.22s cubic-bezier(0.4, 0.0, 0.2, 1)';
   screen.style.transform = `translateX(${distance}%)`;
-  screen.style.opacity = '0';
 
   setTimeout(() => {
     callback();
-    // Apareix des de l'altre costat
-    screen.style.transition = '';
+    // Apareix des de l'altre costat amb slide horitzontal pur
+    screen.style.transition = 'none';
     screen.style.transform = `translateX(${-distance}%)`;
-    screen.style.opacity = '0';
     requestAnimationFrame(() => {
-      screen.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
+      screen.style.transition = 'transform 0.28s cubic-bezier(0.0, 0.0, 0.2, 1)';
       screen.style.transform = '';
-      screen.style.opacity = '';
-      setTimeout(() => { screen.style.transition = ''; }, 250);
+      setTimeout(() => { screen.style.transition = ''; }, 280);
     });
-  }, 200);
+  }, 220);
 }
 
 // Indicadors (punts) a la part superior, estil Stories
@@ -2078,6 +2113,7 @@ function translatePage() {
   updateLangStatus();
   updateStatsSub();
   updateLocationsCount();
+  updatePopularCount();
 }
 
 // NEVI
@@ -3368,6 +3404,7 @@ function openSettings(origin) {
   if (typeof updateLangStatus === 'function') updateLangStatus();
   if (typeof updateStatsSub === 'function') updateStatsSub();
   if (typeof updateLocationsCount === 'function') updateLocationsCount();
+  if (typeof updatePopularCount === 'function') updatePopularCount();
   if (typeof updateSyncStatus === 'function') updateSyncStatus();
   if (typeof updateNotifStatus === 'function') updateNotifStatus();
   if (typeof updateCountryStatus === 'function') updateCountryStatus();
@@ -3449,6 +3486,8 @@ function openEmojiPicker(target, origin) {
     currentEmoji = selectedShoppingEmoji;
   } else if (target === 'popular') {
     currentEmoji = selectedPopularEmoji;
+  } else if (target === 'special-item') {
+    currentEmoji = selectedSpecialItemEmoji;
   }
 
   const container = document.getElementById('emoji-picker-full');
@@ -3470,6 +3509,10 @@ function openEmojiPicker(target, origin) {
       } else if (target === 'popular') {
         selectedPopularEmoji = e;
         const btn = document.getElementById('popular-emoji-current');
+        if (btn) btn.textContent = e;
+      } else if (target === 'special-item') {
+        selectedSpecialItemEmoji = e;
+        const btn = document.getElementById('special-item-emoji-current');
         if (btn) btn.textContent = e;
       } else {
         selectedEmoji = e;
@@ -3579,19 +3622,31 @@ function recordProductInHistory(name, emoji, location, days) {
   if (productHistory.length > 50) productHistory = productHistory.slice(0, 50);
   localStorage.setItem('eatmefirst_product_history', JSON.stringify(productHistory));
 
-  // APRENENTATGE: 2+ vegades → es converteix en popular
-  if (existing && existing.count >= 2) {
-    addToCustomPopular(name, emoji || existing.emoji, days || existing.days || 7);
-  }
+  // APRENENTATGE: cada cop que es desa un producte, l'afegim als populars
+  // (o actualitzem l'entrada existent amb l'emoji, la zona i els dies més recents)
+  addToCustomPopular(name, emoji, days, location);
 }
 
-function addToCustomPopular(name, emoji, days) {
+function addToCustomPopular(name, emoji, days, location) {
   const list = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
-  if (list.find(p => p.name.toLowerCase() === name.toLowerCase())) return;
-  list.push({
-    id: 'pop-learned-' + Date.now(),
-    name, emoji, days
-  });
+  const safeEmoji = emoji || '🥛';
+  const safeDays = (typeof days === 'number' && days > 0) ? days : 7;
+  const safeLoc = location || (typeof guessLocationFromName === 'function' ? guessLocationFromName(name) : null) || 'pantry';
+
+  const existing = list.find(p => p.name.toLowerCase() === name.toLowerCase());
+  if (existing) {
+    existing.emoji = safeEmoji;
+    existing.days = safeDays;
+    existing.location = safeLoc;
+  } else {
+    list.push({
+      id: 'pop-learned-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+      name,
+      emoji: safeEmoji,
+      days: safeDays,
+      location: safeLoc
+    });
+  }
   if (typeof savePopularProducts === 'function') savePopularProducts(list);
 }
 
@@ -3930,6 +3985,13 @@ function updateLocationsCount() {
   const el = document.getElementById('locations-count');
   if (!el) return;
   el.textContent = locations.length + ' ' + (locations.length === 1 ? t('locationSingular') : t('locationPlural'));
+}
+
+function updatePopularCount() {
+  const el = document.getElementById('popular-count');
+  if (!el) return;
+  const n = (typeof getPopularProducts === 'function') ? getPopularProducts().length : 0;
+  el.textContent = n + ' ' + (n === 1 ? t('productSingular') : t('productPlural'));
 }
 
 function renderLangList() {
@@ -4295,6 +4357,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const btnAddListItem = document.getElementById('btn-add-list-item');
   if (btnAddListItem) btnAddListItem.addEventListener('click', addItemToCurrentList);
+
+  // Edició d'item (especial): emoji i guardar
+  const btnPickSpecialItemEmoji = document.getElementById('btn-pick-special-item-emoji');
+  if (btnPickSpecialItemEmoji) btnPickSpecialItemEmoji.addEventListener('click', () => openEmojiPicker('special-item', 'special-item-edit'));
+
+  const btnSaveSpecialItem = document.getElementById('btn-save-special-item');
+  if (btnSaveSpecialItem) btnSaveSpecialItem.addEventListener('click', saveSpecialItem);
 
   // Botó Veure-ho tot
   const btnViewAll = document.getElementById('btn-view-all');

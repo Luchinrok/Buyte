@@ -1001,6 +1001,35 @@
     </button>
   </div>
 
+  <!-- PANTALLA EDITAR/AFEGIR ITEM A LLISTA ESPECIAL -->
+  <div id="screen-special-item-edit" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="special-detail" aria-label="Back">‹</button>
+      <h1 id="special-item-edit-title">-</h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="form-group">
+      <label data-i18n="itemName" for="input-special-item-name"></label>
+      <input type="text" id="input-special-item-name" placeholder="Iogurts, llet...">
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="itemEmoji"></label>
+      <button type="button" class="emoji-button" id="btn-pick-special-item-emoji">
+        <span class="emoji-button-current" id="special-item-emoji-current">🥛</span>
+        <span class="emoji-button-text" data-i18n="changeEmoji"></span>
+      </button>
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="itemQuantity" for="input-special-item-qty"></label>
+      <input type="text" id="input-special-item-qty" placeholder="2, 1L, 500g..." maxlength="20">
+    </div>
+
+    <button class="primary-btn" id="btn-save-special-item" data-i18n="save"></button>
+  </div>
+
   <!-- PANTALLA SUPERMERCATS (selector tipus home) -->
   <div id="screen-shopping" class="screen">
     <header class="top-bar">
