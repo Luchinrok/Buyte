@@ -373,10 +373,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicia notificacions
   initNotifications();
 
-  // Productes populars
+  // Productes populars (des del formulari Add)
   document.getElementById('popular-btn').addEventListener('click', () => {
-    renderPopularList();
-    showScreen('popular');
+    if (typeof openPopular === 'function') openPopular('add');
+    else { renderPopularList(); showScreen('popular'); }
   });
 
   // Codi a mà

@@ -1524,6 +1524,18 @@ h1 {
   border-radius: 8px;
 }
 
+.popular-loc {
+  font-size: 12px;
+  color: var(--text-muted, #666);
+  background: var(--bg-soft, rgba(0,0,0,0.05));
+  padding: 2px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
 .popular-arrows {
   display: flex;
   flex-direction: column;

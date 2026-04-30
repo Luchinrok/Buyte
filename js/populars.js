@@ -7,20 +7,62 @@
 
 
 
+// Construeix un mapa nom-en-minúscules → entrada canònica del catàleg,
+// indexant TOTS els noms en TOTS els idiomes per cada producte. Així podem
+// trobar la zona canònica encara que la cache vingui en un altre idioma.
+function buildPopularNameIndex() {
+  const idx = {};
+  const langs = ['ca','es','en','fr','it','de','pt','nl','ja','zh','ko'];
+  POPULAR_PRODUCTS.forEach(p => {
+    langs.forEach(lg => {
+      if (p[lg]) idx[p[lg].toLowerCase()] = p;
+    });
+  });
+  return idx;
+}
+
 function getPopularProducts() {
   const lang = getCurrentLang();
+  const canonicalByName = buildPopularNameIndex();
   const customRaw = localStorage.getItem('eatmefirst_popular_custom');
   if (customRaw) {
     try {
       const custom = JSON.parse(customRaw);
+      // Normalització: si un item de la cache coincideix amb un producte del
+      // catàleg pel nom, forcem la zona canònica (corregeix caches antigues
+      // que tenien Formatge a congelador, etc.). Items personalitzats per
+      // l'usuari (no al catàleg) es deixen intactes.
+      let migrated = false;
+      custom.forEach(it => {
+        if (!it || !it.name) return;
+        const canon = canonicalByName[it.name.toLowerCase()];
+        if (canon && canon.location && it.location !== canon.location) {
+          it.location = canon.location;
+          migrated = true;
+        }
+        // Si encara no té zona, intenta deduir-la
+        if (!it.location) {
+          if (canon && canon.location) {
+            it.location = canon.location;
+          } else if (typeof guessLocationFromName === 'function') {
+            it.location = guessLocationFromName(it.name) || 'pantry';
+          } else {
+            it.location = 'pantry';
+          }
+          migrated = true;
+        }
+      });
+      if (migrated) {
+        localStorage.setItem('eatmefirst_popular_custom', JSON.stringify(custom));
+      }
       return custom;
     } catch(e) {}
   }
-  // Per defecte: del catàleg, amb zona deduïda automàticament
+  // Per defecte: del catàleg, usant la zona canònica
   return POPULAR_PRODUCTS.map((p, idx) => {
     const name = p[lang] || p.en;
-    let location = null;
-    if (typeof guessLocationFromName === 'function') {
+    let location = p.location;
+    if (!location && typeof guessLocationFromName === 'function') {
       location = guessLocationFromName(name);
     }
     return {
@@ -145,6 +187,15 @@ function openPopular(origin) {
 }
 
 function renderPopularList() {
+  // Defensiu: re-aplicar la zona de "tornar" segons popularOrigin per si
+  // s'ha quedat desactualitzada (ex: ve d'una drecera que no passa per openPopular).
+  const backBtn = document.querySelector('#screen-popular .back-btn');
+  if (backBtn) {
+    if (popularOrigin === 'settings') backBtn.dataset.back = 'settings';
+    else if (popularOrigin === 'shopping') backBtn.dataset.back = 'shopping';
+    else backBtn.dataset.back = 'add';
+  }
+
   const container = document.getElementById('popular-list');
   container.innerHTML = '';
   const items = getPopularProducts();
@@ -158,6 +209,15 @@ function renderPopularList() {
     return;
   }
 
+  // Helper: badge de zona (emoji + nom curt) per inserir a cada fila
+  const locBadge = (locId) => {
+    if (typeof getLocationById !== 'function') return '';
+    const loc = getLocationById(locId);
+    if (!loc) return '';
+    const name = (typeof getLocationName === 'function') ? getLocationName(loc) : (loc.id || '');
+    return `<span class="popular-loc">${loc.emoji} ${escapeHtml(name)}</span>`;
+  };
+
   items.forEach((p, idx) => {
     const isFirst = idx === 0;
     const isLast = idx === items.length - 1;
@@ -169,6 +229,7 @@ function renderPopularList() {
         <button class="popular-item-main">
           <span class="popular-emoji">${p.emoji}</span>
           <span class="popular-name">${escapeHtml(p.name)}</span>
+          ${locBadge(p.location)}
           <span class="popular-days">+${p.days}d</span>
         </button>
         <div class="popular-arrows">
@@ -193,6 +254,7 @@ function renderPopularList() {
         <button class="popular-item-main popular-item-full">
           <span class="popular-emoji">${p.emoji}</span>
           <span class="popular-name">${escapeHtml(p.name)}</span>
+          ${locBadge(p.location)}
           <span class="popular-days">+${p.days}d</span>
         </button>
       `;
