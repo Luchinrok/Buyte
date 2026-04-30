@@ -458,12 +458,37 @@ function openProductDetail(p) {
 // ACCIONS
 function handleAction(action) {
   if (!currentProduct) return;
-  const consumedProduct = currentProduct; // guardem referència abans d'esborrar
-  products = products.filter(p => p.id !== currentProduct.id);
 
-  if (action === 'consumed') { stats.consumed++; showToast(t('consumedMsg')); }
-  else if (action === 'trashed') { stats.trashed++; showToast(t('trashedMsg')); }
-  else showToast(t('deletedMsg'));
+  // "Esborrar" (deleted): comportament directe, sense slider
+  if (action === 'deleted') {
+    products = products.filter(p => p.id !== currentProduct.id);
+    showToast(t('deletedMsg'));
+    saveData();
+    renderHome();
+    updateStatsSub();
+    showScreen('home');
+    currentProduct = null;
+    return;
+  }
+
+  // Consumed / Trashed: obrim slider de consum parcial
+  if (action === 'consumed' || action === 'trashed') {
+    const product = currentProduct;
+    showConsumptionSliderModal(product, action, (percent) => {
+      finalizeConsumption(product, action, percent);
+    });
+  }
+}
+
+function finalizeConsumption(product, action, percent) {
+  recordConsumption(product, action, percent);
+  products = products.filter(p => p.id !== product.id);
+
+  if (action === 'consumed') stats.consumed++;
+  else stats.trashed++;
+
+  const label = action === 'consumed' ? t('consumedToast') : t('wastedToast');
+  showToast('✓ ' + label + ' ' + percent + '%');
 
   saveData();
   renderHome();
@@ -471,10 +496,39 @@ function handleAction(action) {
   showScreen('home');
   currentProduct = null;
 
-  // Pop-up: si s'ha consumit O llençat, oferir afegir a la llista de la compra
-  if ((action === 'consumed' || action === 'trashed') && consumedProduct) {
-    setTimeout(() => askAddToShoppingList(consumedProduct), 600);
+  setTimeout(() => askAddToShoppingList(product), 600);
+}
+
+// Historial detallat de consum/llençaments per a futures estadístiques d'estalvi.
+function recordConsumption(product, action, percent) {
+  let hist = [];
+  try {
+    const raw = localStorage.getItem('eatmefirst_consumption_history');
+    if (raw) hist = JSON.parse(raw);
+    if (!Array.isArray(hist)) hist = [];
+  } catch (e) { hist = []; }
+
+  let daysFromExpiry = null;
+  if (!product.noExpiry && product.date) {
+    const d = daysUntil(product.date);
+    if (d !== Infinity) daysFromExpiry = d;
   }
+
+  hist.push({
+    productName: product.name,
+    productEmoji: product.emoji,
+    action: action,
+    percent: percent,
+    date: new Date().toISOString(),
+    location: product.location || null,
+    daysFromExpiry: daysFromExpiry
+  });
+
+  // Limitem a les últimes 500 entrades per evitar bloat de localStorage
+  if (hist.length > 500) hist = hist.slice(-500);
+
+  localStorage.setItem('eatmefirst_consumption_history', JSON.stringify(hist));
+  if (typeof pushToServer === 'function') pushToServer();
 }
 
 // FORMULARI MANUAL

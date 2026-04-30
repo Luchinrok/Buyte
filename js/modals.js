@@ -164,6 +164,68 @@ function askRecalcExpiry(product, newZone) {
   });
 }
 
+// Slider de consum parcial: pregunta quin % s'ha consumit / llençat.
+// onConfirm rep el percentatge (0-100).
+function showConsumptionSliderModal(product, action, onConfirm) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const question = action === 'consumed' ? t('consumedQuestion') : t('wastedQuestion');
+
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">${product.emoji}</div>
+      <p class="modal-title">${question}</p>
+      <p class="modal-product-name">${escapeHtml(product.name)}</p>
+      <p class="consumption-percent" id="consumption-percent">100%</p>
+      <input type="range" min="0" max="100" value="100" step="1" class="consumption-slider" id="consumption-slider">
+      <div class="consumption-chips">
+        <button type="button" class="consumption-chip" data-val="25">${t('quarter')}</button>
+        <button type="button" class="consumption-chip" data-val="50">${t('half')}</button>
+        <button type="button" class="consumption-chip" data-val="75">${t('threeQuarters')}</button>
+        <button type="button" class="consumption-chip" data-val="100">${t('all')}</button>
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-cancel" id="modal-no-btn">${t('cancel')}</button>
+        <button class="modal-confirm" id="modal-yes-btn">${t('save')}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const slider = overlay.querySelector('#consumption-slider');
+  const display = overlay.querySelector('#consumption-percent');
+
+  const updateFill = () => {
+    const v = parseInt(slider.value);
+    display.textContent = v + '%';
+    slider.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${v}%, var(--bg-secondary) ${v}%, var(--bg-secondary) 100%)`;
+  };
+  updateFill();
+
+  slider.addEventListener('input', updateFill);
+
+  overlay.querySelectorAll('.consumption-chip').forEach(c => {
+    c.addEventListener('click', () => {
+      slider.value = c.dataset.val;
+      updateFill();
+    });
+  });
+
+  overlay.querySelector('#modal-no-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
+    const percent = parseInt(slider.value);
+    document.body.removeChild(overlay);
+    onConfirm(percent);
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
+}
+
 function showEditQtyModal(product) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
