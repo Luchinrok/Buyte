@@ -754,8 +754,16 @@ function showSupermarketPicker(product) {
     ['#AB47BC', '#7B1FA2'], ['#EF5350', '#C62828'], ['#66BB6A', '#388E3C'],
     ['#5C6BC0', '#3949AB']
   ];
-  supermarkets.forEach((sm, idx) => {
-    const [c1, c2] = gradients[idx % gradients.length];
+
+  // Preferides primer, després la resta
+  const preferred = getEnabledSupermarkets();
+  const preferredIds = new Set(preferred.map(s => s.id));
+  const others = supermarkets.filter(s => !preferredIds.has(s.id));
+
+  let counter = 0;
+  const appendBtn = (sm) => {
+    const [c1, c2] = gradients[counter % gradients.length];
+    counter++;
     const btn = document.createElement('button');
     btn.className = 'modal-supermarket-btn';
     btn.style.background = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
@@ -766,7 +774,24 @@ function showSupermarketPicker(product) {
       document.body.removeChild(overlay);
     });
     optionsContainer.appendChild(btn);
-  });
+  };
+
+  const appendHeader = (label) => {
+    const h = document.createElement('p');
+    h.className = 'modal-sub';
+    h.style.cssText = 'margin:10px 0 6px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7';
+    h.textContent = label;
+    optionsContainer.appendChild(h);
+  };
+
+  if (preferred.length > 0) {
+    appendHeader(t('preferredShops'));
+    preferred.forEach(appendBtn);
+  }
+  if (others.length > 0) {
+    appendHeader(t('otherShops'));
+    others.forEach(appendBtn);
+  }
 
   overlay.querySelector('#modal-cancel-btn').addEventListener('click', () => {
     document.body.removeChild(overlay);
