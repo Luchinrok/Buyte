@@ -198,6 +198,14 @@ document.addEventListener('DOMContentLoaded', () => {
     else { showScreen('popular'); renderPopularList(); }
   });
 
+  // "Què tinc a casa"
+  const btnWhatIHave = document.getElementById('btn-what-i-have');
+  if (btnWhatIHave) btnWhatIHave.addEventListener('click', openWhatIHaveScreen);
+
+  document.querySelectorAll('#what-i-have-filters .filter-pill').forEach(pill => {
+    pill.addEventListener('click', () => setWhatIHaveFilter(pill.dataset.filter));
+  });
+
   // Llistes especials
   const btnSpecial = document.getElementById('btn-special-lists');
   if (btnSpecial) btnSpecial.addEventListener('click', openSpecialLists);

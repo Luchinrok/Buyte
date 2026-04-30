@@ -12,7 +12,121 @@ function getShoppingItemsBySupermarket(supermarketId) {
 
 function openShoppingList() {
   renderSupermarkets();
+  updateWhatIHaveCount();
   showScreen('shopping');
+}
+
+// ============ "QUÈ TINC A CASA" ============
+let whatIHaveFilter = 'all';
+
+function updateWhatIHaveCount() {
+  const el = document.getElementById('what-i-have-count');
+  if (el) el.textContent = '(' + (Array.isArray(products) ? products.length : 0) + ')';
+}
+
+function openWhatIHaveScreen() {
+  whatIHaveFilter = 'all';
+  // Reset visual de les pestanyes
+  document.querySelectorAll('#what-i-have-filters .filter-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.filter === 'all');
+  });
+  renderWhatIHave();
+  showScreen('what-i-have');
+}
+
+function setWhatIHaveFilter(filter) {
+  whatIHaveFilter = filter;
+  document.querySelectorAll('#what-i-have-filters .filter-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.filter === filter);
+  });
+  renderWhatIHave();
+}
+
+function buildWhatIHaveRow(p) {
+  const row = document.createElement('button');
+  row.className = 'view-all-row';
+  const days = daysUntil(p.date);
+  const loc = getLocationById(p.location || 'fridge');
+
+  let daysClass = '';
+  if (days !== Infinity) {
+    if (days <= 2) daysClass = 'days-urgent';
+    else if (days <= 5) daysClass = 'days-soon';
+  }
+
+  const locLabel = loc ? loc.emoji + ' ' + getLocationName(loc) : '';
+  row.innerHTML = `
+    <span class="view-all-emoji">${p.emoji}</span>
+    <div class="view-all-info">
+      <p class="view-all-name">${escapeHtml(p.name)}${p.qty ? ' · ' + escapeHtml(p.qty) : ''}</p>
+      <p class="view-all-meta">${locLabel}${locLabel ? ' · ' : ''}<span class="${daysClass}">${daysText(days)}</span></p>
+    </div>
+    <span class="view-all-arrow">›</span>
+  `;
+  row.addEventListener('click', () => openProductDetail(p));
+  return row;
+}
+
+function renderWhatIHave() {
+  const container = document.getElementById('what-i-have-list');
+  const empty = document.getElementById('what-i-have-empty');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!Array.isArray(products) || products.length === 0) {
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  if (whatIHaveFilter === 'zone') {
+    // Agrupat per zona, dins cada zona ordenat per dies
+    const sorted = [...products].sort((a, b) => {
+      const la = getLocationById(a.location || 'fridge');
+      const lb = getLocationById(b.location || 'fridge');
+      const na = la ? getLocationName(la) : '';
+      const nb = lb ? getLocationName(lb) : '';
+      const cmp = na.localeCompare(nb);
+      if (cmp !== 0) return cmp;
+      return daysUntil(a.date) - daysUntil(b.date);
+    });
+
+    let lastZone = null;
+    sorted.forEach(p => {
+      const loc = getLocationById(p.location || 'fridge');
+      const zone = loc ? loc.emoji + ' ' + getLocationName(loc) : '';
+      if (zone !== lastZone) {
+        const header = document.createElement('div');
+        header.className = 'view-all-zone-header';
+        header.textContent = zone;
+        container.appendChild(header);
+        lastZone = zone;
+      }
+      container.appendChild(buildWhatIHaveRow(p));
+    });
+    return;
+  }
+
+  // Mode 'all' o 'urgent': llista plana ordenada per dies fins caducar
+  let list = [...products];
+  if (whatIHaveFilter === 'urgent') {
+    list = list.filter(p => {
+      const d = daysUntil(p.date);
+      return d !== Infinity && d <= 5;
+    });
+  }
+  list.sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
+
+  if (list.length === 0) {
+    // En mode 'urgent' sense res urgent: missatge curt
+    const note = document.createElement('p');
+    note.className = 'empty-state';
+    note.textContent = '🎉 ' + (typeof t === 'function' ? t('shoppingDone') : '');
+    container.appendChild(note);
+    return;
+  }
+
+  list.forEach(p => container.appendChild(buildWhatIHaveRow(p)));
 }
 
 function renderSupermarkets() {

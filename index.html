@@ -1048,6 +1048,12 @@
       <!-- Es genera dinàmicament -->
     </div>
 
+    <button class="what-i-have-btn" id="btn-what-i-have">
+      <span style="font-size:20px;margin-right:8px">🏠</span>
+      <span data-i18n="whatIHaveHome"></span>
+      <span class="what-i-have-count" id="what-i-have-count">(0)</span>
+    </button>
+
     <button class="special-lists-btn" id="btn-special-lists">
       <span style="font-size:20px;margin-right:8px">🎉</span>
       <span data-i18n="specialLists"></span>
@@ -1057,6 +1063,31 @@
       <span style="font-size:20px;margin-right:8px">🛒</span>
       <span data-i18n="manageSupermarkets"></span>
     </button>
+  </div>
+
+  <!-- PANTALLA "QUÈ TINC A CASA" -->
+  <div id="screen-what-i-have" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="shopping" aria-label="Back">‹</button>
+      <h1>🏠 <span data-i18n="whatIHaveHome"></span></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="filter-pills" id="what-i-have-filters">
+      <button class="filter-pill active" data-filter="all" data-i18n="filterAll"></button>
+      <button class="filter-pill" data-filter="urgent" data-i18n="filterUrgent"></button>
+      <button class="filter-pill" data-filter="zone" data-i18n="filterByZone"></button>
+    </div>
+
+    <div class="view-all-list" id="what-i-have-list">
+      <!-- Es genera dinàmicament -->
+    </div>
+
+    <div class="what-i-have-empty" id="what-i-have-empty" style="display:none">
+      <div class="celebrate-emoji">📦</div>
+      <p class="celebrate-title" data-i18n="noProductsAtHome"></p>
+      <p class="celebrate-sub" data-i18n="addToBiteme"></p>
+    </div>
   </div>
 
   <!-- PANTALLA ITEMS D'UN SUPERMERCAT -->
