@@ -240,7 +240,7 @@ function renderPopularList() {
         <button class="popular-delete-btn" aria-label="Delete">✕</button>
       `;
       row.querySelector('.popular-item-main').addEventListener('click', () => {
-        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location });
+        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry });
       });
       row.querySelector('.popular-edit-btn').addEventListener('click', () => editPopularItem(idx));
       row.querySelector('.popular-delete-btn').addEventListener('click', () => deletePopularItem(idx));
@@ -259,7 +259,7 @@ function renderPopularList() {
         </button>
       `;
       row.querySelector('.popular-item-main').addEventListener('click', () => {
-        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location });
+        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry });
       });
     }
 
