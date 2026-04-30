@@ -124,7 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const days = parseInt(b.dataset.days);
       const d = new Date();
       d.setDate(d.getDate() + days);
-      document.getElementById('input-date').value = formatDateForInput(d);
+      const targetId = b.classList.contains('shopping-quick-date') ? 'input-shopping-date' : 'input-date';
+      const target = document.getElementById(targetId);
+      if (target) target.value = formatDateForInput(d);
+      // Si està marcat "no caduca" del context shopping, el desmarquem
+      if (b.classList.contains('shopping-quick-date')) {
+        const noExp = document.getElementById('input-shopping-no-expiry');
+        if (noExp && noExp.checked) noExp.checked = false;
+      }
     });
   });
 
@@ -324,12 +331,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnAddCustomSm = document.getElementById('btn-add-custom-supermarket');
   if (btnAddCustomSm) btnAddCustomSm.addEventListener('click', () => openSupermarketEdit(null));
 
-  // Editar supermercat (botó al header)
+  // Toggle mode editar items (botó al header del super)
   const btnEditSupermarket = document.getElementById('supermarket-edit-btn');
-  if (btnEditSupermarket) btnEditSupermarket.addEventListener('click', () => {
-    const sm = getSupermarketById(currentSupermarketId);
-    if (sm) openSupermarketEdit(sm);
-  });
+  if (btnEditSupermarket) btnEditSupermarket.addEventListener('click', toggleSupermarketItemsMode);
 
   // Pantalla d'edició de supermercat
   const btnSaveSm = document.getElementById('btn-save-supermarket');

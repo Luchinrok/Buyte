@@ -1173,6 +1173,21 @@
       <input type="text" id="input-shopping-notes" placeholder="" maxlength="60">
     </div>
 
+    <div class="form-group">
+      <label data-i18n="expiryDate" for="input-shopping-date"></label>
+      <input type="date" id="input-shopping-date">
+      <div class="quick-dates">
+        <button type="button" class="quick-date shopping-quick-date" data-days="3">+3</button>
+        <button type="button" class="quick-date shopping-quick-date" data-days="7">+7</button>
+        <button type="button" class="quick-date shopping-quick-date" data-days="14">+14</button>
+        <button type="button" class="quick-date shopping-quick-date" data-days="30">+30</button>
+      </div>
+      <label class="no-expiry-label">
+        <input type="checkbox" id="input-shopping-no-expiry">
+        <span class="no-expiry-text" data-i18n="noExpiry"></span>
+      </label>
+    </div>
+
     <div class="form-group" id="shop-selector-group" style="display:none">
       <label data-i18n="changeShop"></label>
       <select id="input-shopping-shop" class="select-input"></select>
@@ -1341,6 +1356,40 @@
     </p>
 
     <button class="primary-btn" id="btn-confirm-join" data-i18n="syncConnect"></button>
+  </div>
+
+  <!-- PANTALLA ESTADÍSTIQUES -->
+  <div id="screen-stats" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <h1 data-i18n="stats"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="stats-content">
+      <div class="stats-hero">
+        <div class="stats-hero-emoji" id="stats-hero-emoji">📊</div>
+        <p class="stats-hero-text" id="stats-hero-text">-</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stats-card stats-card-saved">
+          <div class="stats-card-emoji">✅</div>
+          <p class="stats-card-num" id="stats-saved">0</p>
+          <p class="stats-card-label" data-i18n="statsSavedLabel"></p>
+        </div>
+        <div class="stats-card stats-card-wasted">
+          <div class="stats-card-emoji">🗑️</div>
+          <p class="stats-card-num" id="stats-wasted">0</p>
+          <p class="stats-card-label" data-i18n="statsWastedLabel"></p>
+        </div>
+      </div>
+
+      <div class="stats-rate-card">
+        <p class="stats-rate-label" data-i18n="statsRateLabel"></p>
+        <p class="stats-rate-value" id="stats-rate">-</p>
+      </div>
+    </div>
   </div>
 
   <!-- PANTALLA IDIOMES -->

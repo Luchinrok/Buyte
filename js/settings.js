@@ -634,13 +634,28 @@ function showStats() {
   const saved = stats.consumed;
   const wasted = stats.trashed;
   const total = saved + wasted;
-  let msg;
-  if (total === 0) msg = t('statsEmpty2');
-  else {
+
+  const savedEl = document.getElementById('stats-saved');
+  const wastedEl = document.getElementById('stats-wasted');
+  const rateEl = document.getElementById('stats-rate');
+  const heroEmojiEl = document.getElementById('stats-hero-emoji');
+  const heroTextEl = document.getElementById('stats-hero-text');
+
+  if (savedEl) savedEl.textContent = saved;
+  if (wastedEl) wastedEl.textContent = wasted;
+
+  if (total === 0) {
+    if (rateEl) rateEl.textContent = '–';
+    if (heroEmojiEl) heroEmojiEl.textContent = '📊';
+    if (heroTextEl) heroTextEl.textContent = t('statsEmpty2');
+  } else {
     const pct = Math.round((saved / total) * 100);
-    msg = t('statsSummary', saved, wasted, pct);
+    if (rateEl) rateEl.textContent = pct + '%';
+    if (heroEmojiEl) heroEmojiEl.textContent = pct >= 75 ? '🎉' : pct >= 50 ? '👍' : '💪';
+    if (heroTextEl) heroTextEl.textContent = t('statsHero', saved, wasted);
   }
-  alert(msg);
+
+  showScreen('stats');
 }
 
 function resetAll() {

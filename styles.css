@@ -1663,9 +1663,13 @@ h1 {
   color: var(--text) !important;
 }
 
-/* Ajusta shopping-item amb les fletxes */
+/* Ajusta shopping-item segons el mode (view = 3 col, edit = 4 col) */
 .shopping-item {
-  grid-template-columns: auto 1fr auto auto auto !important;
+  grid-template-columns: auto 1fr auto !important;
+}
+
+.shopping-item.shopping-item-edit-mode {
+  grid-template-columns: auto 1fr auto auto !important;
 }
 
 /* ===== INDICADORS SLIDER SUPERMERCATS (estil Instagram Stories) ===== */
@@ -3599,4 +3603,102 @@ h1 {
 .popular-days {
   font-size: 10px;
   color: var(--text-soft);
+}
+
+/* ===== ESTADÍSTIQUES ===== */
+.stats-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px 0;
+}
+
+.stats-hero {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px 18px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.stats-hero-emoji {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.stats-hero-text {
+  font-size: 15px;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stats-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.stats-card-saved {
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  border-color: #A5D6A7;
+}
+
+.stats-card-wasted {
+  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+  border-color: #EF9A9A;
+}
+
+.stats-card-emoji {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stats-card-num {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 4px 0;
+  color: var(--text);
+}
+
+.stats-card-label {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.stats-rate-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.stats-rate-label {
+  font-size: 14px;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.stats-rate-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
 }

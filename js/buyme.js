@@ -69,15 +69,34 @@ function formatItemCount(n) {
   return t('manyItems', n);
 }
 
-function openSupermarket(id) {
+function openSupermarket(id, options) {
+  const opts = options || {};
   currentSupermarketId = id;
   const sm = getSupermarketById(id);
   if (!sm) return;
   document.getElementById('supermarket-title').textContent = sm.emoji + ' ' + sm.name;
+  // Per defecte, en obrir un super, comencem en mode visualització.
+  // Si tornem d'editar/eliminar un item, conservem el mode amb preserveMode.
+  if (!opts.preserveMode) supermarketItemsMode = 'view';
+  updateSupermarketEditBtn();
   renderShoppingItems();
   renderSupermarketDots();
   showScreen('supermarket');
   setupSupermarketSwipe();
+}
+
+let supermarketItemsMode = 'view';
+
+function toggleSupermarketItemsMode() {
+  supermarketItemsMode = supermarketItemsMode === 'view' ? 'edit' : 'view';
+  updateSupermarketEditBtn();
+  renderShoppingItems();
+}
+
+function updateSupermarketEditBtn() {
+  const btn = document.getElementById('supermarket-edit-btn');
+  if (!btn) return;
+  btn.textContent = supermarketItemsMode === 'edit' ? '✓' : '✏️';
 }
 
 function renderSupermarketDots() {
@@ -208,30 +227,43 @@ function renderShoppingItems() {
     const isFirst = idx === 0;
     const isLast = idx === items.length - 1;
     const div = document.createElement('div');
-    div.className = 'shopping-item';
-    div.innerHTML = `
-      <div class="shopping-item-emoji">${item.emoji}</div>
-      <div class="shopping-item-info">
-        <p class="shopping-item-name">${escapeHtml(item.name)}</p>
-        ${item.qty || item.notes ? `<p class="shopping-item-meta">${item.qty ? escapeHtml(item.qty) : ''}${item.qty && item.notes ? ' · ' : ''}${item.notes ? escapeHtml(item.notes) : ''}</p>` : ''}
-      </div>
-      <div class="shopping-item-arrows">
-        <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
-        <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
-      </div>
-      <button class="shopping-item-edit" data-action="edit" data-id="${item.id}" aria-label="Edit">✏️</button>
-      <button class="shopping-item-bought" data-action="bought" data-id="${item.id}" aria-label="Bought">
-        <span style="font-size:18px">✅</span>
-        <span data-i18n="bought">${t('bought')}</span>
-      </button>
-    `;
-    div.querySelector('[data-action="edit"]').addEventListener('click', () => openShoppingItemEdit(item));
-    div.querySelector('[data-action="bought"]').addEventListener('click', () => buyShoppingItem(item));
+    div.className = 'shopping-item' + (supermarketItemsMode === 'edit' ? ' shopping-item-edit-mode' : '');
+    const meta = item.qty || item.notes
+      ? `<p class="shopping-item-meta">${item.qty ? escapeHtml(item.qty) : ''}${item.qty && item.notes ? ' · ' : ''}${item.notes ? escapeHtml(item.notes) : ''}</p>`
+      : '';
 
-    const upBtn = div.querySelector('[data-action="up"]');
-    const downBtn = div.querySelector('[data-action="down"]');
-    if (upBtn && !isFirst) upBtn.addEventListener('click', () => moveShoppingItem(idx, -1));
-    if (downBtn && !isLast) downBtn.addEventListener('click', () => moveShoppingItem(idx, 1));
+    if (supermarketItemsMode === 'edit') {
+      div.innerHTML = `
+        <div class="shopping-item-emoji">${item.emoji}</div>
+        <div class="shopping-item-info">
+          <p class="shopping-item-name">${escapeHtml(item.name)}</p>
+          ${meta}
+        </div>
+        <div class="shopping-item-arrows">
+          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
+          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
+        </div>
+        <button class="shopping-item-edit" data-action="edit" data-id="${item.id}" aria-label="Edit">✏️</button>
+      `;
+      div.querySelector('[data-action="edit"]').addEventListener('click', () => openShoppingItemEdit(item));
+      const upBtn = div.querySelector('[data-action="up"]');
+      const downBtn = div.querySelector('[data-action="down"]');
+      if (upBtn && !isFirst) upBtn.addEventListener('click', () => moveShoppingItem(idx, -1));
+      if (downBtn && !isLast) downBtn.addEventListener('click', () => moveShoppingItem(idx, 1));
+    } else {
+      div.innerHTML = `
+        <div class="shopping-item-emoji">${item.emoji}</div>
+        <div class="shopping-item-info">
+          <p class="shopping-item-name">${escapeHtml(item.name)}</p>
+          ${meta}
+        </div>
+        <button class="shopping-item-bought" data-action="bought" data-id="${item.id}" aria-label="Bought">
+          <span style="font-size:18px">✅</span>
+          <span data-i18n="bought">${t('bought')}</span>
+        </button>
+      `;
+      div.querySelector('[data-action="bought"]').addEventListener('click', () => buyShoppingItem(item));
+    }
 
     container.appendChild(div);
   });
@@ -299,6 +331,20 @@ function openShoppingItemEdit(item) {
   document.getElementById('input-shopping-notes').value = isNew ? '' : (item.notes || '');
   selectedShoppingEmoji = isNew ? '🥛' : item.emoji;
 
+  const dateInput = document.getElementById('input-shopping-date');
+  const noExpInput = document.getElementById('input-shopping-no-expiry');
+  if (dateInput && noExpInput) {
+    if (isNew) {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      dateInput.value = formatDateForInput(d);
+      noExpInput.checked = false;
+    } else {
+      noExpInput.checked = !!item.noExpiry;
+      dateInput.value = (!item.noExpiry && item.date) ? item.date : '';
+    }
+  }
+
   const delBtn = document.getElementById('btn-delete-shopping-item');
   if (delBtn) delBtn.style.display = isNew ? 'none' : 'block';
 
@@ -335,6 +381,26 @@ function saveShoppingItem() {
   if (!name) { showToast(t('nameRequired')); return; }
   const qty = document.getElementById('input-shopping-qty').value.trim();
   const notes = document.getElementById('input-shopping-notes').value.trim();
+  const dateInput = document.getElementById('input-shopping-date');
+  const noExpInput = document.getElementById('input-shopping-no-expiry');
+  const noExpiry = !!(noExpInput && noExpInput.checked);
+  const date = (!noExpiry && dateInput) ? dateInput.value : '';
+
+  // Aprenentatge: si l'usuari ha posat data o "no caduca", desem el producte
+  // als populars per recordar emoji + dies + flag noExpiry per la propera vegada.
+  const learnPopular = () => {
+    if (typeof addToCustomPopular !== 'function') return;
+    let days = null;
+    if (date) {
+      const d = new Date(date);
+      const now = new Date();
+      const diff = Math.round((d - now) / 86400000);
+      if (diff > 0) days = diff;
+    }
+    if (noExpiry || days) {
+      addToCustomPopular(name, selectedShoppingEmoji, days, null, noExpiry);
+    }
+  };
 
   if (editingShoppingItem) {
     const originalSupermarketId = editingShoppingItem.supermarketId;
@@ -342,15 +408,18 @@ function saveShoppingItem() {
     editingShoppingItem.emoji = selectedShoppingEmoji;
     editingShoppingItem.qty = qty;
     editingShoppingItem.notes = notes;
+    editingShoppingItem.date = noExpiry ? null : (date || null);
+    editingShoppingItem.noExpiry = noExpiry;
     // Aplicar canvi de botiga si l'usuari l'ha canviada
     const shopSelect = document.getElementById('input-shopping-shop');
     if (shopSelect && shopSelect.value) {
       editingShoppingItem.supermarketId = shopSelect.value;
     }
     saveShoppingData();
+    learnPopular();
     showToast(t('saved'));
-    // Tornem al super ORIGINAL (no al nou)
-    openSupermarket(originalSupermarketId);
+    // Tornem al super ORIGINAL (no al nou) preservant el mode
+    openSupermarket(originalSupermarketId, { preserveMode: true });
     return;
   }
 
@@ -363,9 +432,12 @@ function saveShoppingItem() {
       const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
       shoppingItems.push({
         id, supermarketId: currentSupermarketId, name, emoji: selectedShoppingEmoji,
-        qty, notes, addedAt: Date.now()
+        qty, notes, addedAt: Date.now(),
+        date: noExpiry ? null : (date || null),
+        noExpiry
       });
       saveShoppingData();
+      learnPopular();
       showToast(t('saved'));
       openSupermarket(currentSupermarketId);
     });
@@ -375,9 +447,12 @@ function saveShoppingItem() {
   const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
   shoppingItems.push({
     id, supermarketId: currentSupermarketId, name, emoji: selectedShoppingEmoji,
-    qty, notes, addedAt: Date.now()
+    qty, notes, addedAt: Date.now(),
+    date: noExpiry ? null : (date || null),
+    noExpiry
   });
   saveShoppingData();
+  learnPopular();
   showToast(t('saved'));
   openSupermarket(currentSupermarketId);
 }
@@ -422,7 +497,7 @@ function deleteShoppingItem() {
   shoppingItems = shoppingItems.filter(it => it.id !== editingShoppingItem.id);
   saveShoppingData();
   showToast(t('deleted'));
-  openSupermarket(currentSupermarketId);
+  openSupermarket(currentSupermarketId, { preserveMode: true });
 }
 
 // Quan l'usuari prem "Comprat" → obre el formulari del tracker amb el nom prefilfat
@@ -437,13 +512,22 @@ function buyShoppingItem(item) {
   // També cerquem a l'historial
   const fromHistory = productHistory.find(p => p.name.toLowerCase().trim() === item.name.toLowerCase().trim());
 
+  // Si el propi item té data, calculem els dies que falten
+  let itemDays = null;
+  if (item.date) {
+    const d = new Date(item.date);
+    const now = new Date();
+    const diff = Math.round((d - now) / 86400000);
+    if (diff > 0) itemDays = diff;
+  }
+
   const prefill = {
     name: item.name,
     emoji: item.emoji,
     qty: item.qty,
-    days: (fromPopular && fromPopular.days) || (fromHistory && fromHistory.days) || null,
+    days: itemDays || (fromPopular && fromPopular.days) || (fromHistory && fromHistory.days) || null,
     location: (fromPopular && fromPopular.location) || (fromHistory && fromHistory.location) || null,
-    noExpiry: !!((fromPopular && fromPopular.noExpiry) || (fromHistory && fromHistory.noExpiry))
+    noExpiry: !!(item.noExpiry || (fromPopular && fromPopular.noExpiry) || (fromHistory && fromHistory.noExpiry))
   };
 
   if (typeof openAddForm === 'function') {
@@ -583,7 +667,14 @@ function showManualAddToBuyMeModal(product) {
     ['#AB47BC', '#7B1FA2'], ['#EF5350', '#C62828'], ['#66BB6A', '#388E3C'],
     ['#5C6BC0', '#3949AB']
   ];
-  const smButtons = supermarkets.map((sm, idx) => {
+
+  // Preferides primer, després la resta
+  const preferred = getEnabledSupermarkets();
+  const preferredIds = new Set(preferred.map(s => s.id));
+  const others = supermarkets.filter(s => !preferredIds.has(s.id));
+  const ordered = [...preferred, ...others];
+
+  const renderBtn = (sm, idx) => {
     const [c1, c2] = gradients[idx % gradients.length];
     return `
       <button class="modal-supermarket-btn" data-id="${sm.id}" style="background:linear-gradient(135deg, ${c1} 0%, ${c2} 100%)">
@@ -591,7 +682,22 @@ function showManualAddToBuyMeModal(product) {
         <span class="modal-sm-name">${escapeHtml(sm.name)}</span>
       </button>
     `;
-  }).join('');
+  };
+
+  const sectionHeader = (label) => `
+    <p class="modal-sub" style="margin:10px 0 6px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7">${label}</p>
+  `;
+
+  let smButtons = '';
+  let counter = 0;
+  if (preferred.length > 0) {
+    smButtons += sectionHeader(t('preferredShops'));
+    smButtons += preferred.map(sm => renderBtn(sm, counter++)).join('');
+  }
+  if (others.length > 0) {
+    smButtons += sectionHeader(t('otherShops'));
+    smButtons += others.map(sm => renderBtn(sm, counter++)).join('');
+  }
 
   overlay.innerHTML = `
     <div class="modal-content">

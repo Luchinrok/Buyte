@@ -585,6 +585,20 @@ function setupAutocompleteFor(input, suggBox, mode) {
         if (mode === 'shopping') {
           selectedShoppingEmoji = m.emoji;
           renderShoppingEmojiPickerBtn();
+          // Recupera el flag "no caduca" i la data si la sabem
+          const shopNoExp = document.getElementById('input-shopping-no-expiry');
+          const shopDate = document.getElementById('input-shopping-date');
+          if (m.noExpiry) {
+            if (shopNoExp) shopNoExp.checked = true;
+            if (shopDate) shopDate.value = '';
+          } else {
+            if (shopNoExp) shopNoExp.checked = false;
+            if (m.days && shopDate) {
+              const d = new Date();
+              d.setDate(d.getDate() + m.days);
+              shopDate.value = formatDateForInput(d);
+            }
+          }
         } else {
           selectedEmoji = m.emoji;
           renderEmojiPicker();
