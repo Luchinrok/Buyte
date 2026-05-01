@@ -2129,6 +2129,135 @@ h1 {
   font-weight: 500;
 }
 
+/* ===== Tabs del modal de consum (unitats / %) ===== */
+.consume-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0 10px 0;
+}
+
+.consume-tab {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 8px 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.consume-tab.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+}
+
+.consume-tab:active {
+  transform: scale(0.97);
+}
+
+.consume-panel-hidden {
+  display: none;
+}
+
+.consume-panel-label {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 4px 0 10px 0;
+}
+
+.units-selector {
+  margin-bottom: 12px;
+}
+
+.units-chips-container {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.units-chip {
+  min-width: 38px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.units-chip.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+}
+
+.units-chip:active {
+  transform: scale(0.95);
+}
+
+.units-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 6px 0;
+}
+
+.units-stepper-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.units-stepper-btn:active {
+  background: var(--primary);
+  color: white;
+  transform: scale(0.95);
+}
+
+.units-stepper-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text);
+  min-width: 50px;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.units-stepper-max {
+  font-size: 16px;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.units-quick {
+  margin-top: 4px;
+  margin-bottom: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
 /* ===== Bloc "consumit / queda" al detall del producte ===== */
 .product-consumed-block {
   margin: 4px 12px 12px 12px;
