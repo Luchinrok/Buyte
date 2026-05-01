@@ -107,8 +107,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.back-btn').forEach(b => {
     b.addEventListener('click', () => {
       const target = b.dataset.back;
+      // Refresc de la pantalla a la qual tornem (sobretot per quan venim
+      // del detall del producte i hem editat qty, data, zona, etc.)
       if (target === 'shopping') renderSupermarkets();
-      if (target === 'supermarket') renderShoppingItems();
+      else if (target === 'supermarket') renderShoppingItems();
+      else if (target === 'view-all' && typeof renderViewAll === 'function') renderViewAll();
+      else if (target === 'what-i-have' && typeof renderWhatIHave === 'function') renderWhatIHave();
+      else if (target === 'home' && typeof renderHome === 'function') renderHome();
+      else if (target === 'alerts' && typeof renderAlerts === 'function') renderAlerts();
+      else if (target === 'section' && typeof renderSection === 'function') renderSection();
+      else if (target === 'list' && typeof openShelf === 'function' && currentLevel) {
+        openShelf(currentLevel);
+        return; // openShelf ja fa showScreen
+      }
       showScreen(target);
     });
   });
