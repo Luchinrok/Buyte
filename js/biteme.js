@@ -519,10 +519,15 @@ function parseQtyNumber(qty) {
 }
 
 function finalizeConsumption(product, action, percent) {
+  // Sempre desem el percentatge real a l'historial (per a estadístiques
+  // d'estalvi i CO₂), independentment de si el producte queda o desapareix.
   recordConsumption(product, action, percent);
 
-  // Cas B: "Me l'he menjat" amb percent < 100 → el producte pot quedar-se
-  // al BiteMe amb la quantitat reduïda (o amb percentatge consumit acumulat).
+  // Regla per quan el producte es queda al BiteMe:
+  //   Cas A — "consumed" 100%       → desapareix
+  //   Cas B — "consumed" < 100%     → es queda (qty reduïda o consumedPercent acumulat)
+  //   Cas C — "trashed" qualsevol % → desapareix sempre. Si has llençat
+  //                                    una part, ja no la tens.
   let stayInBiteMe = false;
   if (action === 'consumed' && percent < 100) {
     const idx = products.findIndex(p => p.id === product.id);
