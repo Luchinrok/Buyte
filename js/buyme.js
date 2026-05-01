@@ -58,7 +58,7 @@ function buildWhatIHaveRow(p) {
   row.innerHTML = `
     <span class="view-all-emoji">${p.emoji}</span>
     <div class="view-all-info">
-      <p class="view-all-name">${escapeHtml(p.name)}${p.qty ? ' · ' + escapeHtml(p.qty) : ''}</p>
+      <p class="view-all-name">${formatProductLine(p.name, p.qty)}</p>
       <p class="view-all-meta">${locLabel}${locLabel ? ' · ' : ''}<span class="${daysClass}">${daysText(days)}</span></p>
     </div>
     <span class="view-all-arrow">›</span>
@@ -342,15 +342,15 @@ function renderShoppingItems() {
     const isLast = idx === items.length - 1;
     const div = document.createElement('div');
     div.className = 'shopping-item' + (supermarketItemsMode === 'edit' ? ' shopping-item-edit-mode' : '');
-    const meta = item.qty || item.notes
-      ? `<p class="shopping-item-meta">${item.qty ? escapeHtml(item.qty) : ''}${item.qty && item.notes ? ' · ' : ''}${item.notes ? escapeHtml(item.notes) : ''}</p>`
+    const meta = item.notes
+      ? `<p class="shopping-item-meta">${escapeHtml(item.notes)}</p>`
       : '';
 
     if (supermarketItemsMode === 'edit') {
       div.innerHTML = `
         <div class="shopping-item-emoji">${item.emoji}</div>
         <div class="shopping-item-info">
-          <p class="shopping-item-name">${escapeHtml(item.name)}</p>
+          <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
           ${meta}
         </div>
         <div class="shopping-item-arrows">
@@ -368,7 +368,7 @@ function renderShoppingItems() {
       div.innerHTML = `
         <div class="shopping-item-emoji">${item.emoji}</div>
         <div class="shopping-item-info">
-          <p class="shopping-item-name">${escapeHtml(item.name)}</p>
+          <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
           ${meta}
         </div>
         <button class="shopping-item-bought" data-action="bought" data-id="${item.id}" aria-label="Bought">
@@ -576,7 +576,7 @@ function showAlreadyHaveModal(itemName, existingProducts, onConfirm) {
   overlay.className = 'modal-overlay';
   const list = existingProducts.slice(0, 3).map(p => {
     const days = daysUntil(p.date);
-    return `<div class="already-have-row">${p.emoji} ${escapeHtml(p.name)}${p.qty ? ' · ' + escapeHtml(p.qty) : ''} <span class="already-have-days">${daysText(days)}</span></div>`;
+    return `<div class="already-have-row">${p.emoji} ${formatProductLine(p.name, p.qty)} <span class="already-have-days">${daysText(days)}</span></div>`;
   }).join('');
 
   overlay.innerHTML = `

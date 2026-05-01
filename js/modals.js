@@ -14,7 +14,7 @@ function showChangeDateModal(product) {
     <div class="modal-content">
       <div class="modal-emoji-big">📅</div>
       <p class="modal-title">${t('editDate')}</p>
-      <p class="modal-product-name">${escapeHtml(product.emoji + ' ' + product.name)}</p>
+      <p class="modal-product-name">${escapeHtml(product.emoji)} ${formatProductLine(product.name, product.qty)}</p>
       <input type="date" id="modal-date-input" class="select-input" value="${currentDate}" style="margin:12px 0">
       <label class="no-expiry-label" style="margin:0">
         <input type="checkbox" id="modal-no-expiry" ${product.noExpiry ? 'checked' : ''}>
@@ -79,7 +79,7 @@ function showChangeZoneModal(product) {
     <div class="modal-content">
       <div class="modal-emoji-big">📍</div>
       <p class="modal-title">${t('changeZone')}</p>
-      <p class="modal-product-name">${escapeHtml(product.emoji + ' ' + product.name)}</p>
+      <p class="modal-product-name">${escapeHtml(product.emoji)} ${formatProductLine(product.name, product.qty)}</p>
       <div class="modal-supermarket-list">${zonesList}</div>
       <button class="modal-cancel" id="modal-no-btn" style="margin-top:10px">${t('cancel')}</button>
     </div>
@@ -272,8 +272,8 @@ function showEditQtyModal(product) {
       const days = daysUntil(p.date);
       const loc = getLocationById(p.location || 'fridge');
       const locStr = loc ? loc.emoji + ' ' + getLocationName(loc) + ' · ' : '';
-      const qtyStr = p.qty ? ' · ' + p.qty : '';
-      document.getElementById('product-days').textContent = locStr + daysText(days) + qtyStr;
+      document.getElementById('product-days').textContent = locStr + daysText(days);
+      document.getElementById('product-name').innerHTML = formatProductLine(p.name, p.qty);
     }
     document.body.removeChild(overlay);
     showToast('✓ ' + t('saved'));

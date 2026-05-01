@@ -412,6 +412,14 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// Renderitza "nom + quantitat" amb separació visual neta (sense punt mig
+// ni símbol ×). Si la qty és buida retorna només el nom escapat.
+function formatProductLine(name, qty) {
+  const safeName = escapeHtml(name);
+  if (qty === null || qty === undefined || String(qty).trim() === '') return safeName;
+  return safeName + '<span class="prod-qty">' + escapeHtml(String(qty).trim()) + '</span>';
+}
+
 // DIES
 function daysUntil(dateStr) {
   if (!dateStr) return Infinity; // Sense data → mai caduca

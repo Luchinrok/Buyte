@@ -125,7 +125,7 @@ function buildViewAllRow(p) {
   row.innerHTML = `
     <span class="view-all-emoji">${p.emoji}</span>
     <div class="view-all-info">
-      <p class="view-all-name">${escapeHtml(p.name)}${p.qty ? ' · ' + escapeHtml(p.qty) : ''}</p>
+      <p class="view-all-name">${formatProductLine(p.name, p.qty)}</p>
       <p class="view-all-meta">${loc ? loc.emoji + ' ' + getLocationName(loc) : ''} · ${daysText(days)}</p>
     </div>
     <span class="view-all-arrow">›</span>
@@ -440,10 +440,9 @@ function openProduct(id) {
   const days = daysUntil(p.date);
   const loc = getLocationById(p.location || 'fridge');
   document.getElementById('product-emoji').textContent = p.emoji;
-  document.getElementById('product-name').textContent = p.name;
+  document.getElementById('product-name').innerHTML = formatProductLine(p.name, p.qty);
   const locStr = loc ? loc.emoji + ' ' + getLocationName(loc) + ' · ' : '';
-  const qtyStr = p.qty ? ' · ' + p.qty : '';
-  document.getElementById('product-days').textContent = locStr + daysText(days) + qtyStr;
+  document.getElementById('product-days').textContent = locStr + daysText(days);
   const backBtn = document.querySelector('#screen-product .back-btn');
   if (backBtn) backBtn.dataset.back = productDetailBack;
   showScreen('product');

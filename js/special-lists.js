@@ -260,7 +260,7 @@ function renderSpecialDetail() {
       });
     } else {
       row.innerHTML = '<span class="special-item-emoji">' + item.emoji + '</span>'
-        + '<span class="special-item-name">' + escapeHtml(item.name) + (item.qty ? ' · ' + escapeHtml(item.qty) : '') + '</span>';
+        + '<span class="special-item-name">' + formatProductLine(item.name, item.qty) + '</span>';
     }
     container.appendChild(row);
   });
