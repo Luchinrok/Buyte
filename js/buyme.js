@@ -583,7 +583,7 @@ function showAlreadyHaveModal(itemName, existingProducts, onConfirm) {
     <div class="modal-content">
       <div class="modal-emoji-big">⚠️</div>
       <p class="modal-title">${t('alreadyHaveTitle')}</p>
-      <p class="modal-sub">${t('alreadyHaveSub', existingProducts.length)}</p>
+      <p class="modal-sub">${existingProducts.length === 1 ? t('alreadyHaveSubOne') : t('alreadyHaveSubMany', existingProducts.length)}</p>
       <div class="already-have-list">${list}</div>
       <div class="modal-buttons">
         <button class="modal-cancel" id="modal-no-btn">${t('cancel')}</button>
