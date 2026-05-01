@@ -1212,14 +1212,25 @@ async function onBarcodeDetected(code) {
       if (status) status.textContent = t('productFound');
       setTimeout(() => {
         if (isShoppingScan) {
-          // Obrim el formulari de BuyMe amb el producte trobat
-          openShoppingItemEdit(null);
-          setTimeout(() => {
-            const ni = document.getElementById('input-shopping-name');
-            if (ni) ni.value = data.name;
-            selectedShoppingEmoji = data.emoji || '🥛';
-            renderShoppingEmojiPickerBtn();
-          }, 100);
+          // Comprovem abans d'obrir el formulari si ja en tenim al BiteMe
+          const existing = (typeof findExistingAtHome === 'function') ? findExistingAtHome(data.name) : [];
+          const proceedToForm = () => {
+            if (existing.length > 0) skipExistingCheckOnNextSave = true;
+            openShoppingItemEdit(null);
+            setTimeout(() => {
+              const ni = document.getElementById('input-shopping-name');
+              if (ni) ni.value = data.name;
+              selectedShoppingEmoji = data.emoji || '🥛';
+              renderShoppingEmojiPickerBtn();
+            }, 100);
+          };
+          if (existing.length > 0) {
+            // Tornem al super perquè el modal floti per sobre d'una pantalla coherent
+            showScreen('supermarket');
+            showAlreadyHaveModal(data.name, existing, proceedToForm);
+          } else {
+            proceedToForm();
+          }
         } else {
           openAddForm({
             name: data.name,

@@ -490,6 +490,18 @@ function renderShoppingEmojiPicker() {
   renderShoppingEmojiPickerBtn();
 }
 
+// Cerca productes al BiteMe amb nom similar (substring en qualsevol direcció).
+// S'utilitza per avisar abans d'afegir duplicats a la llista de la compra.
+function findExistingAtHome(name) {
+  if (!name) return [];
+  const lowerName = name.toLowerCase();
+  return products.filter(p => p.name.toLowerCase().includes(lowerName) || lowerName.includes(p.name.toLowerCase()));
+}
+
+// Quan ve marcat a true, saveShoppingItem salta la comprovació "ja en tens"
+// (perquè l'usuari ja l'ha vista i confirmada en un pas previ).
+let skipExistingCheckOnNextSave = false;
+
 function saveShoppingItem() {
   const name = document.getElementById('input-shopping-name').value.trim();
   if (!name) { showToast(t('nameRequired')); return; }
@@ -537,9 +549,10 @@ function saveShoppingItem() {
     return;
   }
 
-  // Nou item: comprovem si ja en té a casa (BiteMe)
-  const lowerName = name.toLowerCase();
-  const existingAtHome = products.filter(p => p.name.toLowerCase().includes(lowerName) || lowerName.includes(p.name.toLowerCase()));
+  // Nou item: comprovem si ja en té a casa (BiteMe), tret que ja s'hagi
+  // confirmat en un pas previ (popular pre-check, barcode pre-check).
+  const existingAtHome = skipExistingCheckOnNextSave ? [] : findExistingAtHome(name);
+  skipExistingCheckOnNextSave = false;
 
   if (existingAtHome.length > 0) {
     showAlreadyHaveModal(name, existingAtHome, () => {
@@ -690,17 +703,24 @@ function renderPopularListForShopping() {
       <span class="popular-name">${escapeHtml(p.name)}</span>
     `;
     btn.addEventListener('click', () => {
-      // Afegim directament a la llista del supermercat actual
-      const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-      shoppingItems.push({
-        id, supermarketId: currentSupermarketId,
-        name: p.name, emoji: p.emoji, qty: '', notes: '',
-        addedAt: Date.now()
-      });
-      saveShoppingData();
-      showToast('🛒 ' + p.emoji + ' ' + p.name);
-      renderShoppingItems();
-      showScreen('supermarket');
+      const doAdd = () => {
+        const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+        shoppingItems.push({
+          id, supermarketId: currentSupermarketId,
+          name: p.name, emoji: p.emoji, qty: '', notes: '',
+          addedAt: Date.now()
+        });
+        saveShoppingData();
+        showToast('🛒 ' + p.emoji + ' ' + p.name);
+        renderShoppingItems();
+        showScreen('supermarket');
+      };
+      const existing = findExistingAtHome(p.name);
+      if (existing.length > 0) {
+        showAlreadyHaveModal(p.name, existing, doAdd);
+      } else {
+        doAdd();
+      }
     });
     container.appendChild(btn);
   });
