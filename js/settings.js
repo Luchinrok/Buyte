@@ -523,6 +523,7 @@ function openSettings(origin) {
   if (typeof updateThemeStatus === 'function') updateThemeStatus();
   if (typeof updateLangStatus === 'function') updateLangStatus();
   if (typeof updateStatsSub === 'function') updateStatsSub();
+  if (typeof updateImpactSub === 'function') updateImpactSub();
   if (typeof updateLocationsCount === 'function') updateLocationsCount();
   if (typeof updatePopularCount === 'function') updatePopularCount();
   if (typeof updateSyncStatus === 'function') updateSyncStatus();

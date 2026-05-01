@@ -1893,6 +1893,242 @@ h1 {
   font-size: 20px;
 }
 
+/* ===== EL MEU IMPACTE ===== */
+.settings-card-impact {
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  box-shadow: 0 3px 10px rgba(46, 125, 50, 0.35);
+}
+
+.impact-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-soft);
+}
+
+.impact-period-pills {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 16px 0;
+}
+
+.impact-period-pill {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 9px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.impact-period-pill.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary-dark);
+}
+
+.impact-period-pill:active {
+  transform: scale(0.97);
+}
+
+.impact-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.impact-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 14px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.impact-card-saved {
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  border-color: #A5D6A7;
+}
+
+.impact-card-co2 {
+  background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%);
+  border-color: #80DEEA;
+}
+
+.impact-card-util {
+  background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%);
+  border-color: #CE93D8;
+}
+
+.impact-card-streak {
+  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+  border-color: #FFB74D;
+}
+
+.impact-card-emoji {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.impact-card-number {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 4px 0 0 0;
+  color: var(--text);
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.impact-card-label {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin: 0;
+  font-weight: 600;
+}
+
+.impact-card-comparison {
+  font-size: 11px;
+  color: var(--text-soft);
+  margin: 4px 0 0 0;
+  min-height: 14px;
+}
+
+.impact-card-comparison .positive {
+  color: #2E7D32;
+  font-weight: 700;
+}
+
+.impact-card-comparison .negative {
+  color: #C62828;
+  font-weight: 700;
+}
+
+.impact-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 6px 0 4px 0;
+}
+
+.impact-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.impact-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.impact-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 10px 0;
+}
+
+.impact-chart {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  height: 130px;
+}
+
+.impact-chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.impact-chart-bars {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  padding-bottom: 2px;
+}
+
+.impact-bar {
+  width: 14px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.4s ease;
+  min-height: 0;
+}
+
+.impact-bar-saved {
+  background: linear-gradient(180deg, #66BB6A 0%, #2E7D32 100%);
+}
+
+.impact-bar-wasted {
+  background: linear-gradient(180deg, #EF5350 0%, #C62828 100%);
+}
+
+.impact-chart-label {
+  font-size: 11px;
+  color: var(--text-soft);
+  margin: 0;
+  font-weight: 600;
+}
+
+.impact-top-wasted-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.impact-wasted-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.impact-wasted-emoji {
+  font-size: 22px;
+}
+
+.impact-wasted-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.impact-wasted-stats {
+  font-size: 12px;
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
 /* ===== Quantitat acompanyant un nom ===== */
 .prod-qty {
   margin-left: 8px;

@@ -858,6 +858,18 @@
         <span class="settings-card-arrow">›</span>
       </button>
 
+      <!-- EL MEU IMPACTE -->
+      <button class="settings-card settings-card-impact" id="settings-impact">
+        <div class="settings-card-icon">
+          <span style="font-size:28px">📊</span>
+        </div>
+        <div class="settings-card-info">
+          <p class="settings-card-title" data-i18n="impactTitle"></p>
+          <p class="settings-card-sub" id="impact-sub">-</p>
+        </div>
+        <span class="settings-card-arrow">›</span>
+      </button>
+
       <!-- ESTADÍSTIQUES -->
       <button class="settings-card settings-card-stats" id="settings-stats">
         <div class="settings-card-icon">
@@ -1433,6 +1445,66 @@
     </div>
   </div>
 
+  <!-- PANTALLA EL MEU IMPACTE -->
+  <div id="screen-impact" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <h1>📊 <span data-i18n="impactTitle"></span></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div id="impact-empty" class="impact-empty" style="display:none">
+      <div class="celebrate-emoji">📊</div>
+      <p class="celebrate-title" data-i18n="noImpactData"></p>
+    </div>
+
+    <div id="impact-body">
+      <div class="impact-period-pills" id="impact-period-pills">
+        <button class="impact-period-pill" data-period="week" data-i18n="thisWeek"></button>
+        <button class="impact-period-pill active" data-period="month" data-i18n="thisMonth"></button>
+        <button class="impact-period-pill" data-period="all" data-i18n="allTime"></button>
+      </div>
+
+      <div class="impact-cards">
+        <div class="impact-card impact-card-saved">
+          <span class="impact-card-emoji">💶</span>
+          <p class="impact-card-number" id="impact-saved-num">0 €</p>
+          <p class="impact-card-label" data-i18n="savedAmount"></p>
+          <p class="impact-card-comparison" id="impact-saved-comparison"></p>
+        </div>
+        <div class="impact-card impact-card-co2">
+          <span class="impact-card-emoji">🌍</span>
+          <p class="impact-card-number" id="impact-co2-num">0 kg</p>
+          <p class="impact-card-label" data-i18n="co2Avoided"></p>
+          <p class="impact-card-comparison" id="impact-co2-equiv">-</p>
+        </div>
+        <div class="impact-card impact-card-util">
+          <span class="impact-card-emoji">✅</span>
+          <p class="impact-card-number" id="impact-util-num">0%</p>
+          <p class="impact-card-label" data-i18n="utilization"></p>
+          <div class="impact-progress-bar"><div class="impact-progress-fill" id="impact-util-bar" style="width:0%"></div></div>
+          <p class="impact-card-comparison" id="impact-util-wasted">-</p>
+        </div>
+        <div class="impact-card impact-card-streak">
+          <span class="impact-card-emoji">🔥</span>
+          <p class="impact-card-number" id="impact-streak-num">0</p>
+          <p class="impact-card-label" data-i18n="streak"></p>
+          <p class="impact-card-comparison" id="impact-streak-record">-</p>
+        </div>
+      </div>
+
+      <div class="impact-section">
+        <h3 class="impact-section-title">📈 <span data-i18n="last6Months"></span></h3>
+        <div class="impact-chart" id="impact-chart"></div>
+      </div>
+
+      <div class="impact-section" id="impact-top-wasted-section">
+        <h3 class="impact-section-title">⚠️ <span data-i18n="mostWasted"></span></h3>
+        <div class="impact-top-wasted-list" id="impact-top-wasted-list"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- PANTALLA IDIOMES -->
   <div id="screen-language" class="screen">
     <header class="top-bar">
@@ -1459,6 +1531,7 @@
   <script src="js/special-lists.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/modals.js"></script>
+  <script src="js/impact.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

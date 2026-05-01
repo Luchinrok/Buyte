@@ -141,6 +141,13 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen('language');
   });
   document.getElementById('settings-stats').addEventListener('click', showStats);
+
+  // El meu impacte
+  const btnImpact = document.getElementById('settings-impact');
+  if (btnImpact) btnImpact.addEventListener('click', openImpact);
+  document.querySelectorAll('#impact-period-pills .impact-period-pill').forEach(pill => {
+    pill.addEventListener('click', () => setImpactPeriod(pill.dataset.period));
+  });
   document.getElementById('settings-reset').addEventListener('click', resetAll);
 
   // Ubicacions des de configuració
