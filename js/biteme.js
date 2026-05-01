@@ -382,7 +382,7 @@ function renderAlerts() {
     item.className = 'product-item product-item-alert product-item-' + p.level;
     const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' · ' : '';
     item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div></div><span class="product-item-arrow">›</span>';
-    item.querySelector('.product-item-name').textContent = p.name;
+    item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, p.qty);
     item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
     item.addEventListener('click', () => { productDetailBack = 'alerts'; openProduct(p.id); });
     list.appendChild(item);
@@ -419,7 +419,7 @@ function openShelf(level) {
       item.className = 'product-item';
       const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' · ' : '';
       item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div></div><span class="product-item-arrow">›</span>';
-      item.querySelector('.product-item-name').textContent = p.name;
+      item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, p.qty);
       item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
       item.addEventListener('click', () => { productDetailBack = 'list'; openProduct(p.id); });
       listEl.appendChild(item);
