@@ -508,15 +508,60 @@ function handleAction(action) {
   }
 }
 
+// Si la qty és un número pur (ex: "4", "12", "2.5"), retorna el valor.
+// Per a unitats com "1L", "500g" o quantitats buides, retorna null.
+function parseQtyNumber(qty) {
+  if (typeof qty !== 'string') return null;
+  const trimmed = qty.trim();
+  if (!trimmed) return null;
+  if (!/^\d+(?:[.,]\d+)?$/.test(trimmed)) return null;
+  return parseFloat(trimmed.replace(',', '.'));
+}
+
 function finalizeConsumption(product, action, percent) {
   recordConsumption(product, action, percent);
-  products = products.filter(p => p.id !== product.id);
+
+  // Cas B: "Me l'he menjat" amb percent < 100 → el producte pot quedar-se
+  // al BiteMe amb la quantitat reduïda (o amb percentatge consumit acumulat).
+  let stayInBiteMe = false;
+  if (action === 'consumed' && percent < 100) {
+    const idx = products.findIndex(p => p.id === product.id);
+    if (idx >= 0) {
+      const p = products[idx];
+      const qtyNum = parseQtyNumber(p.qty);
+      if (qtyNum !== null) {
+        // Quantitat numèrica pura: reduir proporcionalment
+        const newQty = Math.round(qtyNum * (100 - percent) / 100);
+        if (newQty > 0) {
+          p.qty = String(newQty);
+          stayInBiteMe = true;
+        }
+      } else {
+        // Quantitat amb unitat o buida: acumular percentatge consumit
+        const accumulated = (p.consumedPercent || 0) + percent;
+        if (accumulated < 100) {
+          p.consumedPercent = accumulated;
+          stayInBiteMe = true;
+        }
+      }
+    }
+  }
+
+  if (!stayInBiteMe) {
+    products = products.filter(p => p.id !== product.id);
+  }
 
   if (action === 'consumed') stats.consumed++;
   else stats.trashed++;
 
-  const label = action === 'consumed' ? t('consumedToast') : t('wastedToast');
-  showToast('✓ ' + label + ' ' + percent + '%');
+  let toastMsg;
+  if (stayInBiteMe) {
+    toastMsg = '✓ ' + t('consumedToast') + ' ' + percent + '%, ' + t('stillAtBiteme');
+  } else {
+    const label = action === 'consumed' ? t('consumedToast') : t('wastedToast');
+    toastMsg = '✓ ' + label + ' ' + percent + '%';
+  }
+  showToast(toastMsg);
 
   saveData();
   renderHome();
@@ -524,7 +569,10 @@ function finalizeConsumption(product, action, percent) {
   navigateAfterAction();
   currentProduct = null;
 
-  setTimeout(() => askAddToShoppingList(product), 600);
+  // Si el producte encara és al BiteMe, no oferim afegir-lo a la llista
+  if (!stayInBiteMe) {
+    setTimeout(() => askAddToShoppingList(product), 600);
+  }
 }
 
 // Historial detallat de consum/llençaments per a futures estadístiques d'estalvi.

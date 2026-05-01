@@ -60,6 +60,7 @@ const TRANSLATIONS = {
     wastedQuestion: 'Quant n\'has llençat?',
     consumedToast: 'Has consumit',
     wastedToast: 'Has llençat',
+    stillAtBiteme: 'encara queda al BiteMe',
     quarter: '¼',
     half: '½',
     threeQuarters: '¾',
