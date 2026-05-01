@@ -542,6 +542,14 @@ function openAddForm(prefill) {
   const qtyInput = document.getElementById('input-qty');
   if (qtyInput) qtyInput.value = (prefill && prefill.qty) ? prefill.qty : '';
 
+  // Preu (opcional): si ve d'un popular/historial amb preu, el pre-fillem
+  const priceInput = document.getElementById('input-price');
+  if (priceInput) {
+    priceInput.value = (prefill && typeof prefill.price === 'number' && prefill.price >= 0)
+      ? String(prefill.price)
+      : '';
+  }
+
   // Reset checkbox "sense data" — restaurat si el prefill ho indica (popular/historial)
   const noExpiry = document.getElementById('input-no-expiry');
   if (noExpiry) noExpiry.checked = !!(prefill && prefill.noExpiry);
@@ -727,6 +735,14 @@ function saveNewProduct() {
   const qtyInput = document.getElementById('input-qty');
   const qty = qtyInput ? qtyInput.value.trim() : '';
 
+  // Preu (opcional). Només el guardem si l'usuari l'ha informat.
+  const priceInput = document.getElementById('input-price');
+  let price = null;
+  if (priceInput && priceInput.value.trim() !== '') {
+    const parsed = parseFloat(priceInput.value);
+    if (!isNaN(parsed) && parsed >= 0) price = Math.round(parsed * 100) / 100;
+  }
+
   if (!name) { showToast(t('needName')); return; }
   if (!date && !noExpiryChecked) { showToast(t('needDate')); return; }
 
@@ -738,9 +754,9 @@ function saveNewProduct() {
     approxDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
   }
 
-  recordProductInHistory(name, selectedEmoji, selectedLocation, approxDays, noExpiryChecked);
+  recordProductInHistory(name, selectedEmoji, selectedLocation, approxDays, noExpiryChecked, price);
 
-  products.push({
+  const newProduct = {
     id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
     name: name,
     emoji: selectedEmoji,
@@ -749,7 +765,9 @@ function saveNewProduct() {
     location: selectedLocation,
     qty: qty,
     addedAt: new Date().toISOString()
-  });
+  };
+  if (price !== null) newProduct.price = price;
+  products.push(newProduct);
 
   saveData();
 
@@ -792,8 +810,9 @@ function loadProductHistory() {
 }
 
 // Endevina la zona d'emmagatzematge segons el nom del producte
-function recordProductInHistory(name, emoji, location, days, noExpiry) {
+function recordProductInHistory(name, emoji, location, days, noExpiry, price) {
   const key = name.toLowerCase().trim();
+  const hasPrice = typeof price === 'number' && price >= 0;
   const existing = productHistory.find(p => p.name.toLowerCase() === key);
   if (existing) {
     existing.count++;
@@ -802,24 +821,28 @@ function recordProductInHistory(name, emoji, location, days, noExpiry) {
     if (location) existing.location = location;
     if (days) existing.days = days;
     existing.noExpiry = !!noExpiry;
+    if (hasPrice) existing.price = price;
   } else {
-    productHistory.push({ name, emoji: emoji || '🥛', location, days, noExpiry: !!noExpiry, count: 1, lastUsed: Date.now() });
+    const entry = { name, emoji: emoji || '🥛', location, days, noExpiry: !!noExpiry, count: 1, lastUsed: Date.now() };
+    if (hasPrice) entry.price = price;
+    productHistory.push(entry);
   }
   productHistory.sort((a, b) => b.count - a.count || b.lastUsed - a.lastUsed);
   if (productHistory.length > 50) productHistory = productHistory.slice(0, 50);
   localStorage.setItem('eatmefirst_product_history', JSON.stringify(productHistory));
 
   // APRENENTATGE: cada cop que es desa un producte, l'afegim als populars
-  // (o actualitzem l'entrada existent amb l'emoji, la zona, els dies i si caduca)
-  addToCustomPopular(name, emoji, days, location, noExpiry);
+  // (o actualitzem l'entrada existent amb l'emoji, la zona, els dies, si caduca i el preu)
+  addToCustomPopular(name, emoji, days, location, noExpiry, price);
 }
 
-function addToCustomPopular(name, emoji, days, location, noExpiry) {
+function addToCustomPopular(name, emoji, days, location, noExpiry, price) {
   const list = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
   const safeEmoji = emoji || '🥛';
   const safeDays = (typeof days === 'number' && days > 0) ? days : 7;
   const safeLoc = location || (typeof guessLocationFromName === 'function' ? guessLocationFromName(name) : null) || 'pantry';
   const noExp = !!noExpiry;
+  const hasPrice = typeof price === 'number' && price >= 0;
 
   const existing = list.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (existing) {
@@ -827,15 +850,18 @@ function addToCustomPopular(name, emoji, days, location, noExpiry) {
     existing.days = safeDays;
     existing.location = safeLoc;
     existing.noExpiry = noExp;
+    if (hasPrice) existing.price = price;
   } else {
-    list.push({
+    const entry = {
       id: 'pop-learned-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
       name,
       emoji: safeEmoji,
       days: safeDays,
       location: safeLoc,
       noExpiry: noExp
-    });
+    };
+    if (hasPrice) entry.price = price;
+    list.push(entry);
   }
   if (typeof savePopularProducts === 'function') savePopularProducts(list);
 }

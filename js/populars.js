@@ -126,6 +126,14 @@ function openPopularEdit(idx) {
   document.getElementById('input-popular-days').value = isNew ? '7' : item.days;
   const noExpInput = document.getElementById('input-popular-no-expiry');
   if (noExpInput) noExpInput.checked = !!(item && item.noExpiry);
+
+  const priceInput = document.getElementById('input-popular-price');
+  if (priceInput) {
+    priceInput.value = (!isNew && item && typeof item.price === 'number' && item.price >= 0)
+      ? String(item.price)
+      : '';
+  }
+
   selectedPopularEmoji = isNew ? '🥛' : item.emoji;
   document.getElementById('popular-emoji-current').textContent = selectedPopularEmoji;
 
@@ -142,17 +150,29 @@ function savePopularEdit() {
   const noExpiry = !!(noExpInput && noExpInput.checked);
   if (!name) { showToast(t('needName')); return; }
 
+  // Preu opcional
+  const priceInput = document.getElementById('input-popular-price');
+  let price = null;
+  if (priceInput && priceInput.value.trim() !== '') {
+    const parsed = parseFloat(priceInput.value);
+    if (!isNaN(parsed) && parsed >= 0) price = Math.round(parsed * 100) / 100;
+  }
+
   const list = getPopularProducts();
   if (editingPopularIdx === null) {
-    list.push({
+    const entry = {
       id: 'pop-custom-' + Date.now(),
       name, emoji: selectedPopularEmoji, days, noExpiry
-    });
+    };
+    if (price !== null) entry.price = price;
+    list.push(entry);
   } else {
     list[editingPopularIdx].name = name;
     list[editingPopularIdx].emoji = selectedPopularEmoji;
     list[editingPopularIdx].days = days;
     list[editingPopularIdx].noExpiry = noExpiry;
+    if (price !== null) list[editingPopularIdx].price = price;
+    else delete list[editingPopularIdx].price;
   }
   savePopularProducts(list);
   showToast(t('saved'));
@@ -240,7 +260,7 @@ function renderPopularList() {
         <button class="popular-delete-btn" aria-label="Delete">✕</button>
       `;
       row.querySelector('.popular-item-main').addEventListener('click', () => {
-        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry });
+        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, price: p.price });
       });
       row.querySelector('.popular-edit-btn').addEventListener('click', () => editPopularItem(idx));
       row.querySelector('.popular-delete-btn').addEventListener('click', () => deletePopularItem(idx));
@@ -259,7 +279,7 @@ function renderPopularList() {
         </button>
       `;
       row.querySelector('.popular-item-main').addEventListener('click', () => {
-        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry });
+        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, price: p.price });
       });
     }
 

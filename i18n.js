@@ -70,6 +70,7 @@ const TRANSLATIONS = {
     filterByZone: 'Per zona',
     noProductsAtHome: 'Encara no tens productes',
     addToBiteme: 'Afegeix-ne al BiteMe!',
+    priceLabel: 'Preu (opcional)',
     back: 'Enrere',
     askAddToShoppingTitle: 'Afegir a la llista de la compra?',
     askAddToShoppingSub: 'Així no t\'oblidaràs de comprar-lo la pròxima vegada!',

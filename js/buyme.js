@@ -641,7 +641,10 @@ function buyShoppingItem(item) {
     qty: item.qty,
     days: itemDays || (fromPopular && fromPopular.days) || (fromHistory && fromHistory.days) || null,
     location: (fromPopular && fromPopular.location) || (fromHistory && fromHistory.location) || null,
-    noExpiry: !!(item.noExpiry || (fromPopular && fromPopular.noExpiry) || (fromHistory && fromHistory.noExpiry))
+    noExpiry: !!(item.noExpiry || (fromPopular && fromPopular.noExpiry) || (fromHistory && fromHistory.noExpiry)),
+    price: (fromPopular && typeof fromPopular.price === 'number') ? fromPopular.price
+         : (fromHistory && typeof fromHistory.price === 'number') ? fromHistory.price
+         : undefined
   };
 
   if (typeof openAddForm === 'function') {
