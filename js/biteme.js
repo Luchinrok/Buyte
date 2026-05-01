@@ -448,10 +448,39 @@ function openProduct(id) {
   showScreen('product');
 }
 
-// Obre el detall del producte des de la pantalla "Veure-ho tot" (BuyTe)
-function openProductDetail(p) {
-  productDetailBack = 'view-all';
+// Obre el detall d'un producte recordant d'on s'ha entrat per poder
+// tornar-hi després d'una acció (consumir/llençar). Per defecte 'view-all'.
+function openProductDetail(p, fromScreen) {
+  productDetailBack = fromScreen || 'view-all';
   openProduct(p.id);
+}
+
+// Després d'una acció (consumed/trashed/deleted), torna a la pantalla
+// d'origen i refresca la seva llista. Si no s'ha registrat origen, va a home.
+function navigateAfterAction() {
+  const target = productDetailBack || 'home';
+  switch (target) {
+    case 'list':
+      if (typeof openShelf === 'function' && currentLevel) {
+        openShelf(currentLevel);
+        return;
+      }
+      break;
+    case 'alerts':
+      if (typeof renderAlerts === 'function') renderAlerts();
+      showScreen('alerts');
+      return;
+    case 'view-all':
+      if (typeof renderViewAll === 'function') renderViewAll();
+      showScreen('view-all');
+      return;
+    case 'what-i-have':
+      if (typeof renderWhatIHave === 'function') renderWhatIHave();
+      showScreen('what-i-have');
+      return;
+  }
+  // home (default)
+  showScreen('home');
 }
 
 // ACCIONS
@@ -465,7 +494,7 @@ function handleAction(action) {
     saveData();
     renderHome();
     updateStatsSub();
-    showScreen('home');
+    navigateAfterAction();
     currentProduct = null;
     return;
   }
@@ -492,7 +521,7 @@ function finalizeConsumption(product, action, percent) {
   saveData();
   renderHome();
   updateStatsSub();
-  showScreen('home');
+  navigateAfterAction();
   currentProduct = null;
 
   setTimeout(() => askAddToShoppingList(product), 600);

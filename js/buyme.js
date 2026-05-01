@@ -63,7 +63,7 @@ function buildWhatIHaveRow(p) {
     </div>
     <span class="view-all-arrow">›</span>
   `;
-  row.addEventListener('click', () => openProductDetail(p));
+  row.addEventListener('click', () => openProductDetail(p, 'what-i-have'));
   return row;
 }
 
