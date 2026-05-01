@@ -164,12 +164,17 @@ function askRecalcExpiry(product, newZone) {
   });
 }
 
-// Slider de consum parcial: pregunta quin % s'ha consumit / llençat.
-// onConfirm rep el percentatge (0-100).
-function showConsumptionSliderModal(product, action, onConfirm) {
+// Slider de consum parcial. Si l'usuari ja havia consumit part del producte
+// (alreadyConsumed > 0), el slider 0-100 representa el % "del que queda",
+// no del total. onConfirm rep dos arguments:
+//   absolutePercent — % real respecte al producte original (per a stats i acumulació)
+//   sliderPercent   — el valor que l'usuari ha vist al slider (per al toast)
+function showConsumptionSliderModal(product, action, onConfirm, alreadyConsumed) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   const question = action === 'consumed' ? t('consumedQuestion') : t('wastedQuestion');
+  const already = Math.max(0, Math.min(99, alreadyConsumed || 0));
+  const remaining = 100 - already; // % màxim de l'original que es pot consumir ara
 
   overlay.innerHTML = `
     <div class="modal-content">
@@ -216,9 +221,10 @@ function showConsumptionSliderModal(product, action, onConfirm) {
   });
 
   overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
-    const percent = parseInt(slider.value);
+    const sliderPercent = parseInt(slider.value);
+    const absolutePercent = Math.round(sliderPercent * remaining / 100);
     document.body.removeChild(overlay);
-    onConfirm(percent);
+    onConfirm(absolutePercent, sliderPercent);
   });
 
   overlay.addEventListener('click', (e) => {

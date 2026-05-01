@@ -443,6 +443,25 @@ function openProduct(id) {
   document.getElementById('product-name').innerHTML = formatProductLine(p.name, p.qty);
   const locStr = loc ? loc.emoji + ' ' + getLocationName(loc) + ' · ' : '';
   document.getElementById('product-days').textContent = locStr + daysText(days);
+
+  // Bloc "Has consumit X% · Queda Y%": només té sentit per qty no numèrica
+  // (les numèriques ja es veuen reduïdes directament a la qty visible).
+  const consumedBlock = document.getElementById('product-consumed-block');
+  const qtyNum = (typeof parseQtyNumber === 'function') ? parseQtyNumber(p.qty) : null;
+  const consumedPct = Math.max(0, Math.min(99, p.consumedPercent || 0));
+  if (consumedBlock) {
+    if (consumedPct > 0 && qtyNum === null) {
+      const remainingPct = 100 - consumedPct;
+      document.getElementById('product-consumed-value').textContent = consumedPct + '%';
+      document.getElementById('product-remaining-value').textContent = remainingPct + '%';
+      const fill = document.getElementById('product-consumed-bar-fill');
+      if (fill) fill.style.width = consumedPct + '%';
+      consumedBlock.style.display = 'block';
+    } else {
+      consumedBlock.style.display = 'none';
+    }
+  }
+
   const backBtn = document.querySelector('#screen-product .back-btn');
   if (backBtn) backBtn.dataset.back = productDetailBack;
   showScreen('product');
@@ -499,12 +518,14 @@ function handleAction(action) {
     return;
   }
 
-  // Consumed / Trashed: obrim slider de consum parcial
+  // Consumed / Trashed: obrim slider de consum parcial.
+  // Si ja s'ha consumit part (consumedPercent), el slider és relatiu al que queda.
   if (action === 'consumed' || action === 'trashed') {
     const product = currentProduct;
-    showConsumptionSliderModal(product, action, (percent) => {
-      finalizeConsumption(product, action, percent);
-    });
+    const alreadyConsumed = product.consumedPercent || 0;
+    showConsumptionSliderModal(product, action, (absolutePercent, sliderPercent) => {
+      finalizeConsumption(product, action, absolutePercent, sliderPercent);
+    }, alreadyConsumed);
   }
 }
 
@@ -518,10 +539,13 @@ function parseQtyNumber(qty) {
   return parseFloat(trimmed.replace(',', '.'));
 }
 
-function finalizeConsumption(product, action, percent) {
+function finalizeConsumption(product, action, percent, displayPercent) {
+  // 'percent'        — % real respecte al producte original (per a stats i acumulació)
+  // 'displayPercent' — el que l'usuari ha vist al slider (per al toast)
   // Sempre desem el percentatge real a l'historial (per a estadístiques
   // d'estalvi i CO₂), independentment de si el producte queda o desapareix.
   recordConsumption(product, action, percent);
+  const shown = (typeof displayPercent === 'number') ? displayPercent : percent;
 
   // Regla per quan el producte es queda al BiteMe:
   //   Cas A — "consumed" 100%       → desapareix
@@ -561,10 +585,10 @@ function finalizeConsumption(product, action, percent) {
 
   let toastMsg;
   if (stayInBiteMe) {
-    toastMsg = '✓ ' + t('consumedToast') + ' ' + percent + '%, ' + t('stillAtBiteme');
+    toastMsg = '✓ ' + t('consumedToast') + ' ' + shown + '%, ' + t('stillAtBiteme');
   } else {
     const label = action === 'consumed' ? t('consumedToast') : t('wastedToast');
-    toastMsg = '✓ ' + label + ' ' + percent + '%';
+    toastMsg = '✓ ' + label + ' ' + shown + '%';
   }
   showToast(toastMsg);
 

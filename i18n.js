@@ -61,6 +61,8 @@ const TRANSLATIONS = {
     consumedToast: 'Has consumit',
     wastedToast: 'Has llençat',
     stillAtBiteme: 'encara queda al BiteMe',
+    consumedSoFar: 'Has consumit',
+    remaining: 'Queda',
     quarter: '¼',
     half: '½',
     threeQuarters: '¾',

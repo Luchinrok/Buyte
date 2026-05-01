@@ -2129,6 +2129,45 @@ h1 {
   font-weight: 500;
 }
 
+/* ===== Bloc "consumit / queda" al detall del producte ===== */
+.product-consumed-block {
+  margin: 4px 12px 12px 12px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.product-consumed-text {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.product-consumed-text strong {
+  color: var(--text);
+}
+
+.product-consumed-sep {
+  margin: 0 6px;
+  opacity: 0.5;
+}
+
+.product-consumed-bar {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.product-consumed-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
 /* ===== Quantitat acompanyant un nom ===== */
 .prod-qty {
   margin-left: 8px;
