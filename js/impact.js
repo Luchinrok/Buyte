@@ -2,9 +2,16 @@
    Buyte — js/impact.js
    Pantalla "El meu impacte": agrega les dades de
    l'historial de consum (eatmefirst_consumption_history)
-   per mostrar diners estalviats, CO₂ evitat, taxa
-   d'aprofitament, ratxa, gràfic mensual i top de
-   productes llençats.
+   per mostrar diners aprofitats vs llençats, CO₂ evitat,
+   ratxa, gràfic mensual i top de productes llençats.
+
+   Càlculs:
+   - Per cada entrada, fem servir getProductPrice/getProductCO2
+     amb el preu/qty/pes guardats en el moment del consum.
+   - El "% de l'entrada" multiplica el preu/CO2 total del producte.
+   - Aprofitat = sumatori de consumed × percent
+   - Llençat = sumatori de trashed × percent
+   - CO₂ evitat només compta el consumed (el llençat ja s'ha emès).
    ============================================ */
 
 
@@ -47,21 +54,6 @@ function periodRange(period) {
   return { start: new Date(0), end: now };
 }
 
-function previousPeriodRange(period) {
-  const now = new Date();
-  if (period === 'week') {
-    const end = new Date(now); end.setDate(now.getDate() - 7); end.setHours(23, 59, 59, 999);
-    const start = new Date(end); start.setDate(end.getDate() - 6); start.setHours(0, 0, 0, 0);
-    return { start, end };
-  }
-  if (period === 'month') {
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-    return { start, end };
-  }
-  return null;
-}
-
 function filterByRange(entries, range) {
   return entries.filter(e => {
     const d = new Date(e.date);
@@ -69,39 +61,46 @@ function filterByRange(entries, range) {
   });
 }
 
-// Resol preu: prioritza el preu guardat a l'entrada, si no usa la mitjana
-// per categoria d'emoji (getDefaultPrice de js/product-data.js).
-function resolvePrice(entry) {
-  if (typeof entry.price === 'number' && entry.price >= 0) return entry.price;
-  if (typeof getDefaultPrice === 'function') return getDefaultPrice(entry.productEmoji);
-  return 2;
+// Reconstrueix el "producte" a partir de l'entrada de l'historial
+// per poder cridar getProductPrice / getProductCO2.
+function entryAsProduct(e) {
+  return {
+    name: e.productName,
+    emoji: e.productEmoji,
+    price: (typeof e.price === 'number' && e.price >= 0) ? e.price : undefined,
+    qty: e.qty,
+    weight: e.weight
+  };
 }
 
-function resolveCO2(entry) {
-  if (typeof getCO2 === 'function') return getCO2(entry.productEmoji);
-  return 2;
+function entryFactor(e) {
+  return Math.max(0, Math.min(100, e.percent || 0)) / 100;
 }
 
 function computeMetrics(entries) {
-  let savedEur = 0, wastedEur = 0, savedCo2 = 0, wastedCo2 = 0;
+  let savedEur = 0, wastedEur = 0;
+  let savedCo2 = 0;
   let consumedCount = 0, wastedCount = 0;
+
   entries.forEach(e => {
-    const price = resolvePrice(e);
-    const co2 = resolveCO2(e);
-    const factor = Math.max(0, Math.min(100, e.percent || 0)) / 100;
+    const product = entryAsProduct(e);
+    const totalPrice = (typeof getProductPrice === 'function') ? getProductPrice(product) : 0;
+    const totalCo2 = (typeof getProductCO2 === 'function') ? getProductCO2(product) : 0;
+    const factor = entryFactor(e);
+
     if (e.action === 'consumed') {
-      savedEur += price * factor;
-      savedCo2 += co2 * factor;
+      savedEur += totalPrice * factor;
+      savedCo2 += totalCo2 * factor;
       consumedCount++;
     } else if (e.action === 'trashed') {
-      wastedEur += price * factor;
-      wastedCo2 += co2 * factor;
+      wastedEur += totalPrice * factor;
       wastedCount++;
     }
   });
+
   const totalEur = savedEur + wastedEur;
   const utilization = totalEur > 0 ? Math.round((savedEur / totalEur) * 100) : 100;
-  return { savedEur, wastedEur, savedCo2, wastedCo2, utilization, consumedCount, wastedCount };
+  return { savedEur, wastedEur, savedCo2, utilization, consumedCount, wastedCount, totalEur };
 }
 
 // Dies des de l'últim 'trashed' amb percent >= 5. Si no n'hi ha cap,
@@ -133,8 +132,10 @@ function topWasted(history, limit) {
     if (!map[key]) {
       map[key] = { name: e.productName, emoji: e.productEmoji || '🥫', count: 0, eurLost: 0 };
     }
+    const product = entryAsProduct(e);
+    const total = (typeof getProductPrice === 'function') ? getProductPrice(product) : 0;
     map[key].count += 1;
-    map[key].eurLost += resolvePrice(e) * (e.percent || 0) / 100;
+    map[key].eurLost += total * entryFactor(e);
   });
   return Object.values(map)
     .sort((a, b) => b.count - a.count || b.eurLost - a.eurLost)
@@ -163,7 +164,9 @@ function monthlyChartData(history) {
     const d = new Date(e.date);
     const found = months.find(m => m.year === d.getFullYear() && m.month === d.getMonth());
     if (!found) return;
-    const eur = resolvePrice(e) * (e.percent || 0) / 100;
+    const product = entryAsProduct(e);
+    const total = (typeof getProductPrice === 'function') ? getProductPrice(product) : 0;
+    const eur = total * entryFactor(e);
     if (e.action === 'consumed') found.savedEur += eur;
     else if (e.action === 'trashed') found.wastedEur += eur;
   });
@@ -176,17 +179,24 @@ function monthlyChartData(history) {
 }
 
 function fmtEur(n) {
-  if (!n || n === 0) return '0 €';
-  if (n < 1) return n.toFixed(2) + ' €';
-  if (n < 10) return n.toFixed(1).replace(/\.0$/, '') + ' €';
-  return Math.round(n) + ' €';
+  if (!isFinite(n) || n === 0) return '0,00 €';
+  // Format català: 1.234,56 €
+  const fixed = n.toFixed(2);
+  const [intPart, decPart] = fixed.split('.');
+  const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return withThousands + ',' + decPart + ' €';
 }
 
 function fmtCo2(n) {
-  if (!n || n === 0) return '0 kg';
-  if (n < 1) return n.toFixed(2) + ' kg';
-  if (n < 10) return n.toFixed(1).replace(/\.0$/, '') + ' kg';
+  if (!isFinite(n) || n === 0) return '0,0 kg';
+  if (n < 10) return n.toFixed(1).replace('.', ',') + ' kg';
   return Math.round(n) + ' kg';
+}
+
+function fmtKm(n) {
+  if (!isFinite(n) || n <= 0) return '0';
+  if (n < 10) return n.toFixed(1).replace('.', ',');
+  return String(Math.round(n));
 }
 
 
@@ -207,6 +217,12 @@ function setImpactPeriod(period) {
   renderImpact();
 }
 
+function moneyTitleFor(period) {
+  if (period === 'week') return t('foodMoneyWeek');
+  if (period === 'all') return t('foodMoneyAll');
+  return t('foodMoneyMonth');
+}
+
 function renderImpact() {
   const history = loadConsumptionHistory();
   const empty = document.getElementById('impact-empty');
@@ -224,41 +240,29 @@ function renderImpact() {
   const periodEntries = filterByRange(history, range);
   const m = computeMetrics(periodEntries);
 
-  // Card: estalvi en €
+  // Card 1 — Diners
+  const moneyTitleEl = document.getElementById('impact-money-title');
+  if (moneyTitleEl) moneyTitleEl.textContent = moneyTitleFor(impactPeriod);
+
   document.getElementById('impact-saved-num').textContent = fmtEur(m.savedEur);
-  const savedComp = document.getElementById('impact-saved-comparison');
-  const prevRange = previousPeriodRange(impactPeriod);
-  if (prevRange) {
-    const prev = computeMetrics(filterByRange(history, prevRange));
-    if (prev.savedEur > 0) {
-      const pct = Math.round(((m.savedEur - prev.savedEur) / prev.savedEur) * 100);
-      if (pct !== 0) {
-        const cls = pct > 0 ? 'positive' : 'negative';
-        const arrow = pct > 0 ? '↑' : '↓';
-        const txt = pct > 0 ? t('moreThanLast') : t('lessThanLast');
-        savedComp.innerHTML = `<span class="${cls}">${arrow} ${Math.abs(pct)}%</span> ${escapeHtml(txt)}`;
-        savedComp.style.display = 'block';
-      } else {
-        savedComp.style.display = 'none';
-      }
-    } else {
-      savedComp.style.display = 'none';
-    }
+  document.getElementById('impact-wasted-num').textContent = fmtEur(m.wastedEur);
+
+  const savedBar = document.getElementById('impact-saved-bar');
+  const wastedBar = document.getElementById('impact-wasted-bar');
+  if (m.totalEur > 0) {
+    if (savedBar) savedBar.style.width = (m.savedEur / m.totalEur * 100).toFixed(1) + '%';
+    if (wastedBar) wastedBar.style.width = (m.wastedEur / m.totalEur * 100).toFixed(1) + '%';
   } else {
-    savedComp.style.display = 'none';
+    if (savedBar) savedBar.style.width = '0%';
+    if (wastedBar) wastedBar.style.width = '0%';
   }
+  document.getElementById('impact-util-line').textContent = t('totalUtilization') + ': ' + m.utilization + '%';
 
-  // Card: CO₂
+  // Card 2 — CO2 evitat (només els consumed)
   document.getElementById('impact-co2-num').textContent = fmtCo2(m.savedCo2);
-  document.getElementById('impact-co2-equiv').textContent = '≈ ' + Math.round(m.savedCo2 * KM_PER_KG_CO2) + ' ' + t('kmInCar');
+  document.getElementById('impact-co2-equiv').textContent = '≈ ' + fmtKm(m.savedCo2 * KM_PER_KG_CO2) + ' ' + t('kmInCar');
 
-  // Card: aprofitament %
-  document.getElementById('impact-util-num').textContent = m.utilization + '%';
-  const bar = document.getElementById('impact-util-bar');
-  if (bar) bar.style.width = m.utilization + '%';
-  document.getElementById('impact-util-wasted').textContent = t('wastedOnly') + ' ' + fmtEur(m.wastedEur);
-
-  // Card: ratxa (sempre sobre tot l'historial)
+  // Card 3 — Ratxa (sempre sobre tot l'historial)
   const streak = computeStreak(history);
   let record = loadStreakRecord();
   if (streak > record) { record = streak; saveStreakRecord(record); }
@@ -274,7 +278,6 @@ function renderMonthlyChart(history) {
   if (!container) return;
   const data = monthlyChartData(history);
 
-  // Si no hi ha dades a cap mes, amaguem el contingut
   let firstActiveIdx = data.findIndex(m => m.savedEur > 0 || m.wastedEur > 0);
   if (firstActiveIdx === -1) {
     container.innerHTML = '';
@@ -289,7 +292,7 @@ function renderMonthlyChart(history) {
     col.className = 'impact-chart-col';
     const savedH = Math.max(2, Math.round((m.savedEur / maxEur) * 100));
     const wastedH = Math.max(2, Math.round((m.wastedEur / maxEur) * 100));
-    const tip = m.fullLabel + ': ' + fmtEur(m.savedEur) + ' consumit, ' + fmtEur(m.wastedEur) + ' llençat';
+    const tip = m.fullLabel + ': ' + fmtEur(m.savedEur) + ' aprofitat, ' + fmtEur(m.wastedEur) + ' llençat';
     col.innerHTML = `
       <div class="impact-chart-bars" title="${escapeHtml(tip)}">
         <div class="impact-bar impact-bar-saved" style="height:${m.savedEur > 0 ? savedH : 0}%"></div>
@@ -323,6 +326,26 @@ function renderTopWasted(history) {
     `;
     list.appendChild(row);
   });
+}
+
+// Modal d'explicació de càlculs (clic ⓘ)
+function showImpactInfoModal(kind) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay info-modal';
+  const text = (kind === 'co2') ? t('calcExplanationCO2') : t('calcExplanationMoney');
+  overlay.innerHTML = `
+    <div class="modal-content info-modal-content">
+      <p class="modal-title">ℹ️ ${escapeHtml(t('howCalculated'))}</p>
+      <p class="info-modal-body">${escapeHtml(text).replace(/\n/g, '<br>')}</p>
+      <div class="modal-buttons" style="margin-top:14px">
+        <button class="modal-confirm" id="info-modal-close">${escapeHtml(t('close'))}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#info-modal-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 // Resum curt per la card de configuració.

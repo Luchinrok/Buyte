@@ -1483,32 +1483,45 @@
         <button class="impact-period-pill" data-period="all" data-i18n="allTime"></button>
       </div>
 
-      <div class="impact-cards">
-        <div class="impact-card impact-card-saved">
-          <span class="impact-card-emoji">💶</span>
-          <p class="impact-card-number" id="impact-saved-num">0 €</p>
-          <p class="impact-card-label" data-i18n="savedAmount"></p>
-          <p class="impact-card-comparison" id="impact-saved-comparison"></p>
+      <!-- CARD 1: DINERS DEL MENJAR -->
+      <div class="impact-card-v2 impact-card-money">
+        <button class="impact-card-info-btn" data-info="money" aria-label="Info">ⓘ</button>
+        <h3 class="impact-card-v2-title"><span class="impact-card-v2-emoji">💰</span> <span id="impact-money-title">-</span></h3>
+
+        <div class="impact-money-row">
+          <div class="impact-money-row-head">
+            <span class="impact-money-row-label">✅ <span data-i18n="utilizedAmount"></span></span>
+            <span class="impact-money-row-value impact-money-saved" id="impact-saved-num">0,00 €</span>
+          </div>
+          <div class="impact-card-progress-track"><div class="impact-progress-bar-green" id="impact-saved-bar" style="width:0%"></div></div>
         </div>
-        <div class="impact-card impact-card-co2">
-          <span class="impact-card-emoji">🌍</span>
-          <p class="impact-card-number" id="impact-co2-num">0 kg</p>
-          <p class="impact-card-label" data-i18n="co2Avoided"></p>
-          <p class="impact-card-comparison" id="impact-co2-equiv">-</p>
+
+        <div class="impact-money-row">
+          <div class="impact-money-row-head">
+            <span class="impact-money-row-label">🗑️ <span data-i18n="wastedAmount"></span></span>
+            <span class="impact-money-row-value impact-money-wasted" id="impact-wasted-num">0,00 €</span>
+          </div>
+          <div class="impact-card-progress-track"><div class="impact-progress-bar-red" id="impact-wasted-bar" style="width:0%"></div></div>
         </div>
-        <div class="impact-card impact-card-util">
-          <span class="impact-card-emoji">✅</span>
-          <p class="impact-card-number" id="impact-util-num">0%</p>
-          <p class="impact-card-label" data-i18n="utilization"></p>
-          <div class="impact-progress-bar"><div class="impact-progress-fill" id="impact-util-bar" style="width:0%"></div></div>
-          <p class="impact-card-comparison" id="impact-util-wasted">-</p>
-        </div>
-        <div class="impact-card impact-card-streak">
-          <span class="impact-card-emoji">🔥</span>
-          <p class="impact-card-number" id="impact-streak-num">0</p>
-          <p class="impact-card-label" data-i18n="streak"></p>
-          <p class="impact-card-comparison" id="impact-streak-record">-</p>
-        </div>
+
+        <p class="impact-money-util" id="impact-util-line">-</p>
+      </div>
+
+      <!-- CARD 2: IMPACTE AMBIENTAL -->
+      <div class="impact-card-v2 impact-card-co2-v2">
+        <button class="impact-card-info-btn" data-info="co2" aria-label="Info">ⓘ</button>
+        <h3 class="impact-card-v2-title"><span class="impact-card-v2-emoji">🌍</span> <span data-i18n="environmentalImpact"></span></h3>
+        <p class="impact-co2-big" id="impact-co2-num">0 kg</p>
+        <p class="impact-co2-label" data-i18n="co2Avoided"></p>
+        <p class="impact-co2-equiv" id="impact-co2-equiv">-</p>
+      </div>
+
+      <!-- CARD 3: RATXA -->
+      <div class="impact-card-v2 impact-card-streak-v2">
+        <p class="impact-streak-emoji">🔥</p>
+        <p class="impact-streak-num" id="impact-streak-num">0</p>
+        <p class="impact-streak-label" data-i18n="streak"></p>
+        <p class="impact-streak-record" id="impact-streak-record">-</p>
       </div>
 
       <div class="impact-section">
@@ -1537,19 +1550,19 @@
   <div id="toast" class="toast"></div>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="firebase-sync.js?v=20260502-4"></script>
-  <script src="notifications.js?v=20260502-4"></script>
-  <script src="i18n.js?v=20260502-4"></script>
-  <script src="js/core.js?v=20260502-4"></script>
-  <script src="js/product-data.js?v=20260502-4"></script>
-  <script src="js/biteme.js?v=20260502-4"></script>
-  <script src="js/shops.js?v=20260502-4"></script>
-  <script src="js/buyme.js?v=20260502-4"></script>
-  <script src="js/populars.js?v=20260502-4"></script>
-  <script src="js/special-lists.js?v=20260502-4"></script>
-  <script src="js/settings.js?v=20260502-4"></script>
-  <script src="js/modals.js?v=20260502-4"></script>
-  <script src="js/impact.js?v=20260502-4"></script>
-  <script src="app.js?v=20260502-4"></script>
+  <script src="firebase-sync.js?v=20260502-5"></script>
+  <script src="notifications.js?v=20260502-5"></script>
+  <script src="i18n.js?v=20260502-5"></script>
+  <script src="js/core.js?v=20260502-5"></script>
+  <script src="js/product-data.js?v=20260502-5"></script>
+  <script src="js/biteme.js?v=20260502-5"></script>
+  <script src="js/shops.js?v=20260502-5"></script>
+  <script src="js/buyme.js?v=20260502-5"></script>
+  <script src="js/populars.js?v=20260502-5"></script>
+  <script src="js/special-lists.js?v=20260502-5"></script>
+  <script src="js/settings.js?v=20260502-5"></script>
+  <script src="js/modals.js?v=20260502-5"></script>
+  <script src="js/impact.js?v=20260502-5"></script>
+  <script src="app.js?v=20260502-5"></script>
 </body>
 </html>

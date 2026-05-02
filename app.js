@@ -160,6 +160,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#impact-period-pills .impact-period-pill').forEach(pill => {
     pill.addEventListener('click', () => setImpactPeriod(pill.dataset.period));
   });
+  document.querySelectorAll('#screen-impact .impact-card-info-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (typeof showImpactInfoModal === 'function') showImpactInfoModal(btn.dataset.info);
+    });
+  });
   document.getElementById('settings-reset').addEventListener('click', resetAll);
 
   // Ubicacions des de configuració
