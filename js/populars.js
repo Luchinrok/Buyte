@@ -116,6 +116,7 @@ let editingPopularIdx = null;
 let selectedPopularEmoji = '🥛';
 
 function openPopularEdit(idx) {
+  console.log('[POPULAR-DBG] openPopularEdit idx=', idx, 'popularOrigin=', popularOrigin);
   editingPopularIdx = idx;
   const list = getPopularProducts();
   const isNew = idx === null;
@@ -181,8 +182,10 @@ function savePopularEdit() {
   }
   savePopularProducts(list);
   showToast(t('saved'));
+  console.log('[POPULAR-DBG] savePopularEdit -> showScreen(popular). popularOrigin=', popularOrigin);
   showScreen('popular');
   renderPopularList();
+  console.log('[POPULAR-DBG] after render. active screen=', document.querySelector('.screen.active')?.id);
 }
 
 function deletePopularEdit() {

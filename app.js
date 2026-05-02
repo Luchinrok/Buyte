@@ -107,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.back-btn').forEach(b => {
     b.addEventListener('click', () => {
       const target = b.dataset.back;
+      console.log('[BACK-DBG] back clicked. target=', target, 'from screen=', b.closest('.screen')?.id);
       // Refresc de la pantalla a la qual tornem (sobretot per quan venim
       // del detall del producte i hem editat qty, data, zona, etc.)
       if (target === 'shopping') renderSupermarkets();
