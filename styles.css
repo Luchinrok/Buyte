@@ -780,6 +780,29 @@ h1 {
   margin-top: 8px;
 }
 
+/* Divisor visual entre les opcions parcials i el "Esborrar TOT" */
+.reset-data-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 22px 0 14px 0;
+}
+.reset-data-cards {
+  margin-bottom: 0;
+}
+
+/* Botó destructiu fort (vermell intens) — usat per "Esborrar TOT"
+   dins de la pantalla d'esborrat de dades. */
+.danger-card {
+  background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
+  box-shadow: 0 3px 10px rgba(229, 57, 53, 0.35);
+  color: white;
+}
+.danger-card .settings-card-title,
+.danger-card .settings-card-sub,
+.danger-card .settings-card-arrow {
+  color: white;
+}
+
 /* Botons d'esborrat granulars: més suaus que el "Esborrar tot" */
 .danger-card-soft {
   background: linear-gradient(135deg, #FFCDD2 0%, #EF9A9A 100%);

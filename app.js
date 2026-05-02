@@ -165,16 +165,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof showImpactInfoModal === 'function') showImpactInfoModal(btn.dataset.info);
     });
   });
-  document.getElementById('settings-reset').addEventListener('click', resetAll);
+  // Entrada al submenú "Esborrar dades" (al menú principal de Configuració)
+  document.getElementById('settings-reset').addEventListener('click', () => {
+    if (typeof openResetDataScreen === 'function') openResetDataScreen();
+    else showScreen('reset-data');
+  });
 
-  const btnResetBiteme = document.getElementById('settings-reset-biteme');
+  // Botons del submenú "Esborrar dades"
+  const btnResetBiteme = document.getElementById('reset-biteme');
   if (btnResetBiteme) btnResetBiteme.addEventListener('click', resetBitemeProducts);
 
-  const btnResetShopping = document.getElementById('settings-reset-shopping');
+  const btnResetShopping = document.getElementById('reset-shopping');
   if (btnResetShopping) btnResetShopping.addEventListener('click', resetShoppingList);
 
-  const btnResetImpact = document.getElementById('settings-reset-impact');
+  const btnResetImpact = document.getElementById('reset-impact');
   if (btnResetImpact) btnResetImpact.addEventListener('click', resetImpactHistory);
+
+  const btnResetAll = document.getElementById('reset-all');
+  if (btnResetAll) btnResetAll.addEventListener('click', resetAll);
 
   // Ubicacions des de configuració
   const settingsLoc = document.getElementById('settings-locations');

@@ -921,54 +921,69 @@
         <span class="settings-card-arrow">›</span>
       </button>
 
-      <!-- ESBORRAR PRODUCTES BITEME -->
-      <button class="settings-card danger-card-soft" id="settings-reset-biteme">
-        <div class="settings-card-icon"><span style="font-size:22px">🥗</span></div>
+      <!-- ESBORRAR DADES (entrada al submenú) -->
+      <button class="settings-card danger-card-soft" id="settings-reset">
+        <div class="settings-card-icon"><span style="font-size:22px">🗑️</span></div>
         <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="resetBitemeTitle"></p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- ESBORRAR LLISTA DE LA COMPRA -->
-      <button class="settings-card danger-card-soft" id="settings-reset-shopping">
-        <div class="settings-card-icon"><span style="font-size:22px">🛒</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="resetShoppingTitle"></p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- ESBORRAR HISTORIAL D'IMPACTE -->
-      <button class="settings-card danger-card-soft" id="settings-reset-impact">
-        <div class="settings-card-icon"><span style="font-size:22px">📊</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="resetImpactTitle"></p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- ESBORRAR TOT -->
-      <button class="settings-card settings-card-reset" id="settings-reset">
-        <div class="settings-card-icon">
-          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 8 9 L 24 9 L 23 26 C 23 27 22 28 21 28 L 11 28 C 10 28 9 27 9 26 Z" fill="#FFFFFF"/>
-            <rect x="6" y="7" width="20" height="3" rx="1.5" fill="#FFFFFF"/>
-            <rect x="13" y="3" width="6" height="4" rx="1" fill="#FFFFFF"/>
-            <line x1="13" y1="13" x2="13" y2="24" stroke="#C62828" stroke-width="1.5"/>
-            <line x1="16" y1="13" x2="16" y2="24" stroke="#C62828" stroke-width="1.5"/>
-            <line x1="19" y1="13" x2="19" y2="24" stroke="#C62828" stroke-width="1.5"/>
-          </svg>
-        </div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="resetAllTitle"></p>
-          <p class="settings-card-sub" data-i18n="resetSub"></p>
+          <p class="settings-card-title" data-i18n="resetDataTitle"></p>
+          <p class="settings-card-sub" data-i18n="resetDataSub"></p>
         </div>
         <span class="settings-card-arrow">›</span>
       </button>
     </div>
 
     <p class="app-version">Buyte · v2.0</p>
+  </div>
+
+  <!-- PANTALLA ESBORRAR DADES -->
+  <div id="screen-reset-data" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <h1>🗑️ <span data-i18n="resetDataScreenTitle"></span></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <p class="section-hint" data-i18n="resetDataHint"></p>
+
+    <div class="settings-cards reset-data-cards">
+      <button class="settings-card danger-card-soft" id="reset-biteme">
+        <div class="settings-card-icon"><span style="font-size:22px">🥗</span></div>
+        <div class="settings-card-info">
+          <p class="settings-card-title" data-i18n="resetBitemeTitle"></p>
+          <p class="settings-card-sub" id="reset-biteme-sub">-</p>
+        </div>
+        <span class="settings-card-arrow">›</span>
+      </button>
+
+      <button class="settings-card danger-card-soft" id="reset-shopping">
+        <div class="settings-card-icon"><span style="font-size:22px">🛒</span></div>
+        <div class="settings-card-info">
+          <p class="settings-card-title" data-i18n="resetShoppingTitle"></p>
+          <p class="settings-card-sub" id="reset-shopping-sub">-</p>
+        </div>
+        <span class="settings-card-arrow">›</span>
+      </button>
+
+      <button class="settings-card danger-card-soft" id="reset-impact">
+        <div class="settings-card-icon"><span style="font-size:22px">📊</span></div>
+        <div class="settings-card-info">
+          <p class="settings-card-title" data-i18n="resetImpactTitle"></p>
+          <p class="settings-card-sub" id="reset-impact-sub">-</p>
+        </div>
+        <span class="settings-card-arrow">›</span>
+      </button>
+    </div>
+
+    <div class="reset-data-divider"></div>
+
+    <button class="settings-card danger-card" id="reset-all">
+      <div class="settings-card-icon"><span style="font-size:22px">🗑️</span></div>
+      <div class="settings-card-info">
+        <p class="settings-card-title" data-i18n="resetAllTitle"></p>
+        <p class="settings-card-sub" data-i18n="cantUndo"></p>
+      </div>
+      <span class="settings-card-arrow">›</span>
+    </button>
   </div>
 
   <!-- PANTALLA BENVINGUDA (primer cop) -->
@@ -1577,19 +1592,19 @@
   <div id="toast" class="toast"></div>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="firebase-sync.js?v=20260502-6"></script>
-  <script src="notifications.js?v=20260502-6"></script>
-  <script src="i18n.js?v=20260502-6"></script>
-  <script src="js/core.js?v=20260502-6"></script>
-  <script src="js/product-data.js?v=20260502-6"></script>
-  <script src="js/biteme.js?v=20260502-6"></script>
-  <script src="js/shops.js?v=20260502-6"></script>
-  <script src="js/buyme.js?v=20260502-6"></script>
-  <script src="js/populars.js?v=20260502-6"></script>
-  <script src="js/special-lists.js?v=20260502-6"></script>
-  <script src="js/settings.js?v=20260502-6"></script>
-  <script src="js/modals.js?v=20260502-6"></script>
-  <script src="js/impact.js?v=20260502-6"></script>
-  <script src="app.js?v=20260502-6"></script>
+  <script src="firebase-sync.js?v=20260502-7"></script>
+  <script src="notifications.js?v=20260502-7"></script>
+  <script src="i18n.js?v=20260502-7"></script>
+  <script src="js/core.js?v=20260502-7"></script>
+  <script src="js/product-data.js?v=20260502-7"></script>
+  <script src="js/biteme.js?v=20260502-7"></script>
+  <script src="js/shops.js?v=20260502-7"></script>
+  <script src="js/buyme.js?v=20260502-7"></script>
+  <script src="js/populars.js?v=20260502-7"></script>
+  <script src="js/special-lists.js?v=20260502-7"></script>
+  <script src="js/settings.js?v=20260502-7"></script>
+  <script src="js/modals.js?v=20260502-7"></script>
+  <script src="js/impact.js?v=20260502-7"></script>
+  <script src="app.js?v=20260502-7"></script>
 </body>
 </html>

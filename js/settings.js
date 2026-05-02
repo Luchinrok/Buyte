@@ -685,6 +685,41 @@ function showConfirmDangerModal(emoji, title, message, onConfirm) {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
+// Subtítols dinàmics de la pantalla "Esborrar dades": mostren quantes
+// dades hi ha de cada categoria abans d'esborrar-la.
+function updateResetDataSubs() {
+  const bitemeSub = document.getElementById('reset-biteme-sub');
+  if (bitemeSub) {
+    const n = Array.isArray(products) ? products.length : 0;
+    bitemeSub.textContent = n + ' ' + t('productsCount');
+  }
+
+  const shoppingSub = document.getElementById('reset-shopping-sub');
+  if (shoppingSub) {
+    const items = Array.isArray(shoppingItems) ? shoppingItems : [];
+    const supersWithItems = new Set(items.map(it => it.supermarketId).filter(Boolean));
+    shoppingSub.textContent = items.length + ' ' + t('productsAtShops', supersWithItems.size);
+  }
+
+  const impactSub = document.getElementById('reset-impact-sub');
+  if (impactSub) {
+    let count = 0;
+    try {
+      const raw = localStorage.getItem('eatmefirst_consumption_history');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) count = parsed.length;
+      }
+    } catch (e) {}
+    impactSub.textContent = count + ' ' + t('historyEntries');
+  }
+}
+
+function openResetDataScreen() {
+  updateResetDataSubs();
+  showScreen('reset-data');
+}
+
 // Esborra TOT el localStorage propi de l'app i recarrega.
 function resetAll() {
   showConfirmDangerModal('🗑️', t('resetAllTitle'), t('resetAllConfirm'), () => {
@@ -710,6 +745,7 @@ function resetBitemeProducts() {
     if (typeof renderHome === 'function') renderHome();
     if (typeof renderSection === 'function') renderSection();
     if (typeof updateStatsSub === 'function') updateStatsSub();
+    updateResetDataSubs();
     showToast(t('doneReset'));
   });
 }
@@ -722,6 +758,7 @@ function resetShoppingList() {
     if (typeof pushToServer === 'function') pushToServer();
     if (typeof renderSupermarkets === 'function') renderSupermarkets();
     if (typeof renderShoppingItems === 'function') renderShoppingItems();
+    updateResetDataSubs();
     showToast(t('doneReset'));
   });
 }
@@ -732,6 +769,7 @@ function resetImpactHistory() {
     localStorage.removeItem('eatmefirst_consumption_history');
     localStorage.removeItem('eatmefirst_streak_record');
     if (typeof updateImpactSub === 'function') updateImpactSub();
+    updateResetDataSubs();
     showToast(t('doneReset'));
   });
 }
