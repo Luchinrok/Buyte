@@ -116,7 +116,6 @@ let editingPopularIdx = null;
 let selectedPopularEmoji = '🥛';
 
 function openPopularEdit(idx) {
-  console.log('[POPULAR-DBG] openPopularEdit idx=', idx, 'popularOrigin=', popularOrigin);
   editingPopularIdx = idx;
   const list = getPopularProducts();
   const isNew = idx === null;
@@ -182,10 +181,8 @@ function savePopularEdit() {
   }
   savePopularProducts(list);
   showToast(t('saved'));
-  console.log('[POPULAR-DBG] savePopularEdit -> showScreen(popular). popularOrigin=', popularOrigin);
   showScreen('popular');
   renderPopularList();
-  console.log('[POPULAR-DBG] after render. active screen=', document.querySelector('.screen.active')?.id);
 }
 
 function deletePopularEdit() {
@@ -252,7 +249,18 @@ function renderPopularList() {
     const row = document.createElement('div');
     row.className = 'popular-row';
 
-    if (popularMode === 'edit') {
+    // Des de Configuració, clicar una fila obre l'edició del popular (gestió
+     // del catàleg). Des d'altres fluxos (add, shopping, home), clicar afegeix
+     // un producte al tracker amb les dades del popular.
+     const onRowClick = () => {
+       if (popularOrigin === 'settings') {
+         editPopularItem(idx);
+       } else {
+         openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, price: p.price });
+       }
+     };
+
+     if (popularMode === 'edit') {
       row.innerHTML = `
         <button class="popular-item-main">
           <span class="popular-emoji">${p.emoji}</span>
@@ -267,9 +275,7 @@ function renderPopularList() {
         <button class="popular-edit-btn" aria-label="Edit">✏️</button>
         <button class="popular-delete-btn" aria-label="Delete">✕</button>
       `;
-      row.querySelector('.popular-item-main').addEventListener('click', () => {
-        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, price: p.price });
-      });
+      row.querySelector('.popular-item-main').addEventListener('click', onRowClick);
       row.querySelector('.popular-edit-btn').addEventListener('click', () => editPopularItem(idx));
       row.querySelector('.popular-delete-btn').addEventListener('click', () => deletePopularItem(idx));
       const upBtn = row.querySelector('[data-action="up"]');
@@ -277,7 +283,6 @@ function renderPopularList() {
       if (upBtn && !isFirst) upBtn.addEventListener('click', () => movePopularItem(idx, -1));
       if (downBtn && !isLast) downBtn.addEventListener('click', () => movePopularItem(idx, 1));
     } else {
-      // Mode visualització (net): només producte i clic per afegir
       row.innerHTML = `
         <button class="popular-item-main popular-item-full">
           <span class="popular-emoji">${p.emoji}</span>
@@ -286,9 +291,7 @@ function renderPopularList() {
           <span class="popular-days">+${p.days}d</span>
         </button>
       `;
-      row.querySelector('.popular-item-main').addEventListener('click', () => {
-        openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, price: p.price });
-      });
+      row.querySelector('.popular-item-main').addEventListener('click', onRowClick);
     }
 
     container.appendChild(row);

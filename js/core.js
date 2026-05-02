@@ -450,7 +450,6 @@ function daysText(days) {
 
 // PANTALLES
 function showScreen(name) {
-  console.log('[SCREEN-DBG] showScreen ->', name, 'caller=', new Error().stack?.split('\n')[2]?.trim());
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   window.scrollTo(0, 0);
