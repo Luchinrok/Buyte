@@ -655,6 +655,13 @@ function openAddForm(prefill) {
       : '';
   }
 
+  // Pes (opcional, en text lliure: "500g", "1kg", "1L"...). Pre-fillem
+  // si ve d'un popular/historial amb pes guardat.
+  const weightInput = document.getElementById('input-weight');
+  if (weightInput) {
+    weightInput.value = (prefill && prefill.weight) ? String(prefill.weight) : '';
+  }
+
   // Reset checkbox "sense data" — restaurat si el prefill ho indica (popular/historial)
   const noExpiry = document.getElementById('input-no-expiry');
   if (noExpiry) noExpiry.checked = !!(prefill && prefill.noExpiry);
@@ -861,6 +868,11 @@ function saveNewProduct() {
 
   recordProductInHistory(name, selectedEmoji, selectedLocation, approxDays, noExpiryChecked, price);
 
+  // Pes (opcional). Guardem el text tal qual l'ha escrit l'usuari
+  // ("500g", "1kg"...), parseQuantityToKg el sap interpretar.
+  const weightInput = document.getElementById('input-weight');
+  const weight = weightInput ? weightInput.value.trim() : '';
+
   const newProduct = {
     id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
     name: name,
@@ -872,6 +884,7 @@ function saveNewProduct() {
     addedAt: new Date().toISOString()
   };
   if (price !== null) newProduct.price = price;
+  if (weight) newProduct.weight = weight;
   products.push(newProduct);
 
   saveData();

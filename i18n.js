@@ -78,6 +78,8 @@ const TRANSLATIONS = {
     noProductsAtHome: 'Encara no tens productes',
     addToBiteme: 'Afegeix-ne al BiteMe!',
     priceLabel: 'Preu (opcional)',
+    weightLabel: 'Pes (opcional)',
+    weightHint: "Si no l'omples, el calculem automàticament segons l'emoji",
     impactTitle: 'El meu impacte',
     thisWeek: 'Aquesta setmana',
     thisMonth: 'Aquest mes',

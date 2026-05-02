@@ -163,17 +163,25 @@ function parseQuantityToKg(qty, emoji) {
   return getWeightPerUnit(emoji);
 }
 
+// Retorna el pes total del producte en kg, respectant product.weight
+// si l'usuari l'ha informat (text com "500g" o número directament en kg),
+// altrament el dedueix de product.qty + emoji.
+function resolveProductWeightKg(product) {
+  if (!product) return DEFAULT_WEIGHT_PER_UNIT;
+  if (typeof product.weight === 'number' && product.weight > 0) return product.weight;
+  if (typeof product.weight === 'string' && product.weight.trim() !== '') {
+    return parseQuantityToKg(product.weight, product.emoji);
+  }
+  return parseQuantityToKg(product.qty, product.emoji);
+}
+
 // Retorna el preu total estimat del producte (€). Prioritats:
 //   1. product.price si > 0 (preu total que ha posat l'usuari)
 //   2. (pes en kg) × (preu/kg de la categoria)
-// pes_kg respecta product.weight si està informat, altrament el dedueix
-// de product.qty + emoji.
 function getProductPrice(product) {
   if (!product) return 0;
   if (typeof product.price === 'number' && product.price > 0) return product.price;
-  const kg = (typeof product.weight === 'number' && product.weight > 0)
-    ? product.weight
-    : parseQuantityToKg(product.qty, product.emoji);
+  const kg = resolveProductWeightKg(product);
   const cat = getCategoryFromEmoji(product.emoji);
   const perKg = PRODUCT_PRICES_PER_KG[cat] !== undefined ? PRODUCT_PRICES_PER_KG[cat] : PRODUCT_PRICES_PER_KG.default;
   return kg * perKg;
@@ -182,9 +190,7 @@ function getProductPrice(product) {
 // Retorna els kg de CO₂ eq totals associats al producte (segons pes).
 function getProductCO2(product) {
   if (!product) return 0;
-  const kg = (typeof product.weight === 'number' && product.weight > 0)
-    ? product.weight
-    : parseQuantityToKg(product.qty, product.emoji);
+  const kg = resolveProductWeightKg(product);
   const cat = getCategoryFromEmoji(product.emoji);
   const perKg = PRODUCT_CO2_PER_KG[cat] !== undefined ? PRODUCT_CO2_PER_KG[cat] : PRODUCT_CO2_PER_KG.default;
   return kg * perKg;
