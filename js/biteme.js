@@ -619,7 +619,9 @@ function recordConsumption(product, action, percent) {
     if (d !== Infinity) daysFromExpiry = d;
   }
 
-  hist.push({
+  // Capturem preu/qty/pes en el moment del consum perquè els càlculs
+  // d'impacte siguin estables encara que canviï el catàleg / mitjanes.
+  const entry = {
     productName: product.name,
     productEmoji: product.emoji,
     action: action,
@@ -627,7 +629,11 @@ function recordConsumption(product, action, percent) {
     date: new Date().toISOString(),
     location: product.location || null,
     daysFromExpiry: daysFromExpiry
-  });
+  };
+  if (typeof product.price === 'number' && product.price >= 0) entry.price = product.price;
+  if (product.qty) entry.qty = product.qty;
+  if (product.weight) entry.weight = product.weight;
+  hist.push(entry);
 
   // Limitem a les últimes 500 entrades per evitar bloat de localStorage
   if (hist.length > 500) hist = hist.slice(-500);
