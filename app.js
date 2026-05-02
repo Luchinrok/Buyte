@@ -116,6 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (target === 'home' && typeof renderHome === 'function') renderHome();
       else if (target === 'alerts' && typeof renderAlerts === 'function') renderAlerts();
       else if (target === 'section' && typeof renderSection === 'function') renderSection();
+      else if (target === 'popular' && typeof renderPopularList === 'function') renderPopularList();
       else if (target === 'list' && typeof openShelf === 'function' && currentLevel) {
         openShelf(currentLevel);
         return; // openShelf ja fa showScreen

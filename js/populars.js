@@ -140,6 +140,11 @@ function openPopularEdit(idx) {
   const delBtn = document.getElementById('btn-delete-popular');
   if (delBtn) delBtn.style.display = isNew ? 'none' : 'block';
 
+  // Defensiu: el back de popular-edit sempre torna a la llista de populars,
+  // que al seu torn coneix el seu origen (settings/add/shopping) via popularOrigin.
+  const editBack = document.querySelector('#screen-popular-edit .back-btn');
+  if (editBack) editBack.dataset.back = 'popular';
+
   showScreen('popular-edit');
 }
 
