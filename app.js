@@ -167,6 +167,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('settings-reset').addEventListener('click', resetAll);
 
+  const btnResetBiteme = document.getElementById('settings-reset-biteme');
+  if (btnResetBiteme) btnResetBiteme.addEventListener('click', resetBitemeProducts);
+
+  const btnResetShopping = document.getElementById('settings-reset-shopping');
+  if (btnResetShopping) btnResetShopping.addEventListener('click', resetShoppingList);
+
+  const btnResetImpact = document.getElementById('settings-reset-impact');
+  if (btnResetImpact) btnResetImpact.addEventListener('click', resetImpactHistory);
+
   // Ubicacions des de configuració
   const settingsLoc = document.getElementById('settings-locations');
   if (settingsLoc) settingsLoc.addEventListener('click', () => openLocations('settings'));

@@ -780,6 +780,50 @@ h1 {
   margin-top: 8px;
 }
 
+/* Botons d'esborrat granulars: més suaus que el "Esborrar tot" */
+.danger-card-soft {
+  background: linear-gradient(135deg, #FFCDD2 0%, #EF9A9A 100%);
+  box-shadow: 0 2px 8px rgba(229, 115, 115, 0.25);
+  color: #B71C1C;
+}
+.danger-card-soft .settings-card-icon {
+  background: rgba(255, 255, 255, 0.55);
+}
+.danger-card-soft .settings-card-title {
+  color: #B71C1C;
+}
+.danger-card-soft .settings-card-arrow {
+  color: #B71C1C;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .danger-card-soft {
+    background: linear-gradient(135deg, #C53A3A 0%, #8E2222 100%);
+    box-shadow: 0 3px 12px rgba(244, 67, 54, 0.3);
+    color: #FFEBEE;
+  }
+  :root:not([data-theme="light"]) .danger-card-soft .settings-card-title,
+  :root:not([data-theme="light"]) .danger-card-soft .settings-card-arrow {
+    color: #FFEBEE;
+  }
+  :root:not([data-theme="light"]) .danger-card-soft .settings-card-icon {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
+:root[data-theme="dark"] .danger-card-soft {
+  background: linear-gradient(135deg, #C53A3A 0%, #8E2222 100%);
+  box-shadow: 0 3px 12px rgba(244, 67, 54, 0.3);
+  color: #FFEBEE;
+}
+:root[data-theme="dark"] .danger-card-soft .settings-card-title,
+:root[data-theme="dark"] .danger-card-soft .settings-card-arrow {
+  color: #FFEBEE;
+}
+:root[data-theme="dark"] .danger-card-soft .settings-card-icon {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 /* Mode fosc - més vibrants */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .settings-card-language {

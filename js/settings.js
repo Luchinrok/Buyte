@@ -659,36 +659,80 @@ function showStats() {
   showScreen('stats');
 }
 
-function resetAll() {
+// Modal de confirmació reusable per a accions destructives.
+// title: text del títol; message: text d'avís; onConfirm: callback si l'usuari confirma.
+function showConfirmDangerModal(emoji, title, message, onConfirm) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="modal-content">
-      <div class="modal-emoji-big">🗑️</div>
-      <p class="modal-title">${t('resetAll')}</p>
-      <p class="modal-sub">${t('resetConfirm')}</p>
+      <div class="modal-emoji-big">${emoji}</div>
+      <p class="modal-title">${escapeHtml(title)}</p>
+      <p class="modal-sub">${escapeHtml(message)}</p>
       <div class="modal-buttons">
-        <button class="modal-cancel" id="modal-no-btn">${t('cancel')}</button>
-        <button class="modal-confirm modal-confirm-danger" id="modal-yes-btn">${t('delete')}</button>
+        <button class="modal-cancel" id="modal-no-btn">${escapeHtml(t('cancel'))}</button>
+        <button class="modal-confirm modal-confirm-danger" id="modal-yes-btn">${escapeHtml(t('delete'))}</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
-
-  overlay.querySelector('#modal-no-btn').addEventListener('click', () => {
-    document.body.removeChild(overlay);
-  });
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#modal-no-btn').addEventListener('click', close);
   overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
-    document.body.removeChild(overlay);
+    close();
+    try { onConfirm(); } catch (e) { console.error(e); }
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
+// Esborra TOT el localStorage propi de l'app i recarrega.
+function resetAll() {
+  showConfirmDangerModal('🗑️', t('resetAllTitle'), t('resetAllConfirm'), () => {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('eatmefirst_')) keysToRemove.push(k);
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    showToast(t('doneReset'));
+    setTimeout(() => location.reload(), 400);
+  });
+}
+
+// Esborra només els productes del tracker BiteMe + estadístiques.
+function resetBitemeProducts() {
+  showConfirmDangerModal('🥗', t('resetBitemeTitle'), t('resetBitemeConfirm'), () => {
     products = [];
     stats = { consumed: 0, trashed: 0 };
-    saveData();
-    renderHome();
-    updateStatsSub();
-    showToast(t('resetDone'));
+    localStorage.setItem('eatmefirst_products', JSON.stringify(products));
+    localStorage.setItem('eatmefirst_stats', JSON.stringify(stats));
+    if (typeof pushToServer === 'function') pushToServer();
+    if (typeof renderHome === 'function') renderHome();
+    if (typeof renderSection === 'function') renderSection();
+    if (typeof updateStatsSub === 'function') updateStatsSub();
+    showToast(t('doneReset'));
   });
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) document.body.removeChild(overlay);
+}
+
+// Esborra només els items de la llista de la compra (manté supers configurats).
+function resetShoppingList() {
+  showConfirmDangerModal('🛒', t('resetShoppingTitle'), t('resetShoppingConfirm'), () => {
+    if (typeof shoppingItems !== 'undefined') shoppingItems = [];
+    localStorage.setItem('eatmefirst_shopping_items', JSON.stringify([]));
+    if (typeof pushToServer === 'function') pushToServer();
+    if (typeof renderSupermarkets === 'function') renderSupermarkets();
+    if (typeof renderShoppingItems === 'function') renderShoppingItems();
+    showToast(t('doneReset'));
+  });
+}
+
+// Esborra només l'historial de consum + el rècord de ratxa.
+function resetImpactHistory() {
+  showConfirmDangerModal('📊', t('resetImpactTitle'), t('resetImpactConfirm'), () => {
+    localStorage.removeItem('eatmefirst_consumption_history');
+    localStorage.removeItem('eatmefirst_streak_record');
+    if (typeof updateImpactSub === 'function') updateImpactSub();
+    showToast(t('doneReset'));
   });
 }
 
