@@ -5076,16 +5076,20 @@ h1 {
 
 .cookme-tab {
   flex: 1;
-  padding: 10px 8px;
+  min-width: 0;
+  padding: 10px 6px;
   background: transparent;
   border: none;
   border-radius: 9px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--text-soft);
   cursor: pointer;
   transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cookme-tab.active {

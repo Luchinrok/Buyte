@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadShoppingData();
   if (typeof loadSpecialLists === 'function') loadSpecialLists();
   loadProductHistory();
+  if (typeof loadRecipeUsage === 'function') loadRecipeUsage();
 
   const savedTheme = localStorage.getItem('eatmefirst_theme') || 'light';
   applyTheme(savedTheme);
@@ -179,6 +180,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const btnResetImpact = document.getElementById('reset-impact');
   if (btnResetImpact) btnResetImpact.addEventListener('click', resetImpactHistory);
+
+  const btnResetRecipeUsage = document.getElementById('reset-recipe-usage');
+  if (btnResetRecipeUsage) btnResetRecipeUsage.addEventListener('click', () => {
+    if (typeof confirmResetRecipeUsage === 'function') confirmResetRecipeUsage();
+  });
 
   const btnResetAll = document.getElementById('reset-all');
   if (btnResetAll) btnResetAll.addEventListener('click', resetAll);

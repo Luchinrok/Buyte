@@ -525,6 +525,11 @@ const TRANSLATIONS = {
     selectAllToBuy: 'Triar quins comprar',
     addNToBuyme: 'Afegir {0} ingredients',
     noStoreConfigured: 'No tens cap supermercat configurat. Vés a Configuració > Botigues per crear-ne un.',
+    mostUsed: 'Més usades',
+    noUsedRecipes: 'Encara no has provat cap recepta. Quan en cuinis algunes, apareixeran aquí com a preferides!',
+    resetRecipeUsageTitle: 'Esborrar ús de receptes',
+    resetRecipeUsageSub: 'Esborra el rànquing de receptes més usades',
+    resetRecipeUsageConfirm: "Vols esborrar l'historial d'ús de receptes? Les receptes en si es mantenen.",
   }
 
 };

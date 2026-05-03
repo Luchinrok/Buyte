@@ -7,8 +7,64 @@
    ============================================ */
 
 
-// Pestanya activa: 'ready' | 'almost' | 'all'
+// Pestanya activa: 'ready' | 'almost' | 'used' | 'all'
 let cookmeTab = 'ready';
+// Historial d'ús de receptes per popularitzar la pestanya "Més usades".
+// Format: { 'recipe-id': { views: n, lastUsed: ts, addedToShopping: n } }
+let recipeUsage = {};
+
+function loadRecipeUsage() {
+  try {
+    const raw = localStorage.getItem('eatmefirst_recipe_usage');
+    recipeUsage = raw ? (JSON.parse(raw) || {}) : {};
+  } catch (e) { recipeUsage = {}; }
+}
+
+function saveRecipeUsage() {
+  try {
+    localStorage.setItem('eatmefirst_recipe_usage', JSON.stringify(recipeUsage));
+  } catch (e) {}
+}
+
+function ensureRecipeUsageEntry(id) {
+  if (!recipeUsage[id]) recipeUsage[id] = { views: 0, lastUsed: 0, addedToShopping: 0 };
+  return recipeUsage[id];
+}
+
+function incrementRecipeView(id) {
+  if (!id) return;
+  const e = ensureRecipeUsageEntry(id);
+  e.views++;
+  e.lastUsed = Date.now();
+  saveRecipeUsage();
+}
+
+function incrementRecipeAddedToShopping(id, count) {
+  if (!id || !count) return;
+  const e = ensureRecipeUsageEntry(id);
+  e.addedToShopping += count;
+  e.lastUsed = Date.now();
+  saveRecipeUsage();
+}
+
+function resetRecipeUsage() {
+  recipeUsage = {};
+  try { localStorage.removeItem('eatmefirst_recipe_usage'); } catch (e) {}
+  if (typeof renderCookMe === 'function') renderCookMe();
+}
+
+// Demana confirmació abans d'esborrar l'historial d'ús de receptes.
+function confirmResetRecipeUsage() {
+  const onYes = () => {
+    resetRecipeUsage();
+    showToast(t('doneReset'));
+  };
+  if (typeof showConfirmDangerModal === 'function') {
+    showConfirmDangerModal('🍳', t('resetRecipeUsageTitle'), t('resetRecipeUsageConfirm'), onYes);
+  } else if (window.confirm(t('resetRecipeUsageConfirm'))) {
+    onYes();
+  }
+}
 // Cerca lliure dins la pestanya activa
 let cookmeSearch = '';
 // Mode d'ordenació: 'percent' (per coincidència) | 'alpha' (A-Z)
@@ -166,6 +222,17 @@ function renderCookMe() {
     filtered = results.filter(r => r.canMake);
   } else if (cookmeTab === 'almost') {
     filtered = results.filter(r => !r.canMake && r.percent >= 70);
+  } else if (cookmeTab === 'used') {
+    // Només receptes amb tracking i ordenades per importància d'ús (top 10)
+    filtered = results
+      .filter(r => recipeUsage[r.recipe.id])
+      .map(r => Object.assign({}, r, { _u: recipeUsage[r.recipe.id] }))
+      .sort((a, b) => {
+        if (b._u.addedToShopping !== a._u.addedToShopping) return b._u.addedToShopping - a._u.addedToShopping;
+        if (b._u.views !== a._u.views) return b._u.views - a._u.views;
+        return (b._u.lastUsed || 0) - (a._u.lastUsed || 0);
+      })
+      .slice(0, 10);
   } else {
     filtered = results.slice();
   }
@@ -183,10 +250,11 @@ function renderCookMe() {
     });
   }
 
-  // Ordena segons el mode triat
+  // Ordena segons el mode triat. La pestanya 'used' té el seu propi ordre
+  // (per popularitat d'ús), només la respectem si l'usuari no ha triat alfabètic.
   if (cookmeSort === 'alpha') {
     filtered.sort((a, b) => (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca'));
-  } else {
+  } else if (cookmeTab !== 'used') {
     filtered.sort((a, b) => {
       if (b.percent !== a.percent) return b.percent - a.percent;
       return (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca');
@@ -199,6 +267,8 @@ function renderCookMe() {
     // Cap recepta a la pestanya. Decideix el missatge:
     if (q) {
       empty.textContent = t('noResults');
+    } else if (cookmeTab === 'used') {
+      empty.textContent = t('noUsedRecipes');
     } else {
       const anyAlmost = results.some(r => r.canMake || r.percent >= 70);
       if (cookmeTab === 'ready' && anyAlmost) {
@@ -342,6 +412,7 @@ function openRecipeDetail(id) {
   if (!recipe) return;
   currentRecipeId = id;
   currentServings = recipe.servings || 1;
+  incrementRecipeView(id);
   renderRecipeDetail();
   showScreen('recipe-detail');
 }
@@ -575,6 +646,7 @@ function addItemsToShop(supermarketId, items) {
     const product = { name: cookmeCapitalize(ing.name || ''), emoji: ing.emoji || '🛒' };
     addToShoppingList(supermarketId, product, ing.qty || '');
   });
+  if (currentRecipeId) incrementRecipeAddedToShopping(currentRecipeId, items.length);
   const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(supermarketId) : null;
   const smName = sm ? sm.name : '';
   showToast('🛒 ' + items.length + ' ' + t('ingredientsAdded') + ' ' + smName);
