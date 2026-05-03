@@ -1009,12 +1009,14 @@ function saveNewProduct() {
     if (approxDays === Infinity) approxDays = null;
   }
 
-  recordProductInHistory(name, selectedEmoji, selectedLocation, approxDays, noExpiryChecked, price);
-
   // Pes (opcional). Guardem el text tal qual l'ha escrit l'usuari
   // ("500g", "1kg"...), parseQuantityToKg el sap interpretar.
   const weightInput = document.getElementById('input-weight');
   const weight = weightInput ? String(weightInput.value || '').trim() : '';
+
+  // Aprenentatge: registra historial i propaga al catàleg de populars
+  // (creant entrada nova o actualitzant la existent amb les dades fresques).
+  recordProductInHistory(name, selectedEmoji, selectedLocation, approxDays, noExpiryChecked, price, weight);
 
   // Mode edició: actualitzem el producte existent i tornem al detall
   if (editingProductId) {
@@ -1122,10 +1124,13 @@ function loadProductHistory() {
   } catch(e) { productHistory = []; }
 }
 
-// Endevina la zona d'emmagatzematge segons el nom del producte
-function recordProductInHistory(name, emoji, location, days, noExpiry, price) {
+// Historial de productes que ha escrit l'usuari. Ens serveix per:
+//   1) Suggerir noms a l'autocomplete del formulari.
+//   2) Propagar els valors al catàleg de populars (aprenentatge automàtic).
+function recordProductInHistory(name, emoji, location, days, noExpiry, price, weight) {
   const key = name.toLowerCase().trim();
   const hasPrice = typeof price === 'number' && price >= 0;
+  const hasWeight = typeof weight === 'string' && weight.trim() !== '';
   const existing = productHistory.find(p => p.name.toLowerCase() === key);
   if (existing) {
     existing.count++;
@@ -1135,9 +1140,11 @@ function recordProductInHistory(name, emoji, location, days, noExpiry, price) {
     if (days) existing.days = days;
     existing.noExpiry = !!noExpiry;
     if (hasPrice) existing.price = price;
+    if (hasWeight) existing.weight = weight;
   } else {
     const entry = { name, emoji: emoji || '🥛', location, days, noExpiry: !!noExpiry, count: 1, lastUsed: Date.now() };
     if (hasPrice) entry.price = price;
+    if (hasWeight) entry.weight = weight;
     productHistory.push(entry);
   }
   productHistory.sort((a, b) => b.count - a.count || b.lastUsed - a.lastUsed);
@@ -1145,17 +1152,18 @@ function recordProductInHistory(name, emoji, location, days, noExpiry, price) {
   localStorage.setItem('eatmefirst_product_history', JSON.stringify(productHistory));
 
   // APRENENTATGE: cada cop que es desa un producte, l'afegim als populars
-  // (o actualitzem l'entrada existent amb l'emoji, la zona, els dies, si caduca i el preu)
-  addToCustomPopular(name, emoji, days, location, noExpiry, price);
+  // (o actualitzem l'entrada existent amb tot el que sapiguem).
+  addToCustomPopular(name, emoji, days, location, noExpiry, price, weight);
 }
 
-function addToCustomPopular(name, emoji, days, location, noExpiry, price) {
+function addToCustomPopular(name, emoji, days, location, noExpiry, price, weight) {
   const list = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
   const safeEmoji = emoji || '🥛';
   const safeDays = (typeof days === 'number' && days > 0) ? days : 7;
   const safeLoc = location || (typeof guessLocationFromName === 'function' ? guessLocationFromName(name) : null) || 'pantry';
   const noExp = !!noExpiry;
   const hasPrice = typeof price === 'number' && price >= 0;
+  const hasWeight = typeof weight === 'string' && weight.trim() !== '';
 
   const existing = list.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (existing) {
@@ -1164,6 +1172,7 @@ function addToCustomPopular(name, emoji, days, location, noExpiry, price) {
     existing.location = safeLoc;
     existing.noExpiry = noExp;
     if (hasPrice) existing.price = price;
+    if (hasWeight) existing.weight = weight;
   } else {
     const entry = {
       id: 'pop-learned-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
@@ -1171,9 +1180,11 @@ function addToCustomPopular(name, emoji, days, location, noExpiry, price) {
       emoji: safeEmoji,
       days: safeDays,
       location: safeLoc,
-      noExpiry: noExp
+      noExpiry: noExp,
+      autoCreated: true
     };
     if (hasPrice) entry.price = price;
+    if (hasWeight) entry.weight = weight;
     list.push(entry);
   }
   if (typeof savePopularProducts === 'function') savePopularProducts(list);
