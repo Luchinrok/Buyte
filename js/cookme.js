@@ -7,7 +7,7 @@
    ============================================ */
 
 
-// Pestanya activa: 'ready' | 'almost' | 'used' | 'all'
+// Pestanya activa: 'ready' | 'used' | 'all'
 let cookmeTab = 'ready';
 // Receptes custom de l'usuari (es desen a localStorage). Conviuen amb el catàleg.
 let customRecipes = [];
@@ -248,8 +248,6 @@ function renderCookMe() {
   let filtered;
   if (cookmeTab === 'ready') {
     filtered = results.filter(r => r.canMake);
-  } else if (cookmeTab === 'almost') {
-    filtered = results.filter(r => !r.canMake && r.percent >= 70);
   } else if (cookmeTab === 'used') {
     // Només receptes amb tracking i ordenades per importància d'ús (top 10)
     filtered = results
@@ -297,13 +295,10 @@ function renderCookMe() {
       empty.textContent = t('noResults');
     } else if (cookmeTab === 'used') {
       empty.textContent = t('noUsedRecipes');
+    } else if (cookmeTab === 'ready') {
+      empty.textContent = t('noRecipesAvailable');
     } else {
-      const anyAlmost = results.some(r => r.canMake || r.percent >= 70);
-      if (cookmeTab === 'ready' && anyAlmost) {
-        empty.textContent = t('noRecipesReady');
-      } else {
-        empty.textContent = t('noRecipesAtAll');
-      }
+      empty.textContent = t('noRecipesAtAll');
     }
     empty.style.display = 'block';
     list.style.display = 'none';
