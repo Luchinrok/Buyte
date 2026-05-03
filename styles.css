@@ -5792,6 +5792,16 @@ h1 {
   padding-left: 50px;
 }
 
+/* Suggeriments d'autocomplete dins la fila d'ingredient: ocupa una línia
+   pròpia després dels controls i només té marge si conté suggeriments. */
+.ingredient-input-row .ingredient-suggestions {
+  flex: 1 1 100%;
+  margin-top: 0;
+}
+.ingredient-input-row .ingredient-suggestions:not(:empty) {
+  margin-top: 4px;
+}
+
 .ingredient-emoji-btn {
   width: 40px;
   height: 40px;

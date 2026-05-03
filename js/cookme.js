@@ -825,27 +825,36 @@ function renderRecipeEditIngredients() {
     row.dataset.idx = idx;
     row.innerHTML =
       '<button type="button" class="ingredient-emoji-btn" data-action="emoji">' + escapeHtml(ing.emoji || '🥕') + '</button>' +
-      '<input type="text" class="ingredient-input-name" placeholder="' + escapeHtml(t('itemName')) + '" value="' + escapeHtml(ing.name || '') + '">' +
-      '<input type="text" class="ingredient-input-qty" placeholder="qty" value="' + escapeHtml(ing.qty || '') + '">' +
+      '<input type="text" class="ingredient-input-name" placeholder="' + escapeHtml(t('itemName')) + '" value="' + escapeHtml(ing.name || '') + '" autocomplete="off">' +
+      '<input type="text" class="ingredient-input-qty" placeholder="qty" value="' + escapeHtml(ing.qty || '') + '" autocomplete="off">' +
       '<label class="ingredient-required-toggle" title="' + escapeHtml(t('requiredIngredient')) + '">' +
         '<input type="checkbox" class="ingredient-required-cb"' + (ing.required ? ' checked' : '') + '>' +
         '<span>' + escapeHtml(t('requiredIngredient')) + '</span>' +
       '</label>' +
-      '<button type="button" class="ingredient-remove-btn" data-action="remove" aria-label="Remove">✕</button>';
+      '<button type="button" class="ingredient-remove-btn" data-action="remove" aria-label="Remove">✕</button>' +
+      '<div class="ingredient-suggestions autocomplete-suggestions"></div>';
     container.appendChild(row);
   });
 
   // Bind events per cada fila
   container.querySelectorAll('.ingredient-input-row').forEach(row => {
     const idx = parseInt(row.dataset.idx, 10);
+    const nameInput = row.querySelector('.ingredient-input-name');
+    const suggBox = row.querySelector('.ingredient-suggestions');
 
     row.querySelector('[data-action="emoji"]').addEventListener('click', () => {
       editingRecipeIngredientIdx = idx;
       if (typeof openEmojiPicker === 'function') openEmojiPicker('recipe-ingredient', 'recipe-edit');
     });
 
-    row.querySelector('.ingredient-input-name').addEventListener('input', (e) => {
+    nameInput.addEventListener('input', (e) => {
       editingRecipeData.ingredients[idx].name = e.target.value;
+      refreshIngredientSuggestions(idx, e.target.value, suggBox, nameInput);
+    });
+
+    nameInput.addEventListener('blur', () => {
+      // Petit retard perquè el clic al suggeriment es processi abans
+      setTimeout(() => { if (suggBox) suggBox.innerHTML = ''; }, 180);
     });
 
     row.querySelector('.ingredient-input-qty').addEventListener('input', (e) => {
@@ -861,6 +870,42 @@ function renderRecipeEditIngredients() {
       editingRecipeData.ingredients.splice(idx, 1);
       renderRecipeEditIngredients();
     });
+  });
+}
+
+// Mostra fins a 5 suggeriments del catàleg de productes populars que coincideixen
+// amb el text que l'usuari està escrivint a la fila d'ingredient indicada.
+// En seleccionar-ne un, omple el nom i l'emoji de l'ingredient (no la qty).
+function refreshIngredientSuggestions(idx, query, suggBox, nameInput) {
+  if (!suggBox) return;
+  const q = cookmeNormalize(query);
+  if (!q) { suggBox.innerHTML = ''; return; }
+
+  const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
+  const matches = populars
+    .filter(p => p && p.name && cookmeNormalize(p.name).includes(q))
+    .slice(0, 5);
+
+  suggBox.innerHTML = '';
+  if (matches.length === 0) return;
+
+  matches.forEach(m => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'autocomplete-item';
+    item.innerHTML = '<span>' + (m.emoji || '🥕') + '</span> <span>' + escapeHtml(m.name || '') + '</span>';
+    // mousedown abans de blur per evitar la cursa que tanca el suggeriment
+    item.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      if (!editingRecipeData) return;
+      const ingr = editingRecipeData.ingredients[idx];
+      if (!ingr) return;
+      ingr.name = m.name || '';
+      if (m.emoji) ingr.emoji = m.emoji;
+      // Re-pintem només aquesta fila per actualitzar emoji + camp del nom
+      renderRecipeEditIngredients();
+    });
+    suggBox.appendChild(item);
   });
 }
 
