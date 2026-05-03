@@ -208,6 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnTogglePopular = document.getElementById('btn-toggle-edit-popular');
   if (btnTogglePopular) btnTogglePopular.addEventListener('click', togglePopularEditMode);
 
+  // Cercador de productes populars
+  const popularSearch = document.getElementById('popular-search');
+  if (popularSearch) popularSearch.addEventListener('input', () => {
+    popularSearchQuery = popularSearch.value;
+    renderPopularList();
+  });
+
   const btnSortAlpha = document.getElementById('popular-sort-alpha');
   if (btnSortAlpha) btnSortAlpha.addEventListener('click', () => {
     sortPopularAlpha();

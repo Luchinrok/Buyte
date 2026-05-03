@@ -708,9 +708,11 @@
     <header class="top-bar">
       <button class="back-btn" data-back="add" aria-label="Back">‹</button>
       <h1 data-i18n="popularProducts"></h1>
-      <div style="width:40px"></div>
+      <button class="header-icon-btn" id="btn-toggle-edit-popular" aria-label="Edit">✏️</button>
     </header>
     <p class="section-hint" data-i18n="popularHint"></p>
+
+    <input type="search" id="popular-search" class="popular-search" autocomplete="off">
 
     <div id="popular-list" class="popular-list"></div>
 
@@ -722,11 +724,6 @@
         ➕ <span data-i18n="addCustomPopular"></span>
       </button>
     </div>
-
-    <button class="add-supermarket-btn" id="btn-toggle-edit-popular">
-      <span style="font-size:20px;margin-right:8px">✏️</span>
-      <span data-i18n="editPopulars"></span>
-    </button>
 
     <button class="primary-btn" id="btn-save-popular-changes" style="display:none;margin-top:10px">
       <span data-i18n="saveChanges"></span>

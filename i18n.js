@@ -465,6 +465,8 @@ const TRANSLATIONS = {
     noExpiryShort: 'Sense data',
     shoppingPopularHint: 'Tria un producte popular per afegir-lo ràpidament a la llista',
     editProduct: 'Editar producte',
+    searchPlaceholder: 'Buscar producte...',
+    noResults: 'Cap resultat',
     editQty: 'Editar quantitat',
     editQtyTitle: 'Quanta quantitat queda?',
     editQtySub: 'Pots posar 1L, 500g, 50%, 3/4...',

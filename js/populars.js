@@ -201,6 +201,9 @@ let popularOrigin = 'home'; // d'on s'ha obert: 'home', 'shopping', 'settings'
 function openPopular(origin) {
   popularOrigin = origin || 'home';
   popularMode = 'view';
+  popularSearchQuery = '';
+  const searchInput = document.getElementById('popular-search');
+  if (searchInput) searchInput.value = '';
   // Reset back-button: per defecte 'add', des de configuració 'settings'
   const backBtn = document.querySelector('#screen-popular .back-btn');
   if (backBtn) {
@@ -210,6 +213,9 @@ function openPopular(origin) {
   renderPopularList();
   showScreen('popular');
 }
+
+// Filtre de cerca actual a la pantalla de productes populars.
+let popularSearchQuery = '';
 
 function renderPopularList() {
   // Defensiu: re-aplicar la zona de "tornar" segons popularOrigin per si
@@ -221,14 +227,23 @@ function renderPopularList() {
     else backBtn.dataset.back = 'add';
   }
 
+  // Placeholder del cercador (només es pot fer aquí perquè depèn de t())
+  const searchInput = document.getElementById('popular-search');
+  if (searchInput) {
+    searchInput.placeholder = t('searchPlaceholder');
+    if (searchInput.value !== popularSearchQuery) searchInput.value = popularSearchQuery;
+  }
+
   const container = document.getElementById('popular-list');
   container.innerHTML = '';
-  const items = getPopularProducts();
+  const allItems = getPopularProducts();
+  const q = popularSearchQuery.toLowerCase().trim();
+  const items = q ? allItems.filter(p => p.name.toLowerCase().includes(q)) : allItems;
 
   if (items.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'empty-state';
-    empty.textContent = t('noPopular');
+    empty.textContent = q ? t('noResults') : t('noPopular');
     container.appendChild(empty);
     updatePopularButtons();
     return;
@@ -243,9 +258,14 @@ function renderPopularList() {
     return `<span class="popular-loc">${loc.emoji} ${escapeHtml(name)}</span>`;
   };
 
-  items.forEach((p, idx) => {
-    const isFirst = idx === 0;
-    const isLast = idx === items.length - 1;
+  items.forEach((p) => {
+    // Quan hi ha cerca activa, items està filtrat: necessitem l'índex original
+    // dins de la llista completa per a editar/moure/esborrar.
+    const realIdx = allItems.indexOf(p);
+    const isFirst = realIdx === 0;
+    const isLast = realIdx === allItems.length - 1;
+    // En mode cerca filtrat, no permetem reordenar amb fletxes (no té sentit).
+    const showArrows = !q;
     const row = document.createElement('div');
     row.className = 'popular-row';
 
@@ -254,13 +274,19 @@ function renderPopularList() {
      // un producte al tracker amb les dades del popular.
      const onRowClick = () => {
        if (popularOrigin === 'settings') {
-         editPopularItem(idx);
+         editPopularItem(realIdx);
        } else {
-         openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, price: p.price });
+         openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, price: p.price, weight: p.weight });
        }
      };
 
      if (popularMode === 'edit') {
+      const arrowsHtml = showArrows ? `
+        <div class="popular-arrows">
+          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
+          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
+        </div>
+      ` : '';
       row.innerHTML = `
         <button class="popular-item-main">
           <span class="popular-emoji">${p.emoji}</span>
@@ -268,20 +294,17 @@ function renderPopularList() {
           ${locBadge(p.location)}
           <span class="popular-days">+${p.days}d</span>
         </button>
-        <div class="popular-arrows">
-          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
-          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
-        </div>
+        ${arrowsHtml}
         <button class="popular-edit-btn" aria-label="Edit">✏️</button>
         <button class="popular-delete-btn" aria-label="Delete">✕</button>
       `;
       row.querySelector('.popular-item-main').addEventListener('click', onRowClick);
-      row.querySelector('.popular-edit-btn').addEventListener('click', () => editPopularItem(idx));
-      row.querySelector('.popular-delete-btn').addEventListener('click', () => deletePopularItem(idx));
+      row.querySelector('.popular-edit-btn').addEventListener('click', () => editPopularItem(realIdx));
+      row.querySelector('.popular-delete-btn').addEventListener('click', () => deletePopularItem(realIdx));
       const upBtn = row.querySelector('[data-action="up"]');
       const downBtn = row.querySelector('[data-action="down"]');
-      if (upBtn && !isFirst) upBtn.addEventListener('click', () => movePopularItem(idx, -1));
-      if (downBtn && !isLast) downBtn.addEventListener('click', () => movePopularItem(idx, 1));
+      if (upBtn && !isFirst) upBtn.addEventListener('click', () => movePopularItem(realIdx, -1));
+      if (downBtn && !isLast) downBtn.addEventListener('click', () => movePopularItem(realIdx, 1));
     } else {
       row.innerHTML = `
         <button class="popular-item-main popular-item-full">
@@ -306,13 +329,18 @@ function updatePopularButtons() {
   const sortBtn = document.getElementById('popular-sort-alpha');
   const saveBtn = document.getElementById('btn-save-popular-changes');
 
+  // El botó del header sempre visible: actua com a toggle (edita/desa).
+  if (editBtn) {
+    editBtn.style.display = 'flex';
+    editBtn.classList.toggle('active', popularMode === 'edit');
+    editBtn.textContent = popularMode === 'edit' ? '✓' : '✏️';
+    editBtn.setAttribute('aria-label', popularMode === 'edit' ? 'Done' : 'Edit');
+  }
   if (popularMode === 'edit') {
-    if (editBtn) editBtn.style.display = 'none';
     if (addBtn) addBtn.style.display = 'flex';
     if (sortBtn) sortBtn.style.display = 'flex';
     if (saveBtn) saveBtn.style.display = 'block';
   } else {
-    if (editBtn) editBtn.style.display = 'flex';
     if (addBtn) addBtn.style.display = 'none';
     if (sortBtn) sortBtn.style.display = 'none';
     if (saveBtn) saveBtn.style.display = 'none';
