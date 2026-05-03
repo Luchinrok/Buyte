@@ -1335,6 +1335,16 @@ function _emojiPickerCurrentEmoji(target) {
   if (target === 'shopping') return selectedShoppingEmoji;
   if (target === 'popular') return selectedPopularEmoji;
   if (target === 'special-item') return selectedSpecialItemEmoji;
+  if (target === 'recipe') return (typeof selectedRecipeEmoji !== 'undefined') ? selectedRecipeEmoji : '🍳';
+  if (target === 'recipe-ingredient') {
+    if (typeof editingRecipeData !== 'undefined' && editingRecipeData
+        && Array.isArray(editingRecipeData.ingredients)
+        && typeof editingRecipeIngredientIdx === 'number'
+        && editingRecipeData.ingredients[editingRecipeIngredientIdx]) {
+      return editingRecipeData.ingredients[editingRecipeIngredientIdx].emoji || '🥕';
+    }
+    return '🥕';
+  }
   return selectedEmoji;
 }
 
@@ -1353,6 +1363,18 @@ function _emojiPickerApply(target, e) {
     selectedSpecialItemEmoji = e;
     const btn = document.getElementById('special-item-emoji-current');
     if (btn) btn.textContent = e;
+  } else if (target === 'recipe') {
+    selectedRecipeEmoji = e;
+    const btn = document.getElementById('recipe-emoji-current');
+    if (btn) btn.textContent = e;
+  } else if (target === 'recipe-ingredient') {
+    if (typeof editingRecipeData !== 'undefined' && editingRecipeData
+        && Array.isArray(editingRecipeData.ingredients)
+        && typeof editingRecipeIngredientIdx === 'number'
+        && editingRecipeData.ingredients[editingRecipeIngredientIdx]) {
+      editingRecipeData.ingredients[editingRecipeIngredientIdx].emoji = e;
+      if (typeof renderRecipeEditIngredients === 'function') renderRecipeEditIngredients();
+    }
   } else {
     selectedEmoji = e;
     renderEmojiPicker();

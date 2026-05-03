@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof loadSpecialLists === 'function') loadSpecialLists();
   loadProductHistory();
   if (typeof loadRecipeUsage === 'function') loadRecipeUsage();
+  if (typeof loadCustomRecipes === 'function') loadCustomRecipes();
 
   const savedTheme = localStorage.getItem('eatmefirst_theme') || 'light';
   applyTheme(savedTheme);
@@ -184,6 +185,49 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnResetRecipeUsage = document.getElementById('reset-recipe-usage');
   if (btnResetRecipeUsage) btnResetRecipeUsage.addEventListener('click', () => {
     if (typeof confirmResetRecipeUsage === 'function') confirmResetRecipeUsage();
+  });
+
+  // Custom recipes: botó nou + accions d'edició al detall
+  const btnAddRecipe = document.getElementById('btn-add-recipe');
+  if (btnAddRecipe) btnAddRecipe.addEventListener('click', () => {
+    if (typeof openNewRecipeForm === 'function') openNewRecipeForm();
+  });
+
+  const btnRecipeDetailEdit = document.getElementById('recipe-detail-edit');
+  if (btnRecipeDetailEdit) btnRecipeDetailEdit.addEventListener('click', () => {
+    if (typeof openEditRecipeForm === 'function' && currentRecipeId) openEditRecipeForm(currentRecipeId);
+  });
+
+  const btnRecipeDetailDelete = document.getElementById('recipe-detail-delete');
+  if (btnRecipeDetailDelete) btnRecipeDetailDelete.addEventListener('click', () => {
+    if (typeof deleteCustomRecipe === 'function' && currentRecipeId) deleteCustomRecipe(currentRecipeId);
+  });
+
+  // Formulari de recepta custom
+  const btnPickRecipeEmoji = document.getElementById('btn-pick-recipe-emoji');
+  if (btnPickRecipeEmoji) btnPickRecipeEmoji.addEventListener('click', () => {
+    if (typeof openEmojiPicker === 'function') openEmojiPicker('recipe', 'recipe-edit');
+  });
+
+  document.querySelectorAll('#recipe-edit-difficulty button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (typeof setRecipeEditDifficulty === 'function') setRecipeEditDifficulty(btn.dataset.value);
+    });
+  });
+
+  const btnAddIngredient = document.getElementById('btn-add-ingredient');
+  if (btnAddIngredient) btnAddIngredient.addEventListener('click', () => {
+    if (typeof addEmptyIngredient === 'function') addEmptyIngredient();
+  });
+
+  const btnAddStep = document.getElementById('btn-add-step');
+  if (btnAddStep) btnAddStep.addEventListener('click', () => {
+    if (typeof addEmptyStep === 'function') addEmptyStep();
+  });
+
+  const btnSaveRecipe = document.getElementById('btn-save-recipe');
+  if (btnSaveRecipe) btnSaveRecipe.addEventListener('click', () => {
+    if (typeof saveRecipeFromForm === 'function') saveRecipeFromForm();
   });
 
   const btnResetAll = document.getElementById('reset-all');

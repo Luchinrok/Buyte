@@ -530,6 +530,20 @@ const TRANSLATIONS = {
     resetRecipeUsageTitle: 'Esborrar ús de receptes',
     resetRecipeUsageSub: 'Esborra el rànquing de receptes més usades',
     resetRecipeUsageConfirm: "Vols esborrar l'historial d'ús de receptes? Les receptes en si es mantenen.",
+    addNewRecipe: 'Afegir recepta',
+    editRecipe: 'Editar recepta',
+    newRecipe: 'Nova recepta',
+    recipeName: 'Nom de la recepta',
+    recipeEmoji: 'Emoji',
+    recipeTime: 'Temps (minuts)',
+    recipeServings: 'Persones',
+    recipeDifficulty: 'Dificultat',
+    recipeCategory: 'Categoria',
+    addIngredient: 'Afegir ingredient',
+    addStep: 'Afegir pas',
+    requiredIngredient: 'Imprescindible',
+    myRecipe: 'La meva',
+    deleteRecipeConfirm: "Vols esborrar aquesta recepta? Aquesta acció no es pot desfer.",
   }
 
 };
