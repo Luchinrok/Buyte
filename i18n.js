@@ -484,6 +484,7 @@ const TRANSLATIONS = {
     shoppingPopularHint: 'Tria un producte popular per afegir-lo ràpidament a la llista',
     editProduct: 'Editar producte',
     searchPlaceholder: 'Buscar producte...',
+    searchEmojiPlaceholder: 'Buscar emoji...',
     noResults: 'Cap resultat',
     editQty: 'Editar quantitat',
     editQtyTitle: 'Quanta quantitat queda?',

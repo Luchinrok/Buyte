@@ -62,6 +62,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnDeletePopular = document.getElementById('btn-delete-popular');
   if (btnDeletePopular) btnDeletePopular.addEventListener('click', deletePopularEdit);
 
+  // Cercador del picker d'emojis (per nom en català)
+  const emojiSearch = document.getElementById('emoji-search');
+  if (emojiSearch) emojiSearch.addEventListener('input', () => {
+    if (typeof emojiPickerQuery !== 'undefined') {
+      emojiPickerQuery = emojiSearch.value;
+      if (emojiPickerQuery) emojiPickerCategory = 'all';
+      if (typeof renderEmojiCategoriesTabs === 'function') renderEmojiCategoriesTabs();
+      if (typeof renderEmojiPickerGrid === 'function') renderEmojiPickerGrid();
+    }
+  });
+
   // Botons de seccions a la pantalla principal
   document.querySelectorAll('.section-btn').forEach(b => {
     b.addEventListener('click', () => openSection(b.dataset.cat));

@@ -1304,60 +1304,139 @@ function renderEmojiPicker() {
 
 let emojiPickerTarget = null; // 'product', 'supermarket', 'shopping'
 let emojiPickerOrigin = null; // pantalla a la qual tornar
+let emojiPickerCategory = 'all';
+let emojiPickerQuery = '';
 
-function openEmojiPicker(target, origin) {
-  emojiPickerTarget = target;
-  emojiPickerOrigin = origin;
-  const backBtn = document.getElementById('emoji-picker-back-btn');
-  if (backBtn) backBtn.dataset.back = origin;
+function _emojiPickerCurrentEmoji(target) {
+  if (target === 'supermarket') return selectedSupermarketEmoji;
+  if (target === 'shopping') return selectedShoppingEmoji;
+  if (target === 'popular') return selectedPopularEmoji;
+  if (target === 'special-item') return selectedSpecialItemEmoji;
+  return selectedEmoji;
+}
 
-  // Tria quina llista d'emojis mostrar
-  let emojisToShow = EMOJIS;
-  let currentEmoji = selectedEmoji;
+function _emojiPickerApply(target, e) {
   if (target === 'supermarket') {
-    emojisToShow = SUPERMARKET_EMOJIS;
-    currentEmoji = selectedSupermarketEmoji;
+    selectedSupermarketEmoji = e;
+    renderSupermarketEmojiPickerBtn();
   } else if (target === 'shopping') {
-    currentEmoji = selectedShoppingEmoji;
+    selectedShoppingEmoji = e;
+    renderShoppingEmojiPickerBtn();
   } else if (target === 'popular') {
-    currentEmoji = selectedPopularEmoji;
+    selectedPopularEmoji = e;
+    const btn = document.getElementById('popular-emoji-current');
+    if (btn) btn.textContent = e;
   } else if (target === 'special-item') {
-    currentEmoji = selectedSpecialItemEmoji;
+    selectedSpecialItemEmoji = e;
+    const btn = document.getElementById('special-item-emoji-current');
+    if (btn) btn.textContent = e;
+  } else {
+    selectedEmoji = e;
+    renderEmojiPicker();
+  }
+}
+
+function renderEmojiPickerGrid() {
+  const target = emojiPickerTarget;
+  const currentEmoji = _emojiPickerCurrentEmoji(target);
+
+  // Per a supermercats fem servir un set propi (no menjar) i no oferim
+  // categories ni cerca: la llista és curta i temàtica.
+  if (target === 'supermarket') {
+    const cats = document.getElementById('emoji-categories');
+    const search = document.getElementById('emoji-search');
+    if (cats) cats.style.display = 'none';
+    if (search) search.style.display = 'none';
+    const container = document.getElementById('emoji-picker-full');
+    if (!container) return;
+    container.innerHTML = '';
+    SUPERMARKET_EMOJIS.forEach(e => container.appendChild(_makeEmojiBtn(e, currentEmoji, target)));
+    return;
+  }
+
+  const cats = document.getElementById('emoji-categories');
+  const search = document.getElementById('emoji-search');
+  if (cats) cats.style.display = '';
+  if (search) search.style.display = '';
+
+  let emojisToShow;
+  if (emojiPickerQuery) {
+    emojisToShow = searchEmojiByName(emojiPickerQuery);
+  } else if (emojiPickerCategory && emojiPickerCategory !== 'all') {
+    const cat = EMOJI_CATEGORIES.find(c => c.id === emojiPickerCategory);
+    emojisToShow = cat ? cat.emojis.slice() : EMOJIS;
+  } else {
+    emojisToShow = EMOJIS;
   }
 
   const container = document.getElementById('emoji-picker-full');
   if (!container) return;
   container.innerHTML = '';
-  emojisToShow.forEach(e => {
+  if (emojisToShow.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-state';
+    empty.textContent = t('noResults');
+    container.appendChild(empty);
+    return;
+  }
+  emojisToShow.forEach(e => container.appendChild(_makeEmojiBtn(e, currentEmoji, target)));
+}
+
+function _makeEmojiBtn(e, currentEmoji, target) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'emoji-option-big' + (e === currentEmoji ? ' selected' : '');
+  btn.textContent = e;
+  btn.addEventListener('click', () => {
+    _emojiPickerApply(target, e);
+    showScreen(emojiPickerOrigin);
+  });
+  return btn;
+}
+
+function renderEmojiCategoriesTabs() {
+  const wrap = document.getElementById('emoji-categories');
+  if (!wrap) return;
+  const target = emojiPickerTarget;
+  if (target === 'supermarket') { wrap.innerHTML = ''; return; }
+
+  wrap.innerHTML = '';
+  const tabs = [{ id: 'all', label: t('filterAll') || 'Tots' }].concat(
+    EMOJI_CATEGORIES.map(c => ({ id: c.id, label: c.label }))
+  );
+  tabs.forEach(t2 => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'emoji-option-big' + (e === currentEmoji ? ' selected' : '');
-    btn.textContent = e;
+    btn.className = 'emoji-category-tab' + ((emojiPickerCategory === t2.id) ? ' active' : '');
+    btn.textContent = t2.label;
     btn.addEventListener('click', () => {
-      // Aplica la selecció segons el target
-      if (target === 'supermarket') {
-        selectedSupermarketEmoji = e;
-        renderSupermarketEmojiPickerBtn();
-      } else if (target === 'shopping') {
-        selectedShoppingEmoji = e;
-        renderShoppingEmojiPickerBtn();
-      } else if (target === 'popular') {
-        selectedPopularEmoji = e;
-        const btn = document.getElementById('popular-emoji-current');
-        if (btn) btn.textContent = e;
-      } else if (target === 'special-item') {
-        selectedSpecialItemEmoji = e;
-        const btn = document.getElementById('special-item-emoji-current');
-        if (btn) btn.textContent = e;
-      } else {
-        selectedEmoji = e;
-        renderEmojiPicker();
-      }
-      // Torna a la pantalla anterior
-      showScreen(origin);
+      emojiPickerCategory = t2.id;
+      emojiPickerQuery = '';
+      const search = document.getElementById('emoji-search');
+      if (search) search.value = '';
+      renderEmojiCategoriesTabs();
+      renderEmojiPickerGrid();
     });
-    container.appendChild(btn);
+    wrap.appendChild(btn);
   });
+}
+
+function openEmojiPicker(target, origin) {
+  emojiPickerTarget = target;
+  emojiPickerOrigin = origin;
+  emojiPickerCategory = 'all';
+  emojiPickerQuery = '';
+  const backBtn = document.getElementById('emoji-picker-back-btn');
+  if (backBtn) backBtn.dataset.back = origin;
+
+  const search = document.getElementById('emoji-search');
+  if (search) {
+    search.value = '';
+    search.placeholder = t('searchEmojiPlaceholder');
+  }
+
+  renderEmojiCategoriesTabs();
+  renderEmojiPickerGrid();
   showScreen('emoji-picker');
 }
 

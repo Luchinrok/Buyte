@@ -45,14 +45,138 @@ const POPULAR_PRODUCTS = [
   { ca: 'Suc de taronja', es: 'Zumo de naranja', en: 'Orange juice', fr: 'Jus d\'orange', it: 'Succo d\'arancia', de: 'Orangensaft', pt: 'Suco de laranja', nl: 'Sinaasappelsap', ja: 'オレンジジュース', zh: '橙汁', ko: '오렌지 주스', emoji: '🧃', days: 7, location: 'fridge', price: 2.00, weight: '1L' }
 ];
 
-const EMOJIS = [
-  '🥛','🧀','🥚','🍖','🥩','🍗','🥓','🐟',
-  '🦐','🥫','🍝','🍞','🥖','🥐','🥨','🧈',
-  '🥗','🥬','🥒','🍅','🥕','🌽','🥔','🧅',
-  '🍎','🍌','🍓','🫐','🍇','🍊','🍋','🍉',
-  '🍕','🍔','🌭','🌮','🥪','🍣','🍱','🍜',
-  '🍰','🧁','🍪','🍫','🍬','🍦','🍯','☕'
+// Catàleg d'emojis organitzat per categoria. Es fa servir tant per l'EMOJI
+// picker (tabs de categoria) com per al cercador.
+const EMOJI_CATEGORIES = [
+  { id: 'fruits', label: 'Fruita', emojis: [
+    '🍎','🍏','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑'
+  ]},
+  { id: 'veggies', label: 'Verdura', emojis: [
+    '🥬','🥦','🥒','🌽','🥕','🌶️','🫑','🍆','🧄','🧅','🥔','🍠','🥜','🌰','🫛','🫘'
+  ]},
+  { id: 'bread', label: 'Pa i cereals', emojis: [
+    '🍞','🥖','🥐','🫓','🥨','🥯','🧇','🥞','🍝','🍜','🍲','🍛','🍱','🥣','🥡','🍚'
+  ]},
+  { id: 'meat', label: 'Carn', emojis: [
+    '🥩','🍗','🍖','🌭','🥓','🍔','🌮','🌯','🥙','🧆'
+  ]},
+  { id: 'fish', label: 'Peix', emojis: [
+    '🐟','🐠','🍣','🍤','🦐','🦑','🦞','🦀','🥫'
+  ]},
+  { id: 'dairy', label: 'Lactis', emojis: [
+    '🥛','🧀','🥚','🧈','🍦'
+  ]},
+  { id: 'desserts', label: 'Dolços', emojis: [
+    '🧁','🍰','🎂','🍫','🍬','🍭','🍮','🍯','🍪','🥧','🍩','🍨','🍧','🍡'
+  ]},
+  { id: 'drinks', label: 'Begudes', emojis: [
+    '💧','🧃','🥤','🍵','☕','🍺','🍻','🥂','🍷','🍸','🍹','🍾','🧋'
+  ]},
+  { id: 'meals', label: 'Plats', emojis: [
+    '🍕','🥗','🥪','🌭','🍳','🥘','🍿','🧂'
+  ]},
+  { id: 'medicine', label: 'Farmàcia', emojis: [
+    '💊','💉','🩹','🩺','🧴','🧼','🧻','🪥'
+  ]},
+  { id: 'other', label: 'Altres', emojis: [
+    '🎂','🎈','🎁','🌱','🌿','🪴','🥢','🍴'
+  ]}
 ];
+
+// Llista plana usada per APIs antigues que esperaven una array d'emojis.
+// Deduplica preservant ordre per categoria.
+const EMOJIS = (() => {
+  const seen = new Set();
+  const out = [];
+  EMOJI_CATEGORIES.forEach(cat => cat.emojis.forEach(e => {
+    if (!seen.has(e)) { seen.add(e); out.push(e); }
+  }));
+  return out;
+})();
+
+// Noms en català per cercar emojis al picker. La cerca és case-insensitive
+// i match per substring, així "po" troba "poma" i "porc" alhora.
+const EMOJI_NAMES_CA = {
+  '🍎': ['poma', 'fruita'], '🍏': ['poma verda', 'fruita'],
+  '🍐': ['pera', 'fruita'], '🍊': ['taronja', 'mandarina', 'fruita'],
+  '🍋': ['llimona', 'fruita'], '🍌': ['plàtan', 'platano', 'banana', 'fruita'],
+  '🍉': ['síndria', 'sandia', 'fruita'], '🍇': ['raïm', 'uva', 'fruita'],
+  '🍓': ['maduixa', 'fresa', 'fruita'], '🫐': ['nabius', 'arandanos', 'fruita'],
+  '🍈': ['meló', 'melon', 'fruita'], '🍒': ['cirera', 'cereza', 'fruita'],
+  '🍑': ['préssec', 'melocoton', 'fruita'], '🥭': ['mango', 'fruita'],
+  '🍍': ['pinya', 'piña', 'fruita'], '🥥': ['coco', 'fruita'],
+  '🥝': ['kiwi', 'fruita'], '🍅': ['tomàquet', 'tomate', 'verdura'],
+  '🥑': ['alvocat', 'aguacate', 'verdura'],
+  '🥬': ['enciam', 'lechuga', 'col', 'verdura'], '🥦': ['bròquil', 'brocoli', 'verdura'],
+  '🥒': ['cogombre', 'pepino', 'verdura'], '🌽': ['blat de moro', 'maíz', 'panotxa', 'verdura'],
+  '🥕': ['pastanaga', 'zanahoria', 'verdura'], '🌶️': ['bitxo', 'pebrot picant', 'chile'],
+  '🫑': ['pebrot', 'pimiento', 'verdura'], '🍆': ['albergínia', 'berenjena', 'verdura'],
+  '🧄': ['all', 'ajo'], '🧅': ['ceba', 'cebolla', 'verdura'],
+  '🥔': ['patata', 'verdura'], '🍠': ['moniato', 'boniato', 'batata'],
+  '🥜': ['cacauet', 'cacahuete', 'fruita seca'], '🌰': ['castanya', 'castaña', 'fruita seca'],
+  '🫛': ['pèsols', 'guisantes', 'verdura'], '🫘': ['mongetes', 'judías', 'llegum'],
+  '🍞': ['pa de motlle', 'pa', 'bread'], '🥖': ['pa', 'barra', 'bread', 'baguette'],
+  '🥐': ['croissant', 'pa'], '🫓': ['pa pla', 'pita'],
+  '🥨': ['pretzel', 'pa'], '🥯': ['bagel', 'pa'],
+  '🧇': ['gofre', 'waffle'], '🥞': ['crepe', 'pancake'],
+  '🍝': ['pasta', 'espagueti'], '🍜': ['fideus', 'noodles', 'sopa'],
+  '🍲': ['estofat', 'guisat', 'sopa'], '🍛': ['curry', 'arròs amb'],
+  '🍱': ['bento', 'menú'], '🥣': ['cereal', 'bol'],
+  '🥡': ['take away', 'menjar per emportar'], '🍚': ['arròs', 'arroz'],
+  '🥩': ['carn', 'filet', 'bistec'], '🍗': ['pollastre', 'pollo', 'cuixa'],
+  '🍖': ['carn', 'os', 'costella'], '🌭': ['salsitxa', 'frankfurt'],
+  '🥓': ['bacó', 'bacon', 'cansalada'], '🍔': ['hamburguesa'],
+  '🌮': ['taco'], '🌯': ['burrito'],
+  '🥙': ['kebab', 'pita'], '🧆': ['mandonguilla', 'falafel'],
+  '🐟': ['peix', 'pescado'], '🐠': ['peix tropical'],
+  '🍣': ['sushi'], '🍤': ['gamba', 'tempura'],
+  '🦐': ['gamba', 'llagostí', 'shrimp'], '🦑': ['calamar'],
+  '🦞': ['llagosta'], '🦀': ['cranc'],
+  '🥫': ['conserva', 'lata', 'tonyina', 'sardina'],
+  '🥛': ['llet', 'leche', 'lacti'], '🧀': ['formatge', 'queso'],
+  '🥚': ['ou', 'huevo'], '🧈': ['mantega', 'mantequilla'],
+  '🍦': ['gelat', 'helado', 'postres'],
+  '🧁': ['magdalena', 'cupcake'], '🍰': ['pastís', 'tarta'],
+  '🎂': ['pastís aniversari', 'tarta'], '🍫': ['xocolata', 'chocolate'],
+  '🍬': ['caramel', 'caramelo'], '🍭': ['piruleta'],
+  '🍮': ['flam', 'flan'], '🍯': ['mel', 'miel'],
+  '🍪': ['galeta', 'galleta', 'cookie'], '🥧': ['pastís', 'pie'],
+  '🍩': ['donut'], '🍨': ['gelat', 'banana split'],
+  '🍧': ['granissat'], '🍡': ['dango', 'dolç japonès'],
+  '💧': ['aigua', 'agua', 'water'], '🧃': ['suc', 'zumo', 'juice'],
+  '🥤': ['refresc', 'beguda'], '🍵': ['te', 'té', 'tea'],
+  '☕': ['cafè', 'café', 'coffee'], '🍺': ['cervesa', 'cerveza'],
+  '🍻': ['cerveses', 'brindis'], '🥂': ['cava', 'champagne', 'brindis'],
+  '🍷': ['vi', 'vino', 'wine'], '🍸': ['còctel'],
+  '🍹': ['còctel tropical'], '🍾': ['cava', 'champagne'],
+  '🧋': ['bubble tea'],
+  '🍕': ['pizza'], '🥗': ['amanida', 'ensalada', 'salad'],
+  '🥪': ['entrepà', 'sandwich', 'bocadillo'],
+  '🍳': ['ous', 'fregit'], '🥘': ['paella'],
+  '🍿': ['crispetes', 'palomitas'], '🧂': ['sal', 'salt'],
+  '💊': ['pastilla', 'medicina', 'medicament'],
+  '💉': ['injecció', 'vacuna'], '🩹': ['tirita', 'apósit'],
+  '🩺': ['estetoscopi', 'salut'], '🧴': ['xampú', 'crema'],
+  '🧼': ['sabó', 'jabón'], '🧻': ['paper higiènic'],
+  '🪥': ['raspall dents', 'cepillo'],
+  '🎈': ['globus'], '🎁': ['regal', 'paquet'],
+  '🌱': ['planta', 'brot'], '🌿': ['herba', 'planta'],
+  '🪴': ['planta'], '🥢': ['palets', 'palillos'],
+  '🍴': ['coberts', 'cubiertos', 'forquilla']
+};
+
+// Cerca emojis pel nom (substring case-insensitive). Retorna array d'emojis.
+function searchEmojiByName(query) {
+  const q = (query || '').toLowerCase().trim();
+  if (!q) return EMOJIS.slice();
+  const out = [];
+  EMOJIS.forEach(e => {
+    const names = EMOJI_NAMES_CA[e];
+    if (!names) return;
+    if (names.some(n => n.toLowerCase().includes(q))) out.push(e);
+  });
+  return out;
+}
 
 // Suggereix emoji segons categoria del producte
 // Buscar primer les paraules més específiques (chocolate-spread abans que spread)
