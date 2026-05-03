@@ -44,8 +44,14 @@ const TRANSLATIONS = {
     themeLight: 'Mode clar',
     themeDark: 'Mode fosc',
     language: 'Idioma',
-    statsEmpty: 'Mira quant menjar has salvat',
-    statsText: (s, t) => s + ' salvats · ' + t + ' llençats',
+    statsEmpty: 'Resum de l\'activitat',
+    statsText: (s, t) => {
+      const total = s + t;
+      if (total === 0) return 'Resum de l\'activitat';
+      const pct = Math.round((s / total) * 100);
+      return total + ' productes · ' + pct + '% aprofitament';
+    },
+    impactEmpty: "Veu l'estalvi i l'impacte",
     resetAll: 'Esborrar totes les dades',
     resetSub: 'No es pot desfer',
     resetConfirm: 'Segur? S\'esborraran tots els productes i estadístiques.',

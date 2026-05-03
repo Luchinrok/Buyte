@@ -395,7 +395,7 @@ function updateImpactSub() {
   if (!el) return;
   const history = loadConsumptionHistory();
   if (history.length === 0) {
-    el.textContent = '-';
+    el.textContent = t('impactEmpty');
     return;
   }
   const m = computeMetrics(history);
