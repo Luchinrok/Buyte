@@ -1199,13 +1199,22 @@ function resetShoppingList() {
   });
 }
 
-// Esborra només l'historial de consum + el rècord de ratxa.
+// Esborra TOT l'historial: el que alimenta "El meu impacte" (consumption_history,
+// streak_record) i també els comptadors legacy de la pantalla "Estadístiques"
+// (eatmefirst_stats), perquè els dos quedin a zero alhora.
 function resetImpactHistory() {
   showConfirmDangerModal('📊', t('resetImpactTitle'), t('resetImpactConfirm'), () => {
     localStorage.removeItem('eatmefirst_consumption_history');
     localStorage.removeItem('eatmefirst_streak_record');
+    localStorage.removeItem('eatmefirst_stats');
+    if (typeof stats !== 'undefined') {
+      stats.consumed = 0;
+      stats.trashed = 0;
+    }
     if (typeof updateImpactSub === 'function') updateImpactSub();
+    if (typeof updateStatsSub === 'function') updateStatsSub();
     updateResetDataSubs();
+    if (typeof pushToServer === 'function') pushToServer();
     showToast(t('doneReset'));
   });
 }
