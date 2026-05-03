@@ -555,6 +555,10 @@ const TRANSLATIONS = {
     recipeTipOptional: 'Consell (opcional)',
     recipeTipPlaceholder: 'Algun truc per fer-la millor...',
     editedTag: 'Editada',
+    recipeMine: 'Les meves',
+    recipeEdited: 'Editades',
+    noMineRecipes: "Encara no has creat cap recepta. Clica '+ Afegir recepta' per començar!",
+    noEditedRecipes: "Encara no has editat cap recepta del catàleg. Pots personalitzar qualsevol recepta amb el botó ✏️.",
   }
 
 };

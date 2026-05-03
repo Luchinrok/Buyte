@@ -5068,36 +5068,36 @@ h1 {
   box-shadow: 0 6px 24px rgba(255, 152, 0, 0.55);
 }
 
-.cookme-tabs {
+/* Filtres horitzontals (chips) sota la capçalera de CookMe */
+.cookme-filters {
   display: flex;
-  gap: 4px;
-  margin: 8px 0 16px;
-  background: var(--bg-secondary);
-  padding: 4px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
+  gap: 8px;
+  margin: 8px 0 14px;
+  padding: 2px 2px 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.cookme-tab {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 6px;
-  background: transparent;
-  border: none;
-  border-radius: 9px;
+.cookme-filter {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-soft);
   cursor: pointer;
-  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s, border-color 0.18s;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.cookme-tab.active {
+.cookme-filter:active { transform: scale(0.97); }
+
+.cookme-filter.active {
   background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
+  border-color: #E65100;
   color: #FFFFFF;
   box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
 }

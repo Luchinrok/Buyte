@@ -471,9 +471,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof openCookMe === 'function') openCookMe();
   });
 
-  document.querySelectorAll('#cookme-tabs .cookme-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      if (typeof setCookMeTab === 'function') setCookMeTab(tab.dataset.tab);
+  document.querySelectorAll('#cookme-filters .cookme-filter').forEach(chip => {
+    chip.addEventListener('click', () => {
+      if (typeof setRecipeFilter === 'function') setRecipeFilter(chip.dataset.filter);
     });
   });
 

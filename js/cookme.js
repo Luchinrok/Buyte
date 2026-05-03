@@ -7,8 +7,8 @@
    ============================================ */
 
 
-// Pestanya activa: 'ready' | 'used' | 'all'
-let cookmeTab = 'ready';
+// Filtre actiu: 'all' (per defecte) | 'available' | 'used' | 'mine' | 'edited'
+let currentRecipeFilter = 'all';
 // D'on s'ha obert CookMe: 'home' (per defecte) o 'settings'. Determina la
 // pantalla a la qual torna el botó back.
 let cookmeOrigin = 'home';
@@ -241,15 +241,15 @@ function calculateRecipeMatch(recipe, userProducts) {
 // botó "back" — així es pot reutilitzar la mateixa pantalla des de Configuració.
 function openCookMe(origin) {
   cookmeOrigin = origin || 'home';
-  cookmeTab = 'ready';
+  currentRecipeFilter = 'all';
   cookmeSearch = '';
   cookmeSort = 'percent';
   recipeEditMode = false;
   updateRecipeEditModeBtn();
   applyCookMeBackTarget();
-  // Sincronitza estat visual de les pestanyes
-  document.querySelectorAll('#cookme-tabs .cookme-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === cookmeTab);
+  // Sincronitza estat visual dels filtres
+  document.querySelectorAll('#cookme-filters .cookme-filter').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === currentRecipeFilter);
   });
   // Reseteja l'input de cerca i el placeholder en l'idioma actual
   const searchInput = document.getElementById('cookme-search');
@@ -285,11 +285,11 @@ function updateRecipeEditModeBtn() {
   btn.setAttribute('aria-label', recipeEditMode ? 'Done' : 'Edit');
 }
 
-// Canvia de pestanya (ready / almost / all).
-function setCookMeTab(tab) {
-  cookmeTab = tab;
-  document.querySelectorAll('#cookme-tabs .cookme-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === tab);
+// Canvia el filtre actiu (all / available / used / mine / edited).
+function setRecipeFilter(filter) {
+  currentRecipeFilter = filter;
+  document.querySelectorAll('#cookme-filters .cookme-filter').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
   });
   renderCookMe();
 }
@@ -339,11 +339,11 @@ function renderCookMe() {
     return { recipe: r, matched: m.matched, missing: m.missing, percent: m.percent, canMake: m.canMake };
   });
 
-  // Filtra segons la pestanya
+  // Filtra segons el filtre actiu
   let filtered;
-  if (cookmeTab === 'ready') {
+  if (currentRecipeFilter === 'available') {
     filtered = results.filter(r => r.canMake);
-  } else if (cookmeTab === 'used') {
+  } else if (currentRecipeFilter === 'used') {
     // Només receptes amb tracking i ordenades per importància d'ús (top 10)
     filtered = results
       .filter(r => recipeUsage[r.recipe.id])
@@ -354,7 +354,12 @@ function renderCookMe() {
         return (b._u.lastUsed || 0) - (a._u.lastUsed || 0);
       })
       .slice(0, 10);
+  } else if (currentRecipeFilter === 'mine') {
+    filtered = results.filter(r => r.recipe.isCustom);
+  } else if (currentRecipeFilter === 'edited') {
+    filtered = results.filter(r => !r.recipe.isCustom && hasRecipeOverride(r.recipe.id));
   } else {
+    // 'all'
     filtered = results.slice();
   }
 
@@ -371,11 +376,11 @@ function renderCookMe() {
     });
   }
 
-  // Ordena segons el mode triat. La pestanya 'used' té el seu propi ordre
+  // Ordena segons el mode triat. El filtre 'used' té el seu propi ordre
   // (per popularitat d'ús), només la respectem si l'usuari no ha triat alfabètic.
   if (cookmeSort === 'alpha') {
     filtered.sort((a, b) => (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca'));
-  } else if (cookmeTab !== 'used') {
+  } else if (currentRecipeFilter !== 'used') {
     filtered.sort((a, b) => {
       if (b.percent !== a.percent) return b.percent - a.percent;
       return (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca');
@@ -385,13 +390,17 @@ function renderCookMe() {
   list.innerHTML = '';
 
   if (filtered.length === 0) {
-    // Cap recepta a la pestanya. Decideix el missatge:
+    // Cap recepta dins el filtre. Decideix el missatge:
     if (q) {
       empty.textContent = t('noResults');
-    } else if (cookmeTab === 'used') {
+    } else if (currentRecipeFilter === 'used') {
       empty.textContent = t('noUsedRecipes');
-    } else if (cookmeTab === 'ready') {
+    } else if (currentRecipeFilter === 'available') {
       empty.textContent = t('noRecipesAvailable');
+    } else if (currentRecipeFilter === 'mine') {
+      empty.textContent = t('noMineRecipes');
+    } else if (currentRecipeFilter === 'edited') {
+      empty.textContent = t('noEditedRecipes');
     } else {
       empty.textContent = t('noRecipesAtAll');
     }
