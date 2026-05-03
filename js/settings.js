@@ -659,6 +659,35 @@ function showStats() {
   showScreen('stats');
 }
 
+// Modal de confirmació primary (no destructiva). El botó de confirmar usa
+// l'estil per defecte; opts.confirmLabel permet personalitzar el text.
+function showConfirmModal(emoji, title, message, opts, onConfirm) {
+  const cfg = opts || {};
+  const confirmLabel = cfg.confirmLabel || t('save');
+  const cancelLabel = cfg.cancelLabel || t('cancel');
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">${emoji}</div>
+      <p class="modal-title">${escapeHtml(title)}</p>
+      <p class="modal-sub">${escapeHtml(message)}</p>
+      <div class="modal-buttons">
+        <button class="modal-cancel" id="modal-no-btn">${escapeHtml(cancelLabel)}</button>
+        <button class="modal-confirm" id="modal-yes-btn">${escapeHtml(confirmLabel)}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#modal-no-btn').addEventListener('click', close);
+  overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
+    close();
+    try { onConfirm(); } catch (e) { console.error(e); }
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
 // Modal de confirmació reusable per a accions destructives.
 // title: text del títol; message: text d'avís; onConfirm: callback si l'usuari confirma.
 function showConfirmDangerModal(emoji, title, message, onConfirm) {
@@ -767,27 +796,31 @@ function importData() {
       try {
         json = JSON.parse(ev.target.result);
       } catch (err) {
-        alert(t('importInvalid'));
+        showToast('⚠️ ' + t('importInvalid'));
         return;
       }
       if (!json || !json.data || typeof json.data !== 'object') {
-        alert(t('importInvalid'));
+        showToast('⚠️ ' + t('importInvalid'));
         return;
       }
       const keys = Object.keys(json.data).filter(k => k.startsWith('eatmefirst_'));
       if (keys.length === 0) {
-        alert(t('importInvalid'));
+        showToast('⚠️ ' + t('importInvalid'));
         return;
       }
-      if (!confirm(t('importConfirm'))) return;
-      keys.forEach(k => {
-        const val = json.data[k];
-        localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
-      });
-      showToast(t('importDone'));
-      setTimeout(() => location.reload(), 800);
+      showConfirmModal('📤', t('importTitle'), t('importConfirm'),
+        { confirmLabel: t('importTitle') },
+        () => {
+          keys.forEach(k => {
+            const val = json.data[k];
+            localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
+          });
+          showToast(t('importDone'));
+          setTimeout(() => location.reload(), 800);
+        }
+      );
     };
-    reader.onerror = () => alert(t('importInvalid'));
+    reader.onerror = () => showToast('⚠️ ' + t('importInvalid'));
     reader.readAsText(file);
   };
   input.click();
