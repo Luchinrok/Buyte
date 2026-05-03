@@ -55,6 +55,20 @@ document.addEventListener('DOMContentLoaded', () => {
     showChangeDateModal(currentProduct);
   });
 
+  // Botó "Editar preu"
+  const btnEditPrice = document.getElementById('btn-edit-price');
+  if (btnEditPrice) btnEditPrice.addEventListener('click', () => {
+    if (!currentProduct) return;
+    showEditPriceModal(currentProduct);
+  });
+
+  // Botó "Editar pes"
+  const btnEditWeight = document.getElementById('btn-edit-weight');
+  if (btnEditWeight) btnEditWeight.addEventListener('click', () => {
+    if (!currentProduct) return;
+    showEditWeightModal(currentProduct);
+  });
+
   // Botons de selector d'emoji
   const btnPickEmoji = document.getElementById('btn-pick-emoji');
   if (btnPickEmoji) btnPickEmoji.addEventListener('click', () => openEmojiPicker('product', 'add'));

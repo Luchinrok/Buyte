@@ -423,3 +423,94 @@ function showEditQtyModal(product) {
     if (e.target === overlay) document.body.removeChild(overlay);
   });
 }
+
+function showEditPriceModal(product) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const currentPrice = (typeof product.price === 'number') ? product.price : '';
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">${product.emoji}</div>
+      <p class="modal-title">${t('editPriceTitle')}</p>
+      <p class="modal-product-name">${escapeHtml(product.name)}</p>
+      <p class="modal-sub">${t('editPriceSub')}</p>
+      <input type="number" id="modal-price-input" class="modal-qty-input" step="0.01" min="0" inputmode="decimal" placeholder="2.50" value="${currentPrice}">
+      <div class="modal-buttons">
+        <button class="modal-cancel" id="modal-no-btn">${t('cancel')}</button>
+        <button class="modal-confirm" id="modal-yes-btn">${t('save')}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const input = overlay.querySelector('#modal-price-input');
+  setTimeout(() => input.focus(), 100);
+
+  overlay.querySelector('#modal-no-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
+    const raw = input.value.trim();
+    const p = products.find(x => x.id === product.id);
+    if (p) {
+      if (raw === '') {
+        delete p.price;
+      } else {
+        const parsed = parseFloat(raw);
+        if (!isNaN(parsed) && parsed >= 0) {
+          p.price = Math.round(parsed * 100) / 100;
+        }
+      }
+      saveData();
+    }
+    document.body.removeChild(overlay);
+    showToast('✓ ' + t('saved'));
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
+}
+
+function showEditWeightModal(product) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">${product.emoji}</div>
+      <p class="modal-title">${t('editWeightTitle')}</p>
+      <p class="modal-product-name">${escapeHtml(product.name)}</p>
+      <p class="modal-sub">${t('editWeightSub')}</p>
+      <input type="text" id="modal-weight-input" class="modal-qty-input" placeholder="500g, 1kg, 1L..." maxlength="15" value="${escapeHtml(product.weight || '')}">
+      <div class="modal-buttons">
+        <button class="modal-cancel" id="modal-no-btn">${t('cancel')}</button>
+        <button class="modal-confirm" id="modal-yes-btn">${t('save')}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const input = overlay.querySelector('#modal-weight-input');
+  setTimeout(() => input.focus(), 100);
+
+  overlay.querySelector('#modal-no-btn').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
+    const newWeight = input.value.trim();
+    const p = products.find(x => x.id === product.id);
+    if (p) {
+      if (newWeight) p.weight = newWeight;
+      else delete p.weight;
+      saveData();
+    }
+    document.body.removeChild(overlay);
+    showToast('✓ ' + t('saved'));
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
+}

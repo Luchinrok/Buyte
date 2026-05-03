@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -c \"C:\\\\Users\\\\Usuario\\\\Desktop\\\\BuyTe\\\\Buyte\\\\app.js\")",
+      "Bash(node -c \"C:\\\\Users\\\\Usuario\\\\Desktop\\\\BuyTe\\\\Buyte\\\\i18n.js\")",
+      "Bash(git *)",
+      "Bash(node -c \"C:/Users/Usuario/Desktop/BuyTe/Buyte/js/core.js\")",
+      "Bash(node -c \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(node -c \"C:/Users/Usuario/Desktop/BuyTe/Buyte/js/biteme.js\")",
+      "Bash(sed -n '198,202p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '418,422p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '2278,2284p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '2326,2332p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '2776,2782p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '199,213p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '254,283p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '742,795p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '253,259p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '784,792p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '865,872p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '125,135p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '2065,2075p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '500,510p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '50,55p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '628,632p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/js/buyme.js\")",
+      "Bash(sed -n '844,855p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/js/buyme.js\")",
+      "Bash(sed -n '843,850p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/js/buyme.js\")",
+      "Bash(sed -n '784,792p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/js/buyme.js\")",
+      "Bash(sed -n '624,632p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/js/buyme.js\")",
+      "Bash(sed -n '604,610p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '946,952p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '1063,1075p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(sed -n '583,590p' \"C:/Users/Usuario/Desktop/BuyTe/Buyte/app.js\")",
+      "Bash(node -c \"C:/Users/Usuario/Desktop/BuyTe/Buyte/js/settings.js\")",
+      "Bash(node -c \"C:/Users/Usuario/Desktop/BuyTe/Buyte/js/special-lists.js\")",
+      "Bash(node -c \"C:/Users/Usuario/Desktop/BuyTe/Buyte/i18n.js\")"
+    ]
+  }
+}
