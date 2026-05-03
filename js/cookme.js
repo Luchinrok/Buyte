@@ -235,7 +235,7 @@ function buildCookMeCard(r) {
   } else {
     const missingNames = r.missing.slice(0, 3).map(i => {
       const em = i.emoji ? (i.emoji + ' ') : '';
-      return em + escapeHtml(i.name || '');
+      return em + escapeHtml(cookmeCapitalize(i.name || ''));
     }).join(', ');
     const more = r.missing.length > 3 ? ' +' + (r.missing.length - 3) : '';
     const cls = r.canMake ? 'cookme-badge-soft' : 'cookme-badge-missing';
@@ -471,7 +471,7 @@ function addMissingToBuyMe() {
 function addMissingItemsTo(supermarketId, missing) {
   if (typeof addToShoppingList !== 'function') return;
   missing.forEach(ing => {
-    const product = { name: ing.name || '', emoji: ing.emoji || '🛒' };
+    const product = { name: cookmeCapitalize(ing.name || ''), emoji: ing.emoji || '🛒' };
     addToShoppingList(supermarketId, product, ing.qty || '');
   });
   const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(supermarketId) : null;
