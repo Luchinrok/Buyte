@@ -548,25 +548,25 @@ function finalizeConsumption(product, action, percent, displayPercent) {
   const shown = (typeof displayPercent === 'number') ? displayPercent : percent;
 
   // Regla per quan el producte es queda al BiteMe:
-  //   Cas A — "consumed" 100%       → desapareix
-  //   Cas B — "consumed" < 100%     → es queda (qty reduïda o consumedPercent acumulat)
-  //   Cas C — "trashed" qualsevol % → desapareix sempre. Si has llençat
-  //                                    una part, ja no la tens.
+  //   Numèric (qty=4): es redueix per unitats per a CONSUMED i TRASHED.
+  //                    Si nova_qty > 0 → es queda; si <= 0 → desapareix.
+  //   No numèric (1L): consumed acumula consumedPercent; trashed sempre desapareix
+  //                    (si has llençat part d'una unitat única, ja no la tens).
   let stayInBiteMe = false;
-  if (action === 'consumed' && percent < 100) {
+  if (percent < 100) {
     const idx = products.findIndex(p => p.id === product.id);
     if (idx >= 0) {
       const p = products[idx];
       const qtyNum = parseQtyNumber(p.qty);
       if (qtyNum !== null) {
-        // Quantitat numèrica pura: reduir proporcionalment
+        // Quantitat numèrica pura: reduir proporcionalment per a consumed i trashed
         const newQty = Math.round(qtyNum * (100 - percent) / 100);
         if (newQty > 0) {
           p.qty = String(newQty);
           stayInBiteMe = true;
         }
-      } else {
-        // Quantitat amb unitat o buida: acumular percentatge consumit
+      } else if (action === 'consumed') {
+        // Quantitat amb unitat o buida: només acumulem per a consumed
         const accumulated = (p.consumedPercent || 0) + percent;
         if (accumulated < 100) {
           p.consumedPercent = accumulated;
@@ -583,12 +583,12 @@ function finalizeConsumption(product, action, percent, displayPercent) {
   if (action === 'consumed') stats.consumed++;
   else stats.trashed++;
 
+  const actionLabel = action === 'consumed' ? t('consumedToast') : t('wastedToast');
   let toastMsg;
   if (stayInBiteMe) {
-    toastMsg = '✓ ' + t('consumedToast') + ' ' + shown + '%, ' + t('stillAtBiteme');
+    toastMsg = '✓ ' + actionLabel + ' ' + shown + '%, ' + t('stillAtBiteme');
   } else {
-    const label = action === 'consumed' ? t('consumedToast') : t('wastedToast');
-    toastMsg = '✓ ' + label + ' ' + shown + '%';
+    toastMsg = '✓ ' + actionLabel + ' ' + shown + '%';
   }
   showToast(toastMsg);
 
