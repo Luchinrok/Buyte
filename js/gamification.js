@@ -479,6 +479,82 @@ function recordHourTouch() {
 // ============================================
 
 // ============================================
+//   COA D'ANIMACIONS (insignia / pujar nivell)
+// ============================================
+
+// Cua interna de toasts pendents. Es processen seqüencialment.
+let _rewardQueue = [];
+let _rewardActive = false;
+
+function showRewardQueue(events) {
+  if (!Array.isArray(events) || events.length === 0) return;
+  _rewardQueue = _rewardQueue.concat(events);
+  if (!_rewardActive) _processNextReward();
+}
+
+function _processNextReward() {
+  if (_rewardQueue.length === 0) {
+    _rewardActive = false;
+    return;
+  }
+  _rewardActive = true;
+  const next = _rewardQueue.shift();
+  if (next.kind === 'level') {
+    _showLevelUpToast(next.level, _processNextReward);
+  } else if (next.kind === 'badge') {
+    _showBadgeUnlockToast(next.badge, _processNextReward);
+  } else {
+    _processNextReward();
+  }
+}
+
+function _showBadgeUnlockToast(badge, onDone) {
+  const overlay = document.createElement('div');
+  overlay.className = 'reward-toast reward-toast-badge';
+  overlay.innerHTML =
+    '<span class="reward-toast-emoji">' + (badge.emoji || '🏅') + '</span>' +
+    '<div class="reward-toast-body">' +
+      '<p class="reward-toast-title">' + escapeHtml(t('badgeUnlocked')) + '</p>' +
+      '<p class="reward-toast-name">' + escapeHtml(badge.name || '') + '</p>' +
+      '<p class="reward-toast-desc">' + escapeHtml(badge.description || '') + '</p>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  // Doble requestAnimationFrame: força el browser a aplicar l'estat inicial
+  // abans d'afegir la classe que fa la transició.
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    setTimeout(() => {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      if (typeof onDone === 'function') onDone();
+    }, 280);
+  }, 4000);
+}
+
+function _showLevelUpToast(level, onDone) {
+  const [c1, c2] = getLevelTierGradient(level);
+  const overlay = document.createElement('div');
+  overlay.className = 'reward-toast reward-toast-level';
+  overlay.style.background = 'linear-gradient(135deg, ' + c1 + ' 0%, ' + c2 + ' 100%)';
+  overlay.innerHTML =
+    '<span class="reward-toast-emoji">' + getLevelTierEmoji(level) + '</span>' +
+    '<div class="reward-toast-body">' +
+      '<p class="reward-toast-title">' + escapeHtml(t('levelUp')) + '</p>' +
+      '<p class="reward-toast-name">' + escapeHtml(t('level')) + ' ' + level + ' — ' + escapeHtml(getLevelName(level)) + '</p>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    setTimeout(() => {
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      if (typeof onDone === 'function') onDone();
+    }, 280);
+  }, 5000);
+}
+
+
+// ============================================
 //   PANTALLA "ELS MEUS ÈXITS"
 // ============================================
 
