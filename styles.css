@@ -4529,6 +4529,10 @@ h1 {
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .danger-btn:active {
