@@ -631,32 +631,358 @@ function renderLangList() {
   container.appendChild(btn);
 }
 
+// === ESTADÍSTIQUES (visió "dades dures") ===
+// Càrrega l'historial de consum i el calcula tot per pintar cards de resum,
+// gràfics, distribució per zona, tops i mitjanes. Si no hi ha entrades,
+// ensenya un empty state.
 function showStats() {
-  const saved = stats.consumed;
-  const wasted = stats.trashed;
-  const total = saved + wasted;
+  const empty = document.getElementById('stats-empty');
+  const body = document.getElementById('stats-body');
+  const history = (typeof loadConsumptionHistory === 'function') ? loadConsumptionHistory() : [];
 
-  const savedEl = document.getElementById('stats-saved');
-  const wastedEl = document.getElementById('stats-wasted');
-  const rateEl = document.getElementById('stats-rate');
-  const heroEmojiEl = document.getElementById('stats-hero-emoji');
-  const heroTextEl = document.getElementById('stats-hero-text');
-
-  if (savedEl) savedEl.textContent = saved;
-  if (wastedEl) wastedEl.textContent = wasted;
-
-  if (total === 0) {
-    if (rateEl) rateEl.textContent = '–';
-    if (heroEmojiEl) heroEmojiEl.textContent = '📊';
-    if (heroTextEl) heroTextEl.textContent = t('statsEmpty2');
-  } else {
-    const pct = Math.round((saved / total) * 100);
-    if (rateEl) rateEl.textContent = pct + '%';
-    if (heroEmojiEl) heroEmojiEl.textContent = pct >= 75 ? '🎉' : pct >= 50 ? '👍' : '💪';
-    if (heroTextEl) heroTextEl.textContent = t('statsHero', saved, wasted);
+  if (!history || history.length === 0) {
+    if (empty) empty.style.display = 'block';
+    if (body) body.innerHTML = '';
+    showScreen('stats');
+    return;
   }
 
+  if (empty) empty.style.display = 'none';
+  if (body) body.innerHTML = renderStatsBody(history);
+
   showScreen('stats');
+}
+
+// Construeix tot l'HTML de la pantalla d'estadístiques.
+function renderStatsBody(history) {
+  const summary = computeStatsSummary(history);
+  const monthly = computeStatsMonthly(history);
+  const zoneDist = computeZoneDistribution();
+  const tops = computeStatsTops(history);
+  const averages = computeStatsAverages(history);
+
+  return [
+    renderStatsSummaryCard(summary),
+    renderStatsLineChartCard(monthly),
+    renderStatsBarChartCard(monthly),
+    renderStatsZoneCard(zoneDist),
+    renderStatsTopsCard(tops),
+    renderStatsAveragesCard(averages)
+  ].join('');
+}
+
+// CARD 1 — Resum global
+function computeStatsSummary(history) {
+  let consumed = 0, trashed = 0;
+  history.forEach(e => {
+    if (e.action === 'consumed') consumed++;
+    else if (e.action === 'trashed') trashed++;
+  });
+  const total = consumed + trashed;
+  const pct = total > 0 ? Math.round((consumed / total) * 100) : 0;
+  return { consumed, trashed, total, pct };
+}
+
+function renderStatsSummaryCard(s) {
+  return `
+    <div class="stats-card-v2">
+      <h3 class="stats-card-v2-title">📊 <span>${escapeHtml(t('statsTitle'))}</span></h3>
+      <div class="stats-summary-grid">
+        <div class="stats-summary-item">
+          <div class="stats-summary-emoji">🥗</div>
+          <p class="stats-summary-num">${s.consumed}</p>
+          <p class="stats-summary-label">${escapeHtml(t('productsConsumed'))}</p>
+        </div>
+        <div class="stats-summary-item">
+          <div class="stats-summary-emoji">🗑️</div>
+          <p class="stats-summary-num">${s.trashed}</p>
+          <p class="stats-summary-label">${escapeHtml(t('productsTrashed'))}</p>
+        </div>
+        <div class="stats-summary-item">
+          <div class="stats-summary-emoji">📦</div>
+          <p class="stats-summary-num">${s.total}</p>
+          <p class="stats-summary-label">${escapeHtml(t('totalProducts'))}</p>
+        </div>
+        <div class="stats-summary-item stats-summary-utilization">
+          <div class="stats-summary-emoji">${s.pct >= 75 ? '🎉' : s.pct >= 50 ? '👍' : '💪'}</div>
+          <p class="stats-summary-num">${s.pct}%</p>
+          <p class="stats-summary-label">${escapeHtml(t('utilizationGlobal'))}</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// CARD 2 + 3 — Dades mensuals (utilització i € llençats)
+function computeStatsMonthly(history) {
+  const now = new Date();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      year: d.getFullYear(),
+      month: d.getMonth(),
+      label: monthShortLetter(d.getMonth()),
+      fullLabel: monthFullName(d.getMonth()),
+      consumed: 0,
+      trashed: 0,
+      wastedEur: 0
+    });
+  }
+  history.forEach(e => {
+    if (!e.date) return;
+    const d = new Date(e.date);
+    const idx = months.findIndex(m => m.year === d.getFullYear() && m.month === d.getMonth());
+    if (idx < 0) return;
+    if (e.action === 'consumed') months[idx].consumed++;
+    else if (e.action === 'trashed') {
+      months[idx].trashed++;
+      const product = (typeof entryAsProduct === 'function') ? entryAsProduct(e) : null;
+      const total = (product && typeof getProductPrice === 'function') ? getProductPrice(product) : 0;
+      const factor = Math.max(0, Math.min(100, e.percent || 0)) / 100;
+      months[idx].wastedEur += total * factor;
+    }
+  });
+  return months.map(m => {
+    const t = m.consumed + m.trashed;
+    return { ...m, utilizationPct: t > 0 ? Math.round((m.consumed / t) * 100) : null };
+  });
+}
+
+function monthShortLetter(idx) {
+  const labels = ['G', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+  return labels[idx] || '?';
+}
+function monthFullName(idx) {
+  const names = ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny',
+                 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'];
+  return names[idx] || '';
+}
+
+// CARD 2 — Gràfic línia % aprofitament
+function renderStatsLineChartCard(monthly) {
+  const points = monthly.map((m, i) => ({ ...m, x: i }));
+  const hasData = points.some(p => p.utilizationPct !== null);
+  if (!hasData) {
+    return `
+      <div class="stats-card-v2">
+        <h3 class="stats-card-v2-title">📈 <span>${escapeHtml(t('utilizationEvolution'))}</span></h3>
+        <div class="stats-chart-empty">${escapeHtml(t('chartEmpty'))}</div>
+      </div>
+    `;
+  }
+  // SVG: 320 wide x 140 tall amb padding lateral 16, base 110
+  const W = 320, H = 140, PAD_X = 20, PAD_TOP = 12, BASE = 116;
+  const stepX = (W - PAD_X * 2) / Math.max(1, points.length - 1);
+  const yFor = (pct) => BASE - (pct / 100) * (BASE - PAD_TOP);
+  const segments = [];
+  let prev = null;
+  points.forEach((p) => {
+    if (p.utilizationPct === null) { prev = null; return; }
+    const cx = PAD_X + p.x * stepX;
+    const cy = yFor(p.utilizationPct);
+    if (prev !== null) segments.push({ x1: prev.cx, y1: prev.cy, x2: cx, y2: cy });
+    prev = { cx, cy };
+  });
+  const linesSvg = segments.map(s =>
+    `<line x1="${s.x1}" y1="${s.y1}" x2="${s.x2}" y2="${s.y2}" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round"/>`
+  ).join('');
+  const dotsSvg = points.map(p => {
+    if (p.utilizationPct === null) return '';
+    const cx = PAD_X + p.x * stepX;
+    const cy = yFor(p.utilizationPct);
+    return `<circle cx="${cx}" cy="${cy}" r="4" fill="var(--primary)"/>`;
+  }).join('');
+  const labelsSvg = points.map(p => {
+    const cx = PAD_X + p.x * stepX;
+    return `<text x="${cx}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--text-soft)" font-family="inherit">${p.label}</text>`;
+  }).join('');
+  const yLabels = `
+    <text x="2" y="${PAD_TOP + 4}" font-size="9" fill="var(--text-soft)" font-family="inherit">100%</text>
+    <text x="2" y="${BASE}" font-size="9" fill="var(--text-soft)" font-family="inherit">0%</text>
+    <line x1="${PAD_X - 2}" y1="${PAD_TOP}" x2="${PAD_X - 2}" y2="${BASE}" stroke="var(--border)" stroke-width="1"/>
+  `;
+  return `
+    <div class="stats-card-v2">
+      <h3 class="stats-card-v2-title">📈 <span>${escapeHtml(t('utilizationEvolution'))}</span></h3>
+      <p class="stats-card-v2-sub">${escapeHtml(t('haveImproved'))}</p>
+      <svg class="stats-line-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+        ${yLabels}
+        ${linesSvg}
+        ${dotsSvg}
+        ${labelsSvg}
+      </svg>
+    </div>
+  `;
+}
+
+// CARD 3 — Gràfic barres € llençats per mes
+function renderStatsBarChartCard(monthly) {
+  const maxEur = Math.max(0, ...monthly.map(m => m.wastedEur));
+  if (maxEur <= 0) {
+    return `
+      <div class="stats-card-v2">
+        <h3 class="stats-card-v2-title">📊 <span>${escapeHtml(t('wastedEvolution'))}</span></h3>
+        <div class="stats-chart-empty">${escapeHtml(t('chartEmpty'))}</div>
+      </div>
+    `;
+  }
+  const bars = monthly.map(m => {
+    const h = m.wastedEur > 0 ? Math.max(4, Math.round((m.wastedEur / maxEur) * 100)) : 0;
+    const tip = m.fullLabel + ': ' + fmtEur(m.wastedEur);
+    return `
+      <div class="stats-bar-col" title="${escapeHtml(tip)}">
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill" style="height:${h}%"></div>
+        </div>
+        <p class="stats-bar-label">${m.label}</p>
+      </div>
+    `;
+  }).join('');
+  return `
+    <div class="stats-card-v2">
+      <h3 class="stats-card-v2-title">📊 <span>${escapeHtml(t('wastedEvolution'))}</span></h3>
+      <div class="stats-bar-chart">${bars}</div>
+    </div>
+  `;
+}
+
+// CARD 4 — Distribució per zona (calculat de products[])
+function computeZoneDistribution() {
+  const list = (typeof products !== 'undefined') ? products : [];
+  if (!list.length) return [];
+  const map = {};
+  list.forEach(p => {
+    const id = p.location || 'unknown';
+    if (!map[id]) map[id] = 0;
+    map[id]++;
+  });
+  const total = list.length;
+  return Object.keys(map).map(id => {
+    const loc = (typeof getLocationById === 'function') ? getLocationById(id) : null;
+    return {
+      id,
+      emoji: loc ? loc.emoji : '📍',
+      name: loc ? getLocationName(loc) : id,
+      count: map[id],
+      pct: Math.round((map[id] / total) * 100)
+    };
+  }).sort((a, b) => b.count - a.count);
+}
+
+function renderStatsZoneCard(zones) {
+  if (!zones.length) {
+    return `
+      <div class="stats-card-v2">
+        <h3 class="stats-card-v2-title">📍 <span>${escapeHtml(t('distributionByZone'))}</span></h3>
+        <div class="stats-chart-empty">${escapeHtml(t('zoneEmpty'))}</div>
+      </div>
+    `;
+  }
+  const rows = zones.map(z => `
+    <div class="stats-zone-row">
+      <span class="stats-zone-emoji">${z.emoji}</span>
+      <span class="stats-zone-name">${escapeHtml(z.name)}</span>
+      <div class="stats-zone-bar">
+        <div class="stats-zone-bar-fill" style="width:${z.pct}%"></div>
+      </div>
+      <span class="stats-zone-count">${z.count} (${z.pct}%)</span>
+    </div>
+  `).join('');
+  return `
+    <div class="stats-card-v2">
+      <h3 class="stats-card-v2-title">📍 <span>${escapeHtml(t('distributionByZone'))}</span></h3>
+      <div class="stats-zone-list">${rows}</div>
+    </div>
+  `;
+}
+
+// CARD 5 — Tops (més comprats / més llençats)
+function computeStatsTops(history) {
+  const purchasedMap = {};
+  const trashedMap = {};
+  history.forEach(e => {
+    const key = (e.productName || '').toLowerCase().trim();
+    if (!key) return;
+    if (!purchasedMap[key]) purchasedMap[key] = { name: e.productName, emoji: e.productEmoji || '🥫', count: 0 };
+    purchasedMap[key].count++;
+    if (e.action === 'trashed') {
+      if (!trashedMap[key]) trashedMap[key] = { name: e.productName, emoji: e.productEmoji || '🥫', count: 0 };
+      trashedMap[key].count++;
+    }
+  });
+  const top = (m) => Object.values(m).sort((a, b) => b.count - a.count).slice(0, 5);
+  return { purchased: top(purchasedMap), trashed: top(trashedMap) };
+}
+
+function renderStatsTopsCard(tops) {
+  const renderList = (arr) => arr.length
+    ? arr.map(p => `
+        <div class="stats-top-row">
+          <span class="stats-top-emoji">${p.emoji}</span>
+          <span class="stats-top-name">${escapeHtml(p.name)}</span>
+          <span class="stats-top-count">${p.count}</span>
+        </div>
+      `).join('')
+    : `<p class="stats-empty-text">—</p>`;
+  return `
+    <div class="stats-card-v2">
+      <h3 class="stats-card-v2-title">🏆 <span>${escapeHtml(t('topPurchased'))}</span></h3>
+      <div class="stats-top-list">${renderList(tops.purchased)}</div>
+      <h3 class="stats-card-v2-title" style="margin-top:18px">⚠️ <span>${escapeHtml(t('topWasted'))}</span></h3>
+      <div class="stats-top-list">${renderList(tops.trashed)}</div>
+    </div>
+  `;
+}
+
+// CARD 6 — Mitjanes (setmana / mes / global)
+function computeStatsAverages(history) {
+  const now = Date.now();
+  const weekMs = 7 * 86400000;
+  const monthMs = 30 * 86400000;
+  const sums = (since) => {
+    let consumed = 0, trashed = 0;
+    history.forEach(e => {
+      if (since !== null) {
+        const d = new Date(e.date).getTime();
+        if (now - d > since) return;
+      }
+      if (e.action === 'consumed') consumed++;
+      else if (e.action === 'trashed') trashed++;
+    });
+    const total = consumed + trashed;
+    return { total, pct: total > 0 ? Math.round((consumed / total) * 100) : 0 };
+  };
+  const week = sums(weekMs);
+  const month = sums(monthMs);
+  const all = sums(null);
+
+  // Productes/setmana = total / setmanes des del primer registre
+  let firstDate = null;
+  history.forEach(e => {
+    if (!e.date) return;
+    const d = new Date(e.date).getTime();
+    if (!firstDate || d < firstDate) firstDate = d;
+  });
+  const weeks = firstDate ? Math.max(1, (now - firstDate) / weekMs) : 1;
+  const perWeek = all.total / weeks;
+
+  return { week, month, all, perWeek };
+}
+
+function renderStatsAveragesCard(a) {
+  return `
+    <div class="stats-card-v2">
+      <h3 class="stats-card-v2-title">📅 <span>${escapeHtml(t('thisWeek'))}</span></h3>
+      <p class="stats-avg-line">${a.week.total} ${escapeHtml(t('items'))} · ${a.week.pct}% ${escapeHtml(t('utilizationGlobal'))}</p>
+
+      <h3 class="stats-card-v2-title" style="margin-top:14px">🗓️ <span>${escapeHtml(t('thisMonth'))}</span></h3>
+      <p class="stats-avg-line">${a.month.total} ${escapeHtml(t('items'))} · ${a.month.pct}% ${escapeHtml(t('utilizationGlobal'))}</p>
+
+      <h3 class="stats-card-v2-title" style="margin-top:14px">📈 <span>${escapeHtml(t('globalAverage'))}</span></h3>
+      <p class="stats-avg-line">${a.perWeek.toFixed(1)} ${escapeHtml(t('productsPerWeek'))} · ${a.all.pct}% ${escapeHtml(t('utilizationGlobal'))}</p>
+    </div>
+  `;
 }
 
 // Modal de confirmació primary (no destructiva). El botó de confirmar usa

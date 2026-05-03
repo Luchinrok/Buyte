@@ -1497,30 +1497,12 @@
       <div style="width:40px"></div>
     </header>
 
-    <div class="stats-content">
-      <div class="stats-hero">
-        <div class="stats-hero-emoji" id="stats-hero-emoji">📊</div>
-        <p class="stats-hero-text" id="stats-hero-text">-</p>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stats-card stats-card-saved">
-          <div class="stats-card-emoji">✅</div>
-          <p class="stats-card-num" id="stats-saved">0</p>
-          <p class="stats-card-label" data-i18n="statsSavedLabel"></p>
-        </div>
-        <div class="stats-card stats-card-wasted">
-          <div class="stats-card-emoji">🗑️</div>
-          <p class="stats-card-num" id="stats-wasted">0</p>
-          <p class="stats-card-label" data-i18n="statsWastedLabel"></p>
-        </div>
-      </div>
-
-      <div class="stats-rate-card">
-        <p class="stats-rate-label" data-i18n="statsRateLabel"></p>
-        <p class="stats-rate-value" id="stats-rate">-</p>
-      </div>
+    <div id="stats-empty" class="impact-empty" style="display:none">
+      <div class="celebrate-emoji">📊</div>
+      <p class="celebrate-title" data-i18n="noStatsData"></p>
     </div>
+
+    <div id="stats-body" class="stats-content"></div>
   </div>
 
   <!-- PANTALLA EL MEU IMPACTE -->
