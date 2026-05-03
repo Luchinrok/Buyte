@@ -438,6 +438,37 @@
     <p id="cookme-empty" class="cookme-empty" style="display:none"></p>
   </div>
 
+  <!-- PANTALLA DETALL DE LA RECEPTA -->
+  <div id="screen-recipe-detail" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="cookme" aria-label="Back">‹</button>
+      <h1 id="recipe-detail-title">-</h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="recipe-hero">
+      <p class="recipe-hero-emoji" id="recipe-hero-emoji">🍳</p>
+      <p class="recipe-hero-name" id="recipe-hero-name"></p>
+      <p class="recipe-hero-meta" id="recipe-hero-meta"></p>
+    </div>
+
+    <div class="recipe-section">
+      <h3 class="recipe-section-title">🥗 <span data-i18n="recipeIngredients"></span></h3>
+      <div class="recipe-ingredients-card" id="recipe-ingredients-list"></div>
+      <button id="recipe-add-missing" class="recipe-add-missing-btn" type="button" style="display:none"></button>
+    </div>
+
+    <div class="recipe-section">
+      <h3 class="recipe-section-title">👨‍🍳 <span data-i18n="recipeSteps"></span></h3>
+      <ol class="recipe-steps" id="recipe-steps-list"></ol>
+    </div>
+
+    <div class="recipe-tip" id="recipe-tip" style="display:none">
+      <span class="recipe-tip-icon">💡</span>
+      <p class="recipe-tip-text"><strong data-i18n="recipeTip"></strong>: <span id="recipe-tip-text"></span></p>
+    </div>
+  </div>
+
   <!-- PANTALLA LLISTA DE PRODUCTES -->
   <div id="screen-list" class="screen">
     <header class="top-bar">

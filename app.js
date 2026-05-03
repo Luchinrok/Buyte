@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (target === 'alerts' && typeof renderAlerts === 'function') renderAlerts();
       else if (target === 'section' && typeof renderSection === 'function') renderSection();
       else if (target === 'popular' && typeof renderPopularList === 'function') renderPopularList();
+      else if (target === 'cookme' && typeof renderCookMe === 'function') renderCookMe();
       else if (target === 'list' && typeof openShelf === 'function' && currentLevel) {
         openShelf(currentLevel);
         return; // openShelf ja fa showScreen
@@ -405,6 +406,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const cookmeSortBtn = document.getElementById('cookme-sort');
   if (cookmeSortBtn) cookmeSortBtn.addEventListener('click', () => {
     if (typeof toggleCookMeSort === 'function') toggleCookMeSort();
+  });
+
+  // Botó "Afegir al BuyMe" del detall de recepta
+  const recipeAddMissing = document.getElementById('recipe-add-missing');
+  if (recipeAddMissing) recipeAddMissing.addEventListener('click', () => {
+    if (typeof addMissingToBuyMe === 'function') addMissingToBuyMe();
   });
 
   // Comptador inicial al botó CookMe del launcher
