@@ -1017,6 +1017,7 @@ function saveNewProduct() {
     const idx = products.findIndex(p => p.id === editingProductId);
     if (idx >= 0) {
       const p = products[idx];
+      const oldLocation = p.location;
       p.name = name;
       p.emoji = selectedEmoji;
       p.date = noExpiryChecked ? null : date;
@@ -1027,9 +1028,34 @@ function saveNewProduct() {
       if (weight) p.weight = weight; else delete p.weight;
       currentProduct = p;
       saveData();
+
+      // Si la zona ha canviat, ajustem la pantalla d'origen perquè tornar
+      // enrere ensenyi el producte on és ara, no on era abans.
+      const zoneChanged = oldLocation !== p.location;
+      if (zoneChanged) {
+        const oldLoc = getLocationById(oldLocation);
+        const newLoc = getLocationById(p.location);
+        const oldCat = oldLoc ? oldLoc.category : null;
+        const newCat = newLoc ? newLoc.category : null;
+        if (productDetailBack === 'list') {
+          // El nivell del producte (verd/groc/...) també pot haver canviat
+          // i no podem endevinar fàcilment el nou prestatge: tornem a home.
+          productDetailBack = 'home';
+        } else if (productDetailBack === 'section' && oldCat !== newCat && newCat) {
+          currentSection = newCat;
+        }
+      }
+
+      // Refresquem totes les pantalles "llistat" perquè l'usuari les trobi
+      // actualitzades quan torni enrere des del detall.
+      renderHome();
+      if (typeof renderViewAll === 'function') renderViewAll();
+      if (typeof renderWhatIHave === 'function') renderWhatIHave();
+      if (typeof renderSection === 'function') renderSection();
+      if (typeof renderAlerts === 'function') renderAlerts();
+
       const editedId = editingProductId;
       editingProductId = null;
-      renderHome();
       showToast('✓ ' + t('saved'));
       openProduct(editedId);
       return;
