@@ -522,6 +522,9 @@ const TRANSLATIONS = {
     ingredientsAdded: 'ingredients afegits a',
     goToShoppingList: 'Veure la llista',
     persons: 'persones',
+    selectAllToBuy: 'Triar quins comprar',
+    addNToBuyme: 'Afegir {0} ingredients',
+    noStoreConfigured: 'No tens cap supermercat configurat. Vés a Configuració > Botigues per crear-ne un.',
   }
 
 };

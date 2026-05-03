@@ -406,14 +406,19 @@ function renderRecipeDetail() {
     });
   }
 
-  // Botó "Afegir al BuyMe" (només si manquen ingredients)
+  // Botó "Afegir al BuyMe": sempre visible — el picker permet triar lliurement.
+  // El comptador només acompanya quan hi ha ingredients que falten.
   const btn = document.getElementById('recipe-add-missing');
   if (btn) {
-    if (m.missing.length > 0) {
-      btn.style.display = 'flex';
-      btn.textContent = '🛒 ' + t('addMissingToShopping') + ' (' + m.missing.length + ' ' + t('missingItems') + ')';
-    } else {
+    if ((recipe.ingredients || []).length === 0) {
       btn.style.display = 'none';
+    } else {
+      btn.style.display = 'flex';
+      if (m.missing.length > 0) {
+        btn.textContent = '🛒 ' + t('addMissingToShopping') + ' (' + m.missing.length + ' ' + t('missingItems') + ')';
+      } else {
+        btn.textContent = '🛒 ' + t('addMissingToShopping');
+      }
     }
   }
 
@@ -444,90 +449,135 @@ function renderRecipeDetail() {
   }
 }
 
-// Inicia el flux d'afegir els ingredients que falten al BuyMe.
+// Obre el picker d'ingredients per afegir-los al BuyMe. L'usuari pot
+// triar quins ingredients afegir (els que falten venen marcats per defecte,
+// els que ja té venen desmarcats) i a quin supermercat actiu enviar-los.
 function addMissingToBuyMe() {
   const recipes = (typeof RECIPES !== 'undefined' && Array.isArray(RECIPES)) ? RECIPES : [];
   const recipe = currentRecipeId ? recipes.find(r => r.id === currentRecipeId) : null;
   if (!recipe) return;
 
-  const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
-  const m = calculateRecipeMatch(recipe, userProducts);
-  if (m.missing.length === 0) return;
-
   const enabled = (typeof getEnabledSupermarkets === 'function') ? getEnabledSupermarkets() : [];
   if (enabled.length === 0) {
-    showToast(t('noSuperAvailable'));
+    showToast(t('noStoreConfigured'));
     return;
   }
-  if (enabled.length === 1) {
-    addMissingItemsTo(enabled[0].id, m.missing);
-    return;
-  }
-  showSuperPickerForMissing(m.missing);
+
+  showIngredientPicker(recipe, enabled);
 }
 
-// Afegeix els ingredients que falten al super indicat. Reutilitza
-// addToShoppingList del BuyMe (mateix format que els productes manuals).
-function addMissingItemsTo(supermarketId, missing) {
-  if (typeof addToShoppingList !== 'function') return;
-  missing.forEach(ing => {
-    const product = { name: cookmeCapitalize(ing.name || ''), emoji: ing.emoji || '🛒' };
-    addToShoppingList(supermarketId, product, ing.qty || '');
+// Construeix i mostra el modal de selecció d'ingredients + supermercat.
+function showIngredientPicker(recipe, enabledSupers) {
+  const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
+  const ingredients = recipe.ingredients || [];
+
+  // Estat dins el modal: índexs marcats i super seleccionat
+  const checked = new Set();
+  ingredients.forEach((ing, idx) => {
+    if (!matchIngredient(ing, userProducts)) checked.add(idx);
   });
-  const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(supermarketId) : null;
-  const smName = sm ? sm.name : '';
-  showToast('🛒 ' + missing.length + ' ' + t('ingredientsAdded') + ' ' + smName);
-}
+  let selectedSuperId = enabledSupers[0].id;
 
-// Mostra un modal amb els supers actius perquè l'usuari triï on afegir-los.
-function showSuperPickerForMissing(missing) {
-  const enabled = (typeof getEnabledSupermarkets === 'function') ? getEnabledSupermarkets() : [];
-  if (enabled.length === 0) return;
+  // Factor d'escala segons l'editor de persones
+  const baseServings = recipe.servings || 1;
+  const factor = baseServings > 0 ? (currentServings / baseServings) : 1;
+
+  // Construeix els blocs HTML
+  const ingHtml = ingredients.map((ing, idx) => {
+    const has = matchIngredient(ing, userProducts);
+    const isChecked = checked.has(idx);
+    const scaledQty = scaleIngredient(ing.qty, factor);
+    const qtyHtml = scaledQty ? '<span class="ingredient-pick-qty">' + escapeHtml(scaledQty) + '</span>' : '';
+    return '<label class="ingredient-pick-row ' + (has ? 'have' : 'missing') + (isChecked ? ' checked' : '') + '" data-idx="' + idx + '">' +
+      '<input type="checkbox" class="ingredient-pick-cb"' + (isChecked ? ' checked' : '') + '>' +
+      '<span class="ingredient-pick-emoji">' + (ing.emoji || '') + '</span>' +
+      '<span class="ingredient-pick-name">' + escapeHtml(cookmeCapitalize(ing.name || '')) + '</span>' +
+      qtyHtml +
+      '</label>';
+  }).join('');
+
+  const chipHtml = enabledSupers.map((sm, i) => {
+    return '<button type="button" class="super-chip' + (i === 0 ? ' active' : '') + '" data-id="' + escapeHtml(sm.id) + '">' +
+      '<span class="super-chip-emoji">' + (sm.emoji || '🛒') + '</span>' +
+      '<span class="super-chip-name">' + escapeHtml(sm.name || '') + '</span>' +
+      '</button>';
+  }).join('');
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
-
-  const gradients = [
-    ['#42A5F5', '#1565C0'], ['#26A69A', '#00695C'], ['#FFA726', '#E65100'],
-    ['#AB47BC', '#7B1FA2'], ['#EF5350', '#C62828'], ['#66BB6A', '#388E3C'],
-    ['#5C6BC0', '#3949AB']
-  ];
-
-  const buttons = enabled.map((sm, idx) => {
-    const [c1, c2] = gradients[idx % gradients.length];
-    return '<button class="modal-supermarket-btn" data-id="' + escapeHtml(sm.id) + '" '
-      + 'style="background:linear-gradient(135deg, ' + c1 + ' 0%, ' + c2 + ' 100%)">'
-      + '<span class="modal-sm-emoji">' + (sm.emoji || '🛒') + '</span>'
-      + '<span class="modal-sm-name">' + escapeHtml(sm.name || '') + '</span>'
-      + '</button>';
-  }).join('');
-
   overlay.innerHTML =
-    '<div class="modal-content">' +
+    '<div class="modal-content modal-content-tall">' +
       '<div class="modal-emoji-big">🛒</div>' +
-      '<p class="modal-title">' + t('whichSuper') + '</p>' +
-      '<p class="modal-sub">' + missing.length + ' ' + t('missingItems') + '</p>' +
-      '<div class="modal-options">' + buttons + '</div>' +
-      '<button class="modal-cancel" id="modal-cancel-btn" style="margin-top:10px">' + t('cancel') + '</button>' +
+      '<p class="modal-title">' + escapeHtml(t('selectAllToBuy')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(recipe.name || '') + '</p>' +
+      '<div class="ingredient-pick-list">' + ingHtml + '</div>' +
+      '<p class="modal-section-label">' + escapeHtml(t('whichSuper')) + '</p>' +
+      '<div class="super-chips-row">' + chipHtml + '</div>' +
+      '<button type="button" class="modal-confirm-btn" id="ingredient-pick-confirm"></button>' +
+      '<button class="modal-cancel" id="modal-cancel-btn">' + t('cancel') + '</button>' +
     '</div>';
-
   document.body.appendChild(overlay);
 
-  overlay.querySelectorAll('.modal-supermarket-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const smId = btn.dataset.id;
-      document.body.removeChild(overlay);
-      addMissingItemsTo(smId, missing);
+  const confirmBtn = overlay.querySelector('#ingredient-pick-confirm');
+  function refreshConfirm() {
+    const n = checked.size;
+    confirmBtn.textContent = '🛒 ' + t('addNToBuyme').replace('{0}', n);
+    if (n === 0) {
+      confirmBtn.setAttribute('disabled', 'disabled');
+      confirmBtn.classList.add('is-disabled');
+    } else {
+      confirmBtn.removeAttribute('disabled');
+      confirmBtn.classList.remove('is-disabled');
+    }
+  }
+  refreshConfirm();
+
+  overlay.querySelectorAll('.ingredient-pick-row').forEach(row => {
+    const cb = row.querySelector('.ingredient-pick-cb');
+    cb.addEventListener('change', () => {
+      const idx = parseInt(row.dataset.idx, 10);
+      if (cb.checked) checked.add(idx); else checked.delete(idx);
+      row.classList.toggle('checked', cb.checked);
+      refreshConfirm();
     });
+  });
+
+  overlay.querySelectorAll('.super-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      overlay.querySelectorAll('.super-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedSuperId = chip.dataset.id;
+    });
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    if (checked.size === 0) return;
+    const items = Array.from(checked).map(idx => {
+      const ing = ingredients[idx];
+      return { name: ing.name || '', emoji: ing.emoji || '🛒', qty: scaleIngredient(ing.qty, factor) };
+    });
+    document.body.removeChild(overlay);
+    addItemsToShop(selectedSuperId, items);
   });
 
   overlay.querySelector('#modal-cancel-btn').addEventListener('click', () => {
     document.body.removeChild(overlay);
   });
-
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) document.body.removeChild(overlay);
   });
+}
+
+// Afegeix una llista d'ingredients (amb qty ja escalada) al supermercat indicat.
+function addItemsToShop(supermarketId, items) {
+  if (typeof addToShoppingList !== 'function') return;
+  items.forEach(ing => {
+    const product = { name: cookmeCapitalize(ing.name || ''), emoji: ing.emoji || '🛒' };
+    addToShoppingList(supermarketId, product, ing.qty || '');
+  });
+  const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(supermarketId) : null;
+  const smName = sm ? sm.name : '';
+  showToast('🛒 ' + items.length + ' ' + t('ingredientsAdded') + ' ' + smName);
 }
 
 // Actualitza el comptador de receptes que es poden fer ja al botó del launcher.
