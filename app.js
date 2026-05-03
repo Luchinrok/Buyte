@@ -307,6 +307,12 @@ document.addEventListener('DOMContentLoaded', () => {
     else { showScreen('popular'); renderPopularList(); }
   });
 
+  // Receptes des de configuració
+  const settingsRecipes = document.getElementById('settings-recipes');
+  if (settingsRecipes) settingsRecipes.addEventListener('click', () => {
+    if (typeof openCookMe === 'function') openCookMe('settings');
+  });
+
   // "Què tinc a casa"
   const btnWhatIHave = document.getElementById('btn-what-i-have');
   if (btnWhatIHave) btnWhatIHave.addEventListener('click', openWhatIHaveScreen);

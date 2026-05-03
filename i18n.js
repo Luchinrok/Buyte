@@ -548,6 +548,9 @@ const TRANSLATIONS = {
     restoreOriginalRecipe: 'Restaurar recepta original',
     restoreOriginalConfirm: "Vols descartar les teves modificacions i tornar a la versió original de la recepta?",
     restoredOriginal: 'Recepta original restaurada',
+    recipes: 'Receptes',
+    recipesEmptySub: 'Editar i afegir receptes',
+    recipesCustomCount: (n) => n === 1 ? '1 recepta pròpia o editada' : n + ' receptes pròpies o editades',
   }
 
 };

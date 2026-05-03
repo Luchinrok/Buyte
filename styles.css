@@ -770,6 +770,10 @@ h1 {
   background: linear-gradient(135deg, #FFCA28 0%, #FFA000 100%);
   box-shadow: 0 3px 10px rgba(255, 193, 7, 0.3);
 }
+.settings-card-recipes {
+  background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
+  box-shadow: 0 3px 10px rgba(255, 152, 0, 0.35);
+}
 .settings-card-sync {
   background: linear-gradient(135deg, #4FC3F7 0%, #0277BD 100%);
   box-shadow: 0 3px 10px rgba(33, 150, 243, 0.3);

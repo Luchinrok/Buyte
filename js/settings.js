@@ -526,6 +526,7 @@ function openSettings(origin) {
   if (typeof updateImpactSub === 'function') updateImpactSub();
   if (typeof updateLocationsCount === 'function') updateLocationsCount();
   if (typeof updatePopularCount === 'function') updatePopularCount();
+  if (typeof updateRecipesCount === 'function') updateRecipesCount();
   if (typeof updateSyncStatus === 'function') updateSyncStatus();
   if (typeof updateNotifStatus === 'function') updateNotifStatus();
   if (typeof updateCountryStatus === 'function') updateCountryStatus();
@@ -1238,4 +1239,5 @@ function translatePage() {
   updateStatsSub();
   updateLocationsCount();
   updatePopularCount();
+  if (typeof updateRecipesCount === 'function') updateRecipesCount();
 }

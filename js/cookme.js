@@ -9,6 +9,9 @@
 
 // Pestanya activa: 'ready' | 'used' | 'all'
 let cookmeTab = 'ready';
+// D'on s'ha obert CookMe: 'home' (per defecte) o 'settings'. Determina la
+// pantalla a la qual torna el botó back.
+let cookmeOrigin = 'home';
 // Receptes custom de l'usuari (es desen a localStorage). Conviuen amb el catàleg.
 let customRecipes = [];
 // Modificacions persistents que l'usuari ha fet sobre receptes del catàleg.
@@ -34,6 +37,20 @@ function saveCustomRecipes() {
   try {
     localStorage.setItem('eatmefirst_custom_recipes', JSON.stringify(customRecipes));
   } catch (e) {}
+}
+
+// Actualitza el subtítol de la card "Receptes" del menú de Configuració.
+function updateRecipesCount() {
+  const el = document.getElementById('recipes-count');
+  if (!el) return;
+  const customN = Array.isArray(customRecipes) ? customRecipes.length : 0;
+  const overrideN = recipeOverrides ? Object.keys(recipeOverrides).length : 0;
+  const total = customN + overrideN;
+  if (total > 0) {
+    el.textContent = t('recipesCustomCount', total);
+  } else {
+    el.textContent = t('recipesEmptySub');
+  }
 }
 
 function loadRecipeOverrides() {
@@ -216,11 +233,15 @@ function calculateRecipeMatch(recipe, userProducts) {
   return { matched, missing, percent, canMake };
 }
 
-// Obre la pantalla CookMe i renderitza la pestanya per defecte.
-function openCookMe() {
+// Obre la pantalla CookMe i renderitza la pestanya per defecte. L'argument
+// origin ('home' | 'settings') determina la pantalla a la qual tornarà el
+// botó "back" — així es pot reutilitzar la mateixa pantalla des de Configuració.
+function openCookMe(origin) {
+  cookmeOrigin = origin || 'home';
   cookmeTab = 'ready';
   cookmeSearch = '';
   cookmeSort = 'percent';
+  applyCookMeBackTarget();
   // Sincronitza estat visual de les pestanyes
   document.querySelectorAll('#cookme-tabs .cookme-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === cookmeTab);
@@ -234,6 +255,13 @@ function openCookMe() {
   updateCookMeSortBtn();
   renderCookMe();
   showScreen('cookme');
+}
+
+// Configura el destí del botó back de la pantalla CookMe segons cookmeOrigin.
+function applyCookMeBackTarget() {
+  const backBtn = document.querySelector('#screen-cookme .back-btn');
+  if (!backBtn) return;
+  backBtn.dataset.back = (cookmeOrigin === 'settings') ? 'settings' : 'launcher';
 }
 
 // Canvia de pestanya (ready / almost / all).
@@ -277,6 +305,9 @@ function renderCookMe() {
   const list = document.getElementById('cookme-list');
   const empty = document.getElementById('cookme-empty');
   if (!list || !empty) return;
+
+  // Defensiu: si veníem de Configuració, mantenim el destí del back
+  applyCookMeBackTarget();
 
   const recipes = getAllRecipes();
   const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
