@@ -283,8 +283,9 @@ function renderMonthlyChart(history) {
   if (!container) return;
   const data = monthlyChartData(history);
 
-  let firstActiveIdx = data.findIndex(m => m.savedEur > 0 || m.wastedEur > 0);
-  if (firstActiveIdx === -1) {
+  // Si TOTS els mesos estan a zero, ensenyem només l'empty state.
+  const hasAnyData = data.some(m => m.savedEur > 0 || m.wastedEur > 0);
+  if (!hasAnyData) {
     container.innerHTML = `
       <div class="impact-chart-empty">
         <p class="impact-chart-empty-text">${escapeHtml(t('chartEmpty'))}</p>
@@ -292,11 +293,13 @@ function renderMonthlyChart(history) {
     `;
     return;
   }
-  const visible = data.slice(firstActiveIdx);
-  const maxEur = Math.max(1, ...visible.flatMap(m => [m.savedEur, m.wastedEur]));
+
+  // Si hi ha dades, sempre dibuixem els 6 mesos sencers (G F M A M J),
+  // encara que només un en tingui valor; els altres queden amb barres a 0.
+  const maxEur = Math.max(1, ...data.flatMap(m => [m.savedEur, m.wastedEur]));
 
   container.innerHTML = '';
-  visible.forEach(m => {
+  data.forEach(m => {
     const col = document.createElement('div');
     col.className = 'impact-chart-col';
     const savedH = Math.max(2, Math.round((m.savedEur / maxEur) * 100));
