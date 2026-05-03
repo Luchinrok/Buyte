@@ -1167,12 +1167,24 @@ function addToCustomPopular(name, emoji, days, location, noExpiry, price, weight
 
   const existing = list.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (existing) {
-    existing.emoji = safeEmoji;
-    existing.days = safeDays;
-    existing.location = safeLoc;
-    existing.noExpiry = noExp;
-    if (hasPrice) existing.price = price;
-    if (hasWeight) existing.weight = weight;
+    // Si l'usuari ha tocat aquesta entrada explícitament des de Configuració,
+    // no la sobreescrivim amb dades aproximades de l'aprenentatge automàtic:
+    // hi ha valors curats (ex: "Pa 4 dies") que volem preservar contra càlculs
+    // derivats d'una compra concreta on l'usuari pot haver-hi posat altres dies.
+    if (existing.userEdited) {
+      // Només omplim camps que estaven completament absents.
+      if (!existing.emoji) existing.emoji = safeEmoji;
+      if (!existing.location) existing.location = safeLoc;
+      if (typeof existing.price !== 'number' && hasPrice) existing.price = price;
+      if (!existing.weight && hasWeight) existing.weight = weight;
+    } else {
+      existing.emoji = safeEmoji;
+      existing.days = safeDays;
+      existing.location = safeLoc;
+      existing.noExpiry = noExp;
+      if (hasPrice) existing.price = price;
+      if (hasWeight) existing.weight = weight;
+    }
   } else {
     const entry = {
       id: 'pop-learned-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),

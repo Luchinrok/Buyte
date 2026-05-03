@@ -196,7 +196,12 @@ function openPopularEdit(idx) {
 
 function savePopularEdit() {
   const name = document.getElementById('input-popular-name').value.trim();
-  const days = parseInt(document.getElementById('input-popular-days').value, 10) || 7;
+  // 'days' és un nombre enter de dies fins caducar — no fem cap conversió
+  // a data per evitar que la zona horària afegeixi/tregui un dia. Acceptem
+  // tant punt com coma per si el navegador hi ha posat alguna cosa rara.
+  const rawDays = String(document.getElementById('input-popular-days').value || '').trim();
+  let days = parseInt(rawDays, 10);
+  if (!Number.isFinite(days) || days <= 0) days = 7;
   const noExpInput = document.getElementById('input-popular-no-expiry');
   const noExpiry = !!(noExpInput && noExpInput.checked);
   if (!name) { showToast(t('needName')); return; }
@@ -205,7 +210,8 @@ function savePopularEdit() {
   const priceInput = document.getElementById('input-popular-price');
   let price = null;
   if (priceInput && priceInput.value.trim() !== '') {
-    const parsed = parseFloat(priceInput.value);
+    const raw = String(priceInput.value).trim().replace(',', '.');
+    const parsed = parseFloat(raw);
     if (!isNaN(parsed) && parsed >= 0) price = Math.round(parsed * 100) / 100;
   }
 
@@ -219,7 +225,12 @@ function savePopularEdit() {
   if (editingPopularIdx === null) {
     const entry = {
       id: 'pop-custom-' + Date.now(),
-      name, emoji: selectedPopularEmoji, days, noExpiry, location
+      name, emoji: selectedPopularEmoji, days, noExpiry, location,
+      // Marca que aquesta entrada té valors explícits posats per l'usuari,
+      // perquè l'aprenentatge automàtic (addToCustomPopular) no els
+      // sobreescrigui sense voler la propera vegada que es desi un producte
+      // amb el mateix nom.
+      userEdited: true
     };
     if (price !== null) entry.price = price;
     if (weight) entry.weight = weight;
@@ -230,6 +241,7 @@ function savePopularEdit() {
     list[editingPopularIdx].days = days;
     list[editingPopularIdx].noExpiry = noExpiry;
     list[editingPopularIdx].location = location;
+    list[editingPopularIdx].userEdited = true;
     if (price !== null) list[editingPopularIdx].price = price;
     else delete list[editingPopularIdx].price;
     if (weight) list[editingPopularIdx].weight = weight;
