@@ -799,6 +799,90 @@ function setupNameAutocomplete() {
   }
 }
 
+// Cerca un nom (case-insensitive) als populars i a l'historial. Retorna
+// l'entrada amb totes les pistes que tinguem (emoji, dies, zona, preu, pes,
+// noExpiry). Els populars tenen prioritat perquè estan curats.
+function findKnownProductByName(name) {
+  if (!name) return null;
+  const q = name.toLowerCase().trim();
+  if (!q) return null;
+  const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
+  const fromPopular = populars.find(p => p.name.toLowerCase().trim() === q);
+  if (fromPopular) {
+    return {
+      name: fromPopular.name,
+      emoji: fromPopular.emoji,
+      days: fromPopular.days,
+      location: fromPopular.location,
+      price: fromPopular.price,
+      weight: fromPopular.weight,
+      noExpiry: !!fromPopular.noExpiry,
+      source: 'popular'
+    };
+  }
+  const fromHistory = (typeof productHistory !== 'undefined' ? productHistory : [])
+    .find(p => p.name.toLowerCase().trim() === q);
+  if (fromHistory) {
+    return {
+      name: fromHistory.name,
+      emoji: fromHistory.emoji,
+      days: fromHistory.days,
+      location: fromHistory.location,
+      price: fromHistory.price,
+      weight: fromHistory.weight,
+      noExpiry: !!fromHistory.noExpiry,
+      source: 'history'
+    };
+  }
+  return null;
+}
+
+// Aplica al formulari del BiteMe (screen-add) tot el que sapiguem d'un
+// producte conegut: emoji, zona, dies (data), preu, pes, "no caduca".
+// No esborra res que l'usuari ja hagi escrit a preu/pes si la match no en porta.
+function applyKnownProductToForm(m) {
+  if (!m) return;
+  selectedEmoji = m.emoji || selectedEmoji;
+  if (typeof renderEmojiPicker === 'function') renderEmojiPicker();
+
+  const guessedLoc = m.location || (typeof guessLocationFromName === 'function' ? guessLocationFromName(m.name) : null);
+  if (guessedLoc && getLocationById(guessedLoc)) {
+    selectedLocation = guessedLoc;
+    if (typeof renderLocationPicker === 'function') renderLocationPicker();
+  }
+
+  const noExpiryInput = document.getElementById('input-no-expiry');
+  const dateInput = document.getElementById('input-date');
+  if (m.noExpiry) {
+    if (noExpiryInput) {
+      noExpiryInput.checked = true;
+      noExpiryInput.dispatchEvent(new Event('change'));
+    }
+    if (dateInput) dateInput.value = '';
+  } else {
+    if (noExpiryInput && noExpiryInput.checked) {
+      noExpiryInput.checked = false;
+      noExpiryInput.dispatchEvent(new Event('change'));
+    }
+    if (m.days && dateInput) {
+      const d = new Date();
+      d.setDate(d.getDate() + m.days);
+      dateInput.value = formatDateForInput(d);
+      dateInput.dataset.baseDays = m.days;
+    }
+  }
+
+  const priceInput = document.getElementById('input-price');
+  if (priceInput && !priceInput.value.trim() && typeof m.price === 'number' && m.price >= 0) {
+    priceInput.value = String(m.price);
+  }
+
+  const weightInput = document.getElementById('input-weight');
+  if (weightInput && !weightInput.value.trim() && m.weight) {
+    weightInput.value = String(m.weight);
+  }
+}
+
 function setupAutocompleteFor(input, suggBox, mode) {
   input.addEventListener('input', () => {
     const q = input.value.trim();
@@ -837,36 +921,10 @@ function setupAutocompleteFor(input, suggBox, mode) {
             }
           }
         } else {
-          selectedEmoji = m.emoji;
-          renderEmojiPicker();
-          // Recupera la zona del popular/historial; si no en té, intenta endevinar
-          const guessedLoc = m.location || (typeof guessLocationFromName === 'function' ? guessLocationFromName(m.name) : null);
-          if (guessedLoc && getLocationById(guessedLoc)) {
-            selectedLocation = guessedLoc;
-            renderLocationPicker();
-          }
-          // Recupera el flag "no caduca" si el tenim guardat al popular o l'historial
-          const noExpiryInput = document.getElementById('input-no-expiry');
-          const dateInput = document.getElementById('input-date');
-          if (m.noExpiry) {
-            if (noExpiryInput) {
-              noExpiryInput.checked = true;
-              noExpiryInput.dispatchEvent(new Event('change'));
-            }
-            if (dateInput) dateInput.value = '';
-          } else {
-            if (noExpiryInput && noExpiryInput.checked) {
-              noExpiryInput.checked = false;
-              noExpiryInput.dispatchEvent(new Event('change'));
-            }
-            // Si ve d'un popular o de l'historial, prefillem la data
-            if (m.days && dateInput) {
-              const d = new Date();
-              d.setDate(d.getDate() + m.days);
-              dateInput.value = formatDateForInput(d);
-              dateInput.dataset.baseDays = m.days;
-            }
-          }
+          // Cerquem el match exacte als populars/historial per agafar tot
+          // (preu, pes...) i caiem al m que ens venia com a fallback.
+          const known = findKnownProductByName(m.name) || m;
+          applyKnownProductToForm(known);
         }
         suggBox.innerHTML = '';
       });
@@ -874,9 +932,21 @@ function setupAutocompleteFor(input, suggBox, mode) {
     });
   });
 
-  input.addEventListener('blur', () => {
-    setTimeout(() => { suggBox.innerHTML = ''; }, 200);
-  });
+  // Quan l'usuari acaba d'escriure (blur), si el nom coincideix exactament
+  // amb un popular o un producte de l'historial, prefillem la resta de camps.
+  if (mode !== 'shopping') {
+    input.addEventListener('blur', () => {
+      setTimeout(() => { suggBox.innerHTML = ''; }, 200);
+      const name = input.value.trim();
+      if (!name) return;
+      const known = findKnownProductByName(name);
+      if (known) applyKnownProductToForm(known);
+    });
+  } else {
+    input.addEventListener('blur', () => {
+      setTimeout(() => { suggBox.innerHTML = ''; }, 200);
+    });
+  }
 }
 
 // Variable global per recordar les categories del producte actual
