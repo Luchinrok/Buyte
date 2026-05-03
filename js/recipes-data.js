@@ -60,8 +60,8 @@ const RECIPES = [
     ]
   },
   {
-    id: 'sandvitx-mixt',
-    name: 'Sandvitx mixt',
+    id: 'biquini',
+    name: 'Biquini',
     emoji: '🥪',
     time: 8, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
@@ -126,8 +126,8 @@ const RECIPES = [
     ]
   },
   {
-    id: 'tostada-alvocat',
-    name: 'Tostada amb alvocat',
+    id: 'torrada-alvocat',
+    name: 'Torrada amb alvocat',
     emoji: '🥑',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
@@ -209,8 +209,8 @@ const RECIPES = [
     ]
   },
   {
-    id: 'tostada-francesa',
-    name: 'Tostada francesa',
+    id: 'torrada-francesa',
+    name: 'Torrada francesa',
     emoji: '🍞',
     time: 10, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
@@ -1103,8 +1103,8 @@ const RECIPES = [
     ]
   },
   {
-    id: 'sandvitx-vegetal',
-    name: 'Sandvitx vegetal',
+    id: 'entrepa-vegetal',
+    name: 'Entrepà vegetal',
     emoji: '🥪',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'plat-unic',
     ingredients: [
@@ -1117,7 +1117,7 @@ const RECIPES = [
     steps: [
       'Talla el pa i unta una mica de maionesa.',
       'Posa enciam, tomàquet i formatge.',
-      'Tanca el sandvitx i talla\'l per la meitat.'
+      'Tanca l\'entrepà i talla\'l per la meitat.'
     ]
   },
   {
@@ -1208,8 +1208,8 @@ const RECIPES = [
     ]
   },
   {
-    id: 'bocadillo-calamars',
-    name: 'Bocadillo de calamars',
+    id: 'entrepa-calamars',
+    name: 'Entrepà de calamars',
     emoji: '🥖',
     time: 15, servings: 1, difficulty: 'fàcil', category: 'plat-unic',
     ingredients: [
@@ -1225,8 +1225,8 @@ const RECIPES = [
     ]
   },
   {
-    id: 'bocadillo-tonyina',
-    name: 'Bocadillo de tonyina',
+    id: 'entrepa-tonyina',
+    name: 'Entrepà de tonyina',
     emoji: '🥖',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'plat-unic',
     ingredients: [
