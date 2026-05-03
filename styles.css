@@ -2322,30 +2322,54 @@ h1 {
 .impact-card-co2-v2 {
   background: linear-gradient(135deg, #F0FAFB 0%, #DDF2F5 100%);
   border-color: #80DEEA;
+}
+
+.impact-co2-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.impact-co2-row + .impact-co2-row {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.impact-co2-row-emoji {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 26px;
   text-align: center;
 }
 
-.impact-co2-big {
-  font-size: 34px;
+.impact-co2-row-value {
+  font-size: 22px;
   font-weight: 800;
-  color: var(--text);
-  margin: 4px 0 0 0;
-  letter-spacing: -0.5px;
-  line-height: 1.1;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
 }
 
-.impact-co2-label {
+.impact-co2-saved-val {
+  color: #2E7D32;
+}
+
+.impact-co2-wasted-val {
+  color: #B71C1C;
+}
+
+.impact-co2-row-label {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-soft);
-  margin: 4px 0 0 0;
+  margin-left: 2px;
 }
 
 .impact-co2-equiv {
   font-size: 14px;
   font-weight: 700;
   color: #006064;
-  margin: 10px 0 0 0;
+  margin: 12px 0 0 0;
+  text-align: right;
 }
 
 /* Card 3 — Ratxa */

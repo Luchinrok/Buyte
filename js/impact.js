@@ -79,7 +79,7 @@ function entryFactor(e) {
 
 function computeMetrics(entries) {
   let savedEur = 0, wastedEur = 0;
-  let savedCo2 = 0;
+  let savedCo2 = 0, wastedCo2 = 0;
   let consumedCount = 0, wastedCount = 0;
 
   entries.forEach(e => {
@@ -94,13 +94,14 @@ function computeMetrics(entries) {
       consumedCount++;
     } else if (e.action === 'trashed') {
       wastedEur += totalPrice * factor;
+      wastedCo2 += totalCo2 * factor;
       wastedCount++;
     }
   });
 
   const totalEur = savedEur + wastedEur;
   const utilization = totalEur > 0 ? Math.round((savedEur / totalEur) * 100) : 100;
-  return { savedEur, wastedEur, savedCo2, utilization, consumedCount, wastedCount, totalEur };
+  return { savedEur, wastedEur, savedCo2, wastedCo2, utilization, consumedCount, wastedCount, totalEur };
 }
 
 // Dies des de l'últim 'trashed' amb percent >= 5. Si no n'hi ha cap,
@@ -258,9 +259,13 @@ function renderImpact() {
   }
   document.getElementById('impact-util-line').textContent = t('totalUtilization') + ': ' + m.utilization + '%';
 
-  // Card 2 — CO2 evitat (només els consumed)
-  document.getElementById('impact-co2-num').textContent = fmtCo2(m.savedCo2);
-  document.getElementById('impact-co2-equiv').textContent = '≈ ' + fmtKm(m.savedCo2 * KM_PER_KG_CO2) + ' ' + t('kmInCar');
+  // Card 2 — CO2 evitat (consumed) + malgastat (trashed)
+  const co2SavedEl = document.getElementById('impact-co2-saved');
+  if (co2SavedEl) co2SavedEl.textContent = fmtCo2(m.savedCo2);
+  const co2WastedEl = document.getElementById('impact-co2-wasted');
+  if (co2WastedEl) co2WastedEl.textContent = fmtCo2(m.wastedCo2);
+  const co2TotalKm = (m.savedCo2 + m.wastedCo2) * KM_PER_KG_CO2;
+  document.getElementById('impact-co2-equiv').textContent = '≈ ' + fmtKm(co2TotalKm) + ' ' + t('kmInCar');
 
   // Card 3 — Ratxa (sempre sobre tot l'historial)
   const streak = computeStreak(history);
