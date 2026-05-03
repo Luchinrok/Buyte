@@ -739,8 +739,8 @@ h1 {
 
 /* Colors per a cada targeta (mode clar) */
 .settings-card-language {
-  background: linear-gradient(135deg, #5C6BC0 0%, #3949AB 100%);
-  box-shadow: 0 3px 10px rgba(63, 81, 181, 0.3);
+  background: linear-gradient(135deg, #42A5F5 0%, #1565C0 100%);
+  box-shadow: 0 3px 10px rgba(33, 150, 243, 0.3);
 }
 .settings-card-locations {
   background: linear-gradient(135deg, #AB47BC 0%, #7B1FA2 100%);
@@ -763,16 +763,16 @@ h1 {
   box-shadow: 0 3px 10px rgba(33, 150, 243, 0.3);
 }
 .settings-card-theme {
-  background: linear-gradient(135deg, #66BB6A 0%, #388E3C 100%);
-  box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+  background: linear-gradient(135deg, #7E57C2 0%, #4527A0 100%);
+  box-shadow: 0 3px 10px rgba(126, 87, 194, 0.3);
 }
 .settings-card-stats {
   background: linear-gradient(135deg, #26C6DA 0%, #00838F 100%);
   box-shadow: 0 3px 10px rgba(0, 188, 212, 0.3);
 }
 .settings-card-notifications {
-  background: linear-gradient(135deg, #BDBDBD 0%, #757575 100%);
-  box-shadow: 0 3px 10px rgba(117, 117, 117, 0.25);
+  background: linear-gradient(135deg, #78909C 0%, #37474F 100%);
+  box-shadow: 0 3px 10px rgba(96, 125, 139, 0.3);
 }
 .settings-card-reset {
   background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
@@ -895,8 +895,8 @@ h1 {
 /* Mode fosc - més vibrants */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .settings-card-language {
-    background: linear-gradient(135deg, #3F51B5 0%, #283593 100%);
-    box-shadow: 0 3px 14px rgba(63, 81, 181, 0.5);
+    background: linear-gradient(135deg, #1976D2 0%, #0D47A1 100%);
+    box-shadow: 0 3px 14px rgba(33, 150, 243, 0.5);
   }
   :root:not([data-theme="light"]) .settings-card-locations {
     background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%);
@@ -919,15 +919,16 @@ h1 {
     box-shadow: 0 3px 14px rgba(33, 150, 243, 0.5);
   }
   :root:not([data-theme="light"]) .settings-card-theme {
-    background: linear-gradient(135deg, #43A047 0%, #2E7D32 100%);
-    box-shadow: 0 3px 14px rgba(76, 175, 80, 0.5);
+    background: linear-gradient(135deg, #673AB7 0%, #311B92 100%);
+    box-shadow: 0 3px 14px rgba(126, 87, 194, 0.5);
   }
   :root:not([data-theme="light"]) .settings-card-stats {
     background: linear-gradient(135deg, #00ACC1 0%, #006064 100%);
     box-shadow: 0 3px 14px rgba(0, 188, 212, 0.5);
   }
   :root:not([data-theme="light"]) .settings-card-notifications {
-    background: linear-gradient(135deg, #757575 0%, #424242 100%);
+    background: linear-gradient(135deg, #546E7A 0%, #263238 100%);
+    box-shadow: 0 3px 14px rgba(96, 125, 139, 0.45);
   }
   :root:not([data-theme="light"]) .settings-card-reset {
     background: linear-gradient(135deg, #E53935 0%, #B71C1C 100%);
@@ -936,8 +937,8 @@ h1 {
 }
 
 :root[data-theme="dark"] .settings-card-language {
-  background: linear-gradient(135deg, #3F51B5 0%, #283593 100%);
-  box-shadow: 0 3px 14px rgba(63, 81, 181, 0.5);
+  background: linear-gradient(135deg, #1976D2 0%, #0D47A1 100%);
+  box-shadow: 0 3px 14px rgba(33, 150, 243, 0.5);
 }
 :root[data-theme="dark"] .settings-card-locations {
   background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%);
@@ -960,15 +961,16 @@ h1 {
   box-shadow: 0 3px 14px rgba(33, 150, 243, 0.5);
 }
 :root[data-theme="dark"] .settings-card-theme {
-  background: linear-gradient(135deg, #43A047 0%, #2E7D32 100%);
-  box-shadow: 0 3px 14px rgba(76, 175, 80, 0.5);
+  background: linear-gradient(135deg, #673AB7 0%, #311B92 100%);
+  box-shadow: 0 3px 14px rgba(126, 87, 194, 0.5);
 }
 :root[data-theme="dark"] .settings-card-stats {
   background: linear-gradient(135deg, #00ACC1 0%, #006064 100%);
   box-shadow: 0 3px 14px rgba(0, 188, 212, 0.5);
 }
 :root[data-theme="dark"] .settings-card-notifications {
-  background: linear-gradient(135deg, #757575 0%, #424242 100%);
+  background: linear-gradient(135deg, #546E7A 0%, #263238 100%);
+  box-shadow: 0 3px 14px rgba(96, 125, 139, 0.45);
 }
 :root[data-theme="dark"] .settings-card-reset {
   background: linear-gradient(135deg, #E53935 0%, #B71C1C 100%);
