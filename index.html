@@ -52,6 +52,19 @@
         <span class="launcher-card-arrow">›</span>
       </button>
 
+      <!-- COOKME -->
+      <button class="launcher-card launcher-card-cookme" id="btn-cookme">
+        <div class="launcher-card-icon">
+          <span class="launcher-card-emoji">🍳</span>
+        </div>
+        <div class="launcher-card-text">
+          <p class="launcher-card-title" data-i18n="cookmeTitle"></p>
+          <p class="launcher-card-desc" data-i18n="cookmeSub"></p>
+        </div>
+        <span class="launcher-card-badge" id="btn-cookme-count" style="display:none">0</span>
+        <span class="launcher-card-arrow">›</span>
+      </button>
+
       <!-- TRACKER (l'app original) -->
       <button class="launcher-card launcher-card-tracker" id="launcher-tracker">
         <div class="launcher-card-icon">
@@ -397,6 +410,24 @@
       <p style="font-size:48px;margin-bottom:10px">🎉</p>
       <p data-i18n="alertsEmpty"></p>
     </div>
+  </div>
+
+  <!-- PANTALLA COOKME -->
+  <div id="screen-cookme" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="launcher" aria-label="Back">‹</button>
+      <h1>🍳 <span data-i18n="cookmeTitle"></span></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="cookme-tabs" id="cookme-tabs">
+      <button class="cookme-tab active" data-tab="ready" data-i18n="recipesYouCanMake"></button>
+      <button class="cookme-tab" data-tab="almost" data-i18n="recipesAlmost"></button>
+      <button class="cookme-tab" data-tab="all" data-i18n="recipesAll"></button>
+    </div>
+
+    <div id="cookme-list" class="cookme-list"></div>
+    <p id="cookme-empty" class="cookme-empty" style="display:none"></p>
   </div>
 
   <!-- PANTALLA LLISTA DE PRODUCTES -->
@@ -1536,6 +1567,8 @@
   <script src="js/settings.js?v=20260503-3"></script>
   <script src="js/modals.js?v=20260503-3"></script>
   <script src="js/impact.js?v=20260503-3"></script>
+  <script src="js/recipes-data.js?v=20260503-3"></script>
+  <script src="js/cookme.js?v=20260503-3"></script>
   <script src="app.js?v=20260503-3"></script>
 </body>
 </html>

@@ -494,6 +494,22 @@ const TRANSLATIONS = {
     addedToShopping: (n) => 'Afegit a ' + n,
     chooseSupermarket: 'A quin supermercat el vols afegir?',
     cancel: 'Cancel·lar',
+    cookmeTitle: 'CookMe',
+    cookmeSub: 'Receptes amb el que tens',
+    recipesYouCanMake: 'Pots fer ja',
+    recipesAlmost: 'A prop',
+    recipesAll: 'Totes',
+    noRecipesAtAll: 'Encara no tens prou ingredients. Compra alguns productes per veure receptes que pots cuinar!',
+    noRecipesReady: "Cap recepta al 100%. Mira la pestanya 'A prop' per veure les que estàs a punt de poder fer!",
+    minutes: 'min',
+    people: 'persona',
+    peoplePlural: 'persones',
+    haveAll: 'Tens tots els ingredients',
+    youMiss: 'Et falta',
+    difficulty: 'Dificultat',
+    easyDiff: 'Fàcil',
+    mediumDiff: 'Mitjana',
+    hardDiff: 'Difícil',
   }
 
 };

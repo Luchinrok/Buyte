@@ -383,6 +383,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const launcherMenuBtn = document.getElementById('launcher-menu-btn');
   if (launcherMenuBtn) launcherMenuBtn.addEventListener('click', () => openSettings('launcher'));
 
+  // CookMe: botó del launcher + pestanyes
+  const btnCookme = document.getElementById('btn-cookme');
+  if (btnCookme) btnCookme.addEventListener('click', () => {
+    if (typeof openCookMe === 'function') openCookMe();
+  });
+
+  document.querySelectorAll('#cookme-tabs .cookme-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (typeof setCookMeTab === 'function') setCookMeTab(tab.dataset.tab);
+    });
+  });
+
+  // Comptador inicial al botó CookMe del launcher
+  if (typeof renderCookMeBadge === 'function') renderCookMeBadge();
+
   // Pantalla de supermercats
   const btnManageSm = document.getElementById('btn-manage-supermarkets');
   if (btnManageSm) btnManageSm.addEventListener('click', () => openManageSupermarkets('shopping'));

@@ -611,6 +611,8 @@ function showScreen(name) {
       void gear.offsetWidth;
       gear.classList.add('gear-spin-once');
     }
+    // Refresca el comptador de receptes que es poden fer ja
+    if (typeof renderCookMeBadge === 'function') renderCookMeBadge();
   }
 }
 
