@@ -782,6 +782,12 @@ function setupAutocompleteFor(input, suggBox, mode) {
         } else {
           selectedEmoji = m.emoji;
           renderEmojiPicker();
+          // Recupera la zona del popular/historial; si no en té, intenta endevinar
+          const guessedLoc = m.location || (typeof guessLocationFromName === 'function' ? guessLocationFromName(m.name) : null);
+          if (guessedLoc && getLocationById(guessedLoc)) {
+            selectedLocation = guessedLoc;
+            renderLocationPicker();
+          }
           // Recupera el flag "no caduca" si el tenim guardat al popular o l'historial
           const noExpiryInput = document.getElementById('input-no-expiry');
           const dateInput = document.getElementById('input-date');
@@ -991,6 +997,17 @@ function addToCustomPopular(name, emoji, days, location, noExpiry, price) {
 }
 
 // Endevina la zona segons el nom del producte
+// Comprova si una paraula curta apareix com a token complet a un text
+// (evita que "pa" matchegi "patata" o "lapa"). Per a paraules llargues
+// preferim simple substring perquè és més tolerant a plurals/derivacions.
+function nameContainsWord(text, word) {
+  const w = word.toLowerCase();
+  if (w.length > 3) return text.includes(w);
+  const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('(^|[^a-zàáâãäåçèéêëìíîïñòóôõöùúûü])' + escaped + '($|[^a-zàáâãäåçèéêëìíîïñòóôõöùúûü])', 'i');
+  return re.test(text);
+}
+
 function guessLocationFromName(name) {
   const n = name.toLowerCase();
 
@@ -1012,7 +1029,21 @@ function guessLocationFromName(name) {
     'oli', 'aceite', 'oil', 'vinagre', 'vinegar', 'cigró', 'garbanzo', 'llentia', 'lenteja',
     'mongeta', 'judia', 'galeta', 'galleta', 'cookie', 'cereal', 'cafe', 'café', 'coffee',
     'te', 'tea', 'xocolata', 'chocolate', 'cacau', 'cacao', 'mel', 'miel', 'honey',
-    'conserva', 'sardina'];
+    'conserva', 'sardina', 'tonyina', 'atun', 'tuna',
+    // Pa i forn
+    'pa', 'pan', 'bread', 'baguette', 'baguet', 'croissant', 'crois', 'panet', 'bagel',
+    'bollo', 'bolleria', 'bizcocho', 'magdalena', 'donut', 'dònut',
+    // Caramels i dolços
+    'caramel', 'caramelo', 'candy', 'llaminadura', 'gominola', 'pastís', 'pastel', 'cake',
+    // Conserves i envasats
+    'pot', 'lata', 'can', 'frasco',
+    // Fruita seca
+    'ametlla', 'almendra', 'almond', 'avellana', 'hazelnut', 'nou', 'nuez', 'walnut',
+    'pistatxo', 'pistacho', 'pistachio', 'cacauet', 'cacahuete', 'peanut',
+    // Salses estables
+    'mostassa', 'mostaza', 'mustard', 'ketchup', 'soja', 'soy',
+    // Begudes estables
+    'aigua', 'agua', 'water', 'refresc', 'refresco', 'soda'];
 
   const dairy = ['llet', 'leche', 'milk', 'iogurt', 'yogur', 'yoghurt', 'formatge', 'queso', 'cheese',
     'mantega', 'mantequilla', 'butter', 'nata', 'cream', 'ou', 'huevo', 'egg'];
@@ -1020,11 +1051,11 @@ function guessLocationFromName(name) {
   const medicine = ['paracetamol', 'ibuprofen', 'aspirina', 'aspirin', 'pastilla', 'pill', 'medicina',
     'medicine', 'xarop', 'jarabe', 'venda', 'tirita', 'apósito'];
 
-  for (const w of medicine) if (n.includes(w)) return 'medicine';
-  for (const w of fruitsVeg) if (n.includes(w)) return 'fruit_bowl';
-  for (const w of meatFish) if (n.includes(w)) return 'fridge';
-  for (const w of dairy) if (n.includes(w)) return 'fridge';
-  for (const w of pantryItems) if (n.includes(w)) return 'pantry';
+  for (const w of medicine) if (nameContainsWord(n, w)) return 'medicine';
+  for (const w of fruitsVeg) if (nameContainsWord(n, w)) return 'fruit_bowl';
+  for (const w of meatFish) if (nameContainsWord(n, w)) return 'fridge';
+  for (const w of dairy) if (nameContainsWord(n, w)) return 'fridge';
+  for (const w of pantryItems) if (nameContainsWord(n, w)) return 'pantry';
 
   return null;
 }
@@ -1037,7 +1068,7 @@ function searchProductHistory(query) {
   const fromHistory = productHistory.filter(p => p.name.toLowerCase().includes(q));
   const fromPopular = getPopularProducts()
     .filter(p => p.name.toLowerCase().includes(q))
-    .map(p => ({ name: p.name, emoji: p.emoji, days: p.days, noExpiry: !!p.noExpiry, isPopular: true }));
+    .map(p => ({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, isPopular: true }));
 
   // Combinem sense duplicats (mateix nom)
   const result = [...fromHistory];
