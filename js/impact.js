@@ -285,7 +285,11 @@ function renderMonthlyChart(history) {
 
   let firstActiveIdx = data.findIndex(m => m.savedEur > 0 || m.wastedEur > 0);
   if (firstActiveIdx === -1) {
-    container.innerHTML = '';
+    container.innerHTML = `
+      <div class="impact-chart-empty">
+        <p class="impact-chart-empty-text">${escapeHtml(t('chartEmpty'))}</p>
+      </div>
+    `;
     return;
   }
   const visible = data.slice(firstActiveIdx);
