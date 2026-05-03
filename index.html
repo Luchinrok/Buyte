@@ -510,6 +510,17 @@
       <input type="number" id="input-popular-price" step="0.01" min="0" inputmode="decimal" placeholder="2.50" autocomplete="off">
     </div>
 
+    <div class="form-group">
+      <label data-i18n="weightLabel" for="input-popular-weight"></label>
+      <input type="text" id="input-popular-weight" placeholder="500g, 1kg, 1L..." maxlength="15" autocomplete="off">
+      <p class="form-hint" data-i18n="weightHint"></p>
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="location"></label>
+      <div class="location-picker" id="popular-location-picker"></div>
+    </div>
+
     <button class="primary-btn" id="btn-save-popular" data-i18n="save"></button>
     <button class="danger-btn" id="btn-delete-popular" data-i18n="delete" style="display:none;margin-top:10px"></button>
   </div>

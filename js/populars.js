@@ -51,6 +51,18 @@ function getPopularProducts() {
           }
           migrated = true;
         }
+        // Omple preu/pes per defecte des del catàleg si l'usuari no els té,
+        // però respectem qualsevol valor que ell hagi posat manualment.
+        if (canon) {
+          if (typeof it.price !== 'number' && typeof canon.price === 'number') {
+            it.price = canon.price;
+            migrated = true;
+          }
+          if (!it.weight && canon.weight) {
+            it.weight = canon.weight;
+            migrated = true;
+          }
+        }
       });
       if (migrated) {
         localStorage.setItem('eatmefirst_popular_custom', JSON.stringify(custom));
@@ -65,13 +77,16 @@ function getPopularProducts() {
     if (!location && typeof guessLocationFromName === 'function') {
       location = guessLocationFromName(name);
     }
-    return {
+    const entry = {
       id: 'pop-' + idx,
       name: name,
       emoji: p.emoji,
       days: p.days,
       location: location || 'pantry'
     };
+    if (typeof p.price === 'number') entry.price = p.price;
+    if (p.weight) entry.weight = p.weight;
+    return entry;
   });
 }
 
@@ -114,6 +129,26 @@ function editPopularItem(idx) {
 
 let editingPopularIdx = null;
 let selectedPopularEmoji = '🥛';
+let selectedPopularLocation = 'pantry';
+
+function renderPopularLocationPicker() {
+  const container = document.getElementById('popular-location-picker');
+  if (!container || typeof locations === 'undefined') return;
+  container.innerHTML = '';
+  locations.forEach(loc => {
+    const btn = document.createElement('button');
+    btn.className = 'loc-option' + (loc.id === selectedPopularLocation ? ' selected' : '');
+    btn.type = 'button';
+    btn.innerHTML = '<span class="loc-option-emoji"></span><span class="loc-option-name"></span>';
+    btn.querySelector('.loc-option-emoji').textContent = loc.emoji;
+    btn.querySelector('.loc-option-name').textContent = getLocationName(loc);
+    btn.addEventListener('click', () => {
+      selectedPopularLocation = loc.id;
+      renderPopularLocationPicker();
+    });
+    container.appendChild(btn);
+  });
+}
 
 function openPopularEdit(idx) {
   editingPopularIdx = idx;
@@ -133,6 +168,17 @@ function openPopularEdit(idx) {
       ? String(item.price)
       : '';
   }
+
+  const weightInput = document.getElementById('input-popular-weight');
+  if (weightInput) {
+    weightInput.value = (!isNew && item && item.weight) ? String(item.weight) : '';
+  }
+
+  selectedPopularLocation = (item && item.location) ? item.location : 'pantry';
+  if (typeof getLocationById === 'function' && !getLocationById(selectedPopularLocation)) {
+    selectedPopularLocation = (typeof locations !== 'undefined' && locations[0]) ? locations[0].id : 'pantry';
+  }
+  renderPopularLocationPicker();
 
   selectedPopularEmoji = isNew ? '🥛' : item.emoji;
   document.getElementById('popular-emoji-current').textContent = selectedPopularEmoji;
@@ -163,21 +209,31 @@ function savePopularEdit() {
     if (!isNaN(parsed) && parsed >= 0) price = Math.round(parsed * 100) / 100;
   }
 
+  // Pes opcional
+  const weightInput = document.getElementById('input-popular-weight');
+  const weight = (weightInput && weightInput.value.trim()) || '';
+
+  const location = selectedPopularLocation || 'pantry';
+
   const list = getPopularProducts();
   if (editingPopularIdx === null) {
     const entry = {
       id: 'pop-custom-' + Date.now(),
-      name, emoji: selectedPopularEmoji, days, noExpiry
+      name, emoji: selectedPopularEmoji, days, noExpiry, location
     };
     if (price !== null) entry.price = price;
+    if (weight) entry.weight = weight;
     list.push(entry);
   } else {
     list[editingPopularIdx].name = name;
     list[editingPopularIdx].emoji = selectedPopularEmoji;
     list[editingPopularIdx].days = days;
     list[editingPopularIdx].noExpiry = noExpiry;
+    list[editingPopularIdx].location = location;
     if (price !== null) list[editingPopularIdx].price = price;
     else delete list[editingPopularIdx].price;
+    if (weight) list[editingPopularIdx].weight = weight;
+    else delete list[editingPopularIdx].weight;
   }
   savePopularProducts(list);
   showToast(t('saved'));
