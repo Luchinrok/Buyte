@@ -1066,7 +1066,11 @@ function updateResetDataSubs() {
         if (Array.isArray(parsed)) count = parsed.length;
       }
     } catch (e) {}
-    impactSub.textContent = count + ' ' + t('historyEntries');
+    if (count > 0) {
+      impactSub.textContent = t('resetImpactSub') + ' · ' + count + ' ' + t('historyEntries');
+    } else {
+      impactSub.textContent = t('resetImpactSub');
+    }
   }
 }
 
