@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadProductHistory();
   if (typeof loadRecipeUsage === 'function') loadRecipeUsage();
   if (typeof loadCustomRecipes === 'function') loadCustomRecipes();
+  if (typeof loadRecipeOverrides === 'function') loadRecipeOverrides();
 
   const savedTheme = localStorage.getItem('eatmefirst_theme') || 'light';
   applyTheme(savedTheme);
@@ -193,14 +194,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof openNewRecipeForm === 'function') openNewRecipeForm();
   });
 
-  const btnRecipeDetailEdit = document.getElementById('recipe-detail-edit');
-  if (btnRecipeDetailEdit) btnRecipeDetailEdit.addEventListener('click', () => {
+  const btnEditRecipe = document.getElementById('btn-edit-recipe');
+  if (btnEditRecipe) btnEditRecipe.addEventListener('click', () => {
     if (typeof openEditRecipeForm === 'function' && currentRecipeId) openEditRecipeForm(currentRecipeId);
   });
 
   const btnRecipeDetailDelete = document.getElementById('recipe-detail-delete');
   if (btnRecipeDetailDelete) btnRecipeDetailDelete.addEventListener('click', () => {
     if (typeof deleteCustomRecipe === 'function' && currentRecipeId) deleteCustomRecipe(currentRecipeId);
+  });
+
+  const btnRestoreRecipe = document.getElementById('btn-restore-recipe');
+  if (btnRestoreRecipe) btnRestoreRecipe.addEventListener('click', () => {
+    if (typeof restoreOriginalRecipe === 'function') restoreOriginalRecipe();
   });
 
   // Formulari de recepta custom

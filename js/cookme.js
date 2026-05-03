@@ -11,6 +11,10 @@
 let cookmeTab = 'ready';
 // Receptes custom de l'usuari (es desen a localStorage). Conviuen amb el catàleg.
 let customRecipes = [];
+// Modificacions persistents que l'usuari ha fet sobre receptes del catàleg.
+// Format: { 'recipe-id': { ...camps editats... } }. La recepta resultant
+// que veu l'usuari és { ...base del catàleg, ...override }.
+let recipeOverrides = {};
 
 // Estat del formulari de nova/editar recepta. Es buida en sortir.
 let editingRecipeData = null;
@@ -32,10 +36,49 @@ function saveCustomRecipes() {
   } catch (e) {}
 }
 
-// Llista combinada: catàleg + custom. Custom van darrere per estabilitat de l'ordre.
+function loadRecipeOverrides() {
+  try {
+    const raw = localStorage.getItem('eatmefirst_recipe_overrides');
+    recipeOverrides = raw ? (JSON.parse(raw) || {}) : {};
+    if (typeof recipeOverrides !== 'object' || Array.isArray(recipeOverrides)) recipeOverrides = {};
+  } catch (e) { recipeOverrides = {}; }
+}
+
+function saveRecipeOverrides() {
+  try {
+    localStorage.setItem('eatmefirst_recipe_overrides', JSON.stringify(recipeOverrides));
+  } catch (e) {}
+}
+
+// Comprova si una recepta del catàleg té modificacions persistents.
+function hasRecipeOverride(id) {
+  return !!(id && recipeOverrides[id]);
+}
+
+// Aplica un override sobre la recepta base i retorna el resultat fusionat.
+function _applyOverride(base, override) {
+  if (!override) return base;
+  return Object.assign({}, base, override);
+}
+
+// Retorna una recepta resoltora a partir de l'id: cerca primer als customs,
+// si no, al catàleg, i en aquest cas aplica l'override si existeix.
+function getRecipe(id) {
+  if (!id) return null;
+  const custom = customRecipes.find(r => r.id === id);
+  if (custom) return custom;
+  const catalog = (typeof RECIPES !== 'undefined' && Array.isArray(RECIPES)) ? RECIPES : [];
+  const base = catalog.find(r => r.id === id);
+  if (!base) return null;
+  return _applyOverride(base, recipeOverrides[id]);
+}
+
+// Llista combinada: catàleg (amb overrides aplicats) + custom. Custom van
+// darrere per estabilitat de l'ordre.
 function getAllRecipes() {
-  const cat = (typeof RECIPES !== 'undefined' && Array.isArray(RECIPES)) ? RECIPES : [];
-  return cat.concat(customRecipes);
+  const catalog = (typeof RECIPES !== 'undefined' && Array.isArray(RECIPES)) ? RECIPES : [];
+  const merged = catalog.map(r => _applyOverride(r, recipeOverrides[r.id]));
+  return merged.concat(customRecipes);
 }
 // Historial d'ús de receptes per popularitzar la pestanya "Més usades".
 // Format: { 'recipe-id': { views: n, lastUsed: ts, addedToShopping: n } }
@@ -434,8 +477,7 @@ function adjustRecipeServings(delta) {
 
 // Obre la pantalla de detall per la recepta amb aquest id.
 function openRecipeDetail(id) {
-  const recipes = getAllRecipes();
-  const recipe = recipes.find(r => r.id === id);
+  const recipe = getRecipe(id);
   if (!recipe) return;
   currentRecipeId = id;
   currentServings = recipe.servings || 1;
@@ -446,8 +488,7 @@ function openRecipeDetail(id) {
 
 // Renderitza els blocs de la pantalla de detall a partir de currentRecipeId.
 function renderRecipeDetail() {
-  const recipes = getAllRecipes();
-  const recipe = currentRecipeId ? recipes.find(r => r.id === currentRecipeId) : null;
+  const recipe = currentRecipeId ? getRecipe(currentRecipeId) : null;
   if (!recipe) return;
 
   const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
@@ -559,8 +600,7 @@ function renderRecipeDetail() {
 // TOTS els supers configurats (preferits primer, altres després), igual
 // que fa el modal de "Comprar llista especial".
 function addMissingToBuyMe() {
-  const recipes = getAllRecipes();
-  const recipe = currentRecipeId ? recipes.find(r => r.id === currentRecipeId) : null;
+  const recipe = currentRecipeId ? getRecipe(currentRecipeId) : null;
   if (!recipe) return;
 
   const all = (typeof supermarkets !== 'undefined' && Array.isArray(supermarkets)) ? supermarkets : [];
@@ -762,9 +802,11 @@ function openNewRecipeForm() {
   showScreen('recipe-edit');
 }
 
-// Obre el formulari per editar una recepta custom existent.
+// Obre el formulari per editar una recepta existent (custom o del catàleg).
+// Si és del catàleg, els canvis es desen com a override; si és custom, es
+// sobreescriu directament.
 function openEditRecipeForm(id) {
-  const recipe = customRecipes.find(r => r.id === id);
+  const recipe = getRecipe(id);
   if (!recipe) return;
   editingRecipeId = id;
   // Còpia profunda perquè els canvis no toquin la recepta fins que es guardi
@@ -813,6 +855,14 @@ function renderRecipeEditForm() {
 
   renderRecipeEditIngredients();
   renderRecipeEditSteps();
+
+  // Botó "Restaurar original": només per receptes del catàleg amb override actiu.
+  const restoreBtn = document.getElementById('btn-restore-recipe');
+  if (restoreBtn) {
+    const isCustom = !!editingRecipeData.isCustom;
+    const showRestore = !isCustom && editingRecipeId && hasRecipeOverride(editingRecipeId);
+    restoreBtn.style.display = showRestore ? 'flex' : 'none';
+  }
 }
 
 function renderRecipeEditIngredients() {
@@ -991,15 +1041,27 @@ function saveRecipeFromForm() {
   editingRecipeData.steps = cleanSteps;
 
   if (editingRecipeId) {
-    // Editar existent
-    const idx = customRecipes.findIndex(r => r.id === editingRecipeId);
-    if (idx >= 0) customRecipes[idx] = Object.assign({}, editingRecipeData, { id: editingRecipeId });
+    // Editar existent: distingim entre custom i catàleg
+    const customIdx = customRecipes.findIndex(r => r.id === editingRecipeId);
+    if (customIdx >= 0) {
+      // Sobreescriu la custom directament
+      customRecipes[customIdx] = Object.assign({}, editingRecipeData, { id: editingRecipeId, isCustom: true });
+      saveCustomRecipes();
+    } else {
+      // Recepta del catàleg: desem la versió editada com a override.
+      // Guardem una còpia neta sense isCustom (les del catàleg no en duen).
+      const overrideData = Object.assign({}, editingRecipeData);
+      overrideData.id = editingRecipeId;
+      delete overrideData.isCustom;
+      recipeOverrides[editingRecipeId] = overrideData;
+      saveRecipeOverrides();
+    }
   } else {
-    // Nova
+    // Nova recepta custom
     editingRecipeData.id = _customRecipeId(editingRecipeData.name);
     customRecipes.push(editingRecipeData);
+    saveCustomRecipes();
   }
-  saveCustomRecipes();
   showToast(t('saved'));
 
   if (editingRecipeId) {
@@ -1015,6 +1077,28 @@ function saveRecipeFromForm() {
     editingRecipeId = null;
     renderCookMe();
     showScreen('cookme');
+  }
+}
+
+// Esborra l'override d'una recepta del catàleg, restaurant els valors originals.
+// Demana confirmació abans d'aplicar.
+function restoreOriginalRecipe() {
+  if (!editingRecipeId || !hasRecipeOverride(editingRecipeId)) return;
+  const id = editingRecipeId;
+  const onYes = () => {
+    delete recipeOverrides[id];
+    saveRecipeOverrides();
+    currentRecipeId = id;
+    editingRecipeData = null;
+    editingRecipeId = null;
+    showToast(t('restoredOriginal'));
+    renderRecipeDetail();
+    showScreen('recipe-detail');
+  };
+  if (typeof showConfirmDangerModal === 'function') {
+    showConfirmDangerModal('🔄', t('restoreOriginalRecipe'), t('restoreOriginalConfirm'), onYes);
+  } else if (window.confirm(t('restoreOriginalConfirm'))) {
+    onYes();
   }
 }
 

@@ -448,7 +448,7 @@
     <header class="top-bar">
       <button class="back-btn" data-back="cookme" aria-label="Back">‹</button>
       <h1 id="recipe-detail-title">-</h1>
-      <div style="width:40px"></div>
+      <button id="btn-edit-recipe" class="header-icon-btn" aria-label="Edit">✏️</button>
     </header>
 
     <div class="recipe-hero">
@@ -479,10 +479,6 @@
     </div>
 
     <div id="recipe-detail-custom-actions" class="recipe-custom-actions" style="display:none">
-      <button type="button" id="recipe-detail-edit" class="recipe-custom-btn recipe-custom-edit">
-        <span style="margin-right:6px">✏️</span>
-        <span data-i18n="editRecipe"></span>
-      </button>
       <button type="button" id="recipe-detail-delete" class="recipe-custom-btn recipe-custom-delete">
         <span style="margin-right:6px">🗑️</span>
         <span data-i18n="delete"></span>
@@ -567,6 +563,10 @@
     </div>
 
     <button class="primary-btn" id="btn-save-recipe" data-i18n="save"></button>
+    <button class="danger-btn" id="btn-restore-recipe" style="display:none;margin-top:10px">
+      <span style="margin-right:6px">🔄</span>
+      <span data-i18n="restoreOriginalRecipe"></span>
+    </button>
   </div>
 
   <!-- PANTALLA LLISTA DE PRODUCTES -->

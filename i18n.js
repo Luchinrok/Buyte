@@ -545,6 +545,9 @@ const TRANSLATIONS = {
     requiredIngredient: 'Imprescindible',
     myRecipe: 'La meva',
     deleteRecipeConfirm: "Vols esborrar aquesta recepta? Aquesta acció no es pot desfer.",
+    restoreOriginalRecipe: 'Restaurar recepta original',
+    restoreOriginalConfirm: "Vols descartar les teves modificacions i tornar a la versió original de la recepta?",
+    restoredOriginal: 'Recepta original restaurada',
   }
 
 };
