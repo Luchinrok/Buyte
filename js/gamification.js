@@ -471,6 +471,146 @@ function recordHourTouch() {
 //   RESET (botó "Esborrar progrés de gamificació")
 // ============================================
 
+// ============================================
+//   PANTALLA "ELS MEUS ÈXITS"
+// ============================================
+
+let achievementsFilter = 'all';
+
+function openAchievements() {
+  achievementsFilter = 'all';
+  renderAchievements();
+  showScreen('achievements');
+}
+
+function renderAchievements() {
+  // Banner de nivell
+  const level = getCurrentLevel();
+  const tierEmoji = getLevelTierEmoji(level);
+  const [c1, c2] = getLevelTierGradient(level);
+  const banner = document.getElementById('level-banner');
+  if (banner) {
+    banner.style.background = 'linear-gradient(135deg, ' + c1 + ' 0%, ' + c2 + ' 100%)';
+    banner.style.boxShadow = '0 6px 20px ' + c2 + '55';
+  }
+  const avatarEl = document.getElementById('level-banner-avatar');
+  if (avatarEl) avatarEl.textContent = tierEmoji;
+  const tierEl = document.getElementById('level-banner-tier');
+  if (tierEl) tierEl.textContent = t('level') + ' ' + level;
+  const nameEl = document.getElementById('level-banner-name');
+  if (nameEl) nameEl.textContent = getLevelName(level);
+
+  const progress = getProgressToNextLevel();
+  const fill = document.getElementById('level-banner-progress-fill');
+  if (fill) fill.style.width = progress.percent + '%';
+  const txt = document.getElementById('level-banner-progress-text');
+  if (txt) {
+    if (progress.isMax) {
+      txt.textContent = t('maxLevelReached');
+    } else {
+      txt.textContent = progress.current + ' / ' + progress.needed + ' ' + t('xpToNextLevel');
+    }
+  }
+
+  // Resum
+  const totalBadges = (typeof BADGES !== 'undefined') ? BADGES.length : 0;
+  const unlockedCount = (gamificationState.unlockedBadges || []).length;
+  const summary = document.getElementById('achievements-summary');
+  if (summary) {
+    const pct = totalBadges > 0 ? Math.round((unlockedCount / totalBadges) * 100) : 0;
+    summary.textContent = unlockedCount + ' / ' + totalBadges + ' ' + t('badgesUnlocked') + ' (' + pct + '%)';
+  }
+
+  renderAchievementsFilters();
+  renderAchievementsList();
+}
+
+function renderAchievementsFilters() {
+  const wrap = document.getElementById('achievements-filters');
+  if (!wrap || typeof BADGE_CATEGORIES === 'undefined') return;
+  wrap.innerHTML = '';
+
+  const all = document.createElement('button');
+  all.type = 'button';
+  all.className = 'achievements-filter' + (achievementsFilter === 'all' ? ' active' : '');
+  all.dataset.filter = 'all';
+  all.textContent = t('filterAll');
+  all.addEventListener('click', () => {
+    achievementsFilter = 'all';
+    renderAchievementsFilters();
+    renderAchievementsList();
+  });
+  wrap.appendChild(all);
+
+  BADGE_CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'achievements-filter' + (achievementsFilter === cat.id ? ' active' : '');
+    btn.dataset.filter = cat.id;
+    btn.textContent = cat.emoji + ' ' + cat.label;
+    btn.addEventListener('click', () => {
+      achievementsFilter = cat.id;
+      renderAchievementsFilters();
+      renderAchievementsList();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function renderAchievementsList() {
+  const list = document.getElementById('achievements-list');
+  if (!list || typeof BADGES === 'undefined') return;
+  list.innerHTML = '';
+
+  const stats = computeGamificationStats();
+  const filtered = (achievementsFilter === 'all')
+    ? BADGES
+    : BADGES.filter(b => b.category === achievementsFilter);
+
+  filtered.forEach(badge => {
+    const ev = evaluateBadge(badge, stats);
+    const unlocked = isBadgeUnlocked(badge.id);
+    const card = document.createElement('div');
+    card.className = 'badge-card' + (unlocked ? ' unlocked' : ' locked');
+
+    let statusHtml;
+    if (unlocked) {
+      const date = getBadgeUnlockDate(badge.id);
+      let dateStr = '';
+      if (date) {
+        try { dateStr = new Date(date).toLocaleDateString('ca-ES'); } catch (e) {}
+      }
+      statusHtml = '<p class="badge-card-status badge-card-unlocked">✓ ' + escapeHtml(t('unlockedAt')) + ' ' + escapeHtml(dateStr) + '</p>';
+    } else if (ev.hasProgress && ev.target > 0 && ev.current > 0) {
+      // Progrés "X/Y" amb una mini barra
+      let cur = ev.current;
+      // Per a CO2/diners arrodonim a 1 decimal
+      if (badge.type === 'co2_saved' || badge.type === 'money_saved') {
+        cur = (Math.round(cur * 10) / 10);
+      }
+      statusHtml =
+        '<div class="badge-progress-track"><div class="badge-progress-fill" style="width:' + ev.percent + '%"></div></div>' +
+        '<p class="badge-card-status">' + escapeHtml(t('progress')) + ': ' + cur + ' / ' + ev.target + '</p>';
+    } else {
+      statusHtml = '<p class="badge-card-status">🔒 ' + escapeHtml(t('locked')) + '</p>';
+    }
+
+    card.innerHTML =
+      '<div class="badge-emoji' + (unlocked ? '' : ' locked') + '">' + (badge.emoji || '🏅') + '</div>' +
+      '<div class="badge-card-body">' +
+        '<p class="badge-card-name">' + escapeHtml(badge.name) + '</p>' +
+        '<p class="badge-card-desc">' + escapeHtml(badge.description) + '</p>' +
+        statusHtml +
+      '</div>';
+    list.appendChild(card);
+  });
+}
+
+
+// ============================================
+//   RESET (botó "Esborrar progrés de gamificació")
+// ============================================
+
 function resetGamificationProgress() {
   gamificationState = {
     xp: 0,

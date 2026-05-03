@@ -6236,3 +6236,311 @@ h1 {
 .recipe-edit-footer .danger-btn {
   margin: 0;
 }
+
+/* ===== GAMIFICACIÓ ===== */
+
+/* Banner de nivell (a "Els meus èxits" i a la pantalla d'Impacte) */
+.level-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  color: #FFFFFF;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.level-banner::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -10%;
+  width: 50%;
+  height: 160%;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.level-banner-avatar {
+  flex-shrink: 0;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  z-index: 1;
+}
+
+.level-banner-body {
+  flex: 1;
+  min-width: 0;
+  z-index: 1;
+}
+
+.level-banner-tier {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  opacity: 0.92;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.level-banner-name {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  letter-spacing: -0.01em;
+}
+
+.level-banner-progress {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.level-banner-progress-fill {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.level-banner-progress-text {
+  font-size: 11.5px;
+  font-weight: 600;
+  margin: 0;
+  opacity: 0.95;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+/* Botó d'entrada al "Els meus èxits" des d'Impacte */
+.achievements-entry-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, transform 0.1s;
+}
+.achievements-entry-btn:active { transform: scale(0.98); }
+.achievements-entry-btn:hover { background: rgba(255, 152, 0, 0.06); }
+.achievements-entry-icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+.achievements-entry-text { flex: 1; min-width: 0; }
+.achievements-entry-arrow { color: var(--text-soft); font-size: 22px; flex-shrink: 0; }
+
+/* Resum d'insignies */
+.achievements-summary {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+  margin: 0 0 12px;
+}
+
+/* Filtres horitzontals per categoria */
+.achievements-filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  margin-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.achievements-filter {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.achievements-filter:active { transform: scale(0.97); }
+
+.achievements-filter.active {
+  background: linear-gradient(135deg, #FFD54F 0%, #F57F17 100%);
+  border-color: #F57F17;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(245, 127, 23, 0.4);
+}
+
+/* Llista d'insignies */
+.achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.badge-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.badge-card.unlocked {
+  background: linear-gradient(135deg, rgba(255, 213, 79, 0.18) 0%, rgba(255, 213, 79, 0.06) 100%);
+  border-color: rgba(245, 127, 23, 0.35);
+}
+
+.badge-emoji {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  line-height: 1;
+}
+.badge-emoji.locked {
+  filter: grayscale(100%);
+  opacity: 0.4;
+}
+
+.badge-card-body { flex: 1; min-width: 0; }
+
+.badge-card-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: var(--text);
+}
+
+.badge-card.locked .badge-card-name { color: var(--text-soft); }
+
+.badge-card-desc {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+
+.badge-card-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.badge-card-unlocked { color: #2E7D32; }
+:root[data-theme="dark"] .badge-card-unlocked { color: #A5D6A7; }
+
+.badge-progress-track {
+  height: 5px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.badge-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFD54F 0%, #F57F17 100%);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* Toasts de recompensa (insignia / pujar nivell) */
+.reward-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(20px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 260px;
+  max-width: 92vw;
+  padding: 14px 18px;
+  border-radius: 18px;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.25s, transform 0.25s;
+  color: #FFFFFF;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.reward-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.reward-toast-badge {
+  background: linear-gradient(135deg, #FFD54F 0%, #F57F17 100%);
+  animation: rewardGlow 1.6s ease-in-out infinite;
+}
+
+.reward-toast-level {
+  background: linear-gradient(135deg, #BA68C8 0%, #6A1B9A 100%);
+  animation: rewardGlow 1.6s ease-in-out infinite;
+}
+
+@keyframes rewardGlow {
+  0%, 100% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(255, 213, 79, 0); }
+  50%      { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 12px rgba(255, 213, 79, 0.18); }
+}
+
+.reward-toast-emoji {
+  font-size: 38px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.reward-toast-body { flex: 1; min-width: 0; }
+
+.reward-toast-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin: 0 0 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.reward-toast-name {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.reward-toast-desc {
+  font-size: 12px;
+  margin: 2px 0 0;
+  opacity: 0.95;
+}

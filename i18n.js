@@ -559,6 +559,22 @@ const TRANSLATIONS = {
     recipeEdited: 'Editades',
     noMineRecipes: "Encara no has creat cap recepta. Clica '+ Afegir recepta' per començar!",
     noEditedRecipes: "Encara no has editat cap recepta del catàleg. Pots personalitzar qualsevol recepta amb el botó ✏️.",
+    achievementsTitle: 'Els meus èxits',
+    level: 'Nivell',
+    xpToNextLevel: 'XP per al següent nivell',
+    badgesUnlocked: 'insignies desbloquejades',
+    unlockedAt: 'Desbloquejada el',
+    locked: 'Bloquejada',
+    progress: 'Progrés',
+    badgeUnlocked: 'Insignia desbloquejada!',
+    levelUp: 'Has pujat de nivell!',
+    xpBonus: 'XP bonus',
+    maxLevelReached: 'Has arribat al nivell màxim',
+    achievementsEntry: 'Els meus èxits',
+    achievementsEntrySub: (u, n) => 'Has desbloquejat ' + u + ' de ' + n + ' insignies →',
+    resetGamificationTitle: 'Esborrar progrés de gamificació',
+    resetGamificationSub: 'Esborra XP, insignies i comptadors',
+    resetGamificationConfirm: "Vols esborrar tot el progrés de gamificació (XP, insignies i comptadors)? Aquesta acció no es pot desfer.",
   }
 
 };

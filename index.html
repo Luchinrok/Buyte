@@ -1723,6 +1723,37 @@
     </div>
   </div>
 
+  <!-- PANTALLA ELS MEUS ÈXITS (gamificació) -->
+  <div id="screen-achievements" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="impact" aria-label="Back">‹</button>
+      <h1>🏆 <span data-i18n="achievementsTitle"></span></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <!-- Banner del nivell actual -->
+    <div class="level-banner" id="level-banner">
+      <div class="level-banner-avatar" id="level-banner-avatar">🌱</div>
+      <div class="level-banner-body">
+        <p class="level-banner-tier" id="level-banner-tier">-</p>
+        <p class="level-banner-name" id="level-banner-name">-</p>
+        <div class="level-banner-progress">
+          <div class="level-banner-progress-fill" id="level-banner-progress-fill" style="width:0%"></div>
+        </div>
+        <p class="level-banner-progress-text" id="level-banner-progress-text">-</p>
+      </div>
+    </div>
+
+    <!-- Resum d'insignies -->
+    <p class="achievements-summary" id="achievements-summary">-</p>
+
+    <!-- Filtres per categoria -->
+    <div class="achievements-filters" id="achievements-filters"></div>
+
+    <!-- Llista d'insignies agrupades / filtrades -->
+    <div class="achievements-list" id="achievements-list"></div>
+  </div>
+
   <!-- PANTALLA IDIOMES -->
   <div id="screen-language" class="screen">
     <header class="top-bar">
@@ -1752,6 +1783,8 @@
   <script src="js/impact.js?v=20260503-3"></script>
   <script src="js/recipes-data.js?v=20260503-3"></script>
   <script src="js/cookme.js?v=20260503-3"></script>
+  <script src="js/badges-data.js?v=20260504-1"></script>
+  <script src="js/gamification.js?v=20260504-1"></script>
   <script src="app.js?v=20260503-3"></script>
 </body>
 </html>
