@@ -863,7 +863,10 @@ function renderRecipeEditForm() {
   if (titleEl) titleEl.textContent = editingRecipeId ? t('editRecipe') : t('newRecipe');
 
   const nameEl = document.getElementById('recipe-edit-name');
-  if (nameEl) nameEl.value = editingRecipeData.name || '';
+  if (nameEl) {
+    nameEl.value = editingRecipeData.name || '';
+    nameEl.placeholder = t('recipeName');
+  }
 
   const emojiCurrent = document.getElementById('recipe-emoji-current');
   if (emojiCurrent) emojiCurrent.textContent = editingRecipeData.emoji || '🍳';
@@ -871,8 +874,9 @@ function renderRecipeEditForm() {
   const timeEl = document.getElementById('recipe-edit-time');
   if (timeEl) timeEl.value = editingRecipeData.time || 20;
 
-  const servEl = document.getElementById('recipe-edit-servings');
-  if (servEl) servEl.value = editingRecipeData.servings || 2;
+  // Stepper de persones: actualitza el número visible
+  const servDisplay = document.getElementById('recipe-edit-servings-display');
+  if (servDisplay) servDisplay.textContent = String(editingRecipeData.servings || 2);
 
   document.querySelectorAll('#recipe-edit-difficulty button').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.value === editingRecipeData.difficulty);
@@ -882,24 +886,45 @@ function renderRecipeEditForm() {
   if (catEl) catEl.value = editingRecipeData.category || 'esmorzar';
 
   const tipEl = document.getElementById('recipe-edit-tip');
-  if (tipEl) tipEl.value = editingRecipeData.tip || '';
+  if (tipEl) {
+    tipEl.value = editingRecipeData.tip || '';
+    tipEl.placeholder = t('recipeTipPlaceholder');
+  }
 
   renderRecipeEditIngredients();
   renderRecipeEditSteps();
 
   // Botó "Restaurar original": només per receptes del catàleg amb override actiu.
   const restoreBtn = document.getElementById('btn-restore-recipe');
+  const deleteBtn = document.getElementById('btn-delete-recipe');
+  const isCustom = !!editingRecipeData.isCustom;
   if (restoreBtn) {
-    const isCustom = !!editingRecipeData.isCustom;
     const showRestore = !isCustom && editingRecipeId && hasRecipeOverride(editingRecipeId);
     restoreBtn.style.display = showRestore ? 'flex' : 'none';
   }
+  // Botó "Esborrar": només per receptes custom existents (mai per al catàleg
+  // ni per a les noves que encara no s'han desat).
+  if (deleteBtn) {
+    deleteBtn.style.display = (isCustom && editingRecipeId) ? 'flex' : 'none';
+  }
+}
+
+// Ajusta el nombre de persones del formulari (clamp 1-20) i actualitza el display.
+function adjustRecipeEditServings(delta) {
+  if (!editingRecipeData) return;
+  const next = Math.min(20, Math.max(1, (editingRecipeData.servings || 1) + delta));
+  if (next === editingRecipeData.servings) return;
+  editingRecipeData.servings = next;
+  const display = document.getElementById('recipe-edit-servings-display');
+  if (display) display.textContent = String(next);
 }
 
 function renderRecipeEditIngredients() {
   const container = document.getElementById('recipe-edit-ingredients');
   if (!container || !editingRecipeData) return;
   container.innerHTML = '';
+  const countEl = document.getElementById('recipe-edit-ingredients-count');
+  if (countEl) countEl.textContent = '(' + editingRecipeData.ingredients.length + ')';
   editingRecipeData.ingredients.forEach((ing, idx) => {
     const row = document.createElement('div');
     row.className = 'ingredient-input-row';
@@ -1000,14 +1025,21 @@ function renderRecipeEditSteps() {
   const container = document.getElementById('recipe-edit-steps');
   if (!container || !editingRecipeData) return;
   container.innerHTML = '';
+  const countEl = document.getElementById('recipe-edit-steps-count');
+  if (countEl) countEl.textContent = '(' + editingRecipeData.steps.length + ')';
+  const total = editingRecipeData.steps.length;
   editingRecipeData.steps.forEach((step, idx) => {
     const row = document.createElement('div');
     row.className = 'step-input-row';
     row.dataset.idx = idx;
     row.innerHTML =
-      '<span class="step-input-number">' + (idx + 1) + '</span>' +
+      '<span class="step-number-bubble">' + (idx + 1) + '</span>' +
       '<textarea class="step-input-text" rows="2" placeholder="' + escapeHtml(t('addStep')) + '">' + escapeHtml(step || '') + '</textarea>' +
-      '<button type="button" class="step-remove-btn" data-action="remove" aria-label="Remove">✕</button>';
+      '<div class="step-actions">' +
+        '<button type="button" class="step-action-btn" data-action="up" aria-label="Up"' + (idx === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button type="button" class="step-action-btn" data-action="down" aria-label="Down"' + (idx === total - 1 ? ' disabled' : '') + '>↓</button>' +
+        '<button type="button" class="step-action-btn step-action-remove" data-action="remove" aria-label="Remove">✕</button>' +
+      '</div>';
     container.appendChild(row);
   });
 
@@ -1021,7 +1053,23 @@ function renderRecipeEditSteps() {
       editingRecipeData.steps.splice(idx, 1);
       renderRecipeEditSteps();
     });
+    const upBtn = row.querySelector('[data-action="up"]');
+    if (upBtn) upBtn.addEventListener('click', () => moveRecipeEditStep(idx, -1));
+    const downBtn = row.querySelector('[data-action="down"]');
+    if (downBtn) downBtn.addEventListener('click', () => moveRecipeEditStep(idx, +1));
   });
+}
+
+// Reordena un pas: puja (-1) o baixa (+1). Re-renderitza si el moviment és vàlid.
+function moveRecipeEditStep(idx, delta) {
+  if (!editingRecipeData) return;
+  const target = idx + delta;
+  if (target < 0 || target >= editingRecipeData.steps.length) return;
+  const arr = editingRecipeData.steps;
+  const tmp = arr[idx];
+  arr[idx] = arr[target];
+  arr[target] = tmp;
+  renderRecipeEditSteps();
 }
 
 function addEmptyStep() {
@@ -1048,8 +1096,8 @@ function saveRecipeFromForm() {
   if (nameEl) editingRecipeData.name = (nameEl.value || '').trim();
   const timeEl = document.getElementById('recipe-edit-time');
   if (timeEl) editingRecipeData.time = Math.max(1, parseInt(timeEl.value, 10) || 0);
-  const servEl = document.getElementById('recipe-edit-servings');
-  if (servEl) editingRecipeData.servings = Math.max(1, parseInt(servEl.value, 10) || 1);
+  // Servings ve del stepper (ja sincronitzat a editingRecipeData via adjustRecipeEditServings)
+  editingRecipeData.servings = Math.min(20, Math.max(1, parseInt(editingRecipeData.servings, 10) || 1));
   const catEl = document.getElementById('recipe-edit-category');
   if (catEl) editingRecipeData.category = catEl.value;
   const tipEl = document.getElementById('recipe-edit-tip');
@@ -1152,5 +1200,22 @@ function deleteCustomRecipe(id) {
     showConfirmDangerModal('🗑️', recipe.name || t('delete'), t('deleteRecipeConfirm'), onYes);
   } else if (window.confirm(t('deleteRecipeConfirm'))) {
     onYes();
+  }
+}
+
+// Surt del formulari sense desar canvis. Si veníem d'un detall, hi tornem;
+// si no, anem a la llista de receptes.
+function cancelRecipeEdit() {
+  const wasEditing = !!editingRecipeId;
+  const id = editingRecipeId;
+  editingRecipeData = null;
+  editingRecipeId = null;
+  if (wasEditing && id) {
+    currentRecipeId = id;
+    renderRecipeDetail();
+    showScreen('recipe-detail');
+  } else {
+    renderCookMe();
+    showScreen('cookme');
   }
 }

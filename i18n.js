@@ -551,6 +551,9 @@ const TRANSLATIONS = {
     recipes: 'Receptes',
     recipesEmptySub: 'Editar i afegir receptes',
     recipesCustomCount: (n) => n === 1 ? '1 recepta pròpia o editada' : n + ' receptes pròpies o editades',
+    recipeDetailsSection: 'Detalls',
+    recipeTipOptional: 'Consell (opcional)',
+    recipeTipPlaceholder: 'Algun truc per fer-la millor...',
   }
 
 };

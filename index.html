@@ -486,7 +486,7 @@
     </div>
   </div>
 
-  <!-- PANTALLA EDITAR / NOVA RECEPTA (custom) -->
+  <!-- PANTALLA EDITAR / NOVA RECEPTA (custom o override del catàleg) -->
   <div id="screen-recipe-edit" class="screen">
     <header class="top-bar">
       <button class="back-btn" id="recipe-edit-back-btn" data-back="cookme" aria-label="Back">‹</button>
@@ -494,79 +494,102 @@
       <div style="width:40px"></div>
     </header>
 
-    <div class="form-group">
-      <label data-i18n="recipeName" for="recipe-edit-name"></label>
-      <input type="text" id="recipe-edit-name" autocomplete="off">
-    </div>
-
-    <div class="form-group">
-      <label data-i18n="recipeEmoji"></label>
-      <button type="button" class="emoji-button" id="btn-pick-recipe-emoji">
-        <span class="emoji-button-current" id="recipe-emoji-current">🍳</span>
-        <span class="emoji-button-text" data-i18n="changeEmoji"></span>
+    <!-- HERO: emoji + nom -->
+    <div class="recipe-edit-hero">
+      <button type="button" class="recipe-edit-emoji-big" id="btn-pick-recipe-emoji">
+        <span id="recipe-emoji-current">🍳</span>
       </button>
+      <input type="text" class="recipe-edit-name-big" id="recipe-edit-name" autocomplete="off">
     </div>
 
-    <div class="recipe-edit-row">
-      <div class="form-group recipe-edit-half">
-        <label data-i18n="recipeTime" for="recipe-edit-time"></label>
-        <input type="number" id="recipe-edit-time" min="1" max="600" value="20">
+    <!-- DETALLS -->
+    <section class="recipe-edit-section">
+      <h3 class="recipe-edit-section-title">📋 <span data-i18n="recipeDetailsSection"></span></h3>
+
+      <div class="recipe-edit-detail-row">
+        <span class="recipe-edit-detail-label">🍴 <span data-i18n="recipeServings"></span></span>
+        <div class="recipe-edit-stepper">
+          <button type="button" id="recipe-edit-servings-minus" class="recipe-edit-stepper-btn" aria-label="-">−</button>
+          <span class="recipe-edit-stepper-value" id="recipe-edit-servings-display">2</span>
+          <button type="button" id="recipe-edit-servings-plus" class="recipe-edit-stepper-btn" aria-label="+">+</button>
+        </div>
       </div>
-      <div class="form-group recipe-edit-half">
-        <label data-i18n="recipeServings" for="recipe-edit-servings"></label>
-        <input type="number" id="recipe-edit-servings" min="1" max="20" value="2">
+
+      <div class="recipe-edit-detail-row">
+        <span class="recipe-edit-detail-label">⏱️ <span data-i18n="recipeTime"></span></span>
+        <div class="recipe-edit-time-input">
+          <input type="number" id="recipe-edit-time" min="1" max="600" value="20">
+          <span class="recipe-edit-time-suffix" data-i18n="minutes"></span>
+        </div>
       </div>
-    </div>
 
-    <div class="form-group">
-      <label data-i18n="recipeDifficulty"></label>
-      <div class="recipe-edit-segmented" id="recipe-edit-difficulty">
-        <button type="button" data-value="fàcil" data-i18n="easyDiff"></button>
-        <button type="button" data-value="mitjana" data-i18n="mediumDiff"></button>
-        <button type="button" data-value="difícil" data-i18n="hardDiff"></button>
+      <div class="recipe-edit-detail-row">
+        <span class="recipe-edit-detail-label">📊 <span data-i18n="recipeDifficulty"></span></span>
+        <div class="recipe-edit-segmented" id="recipe-edit-difficulty">
+          <button type="button" data-value="fàcil" data-i18n="easyDiff"></button>
+          <button type="button" data-value="mitjana" data-i18n="mediumDiff"></button>
+          <button type="button" data-value="difícil" data-i18n="hardDiff"></button>
+        </div>
       </div>
-    </div>
 
-    <div class="form-group">
-      <label data-i18n="recipeCategory" for="recipe-edit-category"></label>
-      <select id="recipe-edit-category" class="select-input">
-        <option value="esmorzar">🌅 Esmorzar</option>
-        <option value="primer">🥗 Primer / Amanida</option>
-        <option value="pasta">🍝 Pasta i arrossos</option>
-        <option value="carn-peix">🍗 Carn i peix</option>
-        <option value="plat-unic">🍕 Plat únic</option>
-        <option value="postre">🍓 Postre</option>
-      </select>
-    </div>
+      <div class="recipe-edit-detail-row">
+        <span class="recipe-edit-detail-label">📂 <span data-i18n="recipeCategory"></span></span>
+        <select id="recipe-edit-category" class="select-input recipe-edit-category-select">
+          <option value="esmorzar">🌅 Esmorzar</option>
+          <option value="primer">🥗 Primer / Amanida</option>
+          <option value="pasta">🍝 Pasta i arrossos</option>
+          <option value="carn-peix">🍗 Carn i peix</option>
+          <option value="plat-unic">🍕 Plat únic</option>
+          <option value="postre">🍓 Postre</option>
+        </select>
+      </div>
+    </section>
 
-    <div class="form-group">
-      <label data-i18n="recipeIngredients"></label>
+    <!-- INGREDIENTS -->
+    <section class="recipe-edit-section">
+      <h3 class="recipe-edit-section-title">
+        🥗 <span data-i18n="recipeIngredients"></span>
+        <span class="recipe-edit-section-count" id="recipe-edit-ingredients-count">(0)</span>
+      </h3>
       <div id="recipe-edit-ingredients" class="recipe-edit-list"></div>
       <button type="button" id="btn-add-ingredient" class="recipe-edit-add-row">
         <span style="margin-right:6px">➕</span>
         <span data-i18n="addIngredient"></span>
       </button>
-    </div>
+    </section>
 
-    <div class="form-group">
-      <label data-i18n="recipeSteps"></label>
+    <!-- PASSOS -->
+    <section class="recipe-edit-section">
+      <h3 class="recipe-edit-section-title">
+        👨‍🍳 <span data-i18n="recipeSteps"></span>
+        <span class="recipe-edit-section-count" id="recipe-edit-steps-count">(0)</span>
+      </h3>
       <div id="recipe-edit-steps" class="recipe-edit-list"></div>
       <button type="button" id="btn-add-step" class="recipe-edit-add-row">
         <span style="margin-right:6px">➕</span>
         <span data-i18n="addStep"></span>
       </button>
-    </div>
+    </section>
 
-    <div class="form-group">
-      <label data-i18n="recipeTip" for="recipe-edit-tip"></label>
-      <textarea id="recipe-edit-tip" rows="2" maxlength="240"></textarea>
-    </div>
+    <!-- CONSELL -->
+    <section class="recipe-edit-section">
+      <h3 class="recipe-edit-section-title">💡 <span data-i18n="recipeTipOptional"></span></h3>
+      <textarea id="recipe-edit-tip" class="recipe-edit-tip-textarea" rows="2" maxlength="240"></textarea>
+    </section>
 
-    <button class="primary-btn" id="btn-save-recipe" data-i18n="save"></button>
-    <button class="danger-btn" id="btn-restore-recipe" style="display:none;margin-top:10px">
-      <span style="margin-right:6px">🔄</span>
-      <span data-i18n="restoreOriginalRecipe"></span>
-    </button>
+    <!-- ACCIONS -->
+    <div class="recipe-edit-footer">
+      <button class="primary-btn" id="btn-save-recipe" data-i18n="save"></button>
+      <button class="secondary-btn" id="btn-cancel-recipe" data-i18n="cancel"></button>
+      <button class="danger-btn" id="btn-restore-recipe" style="display:none">
+        <span style="margin-right:6px">🔄</span>
+        <span data-i18n="restoreOriginalRecipe"></span>
+      </button>
+      <button class="danger-btn" id="btn-delete-recipe" style="display:none">
+        <span style="margin-right:6px">🗑️</span>
+        <span data-i18n="delete"></span>
+      </button>
+    </div>
   </div>
 
   <!-- PANTALLA LLISTA DE PRODUCTES -->

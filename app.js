@@ -236,6 +236,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof saveRecipeFromForm === 'function') saveRecipeFromForm();
   });
 
+  const btnCancelRecipe = document.getElementById('btn-cancel-recipe');
+  if (btnCancelRecipe) btnCancelRecipe.addEventListener('click', () => {
+    if (typeof cancelRecipeEdit === 'function') cancelRecipeEdit();
+  });
+
+  const btnDeleteRecipeFromForm = document.getElementById('btn-delete-recipe');
+  if (btnDeleteRecipeFromForm) btnDeleteRecipeFromForm.addEventListener('click', () => {
+    if (typeof deleteCustomRecipe === 'function' && editingRecipeId) deleteCustomRecipe(editingRecipeId);
+  });
+
+  const btnServingsMinus = document.getElementById('recipe-edit-servings-minus');
+  if (btnServingsMinus) btnServingsMinus.addEventListener('click', () => {
+    if (typeof adjustRecipeEditServings === 'function') adjustRecipeEditServings(-1);
+  });
+  const btnServingsPlus = document.getElementById('recipe-edit-servings-plus');
+  if (btnServingsPlus) btnServingsPlus.addEventListener('click', () => {
+    if (typeof adjustRecipeEditServings === 'function') adjustRecipeEditServings(1);
+  });
+
   const btnResetAll = document.getElementById('reset-all');
   if (btnResetAll) btnResetAll.addEventListener('click', resetAll);
 
