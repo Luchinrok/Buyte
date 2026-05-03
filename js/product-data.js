@@ -128,69 +128,119 @@ function getWeightPerUnit(emoji) {
   return PRODUCT_WEIGHTS_PER_UNIT[emoji] || DEFAULT_WEIGHT_PER_UNIT;
 }
 
-// Converteix una qty en kg fent servir l'emoji per saber el pes per unitat
-// si no hi ha unitats explícites. Casos:
-//   "1kg", "500g", "1.5kg"      → conversió directa de pes
-//   "1L", "500ml", "1.5L"       → tractem 1L = 1kg
-//   "4", "12 unitats"            → nombre × pes-per-unitat[emoji]
-//   "" / null                    → pes-per-unitat[emoji] (1 unitat)
-function parseQuantityToKg(qty, emoji) {
-  if (qty === null || qty === undefined || (typeof qty === 'string' && qty.trim() === '')) {
-    return getWeightPerUnit(emoji);
+// Helpers de parseig.
+//   - "Quantitat numèrica" = només dígits (opcionalment amb decimal): "1", "2.5", "12".
+//   - "Pes amb unitat"     = número seguit de g/kg/ml/L (case insensitive): "500g", "1kg", "1L".
+function _normalize(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).trim().toLowerCase().replace(',', '.');
+}
+
+function _parseNumericQty(s) {
+  const n = _normalize(s);
+  if (n === '') return null;
+  return /^\d+(?:\.\d+)?$/.test(n) ? parseFloat(n) : null;
+}
+
+// Parsa una cadena tipus "500g" / "1kg" / "200ml" / "1.5L" a kg.
+// Retorna null si la cadena no encaixa amb cap d'aquests patrons.
+function _parseWeightString(s) {
+  const n = _normalize(s);
+  if (n === '') return null;
+  let m = n.match(/^(\d+(?:\.\d+)?)\s*kg\b/);
+  if (m) return parseFloat(m[1]);
+  m = n.match(/^(\d+(?:\.\d+)?)\s*g\b/);
+  if (m) return parseFloat(m[1]) / 1000;
+  m = n.match(/^(\d+(?:\.\d+)?)\s*l\b/);
+  if (m) return parseFloat(m[1]);
+  m = n.match(/^(\d+(?:\.\d+)?)\s*ml\b/);
+  if (m) return parseFloat(m[1]) / 1000;
+  return null;
+}
+
+// Calcula el pes TOTAL del producte en kg seguint aquestes regles:
+//
+//   CAS 1 — qty numèrica + weight amb unitat:
+//     weight és per unitat → total = qty × weight
+//   CAS 2 — qty numèrica sense weight:
+//     qty és nombre d'unitats → total = qty × pes_mitjà_per_unitat[emoji]
+//   CAS 3 — weight amb unitat sense qty:
+//     weight és el pes total directe
+//   CAS 4 — qty amb unitat (no numèrica) sense weight:
+//     tractar qty com a weight
+//   CAS 5 — Ni qty ni weight reconeguts:
+//     pes per defecte segons emoji (1 unitat)
+function parseQuantityToKg(product) {
+  if (!product) return DEFAULT_WEIGHT_PER_UNIT;
+  const emoji = product.emoji;
+
+  // product.weight pot venir com a número (kg directe) o text ("500g").
+  let weightKg = null;
+  if (typeof product.weight === 'number' && product.weight > 0) {
+    weightKg = product.weight;
+  } else if (typeof product.weight === 'string') {
+    weightKg = _parseWeightString(product.weight);
   }
-  const s = String(qty).trim().toLowerCase().replace(',', '.');
 
-  // "1.5kg", "500g"
-  const kgMatch = s.match(/^(\d+(?:\.\d+)?)\s*kg\b/);
-  if (kgMatch) return parseFloat(kgMatch[1]);
-  const gMatch = s.match(/^(\d+(?:\.\d+)?)\s*g\b/);
-  if (gMatch) return parseFloat(gMatch[1]) / 1000;
+  const qtyNumber = _parseNumericQty(product.qty);
+  const qtyAsWeightKg = (qtyNumber === null) ? _parseWeightString(product.qty) : null;
 
-  // "1.5L", "500ml" — densitat 1
-  const lMatch = s.match(/^(\d+(?:\.\d+)?)\s*l\b/);
-  if (lMatch) return parseFloat(lMatch[1]);
-  const mlMatch = s.match(/^(\d+(?:\.\d+)?)\s*ml\b/);
-  if (mlMatch) return parseFloat(mlMatch[1]) / 1000;
-
-  // Nombre sol o seguit de paraula (unitats, paquets, ...)
-  const numMatch = s.match(/^(\d+(?:\.\d+)?)/);
-  if (numMatch) {
-    const n = parseFloat(numMatch[1]);
-    return n * getWeightPerUnit(emoji);
-  }
-
-  // No hem reconegut res → assumim 1 unitat
+  // CAS 1
+  if (qtyNumber !== null && weightKg !== null) return qtyNumber * weightKg;
+  // CAS 2
+  if (qtyNumber !== null) return qtyNumber * getWeightPerUnit(emoji);
+  // CAS 3
+  if (weightKg !== null) return weightKg;
+  // CAS 4
+  if (qtyAsWeightKg !== null) return qtyAsWeightKg;
+  // CAS 5
   return getWeightPerUnit(emoji);
 }
 
-// Retorna el pes total del producte en kg, respectant product.weight
-// si l'usuari l'ha informat (text com "500g" o número directament en kg),
-// altrament el dedueix de product.qty + emoji.
-function resolveProductWeightKg(product) {
-  if (!product) return DEFAULT_WEIGHT_PER_UNIT;
-  if (typeof product.weight === 'number' && product.weight > 0) return product.weight;
-  if (typeof product.weight === 'string' && product.weight.trim() !== '') {
-    return parseQuantityToKg(product.weight, product.emoji);
-  }
-  return parseQuantityToKg(product.qty, product.emoji);
-}
-
-// Retorna el preu total estimat del producte (€). Prioritats:
-//   1. product.price si > 0 (preu total que ha posat l'usuari)
-//   2. (pes en kg) × (preu/kg de la categoria)
+// Retorna el preu TOTAL estimat del producte (€) seguint aquestes regles:
+//
+//   P1 — product.price > 0:
+//     CAS A — qty numèrica > 1 i weight definit:
+//       price és per unitat → total = price × qty
+//     CAS B — només qty numèrica (sense weight):
+//       price és per unitat → total = price × qty
+//     CAS C — la resta:
+//       price és el total directe del producte
+//   P2 — sense price:
+//     total = pes_kg × preu_per_kg_segons_categoria
 function getProductPrice(product) {
   if (!product) return 0;
-  if (typeof product.price === 'number' && product.price > 0) return product.price;
-  const kg = resolveProductWeightKg(product);
+
+  const qtyNumber = _parseNumericQty(product.qty);
+  const hasUnitWeight =
+    (typeof product.weight === 'number' && product.weight > 0) ||
+    (typeof product.weight === 'string' && _parseWeightString(product.weight) !== null);
+
+  if (typeof product.price === 'number' && product.price > 0) {
+    // CAS A
+    if (qtyNumber !== null && qtyNumber > 1 && hasUnitWeight) {
+      return product.price * qtyNumber;
+    }
+    // CAS B
+    if (qtyNumber !== null && !hasUnitWeight) {
+      return product.price * qtyNumber;
+    }
+    // CAS C
+    return product.price;
+  }
+
+  // P2 — sense preu posat: derivar del pes × preu/kg
+  const kg = parseQuantityToKg(product);
   const cat = getCategoryFromEmoji(product.emoji);
   const perKg = PRODUCT_PRICES_PER_KG[cat] !== undefined ? PRODUCT_PRICES_PER_KG[cat] : PRODUCT_PRICES_PER_KG.default;
   return kg * perKg;
 }
 
-// Retorna els kg de CO₂ eq totals associats al producte (segons pes).
+// Retorna els kg de CO₂ eq totals associats al producte. El CO₂ depèn
+// purament del pes total i la categoria.
 function getProductCO2(product) {
   if (!product) return 0;
-  const kg = resolveProductWeightKg(product);
+  const kg = parseQuantityToKg(product);
   const cat = getCategoryFromEmoji(product.emoji);
   const perKg = PRODUCT_CO2_PER_KG[cat] !== undefined ? PRODUCT_CO2_PER_KG[cat] : PRODUCT_CO2_PER_KG.default;
   return kg * perKg;
