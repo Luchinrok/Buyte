@@ -560,32 +560,40 @@ function renderRecipeDetail() {
 
 // Obre el picker d'ingredients per afegir-los al BuyMe. L'usuari pot
 // triar quins ingredients afegir (els que falten venen marcats per defecte,
-// els que ja té venen desmarcats) i a quin supermercat actiu enviar-los.
+// els que ja té venen desmarcats) i a quin super enviar-los: es mostren
+// TOTS els supers configurats (preferits primer, altres després), igual
+// que fa el modal de "Comprar llista especial".
 function addMissingToBuyMe() {
   const recipes = getAllRecipes();
   const recipe = currentRecipeId ? recipes.find(r => r.id === currentRecipeId) : null;
   if (!recipe) return;
 
-  const enabled = (typeof getEnabledSupermarkets === 'function') ? getEnabledSupermarkets() : [];
-  if (enabled.length === 0) {
+  const all = (typeof supermarkets !== 'undefined' && Array.isArray(supermarkets)) ? supermarkets : [];
+  if (all.length === 0) {
     showToast(t('noStoreConfigured'));
     return;
   }
 
-  showIngredientPicker(recipe, enabled);
+  const enabled = all.filter(s => s.enabled !== false);
+  const others = all.filter(s => s.enabled === false);
+
+  showIngredientPicker(recipe, { enabled, others });
 }
 
 // Construeix i mostra el modal de selecció d'ingredients + supermercat.
-function showIngredientPicker(recipe, enabledSupers) {
+function showIngredientPicker(recipe, supers) {
   const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
   const ingredients = recipe.ingredients || [];
+  const enabledSupers = (supers && supers.enabled) ? supers.enabled : [];
+  const otherSupers = (supers && supers.others) ? supers.others : [];
+  const allSupers = enabledSupers.concat(otherSupers);
 
   // Estat dins el modal: índexs marcats i super seleccionat
   const checked = new Set();
   ingredients.forEach((ing, idx) => {
     if (!matchIngredient(ing, userProducts)) checked.add(idx);
   });
-  let selectedSuperId = enabledSupers[0].id;
+  let selectedSuperId = allSupers[0] ? allSupers[0].id : null;
 
   // Factor d'escala segons l'editor de persones
   const baseServings = recipe.servings || 1;
@@ -605,12 +613,26 @@ function showIngredientPicker(recipe, enabledSupers) {
       '</label>';
   }).join('');
 
-  const chipHtml = enabledSupers.map((sm, i) => {
-    return '<button type="button" class="super-chip' + (i === 0 ? ' active' : '') + '" data-id="' + escapeHtml(sm.id) + '">' +
+  // Una funció per renderitzar els chips d'un grup de supers
+  const renderChips = (list) => list.map((sm) => {
+    const isActive = sm.id === selectedSuperId;
+    return '<button type="button" class="super-chip' + (isActive ? ' active' : '') + '" data-id="' + escapeHtml(sm.id) + '">' +
       '<span class="super-chip-emoji">' + (sm.emoji || '🛒') + '</span>' +
       '<span class="super-chip-name">' + escapeHtml(sm.name || '') + '</span>' +
       '</button>';
   }).join('');
+
+  let supersHtml = '';
+  if (enabledSupers.length > 0 && otherSupers.length > 0) {
+    // Hi ha de les dues — mostrem capçaleres per distingir-les
+    supersHtml += '<p class="modal-section-sublabel">' + escapeHtml(t('preferredShops')) + '</p>';
+    supersHtml += '<div class="super-chips-row">' + renderChips(enabledSupers) + '</div>';
+    supersHtml += '<p class="modal-section-sublabel">' + escapeHtml(t('otherShops')) + '</p>';
+    supersHtml += '<div class="super-chips-row">' + renderChips(otherSupers) + '</div>';
+  } else {
+    // Tot a una sola tira (les preferides o les altres, segons quines hi hagi)
+    supersHtml += '<div class="super-chips-row">' + renderChips(allSupers) + '</div>';
+  }
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -621,7 +643,7 @@ function showIngredientPicker(recipe, enabledSupers) {
       '<p class="modal-sub">' + escapeHtml(recipe.name || '') + '</p>' +
       '<div class="ingredient-pick-list">' + ingHtml + '</div>' +
       '<p class="modal-section-label">' + escapeHtml(t('whichSuper')) + '</p>' +
-      '<div class="super-chips-row">' + chipHtml + '</div>' +
+      supersHtml +
       '<button type="button" class="modal-confirm-btn" id="ingredient-pick-confirm"></button>' +
       '<button class="modal-cancel" id="modal-cancel-btn">' + t('cancel') + '</button>' +
     '</div>';
