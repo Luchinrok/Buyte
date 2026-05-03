@@ -5210,3 +5210,54 @@ h1 {
   font-size: 14px;
   line-height: 1.5;
 }
+
+.cookme-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cookme-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.cookme-search-input::placeholder {
+  color: var(--text-soft);
+}
+
+.cookme-search-input:focus {
+  outline: none;
+  border-color: #FF9800;
+  box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.15);
+}
+
+.cookme-sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.cookme-sort-btn:active { transform: scale(0.97); }
+
+.cookme-sort-icon { font-size: 16px; line-height: 1; }
+.cookme-sort-label { font-size: 12px; }

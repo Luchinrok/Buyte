@@ -9,6 +9,10 @@
 
 // Pestanya activa: 'ready' | 'almost' | 'all'
 let cookmeTab = 'ready';
+// Cerca lliure dins la pestanya activa
+let cookmeSearch = '';
+// Mode d'ordenació: 'percent' (per coincidència) | 'alpha' (A-Z)
+let cookmeSort = 'percent';
 
 // Normalitza un text: minúscules + sense accents + sense espais finals.
 function cookmeNormalize(s) {
@@ -88,10 +92,19 @@ function calculateRecipeMatch(recipe, userProducts) {
 // Obre la pantalla CookMe i renderitza la pestanya per defecte.
 function openCookMe() {
   cookmeTab = 'ready';
+  cookmeSearch = '';
+  cookmeSort = 'percent';
   // Sincronitza estat visual de les pestanyes
   document.querySelectorAll('#cookme-tabs .cookme-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === cookmeTab);
   });
+  // Reseteja l'input de cerca i el placeholder en l'idioma actual
+  const searchInput = document.getElementById('cookme-search');
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.placeholder = t('searchRecipe');
+  }
+  updateCookMeSortBtn();
   renderCookMe();
   showScreen('cookme');
 }
@@ -103,6 +116,33 @@ function setCookMeTab(tab) {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
   renderCookMe();
+}
+
+// Actualitza el text de la cerca i re-renderitza.
+function setCookMeSearch(query) {
+  cookmeSearch = query || '';
+  renderCookMe();
+}
+
+// Toggle entre ordenació per % i alfabètic.
+function toggleCookMeSort() {
+  cookmeSort = (cookmeSort === 'percent') ? 'alpha' : 'percent';
+  updateCookMeSortBtn();
+  renderCookMe();
+}
+
+// Refresca icona i text del botó d'ordenació segons el mode actiu.
+function updateCookMeSortBtn() {
+  const icon = document.getElementById('cookme-sort-icon');
+  const label = document.getElementById('cookme-sort-label');
+  if (!icon || !label) return;
+  if (cookmeSort === 'percent') {
+    icon.textContent = '📊';
+    label.textContent = t('sortByPercent');
+  } else {
+    icon.textContent = '🔠';
+    label.textContent = t('sortAlpha');
+  }
 }
 
 // Renderitza la llista de receptes segons la pestanya activa.
@@ -130,21 +170,42 @@ function renderCookMe() {
     filtered = results.slice();
   }
 
-  // Ordena per percent desc, després per nom
-  filtered.sort((a, b) => {
-    if (b.percent !== a.percent) return b.percent - a.percent;
-    return (a.recipe.name || '').localeCompare(b.recipe.name || '');
-  });
+  // Cerca lliure: nom de recepta o nom d'ingredient
+  const q = cookmeNormalize(cookmeSearch);
+  if (q) {
+    filtered = filtered.filter(r => {
+      if (cookmeNormalize(r.recipe.name).includes(q)) return true;
+      const ings = r.recipe.ingredients || [];
+      for (let i = 0; i < ings.length; i++) {
+        if (cookmeNormalize(ings[i].name).includes(q)) return true;
+      }
+      return false;
+    });
+  }
+
+  // Ordena segons el mode triat
+  if (cookmeSort === 'alpha') {
+    filtered.sort((a, b) => (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca'));
+  } else {
+    filtered.sort((a, b) => {
+      if (b.percent !== a.percent) return b.percent - a.percent;
+      return (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca');
+    });
+  }
 
   list.innerHTML = '';
 
   if (filtered.length === 0) {
     // Cap recepta a la pestanya. Decideix el missatge:
-    const anyAlmost = results.some(r => r.canMake || r.percent >= 70);
-    if (cookmeTab === 'ready' && anyAlmost) {
-      empty.textContent = t('noRecipesReady');
+    if (q) {
+      empty.textContent = t('noResults');
     } else {
-      empty.textContent = t('noRecipesAtAll');
+      const anyAlmost = results.some(r => r.canMake || r.percent >= 70);
+      if (cookmeTab === 'ready' && anyAlmost) {
+        empty.textContent = t('noRecipesReady');
+      } else {
+        empty.textContent = t('noRecipesAtAll');
+      }
     }
     empty.style.display = 'block';
     list.style.display = 'none';

@@ -395,6 +395,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Cercador de receptes
+  const cookmeSearchInput = document.getElementById('cookme-search');
+  if (cookmeSearchInput) cookmeSearchInput.addEventListener('input', (e) => {
+    if (typeof setCookMeSearch === 'function') setCookMeSearch(e.target.value);
+  });
+
+  // Toggle d'ordenació (per % / alfabètic)
+  const cookmeSortBtn = document.getElementById('cookme-sort');
+  if (cookmeSortBtn) cookmeSortBtn.addEventListener('click', () => {
+    if (typeof toggleCookMeSort === 'function') toggleCookMeSort();
+  });
+
   // Comptador inicial al botó CookMe del launcher
   if (typeof renderCookMeBadge === 'function') renderCookMeBadge();
 

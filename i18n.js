@@ -415,7 +415,7 @@ const TRANSLATIONS = {
     addToBuyMe: 'Afegeix al BuyMe',
     changeEmoji: 'Triar emoji',
     chooseEmoji: 'Triar emoji',
-    sortAlpha: 'Ordenar A-Z',
+    sortAlpha: 'Alfabètic',
     addPopular: 'Afegir nou',
     sorted: 'Ordenat',
     noPopular: 'Cap producte popular',
@@ -510,6 +510,17 @@ const TRANSLATIONS = {
     easyDiff: 'Fàcil',
     mediumDiff: 'Mitjana',
     hardDiff: 'Difícil',
+    searchRecipe: 'Buscar recepta...',
+    sortByPercent: 'Per ingredients',
+    recipeIngredients: 'Ingredients',
+    recipeSteps: 'Passos',
+    recipeTip: 'Consell',
+    addMissingToShopping: 'Afegir al BuyMe',
+    missingItems: 'que falten',
+    whichSuper: 'A quin super afegir-ho?',
+    noSuperAvailable: "No tens cap super configurat. Crea'n un primer.",
+    ingredientsAdded: 'ingredients afegits a',
+    goToShoppingList: 'Veure la llista',
   }
 
 };
