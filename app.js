@@ -184,6 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnResetAll = document.getElementById('reset-all');
   if (btnResetAll) btnResetAll.addEventListener('click', resetAll);
 
+  const btnExportData = document.getElementById('export-data');
+  if (btnExportData) btnExportData.addEventListener('click', exportData);
+
   // Ubicacions des de configuració
   const settingsLoc = document.getElementById('settings-locations');
   if (settingsLoc) settingsLoc.addEventListener('click', () => openLocations('settings'));

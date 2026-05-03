@@ -720,6 +720,38 @@ function openResetDataScreen() {
   showScreen('reset-data');
 }
 
+// Recull totes les claus de l'app a localStorage i les baixa com a JSON.
+function exportData() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    version: 'v2.0',
+    data: {}
+  };
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith('eatmefirst_')) continue;
+    const raw = localStorage.getItem(key);
+    try {
+      payload.data[key] = JSON.parse(raw);
+    } catch (e) {
+      payload.data[key] = raw;
+    }
+  }
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date().toISOString().split('T')[0];
+  a.href = url;
+  a.download = 'buyte-backup-' + today + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  showToast(t('exportDone'));
+}
+
 // Esborra TOT el localStorage propi de l'app i recarrega.
 function resetAll() {
   showConfirmDangerModal('🗑️', t('resetAllTitle'), t('resetAllConfirm'), () => {

@@ -790,6 +790,51 @@ h1 {
   margin-bottom: 0;
 }
 
+/* Botó d'exportació de dades — to neutre, no-destructiu. */
+.export-card {
+  background: linear-gradient(135deg, #BBDEFB 0%, #90CAF9 100%);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.25);
+  color: #0D47A1;
+}
+.export-card .settings-card-title,
+.export-card .settings-card-sub,
+.export-card .settings-card-arrow {
+  color: #0D47A1;
+}
+.export-card .settings-card-icon {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .export-card {
+    background: linear-gradient(135deg, #1976D2 0%, #0D47A1 100%);
+    box-shadow: 0 3px 12px rgba(33, 150, 243, 0.35);
+    color: #E3F2FD;
+  }
+  :root:not([data-theme="light"]) .export-card .settings-card-title,
+  :root:not([data-theme="light"]) .export-card .settings-card-sub,
+  :root:not([data-theme="light"]) .export-card .settings-card-arrow {
+    color: #E3F2FD;
+  }
+  :root:not([data-theme="light"]) .export-card .settings-card-icon {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
+:root[data-theme="dark"] .export-card {
+  background: linear-gradient(135deg, #1976D2 0%, #0D47A1 100%);
+  box-shadow: 0 3px 12px rgba(33, 150, 243, 0.35);
+  color: #E3F2FD;
+}
+:root[data-theme="dark"] .export-card .settings-card-title,
+:root[data-theme="dark"] .export-card .settings-card-sub,
+:root[data-theme="dark"] .export-card .settings-card-arrow {
+  color: #E3F2FD;
+}
+:root[data-theme="dark"] .export-card .settings-card-icon {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 /* Botó destructiu fort (vermell intens) — usat per "Esborrar TOT"
    dins de la pantalla d'esborrat de dades. */
 .danger-card {
