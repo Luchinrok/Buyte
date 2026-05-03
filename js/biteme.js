@@ -986,12 +986,17 @@ function saveNewProduct() {
   const qtyInput = document.getElementById('input-qty');
   const qty = qtyInput ? qtyInput.value.trim() : '';
 
-  // Preu (opcional). Només el guardem si l'usuari l'ha informat.
+  // Preu (opcional). Només el guardem si l'usuari l'ha informat. Acceptem
+  // tant punt com coma com a separador decimal: en alguns inputs type=number
+  // amb locale ca/es, "2,50" no es parsa bé per parseFloat per defecte.
   const priceInput = document.getElementById('input-price');
   let price = null;
-  if (priceInput && priceInput.value.trim() !== '') {
-    const parsed = parseFloat(priceInput.value);
-    if (!isNaN(parsed) && parsed >= 0) price = Math.round(parsed * 100) / 100;
+  if (priceInput) {
+    const raw = String(priceInput.value || '').trim().replace(',', '.');
+    if (raw !== '') {
+      const parsed = parseFloat(raw);
+      if (!isNaN(parsed) && parsed >= 0) price = Math.round(parsed * 100) / 100;
+    }
   }
 
   if (!name) { showToast(t('needName')); return; }
@@ -1009,7 +1014,7 @@ function saveNewProduct() {
   // Pes (opcional). Guardem el text tal qual l'ha escrit l'usuari
   // ("500g", "1kg"...), parseQuantityToKg el sap interpretar.
   const weightInput = document.getElementById('input-weight');
-  const weight = weightInput ? weightInput.value.trim() : '';
+  const weight = weightInput ? String(weightInput.value || '').trim() : '';
 
   // Mode edició: actualitzem el producte existent i tornem al detall
   if (editingProductId) {
