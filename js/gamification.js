@@ -483,6 +483,36 @@ function openAchievements() {
   showScreen('achievements');
 }
 
+// Pinta el banner de nivell que apareix a la pantalla "El meu impacte".
+// És un resum compacte amb avatar + nom de nivell + progrés + comptador
+// d'insignies. Tot el banner és clicable i porta a "Els meus èxits".
+function renderImpactLevelBanner() {
+  const banner = document.getElementById('impact-level-banner');
+  if (!banner) return;
+
+  const level = getCurrentLevel();
+  const tierEmoji = getLevelTierEmoji(level);
+  const [c1, c2] = getLevelTierGradient(level);
+  banner.style.background = 'linear-gradient(135deg, ' + c1 + ' 0%, ' + c2 + ' 100%)';
+  banner.style.boxShadow = '0 6px 20px ' + c2 + '55';
+
+  const avatar = document.getElementById('impact-level-avatar');
+  if (avatar) avatar.textContent = tierEmoji;
+  const tierEl = document.getElementById('impact-level-tier');
+  if (tierEl) tierEl.textContent = t('level') + ' ' + level;
+  const nameEl = document.getElementById('impact-level-name');
+  if (nameEl) nameEl.textContent = getLevelName(level);
+
+  const progress = getProgressToNextLevel();
+  const fill = document.getElementById('impact-level-progress-fill');
+  if (fill) fill.style.width = progress.percent + '%';
+
+  const totalBadges = (typeof BADGES !== 'undefined') ? BADGES.length : 0;
+  const unlocked = (gamificationState.unlockedBadges || []).length;
+  const entry = document.getElementById('impact-level-entry');
+  if (entry) entry.textContent = unlocked + '/' + totalBadges + ' ' + t('badgesUnlocked') + ' →';
+}
+
 function renderAchievements() {
   // Banner de nivell
   const level = getCurrentLevel();

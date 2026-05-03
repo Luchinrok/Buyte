@@ -207,6 +207,7 @@ function openImpact() {
     p.classList.toggle('active', p.dataset.period === impactPeriod);
   });
   renderImpact();
+  if (typeof renderImpactLevelBanner === 'function') renderImpactLevelBanner();
   showScreen('impact');
 }
 

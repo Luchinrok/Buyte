@@ -6326,6 +6326,34 @@ h1 {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
+/* Versió clicable del banner (a "El meu impacte") */
+.level-banner-clickable {
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 0.1s;
+}
+.level-banner-clickable:active { transform: scale(0.985); }
+
+.level-banner-arrow {
+  z-index: 1;
+  flex-shrink: 0;
+  font-size: 28px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.9);
+  margin-left: 4px;
+}
+
+.level-banner-entry {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 4px 0 0;
+  opacity: 0.95;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
 /* Botó d'entrada al "Els meus èxits" des d'Impacte */
 .achievements-entry-btn {
   display: flex;

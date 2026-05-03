@@ -14,6 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof loadRecipeUsage === 'function') loadRecipeUsage();
   if (typeof loadCustomRecipes === 'function') loadCustomRecipes();
   if (typeof loadRecipeOverrides === 'function') loadRecipeOverrides();
+  if (typeof loadGamificationState === 'function') {
+    loadGamificationState();
+    // Comprovem insígnies a l'arrencada per si s'han desbloquejat estant offline.
+    if (typeof checkBadges === 'function') checkBadges();
+  }
 
   const savedTheme = localStorage.getItem('eatmefirst_theme') || 'light';
   applyTheme(savedTheme);
@@ -159,6 +164,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // El meu impacte
   const btnImpact = document.getElementById('settings-impact');
   if (btnImpact) btnImpact.addEventListener('click', openImpact);
+
+  // Banner de nivell (pantalla d'Impacte) → Els meus èxits
+  const impactLevelBanner = document.getElementById('impact-level-banner');
+  if (impactLevelBanner) impactLevelBanner.addEventListener('click', () => {
+    if (typeof openAchievements === 'function') openAchievements();
+  });
   document.querySelectorAll('#impact-period-pills .impact-period-pill').forEach(pill => {
     pill.addEventListener('click', () => setImpactPeriod(pill.dataset.period));
   });
