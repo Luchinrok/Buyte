@@ -30,9 +30,11 @@ function showConsumptionSliderModal(product, action, onConfirm, alreadyConsumed)
   const isConsumed = action === 'consumed';
   const UNITS_CHIPS_MAX = 12;
 
+  // Per defecte assumim el cas més habitual: t'ho has menjat / llençat tot.
+  // Per unitats → totes (qty completa). Per % → 100%.
   let activeTab = 'units';
-  let currentUnits = Math.min(1, qtyNum || 1);
-  let currentPercent = showTabs ? 25 : 100;
+  let currentUnits = qtyNum && qtyNum > 0 ? qtyNum : 1;
+  let currentPercent = 100;
 
   // Render dels chips d'unitats (si qty no és gaire gran)
   const unitsChipsHtml = () => {
