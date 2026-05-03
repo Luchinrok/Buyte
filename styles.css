@@ -851,14 +851,19 @@ h1 {
 /* Botons d'esborrat granulars: més suaus que el "Esborrar tot" */
 .danger-card-soft {
   background: linear-gradient(135deg, #FFCDD2 0%, #EF9A9A 100%);
-  box-shadow: 0 2px 8px rgba(229, 115, 115, 0.25);
+  box-shadow: 0 2px 10px rgba(229, 57, 53, 0.28);
+  border: 1px solid #E57373;
   color: #B71C1C;
 }
 .danger-card-soft .settings-card-icon {
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.65);
 }
 .danger-card-soft .settings-card-title {
   color: #B71C1C;
+  text-shadow: none;
+}
+.danger-card-soft .settings-card-sub {
+  color: #C62828;
 }
 .danger-card-soft .settings-card-arrow {
   color: #B71C1C;
@@ -866,13 +871,15 @@ h1 {
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .danger-card-soft {
-    background: linear-gradient(135deg, #C53A3A 0%, #8E2222 100%);
+    background: linear-gradient(135deg, #4A1B1B 0%, #2E0F0F 100%);
     box-shadow: 0 3px 12px rgba(244, 67, 54, 0.3);
-    color: #FFEBEE;
+    border-color: rgba(244, 67, 54, 0.4);
+    color: #FFCDD2;
   }
   :root:not([data-theme="light"]) .danger-card-soft .settings-card-title,
+  :root:not([data-theme="light"]) .danger-card-soft .settings-card-sub,
   :root:not([data-theme="light"]) .danger-card-soft .settings-card-arrow {
-    color: #FFEBEE;
+    color: #FFCDD2;
   }
   :root:not([data-theme="light"]) .danger-card-soft .settings-card-icon {
     background: rgba(255, 255, 255, 0.18);
@@ -880,13 +887,15 @@ h1 {
 }
 
 :root[data-theme="dark"] .danger-card-soft {
-  background: linear-gradient(135deg, #C53A3A 0%, #8E2222 100%);
+  background: linear-gradient(135deg, #4A1B1B 0%, #2E0F0F 100%);
   box-shadow: 0 3px 12px rgba(244, 67, 54, 0.3);
-  color: #FFEBEE;
+  border-color: rgba(244, 67, 54, 0.4);
+  color: #FFCDD2;
 }
 :root[data-theme="dark"] .danger-card-soft .settings-card-title,
+:root[data-theme="dark"] .danger-card-soft .settings-card-sub,
 :root[data-theme="dark"] .danger-card-soft .settings-card-arrow {
-  color: #FFEBEE;
+  color: #FFCDD2;
 }
 :root[data-theme="dark"] .danger-card-soft .settings-card-icon {
   background: rgba(255, 255, 255, 0.18);
