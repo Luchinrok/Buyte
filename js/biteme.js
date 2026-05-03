@@ -1000,9 +1000,8 @@ function saveNewProduct() {
   // Calcula dies aproximats per a l'aprenentatge automàtic
   let approxDays = null;
   if (date) {
-    const d = new Date(date);
-    const now = new Date();
-    approxDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
+    approxDays = daysUntil(date);
+    if (approxDays === Infinity) approxDays = null;
   }
 
   recordProductInHistory(name, selectedEmoji, selectedLocation, approxDays, noExpiryChecked, price);

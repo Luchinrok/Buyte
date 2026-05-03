@@ -421,12 +421,33 @@ function formatProductLine(name, qty) {
   return safeName + '<span class="prod-qty">' + escapeHtml(String(qty).trim()) + '</span>';
 }
 
+// Converteix una string "YYYY-MM-DD" en un Date a midnight LOCAL (no UTC).
+// `new Date("2026-06-03")` en canvi parseja com a UTC, cosa que en zones
+// horàries com CET/CEST acaba causant errors d'1 dia en zones horàries
+// diferents.
+function parseDateLocal(str) {
+  if (!str) return null;
+  const m = String(str).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return new Date(str); // fallback per ISO completes
+  return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+}
+
+// Formata un Date a "YYYY-MM-DD" usant la zona horària LOCAL.
+// És el complement de parseDateLocal.
+function formatDateLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + dd;
+}
+
 // DIES
 function daysUntil(dateStr) {
   if (!dateStr) return Infinity; // Sense data → mai caduca
   const now = new Date();
   now.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
+  const target = parseDateLocal(dateStr);
+  if (!target) return Infinity;
   target.setHours(0, 0, 0, 0);
   return Math.round((target - now) / 86400000);
 }
@@ -469,11 +490,9 @@ function showScreen(name) {
   }
 }
 
+// Manté el nom legacy: és exactament el mateix que formatDateLocal.
 function formatDateForInput(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + dd;
+  return formatDateLocal(d);
 }
 
 // TOAST

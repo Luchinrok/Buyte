@@ -518,10 +518,8 @@ function saveShoppingItem() {
     if (typeof addToCustomPopular !== 'function') return;
     let days = null;
     if (date) {
-      const d = new Date(date);
-      const now = new Date();
-      const diff = Math.round((d - now) / 86400000);
-      if (diff > 0) days = diff;
+      const diff = daysUntil(date);
+      if (Number.isFinite(diff) && diff > 0) days = diff;
     }
     if (noExpiry || days) {
       addToCustomPopular(name, selectedShoppingEmoji, days, null, noExpiry);
@@ -642,10 +640,8 @@ function buyShoppingItem(item) {
   // Si el propi item té data, calculem els dies que falten
   let itemDays = null;
   if (item.date) {
-    const d = new Date(item.date);
-    const now = new Date();
-    const diff = Math.round((d - now) / 86400000);
-    if (diff > 0) itemDays = diff;
+    const diff = daysUntil(item.date);
+    if (Number.isFinite(diff) && diff > 0) itemDays = diff;
   }
 
   const prefill = {
