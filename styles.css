@@ -714,7 +714,7 @@ h1 {
 /* Emojis (text) dins de la pastilla d'icona — mateixa mida que els SVG perquè
    tots els botons del menú es vegin uniformement. */
 .settings-card-icon > span {
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -771,7 +771,7 @@ h1 {
   box-shadow: 0 3px 10px rgba(255, 193, 7, 0.3);
 }
 .settings-card-sync {
-  background: linear-gradient(135deg, #29B6F6 0%, #0277BD 100%);
+  background: linear-gradient(135deg, #4FC3F7 0%, #0277BD 100%);
   box-shadow: 0 3px 10px rgba(33, 150, 243, 0.3);
 }
 .settings-card-theme {
@@ -3836,31 +3836,13 @@ h1 {
   background: rgba(255,255,255,0.3);
 }
 
-/* Targeta sincronització a la configuració */
-.settings-card-sync {
-  background: linear-gradient(135deg, #26A69A 0%, #00695C 100%);
-  box-shadow: 0 3px 10px rgba(0, 137, 123, 0.3);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .settings-card-sync {
-    background: linear-gradient(135deg, #00897B 0%, #004D40 100%);
-    box-shadow: 0 3px 14px rgba(0, 137, 123, 0.5);
-  }
-}
-
-:root[data-theme="dark"] .settings-card-sync {
-  background: linear-gradient(135deg, #00897B 0%, #004D40 100%);
-  box-shadow: 0 3px 14px rgba(0, 137, 123, 0.5);
-}
-
-/* La icona de sincronització a la home gira sutilment quan hi ha activitat */
-.settings-card-sync .settings-card-icon svg {
+/* La icona de sincronització gira sutilment quan està activa */
+.settings-card-sync .settings-card-icon > span {
   animation: syncRotate 4s linear infinite;
   animation-play-state: paused;
 }
 
-.settings-card-sync.active .settings-card-icon svg {
+.settings-card-sync.active .settings-card-icon > span {
   animation-play-state: running;
 }
 
