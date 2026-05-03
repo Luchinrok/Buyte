@@ -775,6 +775,9 @@ function addToShoppingList(supermarketId, product, qty) {
     addedAt: Date.now()
   });
   saveShoppingData();
+  // Gamificació: 1 XP per item afegit al BuyMe + comptador històric.
+  if (typeof bumpBuymeAddedCounter === 'function') bumpBuymeAddedCounter(1);
+  if (typeof addXp === 'function') addXp(1, 'buyme-add');
 }
 
 // Flux manual: pregunta quantitat i supermercat per afegir al BuyMe

@@ -603,6 +603,10 @@ function showScreen(name) {
   // Aturar escàner si no som a la pantalla d'escaneig
   if (name !== 'scan') stopScanner();
 
+  // Gamificació: registra la pantalla visitada i l'hora de l'acció
+  if (typeof recordScreenVisit === 'function') recordScreenVisit(name);
+  if (typeof recordHourTouch === 'function') recordHourTouch();
+
   // Engranatge del launcher: gira un cop quan s'entra a la pantalla inicial
   if (name === 'launcher') {
     const gear = document.querySelector('#launcher-menu-btn .gear-spin');

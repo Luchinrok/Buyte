@@ -393,9 +393,9 @@ function unlockBadge(id) {
   return badge;
 }
 
-// Recorre totes les insignies i desbloqueja les que ja compleixen el criteri.
-// Retorna l'array d'insignies acabades de desbloquejar (poden ser zero).
-function checkBadges() {
+// Variant interna sense efectes de cua: només desbloqueja les que toquin
+// (afegint xpReward) i retorna les noves insignies.
+function _checkBadgesSilent() {
   if (typeof BADGES === 'undefined') return [];
   const stats = computeGamificationStats();
   const newly = [];
@@ -409,6 +409,18 @@ function checkBadges() {
   return newly;
 }
 
+// Punt d'entrada públic: comprova insignies i mostra la cua de recompenses.
+// Calcula el nivell ABANS i DESPRÉS, així si una insignia (via xpReward)
+// fa pujar de nivell, també n'emetem l'esdeveniment.
+function checkBadges() {
+  const oldLevel = getCurrentLevel();
+  const newly = _checkBadgesSilent();
+  saveGamificationState();
+  const newLevel = getCurrentLevel();
+  _emitRewardQueue(oldLevel, newLevel, newly);
+  return newly;
+}
+
 
 // ============================================
 //   AFEGIR XP
@@ -418,25 +430,20 @@ function checkBadges() {
 // { kind: 'level'|'badge', ... } perquè la capa visual l'animi després.
 function addXp(amount, reason) {
   amount = Number(amount) || 0;
-  if (amount <= 0) {
-    // Encara així, comprovem insignies (alguna pot no dependre d'XP, com 'streak').
-    return _processQueue([], checkBadges());
-  }
   const oldLevel = getCurrentLevel();
-  gamificationState.xp += amount;
-  const newLevel = getCurrentLevel();
-  saveGamificationState();
-
-  const levelEvents = [];
-  for (let l = oldLevel + 1; l <= newLevel; l++) {
-    levelEvents.push({ kind: 'level', level: l });
+  if (amount > 0) {
+    gamificationState.xp += amount;
   }
-  return _processQueue(levelEvents, checkBadges());
+  const newBadges = _checkBadgesSilent();
+  saveGamificationState();
+  const newLevel = getCurrentLevel();
+  return _emitRewardQueue(oldLevel, newLevel, newBadges);
 }
 
-function _processQueue(levelEvents, newBadges) {
-  const queue = levelEvents.slice();
-  newBadges.forEach(b => queue.push({ kind: 'badge', badge: b }));
+function _emitRewardQueue(oldLevel, newLevel, newBadges) {
+  const queue = [];
+  for (let l = oldLevel + 1; l <= newLevel; l++) queue.push({ kind: 'level', level: l });
+  (newBadges || []).forEach(b => queue.push({ kind: 'badge', badge: b }));
   if (queue.length > 0 && typeof showRewardQueue === 'function') {
     showRewardQueue(queue);
   }

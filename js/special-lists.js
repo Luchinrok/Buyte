@@ -416,6 +416,9 @@ function addSpecialListToSupermarket(supermarketId) {
   saveShoppingData();
   specialSelectedItems = [];
   showToast('🎉 ' + items.length + ' ' + t('itemsAdded'));
+  // Gamificació: 30 XP per haver "Comprat" una llista especial.
+  if (typeof bumpSpecialListsUsedCounter === 'function') bumpSpecialListsUsedCounter();
+  if (typeof addXp === 'function') addXp(30, 'special-list-used');
   // Quedar-se a la pantalla del detall de la llista (no anar al super)
 }
 

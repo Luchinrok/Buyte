@@ -862,6 +862,9 @@ function addItemsToShop(supermarketId, items) {
   const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(supermarketId) : null;
   const smName = sm ? sm.name : '';
   showToast('🛒 ' + items.length + ' ' + t('ingredientsAdded') + ' ' + smName);
+  // Gamificació: 25 XP per "cuinar" una recepta (afegir-ne ingredients al BuyMe).
+  // Es compta per acció (no per ingredient — cada ítem ja n'ha sumat 1 via addToShoppingList).
+  if (typeof addXp === 'function' && items.length > 0) addXp(25, 'cookme-cook');
 }
 
 // Actualitza el comptador de receptes que es poden fer ja al botó del launcher.
@@ -1213,6 +1216,8 @@ function saveRecipeFromForm() {
   editingRecipeData.ingredients = cleanIngs;
   editingRecipeData.steps = cleanSteps;
 
+  let xpAmount = 0;
+  let xpReason = '';
   if (editingRecipeId) {
     // Editar existent: distingim entre custom i catàleg
     const customIdx = customRecipes.findIndex(r => r.id === editingRecipeId);
@@ -1229,12 +1234,17 @@ function saveRecipeFromForm() {
       recipeOverrides[editingRecipeId] = overrideData;
       saveRecipeOverrides();
     }
+    xpAmount = 5;
+    xpReason = 'recipe-edit';
   } else {
     // Nova recepta custom
     editingRecipeData.id = _customRecipeId(editingRecipeData.name);
     customRecipes.push(editingRecipeData);
     saveCustomRecipes();
+    xpAmount = 50;
+    xpReason = 'recipe-new';
   }
+  if (typeof addXp === 'function' && xpAmount > 0) addXp(xpAmount, xpReason);
   showToast(t('saved'));
 
   if (editingRecipeId) {

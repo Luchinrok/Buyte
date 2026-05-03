@@ -545,6 +545,20 @@ function finalizeConsumption(product, action, percent, displayPercent) {
   // Sempre desem el percentatge real a l'historial (per a estadístiques
   // d'estalvi i CO₂), independentment de si el producte queda o desapareix.
   recordConsumption(product, action, percent);
+
+  // XP de gamificació: només per "consumed" (aprofitament). +5 XP bonus
+  // si el producte caducava avui o demà (premi al rescat d'última hora).
+  if (typeof addXp === 'function') {
+    if (action === 'consumed') {
+      let xp = Math.round(10 * percent / 100);
+      const days = (typeof daysUntil === 'function' && product.date) ? daysUntil(product.date) : null;
+      if (typeof days === 'number' && isFinite(days) && days <= 1) xp += 5;
+      addXp(xp, 'consumed');
+    } else {
+      // "trashed" no atorga XP, però volem revisar insignies de constància/streak.
+      if (typeof checkBadges === 'function') checkBadges();
+    }
+  }
   const shown = (typeof displayPercent === 'number') ? displayPercent : percent;
 
   // Regla per quan el producte es queda al BiteMe:
@@ -1085,6 +1099,10 @@ function saveNewProduct() {
   products.push(newProduct);
 
   saveData();
+
+  // Gamificació: comptador històric + 2 XP per producte afegit al BiteMe.
+  if (typeof bumpProductsAddedCounter === 'function') bumpProductsAddedCounter();
+  if (typeof addXp === 'function') addXp(2, 'biteme-add');
 
   // Si veníem de la llista de la compra, traiem l'item d'allà i tornem a comprar
   if (pendingShoppingItemId) {
