@@ -199,6 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof confirmResetRecipeUsage === 'function') confirmResetRecipeUsage();
   });
 
+  const btnResetGamification = document.getElementById('reset-gamification');
+  if (btnResetGamification) btnResetGamification.addEventListener('click', () => {
+    if (typeof confirmResetGamificationProgress === 'function') confirmResetGamificationProgress();
+  });
+
   // Custom recipes: botó nou + accions d'edició al detall
   const btnAddRecipe = document.getElementById('btn-add-recipe');
   if (btnAddRecipe) btnAddRecipe.addEventListener('click', () => {

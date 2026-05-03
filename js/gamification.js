@@ -743,3 +743,18 @@ function resetGamificationProgress() {
     localStorage.removeItem('eatmefirst_special_lists_used');
   } catch (e) {}
 }
+
+// Demana confirmació abans d'esborrar tot el progrés de gamificació.
+function confirmResetGamificationProgress() {
+  const onYes = () => {
+    resetGamificationProgress();
+    if (typeof showToast === 'function') showToast(t('doneReset'));
+    if (typeof renderImpactLevelBanner === 'function') renderImpactLevelBanner();
+    if (typeof renderAchievements === 'function') renderAchievements();
+  };
+  if (typeof showConfirmDangerModal === 'function') {
+    showConfirmDangerModal('🏆', t('resetGamificationTitle'), t('resetGamificationConfirm'), onYes);
+  } else if (window.confirm(t('resetGamificationConfirm'))) {
+    onYes();
+  }
+}
