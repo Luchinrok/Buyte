@@ -201,6 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExportData = document.getElementById('export-data');
   if (btnExportData) btnExportData.addEventListener('click', exportData);
 
+  const btnImportData = document.getElementById('import-data');
+  if (btnImportData) btnImportData.addEventListener('click', importData);
+
   // Ubicacions des de configuració
   const settingsLoc = document.getElementById('settings-locations');
   if (settingsLoc) settingsLoc.addEventListener('click', () => openLocations('settings'));

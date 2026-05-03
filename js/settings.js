@@ -752,6 +752,47 @@ function exportData() {
   showToast(t('exportDone'));
 }
 
+// Importa un fitxer JSON exportat per exportData().
+// Substitueix les claus eatmefirst_* del localStorage i recarrega.
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      let json;
+      try {
+        json = JSON.parse(ev.target.result);
+      } catch (err) {
+        alert(t('importInvalid'));
+        return;
+      }
+      if (!json || !json.data || typeof json.data !== 'object') {
+        alert(t('importInvalid'));
+        return;
+      }
+      const keys = Object.keys(json.data).filter(k => k.startsWith('eatmefirst_'));
+      if (keys.length === 0) {
+        alert(t('importInvalid'));
+        return;
+      }
+      if (!confirm(t('importConfirm'))) return;
+      keys.forEach(k => {
+        const val = json.data[k];
+        localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
+      });
+      showToast(t('importDone'));
+      setTimeout(() => location.reload(), 800);
+    };
+    reader.onerror = () => alert(t('importInvalid'));
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
 // Esborra TOT el localStorage propi de l'app i recarrega.
 function resetAll() {
   showConfirmDangerModal('🗑️', t('resetAllTitle'), t('resetAllConfirm'), () => {
