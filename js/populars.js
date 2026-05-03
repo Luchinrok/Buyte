@@ -260,10 +260,12 @@ function openPopular(origin) {
   popularSearchQuery = '';
   const searchInput = document.getElementById('popular-search');
   if (searchInput) searchInput.value = '';
-  // Reset back-button: per defecte 'add', des de configuració 'settings'
+  // Reset back-button: 'settings' des de configuració, 'shopping-item-edit'
+  // des del BuyMe, 'add' (formulari del BiteMe) per defecte.
   const backBtn = document.querySelector('#screen-popular .back-btn');
   if (backBtn) {
     if (popularOrigin === 'settings') backBtn.dataset.back = 'settings';
+    else if (popularOrigin === 'shopping') backBtn.dataset.back = 'shopping-item-edit';
     else backBtn.dataset.back = 'add';
   }
   renderPopularList();
@@ -279,7 +281,7 @@ function renderPopularList() {
   const backBtn = document.querySelector('#screen-popular .back-btn');
   if (backBtn) {
     if (popularOrigin === 'settings') backBtn.dataset.back = 'settings';
-    else if (popularOrigin === 'shopping') backBtn.dataset.back = 'shopping';
+    else if (popularOrigin === 'shopping') backBtn.dataset.back = 'shopping-item-edit';
     else backBtn.dataset.back = 'add';
   }
 
@@ -326,15 +328,24 @@ function renderPopularList() {
     row.className = 'popular-row';
 
     // Des de Configuració, clicar una fila obre l'edició del popular (gestió
-     // del catàleg). Des d'altres fluxos (add, shopping, home), clicar afegeix
-     // un producte al tracker amb les dades del popular.
-     const onRowClick = () => {
-       if (popularOrigin === 'settings') {
-         editPopularItem(realIdx);
-       } else {
-         openAddForm({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, price: p.price, weight: p.weight });
-       }
-     };
+    // del catàleg). Des del BuyMe, prefilla el formulari de la llista de la
+    // compra. Des de la resta (add/home), prefilla el formulari del BiteMe.
+    const onRowClick = () => {
+      if (popularOrigin === 'settings') {
+        editPopularItem(realIdx);
+      } else if (popularOrigin === 'shopping') {
+        if (typeof prefillShoppingItemFromPopular === 'function') {
+          prefillShoppingItemFromPopular(p);
+        }
+        showScreen('shopping-item-edit');
+      } else {
+        openAddForm({
+          name: p.name, emoji: p.emoji, days: p.days,
+          location: p.location, noExpiry: !!p.noExpiry,
+          price: p.price, weight: p.weight
+        });
+      }
+    };
 
      if (popularMode === 'edit') {
       const arrowsHtml = showArrows ? `

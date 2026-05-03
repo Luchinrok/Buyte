@@ -676,50 +676,44 @@ async function startShoppingScanner() {
   }
 }
 
-// Renderitza els productes populars per afegir a BuyMe (sense caducitat, només nom + emoji)
-function renderPopularListForShopping() {
-  const container = document.getElementById('shopping-popular-list');
-  if (!container) return;
-  container.innerHTML = '';
-  const items = getPopularProducts();
+// Prefilla el formulari del BuyMe (screen-shopping-item-edit) amb les dades
+// d'un popular. Es crida quan l'usuari selecciona un popular des del flux
+// d'afegir a un supermercat.
+function prefillShoppingItemFromPopular(p) {
+  if (!p) return;
+  // Marquem que estem creant nou (no editant) perquè saveShoppingItem
+  // tracti el resultat com a item nou al supermercat actual.
+  editingShoppingItem = null;
+  const titleEl = document.getElementById('shopping-item-edit-title');
+  if (titleEl) titleEl.textContent = t('newShoppingItem');
 
-  if (items.length === 0) {
-    const empty = document.createElement('p');
-    empty.className = 'empty-state';
-    empty.textContent = t('noPopular');
-    container.appendChild(empty);
-    return;
+  document.getElementById('input-shopping-name').value = p.name || '';
+  document.getElementById('input-shopping-qty').value = '';
+  document.getElementById('input-shopping-notes').value = '';
+  selectedShoppingEmoji = p.emoji || '🥛';
+  renderShoppingEmojiPicker();
+
+  const dateInput = document.getElementById('input-shopping-date');
+  const noExpInput = document.getElementById('input-shopping-no-expiry');
+  if (noExpInput) noExpInput.checked = !!p.noExpiry;
+  if (dateInput) {
+    if (p.noExpiry) {
+      dateInput.value = '';
+    } else if (p.days) {
+      const d = new Date();
+      d.setDate(d.getDate() + p.days);
+      dateInput.value = formatDateForInput(d);
+    } else {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      dateInput.value = formatDateForInput(d);
+    }
   }
 
-  items.forEach(p => {
-    const btn = document.createElement('button');
-    btn.className = 'popular-item';
-    btn.innerHTML = `
-      <span class="popular-emoji">${p.emoji}</span>
-      <span class="popular-name">${escapeHtml(p.name)}</span>
-    `;
-    btn.addEventListener('click', () => {
-      const doAdd = () => {
-        const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-        shoppingItems.push({
-          id, supermarketId: currentSupermarketId,
-          name: p.name, emoji: p.emoji, qty: '', notes: '',
-          addedAt: Date.now()
-        });
-        saveShoppingData();
-        showToast('🛒 ' + p.emoji + ' ' + p.name);
-        renderShoppingItems();
-        showScreen('supermarket');
-      };
-      const existing = findExistingAtHome(p.name);
-      if (existing.length > 0) {
-        showAlreadyHaveModal(p.name, existing, doAdd);
-      } else {
-        doAdd();
-      }
-    });
-    container.appendChild(btn);
-  });
+  const delBtn = document.getElementById('btn-delete-shopping-item');
+  if (delBtn) delBtn.style.display = 'none';
+  const shopGroup = document.getElementById('shop-selector-group');
+  if (shopGroup) shopGroup.style.display = 'none';
 }
 
 

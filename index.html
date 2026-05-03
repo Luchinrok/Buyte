@@ -1186,22 +1186,7 @@
         <span class="big-choice-emoji">✍️</span>
         <span class="big-choice-text" data-i18n="manual"></span>
       </button>
-      <button class="big-choice" id="shop-choice-popular">
-        <span class="big-choice-emoji">⭐</span>
-        <span class="big-choice-text" data-i18n="popularProducts"></span>
-      </button>
     </div>
-  </div>
-
-  <!-- PANTALLA POPULARS PER A BUYME -->
-  <div id="screen-shopping-popular" class="screen">
-    <header class="top-bar">
-      <button class="back-btn" data-back="shopping-add-choice" aria-label="Back">‹</button>
-      <h1 data-i18n="popularProducts"></h1>
-      <div style="width:40px"></div>
-    </header>
-    <p class="section-hint" data-i18n="shoppingPopularHint"></p>
-    <div id="shopping-popular-list" class="popular-list-shopping"></div>
   </div>
 
   <div id="screen-shopping-item-edit" class="screen">
@@ -1210,6 +1195,11 @@
       <h1 id="shopping-item-edit-title">-</h1>
       <div style="width:40px"></div>
     </header>
+
+    <button id="shopping-popular-btn" class="popular-btn">
+      <span style="font-size:22px">⭐</span>
+      <span data-i18n="popularProducts"></span>
+    </button>
 
     <div class="form-group">
       <label data-i18n="itemName" for="input-shopping-name"></label>

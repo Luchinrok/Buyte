@@ -418,10 +418,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const choiceShopManual = document.getElementById('shop-choice-manual');
   if (choiceShopManual) choiceShopManual.addEventListener('click', () => openShoppingItemEdit(null));
 
-  const choiceShopPopular = document.getElementById('shop-choice-popular');
-  if (choiceShopPopular) choiceShopPopular.addEventListener('click', () => {
-    renderPopularListForShopping();
-    showScreen('shopping-popular');
+  // Botó "⭐ Productes populars" dins del formulari del BuyMe — reutilitza la
+  // mateixa pantalla de populars que el BiteMe, però amb origin='shopping'
+  // perquè el back i la selecció apuntin de tornada al BuyMe.
+  const shoppingPopularBtn = document.getElementById('shopping-popular-btn');
+  if (shoppingPopularBtn) shoppingPopularBtn.addEventListener('click', () => {
+    if (typeof openPopular === 'function') openPopular('shopping');
   });
 
   // Pantalla d'edició d'item
