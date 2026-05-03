@@ -133,6 +133,75 @@ const TRANSLATIONS = {
     totalUtilization: 'Aprofitament total',
     environmentalImpact: 'Impacte ambiental',
     howCalculated: 'Com es calcula?',
+    infoCalcMoneySections: [
+      {
+        emoji: '📦',
+        title: 'El pes total',
+        intro: 'Calculem el pes segons el que has posat:',
+        bullets: [
+          'Quantitat + pes → és per unitat (3 brics × 500 ml = 1,5 L)',
+          'Només quantitat → multipliquem pel pes mitjà segons l\'emoji',
+          'Només pes/volum → és el total',
+          'Res → fem servir valors mitjans'
+        ]
+      },
+      {
+        emoji: '💰',
+        title: 'El preu total',
+        bullets: [
+          'Si has posat preu i tens més d\'una unitat → és per unitat',
+          'Si no has posat preu → preu mitjà per kg de la categoria'
+        ]
+      },
+      {
+        emoji: '📊',
+        title: 'El càlcul final',
+        bullets: [
+          'Aprofitat = preu total × % consumit',
+          'Llençat = preu total × % llençat'
+        ]
+      },
+      {
+        emoji: '💡',
+        title: 'Exemple',
+        example: 'Llet 1 L · preu 1,20 €\nHas begut el 50% → 0,60 € aprofitat'
+      }
+    ],
+    infoCalcCo2Sections: [
+      {
+        emoji: '📦',
+        title: 'El pes total',
+        intro: 'Igual que als diners:',
+        bullets: [
+          'Quantitat + pes = pes per unitat × quantitat',
+          'Només quantitat = quantitat × pes mitjà segons l\'emoji',
+          'Només pes/volum = el total directe'
+        ]
+      },
+      {
+        emoji: '🌱',
+        title: 'L\'emissió per categoria',
+        intro: 'Cada categoria té una emissió mitjana per kg:',
+        bullets: [
+          'Carn vermella ≈ 27 kg CO₂/kg',
+          'Lactis ≈ 3 kg CO₂/kg',
+          'Verdura ≈ 0,5 kg CO₂/kg'
+        ]
+      },
+      {
+        emoji: '📊',
+        title: 'El càlcul final',
+        bullets: [
+          'CO₂ evitat = pes × emissió × % consumit',
+          'CO₂ malgastat = pes × emissió × % llençat (l\'emissió ja va passar)'
+        ]
+      },
+      {
+        emoji: '💡',
+        title: 'Exemple',
+        example: '500 g de carn vermella llençats\n0,5 × 27 = 13,5 kg CO₂ malgastats'
+      }
+    ],
     calcExplanationMoney: "Per cada producte calculem el preu i el pes totals segons el que has posat:\n\n• Si poses quantitat i pes, el pes és per unitat (3 brics × 500ml = 1,5L).\n• Si poses només quantitat, multipliquem pel pes mitjà segons l'emoji.\n• Si poses només pes/volum, és el total.\n• Si no poses res, fem servir valors mitjans.\n\nPer al preu:\n• Si has posat preu i tens més d'una unitat, és el preu per unitat.\n• Si no has posat preu, fem servir el preu mitjà per kg de la categoria.\n\nQuan dius «me l'he menjat 50%», l'aprofitat és el 50% del valor total. Quan dius «l'he llençat 100%», el llençat és el 100% del valor.",
     calcExplanationCO2: "El pes total es calcula igual que per al preu (mira la pestanya de diners):\n\n• Quantitat + pes = pes per unitat × quantitat.\n• Només quantitat = quantitat × pes mitjà segons l'emoji.\n• Només pes/volum = total directe.\n\nDesprés multipliquem el pes total per l'emissió mitjana de la categoria (per exemple, la carn vermella ~27 kg de CO₂ per kg) i pel % consumit o llençat.\n\nEl CO₂ evitat compta el que t'has menjat. El CO₂ malgastat compta el que has llençat — l'emissió ja va passar igualment.",
     close: 'Tancar',

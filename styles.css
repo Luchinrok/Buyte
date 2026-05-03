@@ -2466,14 +2466,124 @@ h1 {
 /* Modal d'explicació de càlculs */
 .info-modal-content {
   text-align: left;
+  padding: 0;
+  overflow: hidden;
+  max-width: 480px;
 }
 
 .info-modal-body {
   font-size: 14px;
   line-height: 1.55;
   color: var(--text);
-  margin: 12px 0 0 0;
+  margin: 16px 18px 0;
   white-space: normal;
+}
+
+.info-modal-header {
+  background: linear-gradient(135deg, #42A5F5 0%, #1565C0 100%);
+  color: #FFFFFF;
+  padding: 22px 18px 18px;
+  text-align: center;
+  border-radius: 18px 18px 0 0;
+}
+
+.info-modal-icon {
+  font-size: 38px;
+  display: block;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.info-modal-heading {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.18);
+}
+
+.info-modal-sections {
+  padding: 6px 18px 4px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.info-section {
+  padding: 16px 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+.info-section:last-child {
+  border-bottom: none;
+}
+
+.info-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.info-section-emoji {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.info-section-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.info-section-intro {
+  font-size: 13.5px;
+  color: var(--text-soft);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.info-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.info-bullets li {
+  position: relative;
+  padding: 4px 0 4px 18px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.info-bullets li::before {
+  content: '·';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.info-example {
+  background: var(--bg-secondary);
+  border-left: 3px solid var(--primary);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.info-modal .modal-buttons {
+  padding: 0 18px 18px;
+  margin: 0 !important;
 }
 
 /* ===== Tabs del modal de consum (unitats / %) ===== */

@@ -333,15 +333,51 @@ function renderTopWasted(history) {
   });
 }
 
-// Modal d'explicació de càlculs (clic ⓘ)
+// Modal d'explicació de càlculs (clic ⓘ).
+// Renderitza les seccions estructurades de i18n (infoCalcMoneySections /
+// infoCalcCo2Sections). Cau cap a les explicacions textuals si no n'hi ha.
 function showImpactInfoModal(kind) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay info-modal';
-  const text = (kind === 'co2') ? t('calcExplanationCO2') : t('calcExplanationMoney');
+
+  const sectionsKey = (kind === 'co2') ? 'infoCalcCo2Sections' : 'infoCalcMoneySections';
+  const sections = t(sectionsKey);
+  let bodyHtml;
+  if (Array.isArray(sections) && sections.length > 0) {
+    bodyHtml = sections.map(s => {
+      const bullets = Array.isArray(s.bullets) && s.bullets.length > 0
+        ? '<ul class="info-bullets">' + s.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('') + '</ul>'
+        : '';
+      const intro = s.intro ? `<p class="info-section-intro">${escapeHtml(s.intro)}</p>` : '';
+      const example = s.example
+        ? `<div class="info-example">${escapeHtml(s.example).replace(/\n/g, '<br>')}</div>`
+        : '';
+      return `
+        <section class="info-section">
+          <header class="info-section-head">
+            <span class="info-section-emoji">${s.emoji}</span>
+            <h3 class="info-section-title">${escapeHtml(s.title)}</h3>
+          </header>
+          ${intro}
+          ${bullets}
+          ${example}
+        </section>
+      `;
+    }).join('');
+  } else {
+    const text = (kind === 'co2') ? t('calcExplanationCO2') : t('calcExplanationMoney');
+    bodyHtml = `<p class="info-modal-body">${escapeHtml(text).replace(/\n/g, '<br>')}</p>`;
+  }
+
   overlay.innerHTML = `
     <div class="modal-content info-modal-content">
-      <p class="modal-title">ℹ️ ${escapeHtml(t('howCalculated'))}</p>
-      <p class="info-modal-body">${escapeHtml(text).replace(/\n/g, '<br>')}</p>
+      <div class="info-modal-header">
+        <span class="info-modal-icon">💡</span>
+        <h2 class="info-modal-heading">${escapeHtml(t('howCalculated'))}</h2>
+      </div>
+      <div class="info-modal-sections">
+        ${bodyHtml}
+      </div>
       <div class="modal-buttons" style="margin-top:14px">
         <button class="modal-confirm" id="info-modal-close">${escapeHtml(t('close'))}</button>
       </div>
