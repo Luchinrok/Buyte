@@ -12,6 +12,9 @@ let cookmeTab = 'ready';
 // D'on s'ha obert CookMe: 'home' (per defecte) o 'settings'. Determina la
 // pantalla a la qual torna el botó back.
 let cookmeOrigin = 'home';
+// Mode d'edició de la llista: quan està actiu, cada card de recepta mostra
+// botons inline d'editar/esborrar/restaurar i clicar la card no obre el detall.
+let recipeEditMode = false;
 // Receptes custom de l'usuari (es desen a localStorage). Conviuen amb el catàleg.
 let customRecipes = [];
 // Modificacions persistents que l'usuari ha fet sobre receptes del catàleg.
@@ -241,6 +244,8 @@ function openCookMe(origin) {
   cookmeTab = 'ready';
   cookmeSearch = '';
   cookmeSort = 'percent';
+  recipeEditMode = false;
+  updateRecipeEditModeBtn();
   applyCookMeBackTarget();
   // Sincronitza estat visual de les pestanyes
   document.querySelectorAll('#cookme-tabs .cookme-tab').forEach(b => {
@@ -262,6 +267,22 @@ function applyCookMeBackTarget() {
   const backBtn = document.querySelector('#screen-cookme .back-btn');
   if (!backBtn) return;
   backBtn.dataset.back = (cookmeOrigin === 'settings') ? 'settings' : 'launcher';
+}
+
+// Activa o desactiva el mode d'edició de la llista de receptes.
+function toggleRecipeEditMode() {
+  recipeEditMode = !recipeEditMode;
+  updateRecipeEditModeBtn();
+  renderCookMe();
+}
+
+// Refresca l'aparença del botó ✏️ / ✓ Fet a la capçalera.
+function updateRecipeEditModeBtn() {
+  const btn = document.getElementById('btn-toggle-recipe-edit');
+  if (!btn) return;
+  btn.textContent = recipeEditMode ? '✓' : '✏️';
+  btn.classList.toggle('is-active', recipeEditMode);
+  btn.setAttribute('aria-label', recipeEditMode ? 'Done' : 'Edit');
 }
 
 // Canvia de pestanya (ready / almost / all).
@@ -413,7 +434,27 @@ function buildCookMeCard(r) {
     ? '<span class="recipe-custom-badge">' + escapeHtml(t('myRecipe')) + '</span>'
     : '';
 
+  // Badge "Editada" per a les receptes del catàleg amb override actiu
+  const isCustom = !!r.recipe.isCustom;
+  const isEdited = !isCustom && hasRecipeOverride(r.recipe.id);
+  const editedBadge = isEdited
+    ? '<span class="recipe-edited-badge">⚡ ' + escapeHtml(t('editedTag')) + '</span>'
+    : '';
+
+  // Accions inline quan estem en mode edició
+  let actionsHtml = '';
+  if (recipeEditMode) {
+    let actions = '<button type="button" class="recipe-edit-pencil" data-action="edit" aria-label="Edit">✏️</button>';
+    if (isCustom) {
+      actions += '<button type="button" class="recipe-delete-btn" data-action="delete" aria-label="Delete">✕</button>';
+    } else if (isEdited) {
+      actions += '<button type="button" class="recipe-restore-btn" data-action="restore" aria-label="Restore">🔄</button>';
+    }
+    actionsHtml = '<div class="recipe-edit-mode-actions">' + actions + '</div>';
+  }
+
   card.innerHTML =
+    editedBadge +
     '<div class="cookme-card-emoji">' + (r.recipe.emoji || '🍽️') + '</div>' +
     '<div class="cookme-card-body">' +
       '<p class="cookme-card-title">' + escapeHtml(r.recipe.name || '') + customTag + '</p>' +
@@ -421,13 +462,49 @@ function buildCookMeCard(r) {
         ' · 🍴 ' + (r.recipe.servings || 1) + ' ' + escapeHtml(peopleLabel) + '</p>' +
       badgeHtml +
     '</div>' +
-    '<div class="cookme-card-percent">' + r.percent + '%</div>';
+    (recipeEditMode ? actionsHtml : '<div class="cookme-card-percent">' + r.percent + '%</div>');
 
-  card.addEventListener('click', () => {
-    openRecipeDetail(r.recipe.id);
-  });
+  if (recipeEditMode) {
+    // En mode edició, els botons d'acció són els únics clicables
+    const editBtn = card.querySelector('[data-action="edit"]');
+    if (editBtn) editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openEditRecipeForm(r.recipe.id);
+    });
+    const delBtn = card.querySelector('[data-action="delete"]');
+    if (delBtn) delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteCustomRecipe(r.recipe.id);
+    });
+    const restoreBtn = card.querySelector('[data-action="restore"]');
+    if (restoreBtn) restoreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      restoreCatalogRecipe(r.recipe.id);
+    });
+  } else {
+    card.addEventListener('click', () => {
+      openRecipeDetail(r.recipe.id);
+    });
+  }
 
   return card;
+}
+
+// Restaura una recepta del catàleg desde la llista (sense passar per l'edit form).
+function restoreCatalogRecipe(id) {
+  if (!hasRecipeOverride(id)) return;
+  const recipe = getRecipe(id);
+  const onYes = () => {
+    delete recipeOverrides[id];
+    saveRecipeOverrides();
+    showToast(t('restoredOriginal'));
+    renderCookMe();
+  };
+  if (typeof showConfirmDangerModal === 'function') {
+    showConfirmDangerModal('🔄', recipe ? recipe.name : t('restoreOriginalRecipe'), t('restoreOriginalConfirm'), onYes);
+  } else if (window.confirm(t('restoreOriginalConfirm'))) {
+    onYes();
+  }
 }
 
 // ============================================

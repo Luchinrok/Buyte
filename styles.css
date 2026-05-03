@@ -5109,6 +5109,7 @@ h1 {
 }
 
 .cookme-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -5122,6 +5123,73 @@ h1 {
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.18s;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Badge "Editada" a la cantonada superior dreta de la card. */
+.recipe-edited-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  background: rgba(255, 152, 0, 0.18);
+  color: #BF360C;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  z-index: 1;
+}
+:root[data-theme="dark"] .recipe-edited-badge {
+  background: rgba(255, 152, 0, 0.22);
+  color: #FFCC80;
+}
+
+/* Mode edició: contenidor de botons d'acció a cada card */
+.recipe-edit-mode-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.recipe-edit-pencil,
+.recipe-delete-btn,
+.recipe-restore-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.recipe-edit-pencil:active,
+.recipe-delete-btn:active,
+.recipe-restore-btn:active { transform: scale(0.92); }
+
+.recipe-delete-btn {
+  background: rgba(244, 67, 54, 0.12);
+  border-color: rgba(244, 67, 54, 0.3);
+  color: #C62828;
+}
+
+.recipe-restore-btn {
+  background: rgba(255, 152, 0, 0.12);
+  border-color: rgba(255, 152, 0, 0.3);
+}
+
+/* Quan el botó del header està actiu (mode edició), pinta'l de taronja */
+.header-icon-btn.is-active {
+  background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
+  color: #FFFFFF;
+  font-weight: 800;
 }
 
 .cookme-card:active {

@@ -477,6 +477,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Toggle mode d'edició de la llista de receptes
+  const btnToggleRecipeEdit = document.getElementById('btn-toggle-recipe-edit');
+  if (btnToggleRecipeEdit) btnToggleRecipeEdit.addEventListener('click', () => {
+    if (typeof toggleRecipeEditMode === 'function') toggleRecipeEditMode();
+  });
+
   // Cercador de receptes
   const cookmeSearchInput = document.getElementById('cookme-search');
   if (cookmeSearchInput) cookmeSearchInput.addEventListener('input', (e) => {

@@ -554,6 +554,7 @@ const TRANSLATIONS = {
     recipeDetailsSection: 'Detalls',
     recipeTipOptional: 'Consell (opcional)',
     recipeTipPlaceholder: 'Algun truc per fer-la millor...',
+    editedTag: 'Editada',
   }
 
 };
