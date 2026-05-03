@@ -34,40 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     manualAddToBuyMe(currentProduct);
   });
 
-  // Botó "Editar quantitat" del detall del producte
-  const btnEditQty = document.getElementById('btn-edit-product-qty');
-  if (btnEditQty) btnEditQty.addEventListener('click', () => {
+  // Botó únic "Editar producte" — reutilitza screen-add en mode edició
+  const btnEditProduct = document.getElementById('btn-edit-product');
+  if (btnEditProduct) btnEditProduct.addEventListener('click', () => {
     if (!currentProduct) return;
-    showEditQtyModal(currentProduct);
+    openEditProductForm(currentProduct);
   });
 
-  // Botó "Canviar de zona"
-  const btnChangeZone = document.getElementById('btn-change-zone');
-  if (btnChangeZone) btnChangeZone.addEventListener('click', () => {
-    if (!currentProduct) return;
-    showChangeZoneModal(currentProduct);
-  });
-
-  // Botó "Editar data de caducitat"
-  const btnChangeDate = document.getElementById('btn-change-date');
-  if (btnChangeDate) btnChangeDate.addEventListener('click', () => {
-    if (!currentProduct) return;
-    showChangeDateModal(currentProduct);
-  });
-
-  // Botó "Editar preu"
-  const btnEditPrice = document.getElementById('btn-edit-price');
-  if (btnEditPrice) btnEditPrice.addEventListener('click', () => {
-    if (!currentProduct) return;
-    showEditPriceModal(currentProduct);
-  });
-
-  // Botó "Editar pes"
-  const btnEditWeight = document.getElementById('btn-edit-weight');
-  if (btnEditWeight) btnEditWeight.addEventListener('click', () => {
-    if (!currentProduct) return;
-    showEditWeightModal(currentProduct);
-  });
 
   // Botons de selector d'emoji
   const btnPickEmoji = document.getElementById('btn-pick-emoji');

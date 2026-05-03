@@ -642,8 +642,61 @@ function recordConsumption(product, action, percent) {
   if (typeof pushToServer === 'function') pushToServer();
 }
 
+// Estat global d'edició: si està definit, saveNewProduct() actualitza el
+// producte existent en lloc de crear-ne un de nou.
+let editingProductId = null;
+
+// Obre el formulari en mode "editar producte existent" reutilitzant screen-add.
+function openEditProductForm(product) {
+  openAddForm({
+    name: product.name,
+    emoji: product.emoji,
+    qty: product.qty,
+    price: product.price,
+    weight: product.weight,
+    location: product.location,
+    noExpiry: !!product.noExpiry,
+    date: product.date,
+    _editingId: product.id
+  });
+}
+
 // FORMULARI MANUAL
 function openAddForm(prefill) {
+  // Mode edició: només quan openEditProductForm passa _editingId.
+  // Qualsevol altra entrada (afegir nou, prefill de popular, escaneig...)
+  // surt del mode edició automàticament.
+  editingProductId = (prefill && prefill._editingId) ? prefill._editingId : null;
+
+  // Configurem títol, botó tornar i botó "popular" segons mode (afegir/editar)
+  const titleEl = document.getElementById('screen-add-title');
+  const backBtn = document.getElementById('screen-add-back');
+  const popularBtn = document.getElementById('popular-btn');
+  const saveBtnEl = document.getElementById('save-btn');
+  if (editingProductId) {
+    if (titleEl) {
+      titleEl.removeAttribute('data-i18n');
+      titleEl.textContent = t('editProduct');
+    }
+    if (backBtn) backBtn.dataset.back = 'product';
+    if (popularBtn) popularBtn.style.display = 'none';
+    if (saveBtnEl) {
+      saveBtnEl.removeAttribute('data-i18n');
+      saveBtnEl.textContent = t('saveChanges');
+    }
+  } else {
+    if (titleEl) {
+      titleEl.setAttribute('data-i18n', 'addProductTitle');
+      titleEl.textContent = t('addProductTitle');
+    }
+    if (backBtn) backBtn.dataset.back = 'add-choice';
+    if (popularBtn) popularBtn.style.display = '';
+    if (saveBtnEl) {
+      saveBtnEl.setAttribute('data-i18n', 'save');
+      saveBtnEl.textContent = t('save');
+    }
+  }
+
   const nameInput = document.getElementById('input-name');
   const productName = prefill && prefill.name ? prefill.name : '';
   nameInput.value = productName;
@@ -703,6 +756,10 @@ function openAddForm(prefill) {
   const dateInputEl = document.getElementById('input-date');
   if (prefill && prefill.noExpiry) {
     dateInputEl.value = '';
+    dateInputEl.dataset.baseDays = '';
+  } else if (editingProductId && prefill && prefill.date) {
+    // En mode edició, no recalculem la data: respectem el que ja estava guardat.
+    dateInputEl.value = prefill.date;
     dateInputEl.dataset.baseDays = '';
   } else {
     const d = new Date();
@@ -884,6 +941,32 @@ function saveNewProduct() {
   // ("500g", "1kg"...), parseQuantityToKg el sap interpretar.
   const weightInput = document.getElementById('input-weight');
   const weight = weightInput ? weightInput.value.trim() : '';
+
+  // Mode edició: actualitzem el producte existent i tornem al detall
+  if (editingProductId) {
+    const idx = products.findIndex(p => p.id === editingProductId);
+    if (idx >= 0) {
+      const p = products[idx];
+      p.name = name;
+      p.emoji = selectedEmoji;
+      p.date = noExpiryChecked ? null : date;
+      p.noExpiry = noExpiryChecked;
+      p.location = selectedLocation;
+      p.qty = qty;
+      if (price !== null) p.price = price; else delete p.price;
+      if (weight) p.weight = weight; else delete p.weight;
+      currentProduct = p;
+      saveData();
+      const editedId = editingProductId;
+      editingProductId = null;
+      renderHome();
+      showToast('✓ ' + t('saved'));
+      openProduct(editedId);
+      return;
+    }
+    // Si no el trobem (estranyíssim), caiem a la creació normal
+    editingProductId = null;
+  }
 
   const newProduct = {
     id: Date.now().toString() + Math.random().toString(36).slice(2, 7),

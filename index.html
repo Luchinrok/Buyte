@@ -446,25 +446,9 @@
           <div class="product-consumed-bar-fill" id="product-consumed-bar-fill" style="width:0%"></div>
         </div>
       </div>
-      <button id="btn-edit-product-qty" class="edit-qty-btn">
+      <button id="btn-edit-product" class="edit-qty-btn">
         <span style="margin-right:6px">✏️</span>
-        <span data-i18n="editQty"></span>
-      </button>
-      <button id="btn-change-date" class="edit-qty-btn">
-        <span style="margin-right:6px">📅</span>
-        <span data-i18n="editDate"></span>
-      </button>
-      <button id="btn-change-zone" class="edit-qty-btn">
-        <span style="margin-right:6px">📍</span>
-        <span data-i18n="changeZone"></span>
-      </button>
-      <button id="btn-edit-price" class="edit-qty-btn">
-        <span style="margin-right:6px">💰</span>
-        <span data-i18n="editPrice"></span>
-      </button>
-      <button id="btn-edit-weight" class="edit-qty-btn">
-        <span style="margin-right:6px">⚖️</span>
-        <span data-i18n="editWeight"></span>
+        <span data-i18n="editProduct"></span>
       </button>
     </div>
 
@@ -607,8 +591,8 @@
   <!-- PANTALLA AFEGIR PRODUCTE (manual o després d'escanejar) -->
   <div id="screen-add" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="add-choice" aria-label="Back">‹</button>
-      <h1 data-i18n="addProductTitle"></h1>
+      <button class="back-btn" id="screen-add-back" data-back="add-choice" aria-label="Back">‹</button>
+      <h1 id="screen-add-title" data-i18n="addProductTitle"></h1>
       <div style="width:40px"></div>
     </header>
 
