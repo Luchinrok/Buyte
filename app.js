@@ -414,6 +414,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof addMissingToBuyMe === 'function') addMissingToBuyMe();
   });
 
+  // Editor de persones al detall de recepta
+  const recipeServingMinus = document.getElementById('recipe-serving-minus');
+  if (recipeServingMinus) recipeServingMinus.addEventListener('click', () => {
+    if (typeof adjustRecipeServings === 'function') adjustRecipeServings(-1);
+  });
+  const recipeServingPlus = document.getElementById('recipe-serving-plus');
+  if (recipeServingPlus) recipeServingPlus.addEventListener('click', () => {
+    if (typeof adjustRecipeServings === 'function') adjustRecipeServings(1);
+  });
+
   // Comptador inicial al botó CookMe del launcher
   if (typeof renderCookMeBadge === 'function') renderCookMeBadge();
 

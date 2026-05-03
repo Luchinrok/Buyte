@@ -265,6 +265,75 @@ function buildCookMeCard(r) {
 
 // Recepta oberta actualment. Útil per refrescar quan tornem a la pantalla.
 let currentRecipeId = null;
+// Persones temporals al detall (no es persisteix). Determina el factor d'escala.
+let currentServings = 1;
+
+// Mapa de fraccions Unicode → decimal. Permet escalar quantitats com "½ unitat".
+const COOKME_FRACTIONS = {
+  '½': 0.5, '⅓': 1/3, '⅔': 2/3,
+  '¼': 0.25, '¾': 0.75,
+  '⅕': 0.2, '⅖': 0.4, '⅗': 0.6, '⅘': 0.8,
+  '⅙': 1/6, '⅚': 5/6,
+  '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875
+};
+
+// Capitalitza la primera lletra d'un text (sense canviar la resta).
+function cookmeCapitalize(s) {
+  if (!s) return '';
+  const str = String(s);
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// Format compacte: enter si està prou a prop, si no 1 decimal amb coma.
+function cookmeFormatNumber(n) {
+  if (n === null || n === undefined || isNaN(n)) return '';
+  if (Math.abs(n - Math.round(n)) < 0.05) return String(Math.round(n));
+  return (Math.round(n * 10) / 10).toString().replace('.', ',');
+}
+
+// Escala un text de quantitat per un factor. Suporta:
+//   - Enters i decimals ("200 g", "1,5 L")
+//   - Fraccions Unicode ("½ unitat", "¼")
+//   - Rangs ("6-8", "2-3 cullerades")
+//   - Text lliure inalterat ("al gust", "una mica")
+function scaleIngredient(qtyText, factor) {
+  if (!qtyText) return '';
+  if (!factor || factor === 1) return String(qtyText);
+  const text = String(qtyText).trim();
+  if (!text) return '';
+
+  // Rang amb dos números
+  const rangeMatch = text.match(/^(\d+(?:[,.]\d+)?)-(\d+(?:[,.]\d+)?)(.*)$/);
+  if (rangeMatch) {
+    const a = parseFloat(rangeMatch[1].replace(',', '.')) * factor;
+    const b = parseFloat(rangeMatch[2].replace(',', '.')) * factor;
+    return cookmeFormatNumber(a) + '-' + cookmeFormatNumber(b) + rangeMatch[3];
+  }
+
+  // Fracció Unicode al començament
+  if (COOKME_FRACTIONS[text[0]] !== undefined) {
+    const num = COOKME_FRACTIONS[text[0]] * factor;
+    return cookmeFormatNumber(num) + text.slice(1);
+  }
+
+  // Número (enter o decimal amb coma/punt) al començament
+  const numMatch = text.match(/^(\d+(?:[,.]\d+)?)(.*)$/);
+  if (numMatch) {
+    const num = parseFloat(numMatch[1].replace(',', '.')) * factor;
+    return cookmeFormatNumber(num) + numMatch[2];
+  }
+
+  // Text lliure: deixa-ho tal com està
+  return text;
+}
+
+// Ajusta el nombre de persones al detall (clamp 1-20) i re-renderitza.
+function adjustRecipeServings(delta) {
+  const next = Math.min(20, Math.max(1, (currentServings || 1) + delta));
+  if (next === currentServings) return;
+  currentServings = next;
+  renderRecipeDetail();
+}
 
 // Obre la pantalla de detall per la recepta amb aquest id.
 function openRecipeDetail(id) {
@@ -272,6 +341,7 @@ function openRecipeDetail(id) {
   const recipe = recipes.find(r => r.id === id);
   if (!recipe) return;
   currentRecipeId = id;
+  currentServings = recipe.servings || 1;
   renderRecipeDetail();
   showScreen('recipe-detail');
 }
@@ -295,7 +365,6 @@ function renderRecipeDetail() {
   const nameEl = document.getElementById('recipe-hero-name');
   if (nameEl) nameEl.textContent = recipe.name || '';
 
-  const peopleLabel = recipe.servings === 1 ? t('people') : t('peoplePlural');
   const diffKey = recipe.difficulty === 'fàcil' ? 'easyDiff'
     : recipe.difficulty === 'mitjana' ? 'mediumDiff'
     : recipe.difficulty === 'difícil' ? 'hardDiff' : null;
@@ -304,11 +373,20 @@ function renderRecipeDetail() {
   const metaEl = document.getElementById('recipe-hero-meta');
   if (metaEl) {
     metaEl.textContent = '⏱️ ' + (recipe.time || 0) + ' ' + t('minutes')
-      + ' · 🍴 ' + (recipe.servings || 1) + ' ' + peopleLabel
       + ' · ⚙️ ' + diffText;
   }
 
-  // Ingredients
+  // Editor de persones (a la card hero)
+  const servingsCount = document.getElementById('recipe-servings-count');
+  const servingsLabel = document.getElementById('recipe-servings-label');
+  if (servingsCount) servingsCount.textContent = String(currentServings);
+  if (servingsLabel) servingsLabel.textContent = currentServings === 1 ? t('people') : t('peoplePlural');
+
+  // Factor d'escala respecte les persones originals de la recepta
+  const baseServings = recipe.servings || 1;
+  const factor = baseServings > 0 ? (currentServings / baseServings) : 1;
+
+  // Ingredients (escalats segons el factor i amb el nom capitalitzat)
   const ingList = document.getElementById('recipe-ingredients-list');
   if (ingList) {
     ingList.innerHTML = '';
@@ -317,11 +395,12 @@ function renderRecipeDetail() {
       const row = document.createElement('div');
       row.className = 'recipe-ingredient-row' + (has ? ' have' : ' missing');
       const checkIcon = has ? '✅' : '⚠️';
-      const qty = ing.qty ? '<span class="recipe-ingredient-qty">' + escapeHtml(ing.qty) + '</span>' : '';
+      const scaledQty = scaleIngredient(ing.qty, factor);
+      const qty = scaledQty ? '<span class="recipe-ingredient-qty">' + escapeHtml(scaledQty) + '</span>' : '';
       row.innerHTML =
         '<span class="recipe-ingredient-icon">' + checkIcon + '</span>' +
         '<span class="recipe-ingredient-emoji">' + (ing.emoji || '') + '</span>' +
-        '<span class="recipe-ingredient-name">' + escapeHtml(ing.name || '') + '</span>' +
+        '<span class="recipe-ingredient-name">' + escapeHtml(cookmeCapitalize(ing.name || '')) + '</span>' +
         qty;
       ingList.appendChild(row);
     });

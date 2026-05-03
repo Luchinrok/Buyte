@@ -521,6 +521,7 @@ const TRANSLATIONS = {
     noSuperAvailable: "No tens cap super configurat. Crea'n un primer.",
     ingredientsAdded: 'ingredients afegits a',
     goToShoppingList: 'Veure la llista',
+    persons: 'persones',
   }
 
 };
