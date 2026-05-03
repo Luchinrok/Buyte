@@ -1015,14 +1015,16 @@ function renderRecipeEditIngredients() {
     const row = document.createElement('div');
     row.className = 'ingredient-input-row';
     row.dataset.idx = idx;
+    const requiredTitle = escapeHtml(t('requiredIngredient'));
     row.innerHTML =
       '<button type="button" class="ingredient-emoji-btn" data-action="emoji">' + escapeHtml(ing.emoji || '🥕') + '</button>' +
       '<input type="text" class="ingredient-input-name" placeholder="' + escapeHtml(t('itemName')) + '" value="' + escapeHtml(ing.name || '') + '" autocomplete="off">' +
       '<input type="text" class="ingredient-input-qty" placeholder="qty" value="' + escapeHtml(ing.qty || '') + '" autocomplete="off">' +
-      '<label class="ingredient-required-toggle" title="' + escapeHtml(t('requiredIngredient')) + '">' +
-        '<input type="checkbox" class="ingredient-required-cb"' + (ing.required ? ' checked' : '') + '>' +
-        '<span>' + escapeHtml(t('requiredIngredient')) + '</span>' +
-      '</label>' +
+      '<button type="button" class="ingredient-required-star' + (ing.required ? ' is-required' : '') + '" ' +
+        'data-action="toggle-required" title="' + requiredTitle + '" aria-label="' + requiredTitle + '" ' +
+        'aria-pressed="' + (ing.required ? 'true' : 'false') + '">' +
+        (ing.required ? '⭐' : '☆') +
+      '</button>' +
       '<button type="button" class="ingredient-remove-btn" data-action="remove" aria-label="Remove">✕</button>' +
       '<div class="ingredient-suggestions autocomplete-suggestions"></div>';
     container.appendChild(row);
@@ -1053,8 +1055,14 @@ function renderRecipeEditIngredients() {
       editingRecipeData.ingredients[idx].qty = e.target.value;
     });
 
-    row.querySelector('.ingredient-required-cb').addEventListener('change', (e) => {
-      editingRecipeData.ingredients[idx].required = e.target.checked;
+    const starBtn = row.querySelector('[data-action="toggle-required"]');
+    if (starBtn) starBtn.addEventListener('click', () => {
+      const ingr = editingRecipeData.ingredients[idx];
+      if (!ingr) return;
+      ingr.required = !ingr.required;
+      starBtn.classList.toggle('is-required', ingr.required);
+      starBtn.setAttribute('aria-pressed', ingr.required ? 'true' : 'false');
+      starBtn.textContent = ingr.required ? '⭐' : '☆';
     });
 
     row.querySelector('[data-action="remove"]').addEventListener('click', () => {

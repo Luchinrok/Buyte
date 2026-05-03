@@ -6022,17 +6022,35 @@ h1 {
   border-radius: 12px;
 }
 
-.ingredient-input-row .ingredient-input-name {
-  flex: 1 1 120px;
-}
+/* Tots els controls principals comparteixen una sola fila — només el calaix
+   d'autocomplete pot embolcallar-se a una línia inferior quan apareix. */
+.ingredient-input-row > .ingredient-emoji-btn { flex: 0 0 40px; }
+.ingredient-input-row > .ingredient-input-name { flex: 1 1 80px; min-width: 0; }
+.ingredient-input-row > .ingredient-input-qty { flex: 0 0 64px; min-width: 0; }
+.ingredient-input-row > .ingredient-required-star { flex: 0 0 32px; }
+.ingredient-input-row > .ingredient-remove-btn { flex: 0 0 32px; }
 
-.ingredient-input-row .ingredient-input-qty {
-  flex: 0 0 90px;
+.ingredient-required-star {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-soft);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-
-.ingredient-input-row .ingredient-required-toggle {
-  flex: 1 1 100%;
-  padding-left: 50px;
+.ingredient-required-star:active { transform: scale(0.92); }
+.ingredient-required-star.is-required {
+  background: rgba(255, 152, 0, 0.16);
+  border-color: rgba(255, 152, 0, 0.4);
+  color: #E65100;
 }
 
 /* Suggeriments d'autocomplete dins la fila d'ingredient: ocupa una línia
