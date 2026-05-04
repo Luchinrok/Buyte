@@ -249,12 +249,22 @@ function updateNotifStatus() {
 
   if (perm === 'unsupported') {
     subEl.textContent = t('notifNotSupportedShort');
-  } else if (perm !== 'granted' || !s.enabled) {
-    subEl.textContent = t('notifInactive');
+    return;
+  }
+
+  // Reflectim l'estat del master switch (l'usuari el percep com a "estan
+  // activades o no?"). Els permisos del navegador són un detall ortogonal:
+  // si l'usuari ha activat el master però encara no hi ha permís, ho
+  // indiquem amb un sub-text.
+  if (!s.enabled) {
+    subEl.textContent = t('notifStatusOff');
+    return;
+  }
+  const activeCount = Object.values(s.types || {}).filter(c => c && c.enabled).length;
+  if (perm !== 'granted') {
+    subEl.textContent = t('notifStatusOnNoPerm');
   } else {
-    // Mostra quants tipus té actius
-    const activeCount = Object.values(s.types || {}).filter(c => c && c.enabled).length;
-    subEl.textContent = '✓ ' + activeCount + ' actius';
+    subEl.textContent = t('notifStatusOn', activeCount);
   }
 }
 

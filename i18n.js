@@ -602,6 +602,9 @@ const TRANSLATIONS = {
     notifPermStatusDefault: 'Cal donar permís per rebre notificacions',
     notifPermStatusUnsupported: 'El navegador no suporta notificacions',
     notifDayShort: ['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'],
+    notifStatusOff: 'Desactivades',
+    notifStatusOn: (n) => '✓ Activades · ' + n + (n === 1 ? ' tipus' : ' tipus'),
+    notifStatusOnNoPerm: 'Activades · falta permís',
   }
 
 };

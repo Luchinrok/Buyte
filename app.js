@@ -128,6 +128,21 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (target === 'section' && typeof renderSection === 'function') renderSection();
       else if (target === 'popular' && typeof renderPopularList === 'function') renderPopularList();
       else if (target === 'cookme' && typeof renderCookMe === 'function') renderCookMe();
+      else if (target === 'settings') {
+        // Refresca tots els subtítols de Configuració (notificacions, idioma,
+        // pais, etc.) per reflectir canvis fets a les sub-pantalles.
+        if (typeof updateNotifStatus === 'function') updateNotifStatus();
+        if (typeof updateThemeStatus === 'function') updateThemeStatus();
+        if (typeof updateLangStatus === 'function') updateLangStatus();
+        if (typeof updateStatsSub === 'function') updateStatsSub();
+        if (typeof updateImpactSub === 'function') updateImpactSub();
+        if (typeof updateLocationsCount === 'function') updateLocationsCount();
+        if (typeof updatePopularCount === 'function') updatePopularCount();
+        if (typeof updateRecipesCount === 'function') updateRecipesCount();
+        if (typeof updateSyncStatus === 'function') updateSyncStatus();
+        if (typeof updateCountryStatus === 'function') updateCountryStatus();
+        if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
+      }
       else if (target === 'list' && typeof openShelf === 'function' && currentLevel) {
         openShelf(currentLevel);
         return; // openShelf ja fa showScreen
