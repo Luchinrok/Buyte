@@ -7,10 +7,14 @@
 
    Emmagatzematge a localStorage:
      eatmefirst_smart_notif_v2        — configuració de l'usuari
-     eatmefirst_smart_notif_log       — { 'YYYY-MM-DD': { type: true } }
-     eatmefirst_smart_notif_dismissed — banners tancats { 'YYYY-MM-DD': { type: true } }
-     eatmefirst_smart_notif_banners   — banners pendents per pintar a la home
+     eatmefirst_smart_notif_log       — { 'YYYY-MM-DD': { type: true } } push debounce
+     eatmefirst_notif_dismissed       — { bannerId: 'YYYY-MM-DD' } descart per dia
      eatmefirst_last_open             — última obertura de l'app (per a 'reactivation')
+
+   Els banners de l'app es generen EN VIU des de getActiveBanners() — no es
+   desen enlloc. La hora configurada per cada tipus només afecta a les
+   notificacions push del sistema; els banners apareixen sempre que el tipus
+   estigui activat i no s'hagi descartat avui.
    ============================================ */
 
 
@@ -153,48 +157,42 @@ function markNotifiedToday(typeId) {
   _writeMap('eatmefirst_smart_notif_log', log);
 }
 
-function shouldShowBannerToday(typeId) {
-  const dis = _pruneToToday(_readMap('eatmefirst_smart_notif_dismissed'));
-  return !(dis[_todayKey()] && dis[_todayKey()][typeId]);
-}
+// ============================================
+//   DESCART DE BANNERS
+// ============================================
+// Format: { bannerId: 'YYYY-MM-DD' } a 'eatmefirst_notif_dismissed'.
+// El descart caduca a mitjanit — l'endemà el banner torna a sortir.
+// Cada vegada que es llegeix el mapa, esborrem entrades amb data anterior
+// a avui per no acumular brossa.
 
-function dismissBannerToday(typeId) {
-  const dis = _pruneToToday(_readMap('eatmefirst_smart_notif_dismissed'));
+function _pruneDismissedToToday(map) {
   const today = _todayKey();
-  if (!dis[today]) dis[today] = {};
-  dis[today][typeId] = true;
-  _writeMap('eatmefirst_smart_notif_dismissed', dis);
-  // També neteja el banner pendent perquè no torni a aparèixer
-  _removeBanner(typeId);
+  const out = {};
+  Object.keys(map || {}).forEach(id => {
+    if (map[id] === today) out[id] = today;
+  });
+  return out;
 }
 
-
-// ============================================
-//   BANNERS PENDENTS (cua dins l'app)
-// ============================================
-
-function _readBanners() {
-  return _pruneToToday(_readMap('eatmefirst_smart_notif_banners'))[_todayKey()] || {};
-}
-
-function _writeBanners(today) {
-  const banners = _pruneToToday(_readMap('eatmefirst_smart_notif_banners'));
-  banners[_todayKey()] = today;
-  _writeMap('eatmefirst_smart_notif_banners', banners);
-}
-
-function _addBanner(typeId, data) {
-  const today = _readBanners();
-  today[typeId] = Object.assign({ ts: Date.now() }, data || {});
-  _writeBanners(today);
-}
-
-function _removeBanner(typeId) {
-  const today = _readBanners();
-  if (today[typeId]) {
-    delete today[typeId];
-    _writeBanners(today);
+function _readDismissed() {
+  const raw = _readMap('eatmefirst_notif_dismissed');
+  const pruned = _pruneDismissedToToday(raw);
+  // Si hem netejat alguna entrada, persistim la versió neta.
+  if (Object.keys(pruned).length !== Object.keys(raw || {}).length) {
+    _writeMap('eatmefirst_notif_dismissed', pruned);
   }
+  return pruned;
+}
+
+function isBannerDismissedToday(bannerId) {
+  const map = _readDismissed();
+  return map[bannerId] === _todayKey();
+}
+
+function dismissBanner(bannerId) {
+  const map = _readDismissed();
+  map[bannerId] = _todayKey();
+  _writeMap('eatmefirst_notif_dismissed', map);
 }
 
 // Banners URGENTS: un per cada producte JA CADUCAT (daysUntilExpiry < 0).
@@ -214,7 +212,8 @@ function _computeUrgentBanners() {
     const days = Math.abs(d);
     const dayWord = days === 1 ? 'dia' : 'dies';
     out.push({
-      type: 'expired-' + p.id,
+      id: 'expired-' + p.id,
+      type: 'expired',
       urgent: true,
       emoji: '🚨',
       productId: p.id,
@@ -232,16 +231,95 @@ function _computeUrgentBanners() {
   return out;
 }
 
-// Llista pública dels banners actius avui. Primer els URGENTS (sempre
-// visibles, no descartables), després els NORMALS (descartables i emmagatzemats).
-function getActiveBanners() {
-  const out = _computeUrgentBanners();
-  const banners = _readBanners();
-  SMART_NOTIF_TYPES.forEach(meta => {
-    if (banners[meta.id] && shouldShowBannerToday(meta.id)) {
-      out.push(Object.assign({ type: meta.id, emoji: meta.emoji }, banners[meta.id]));
+// Banners NORMALS d'expiry: un per cada producte que caduca AVUI o DEMÀ.
+// Cada banner té id 'expiry-{productId}' i es pot descartar individualment.
+function _computeExpiryBanners() {
+  const out = [];
+  _smartProducts().forEach(p => {
+    if (p.noExpiry || !p.date) return;
+    const d = _smartDaysUntil(p.date);
+    if (!isFinite(d)) return;
+    let body, emoji;
+    if (d === 0) {
+      emoji = '🚨';
+      body = "🚨 Avui caduca: " + (p.emoji || '') + ' ' + (p.name || '');
+    } else if (d === 1) {
+      emoji = '⏰';
+      body = "⏰ Demà caduca: " + (p.emoji || '') + ' ' + (p.name || '');
+    } else {
+      return;
     }
+    out.push({
+      id: 'expiry-' + p.id,
+      type: 'expiry',
+      emoji: emoji,
+      productId: p.id,
+      body: body,
+      _days: d
+    });
   });
+  out.sort((a, b) => a._days - b._days);
+  return out;
+}
+
+function _isTypeEnabled(typeId) {
+  if (!smartNotifSettings || !smartNotifSettings.enabled) return false;
+  const cfg = smartNotifSettings.types && smartNotifSettings.types[typeId];
+  return !!(cfg && cfg.enabled);
+}
+
+// Llista pública dels banners actius. ES GENERA EN VIU cada vegada — no
+// depèn de l'hora del dia ni de cap cua emmagatzemada. Els únics filtres:
+//   1) El tipus està activat a la configuració de l'usuari.
+//   2) Per als no-urgents, no s'ha descartat avui.
+//   3) Hi ha contingut rellevant (l'evaluador retorna payload).
+// Els banners URGENTS (productes ja caducats) sempre passen aquests filtres.
+function getActiveBanners() {
+  const out = [];
+
+  // 1. URGENTS — sempre visibles.
+  out.push.apply(out, _computeUrgentBanners());
+
+  // 2. EXPIRY (per producte que caduca avui o demà).
+  if (_isTypeEnabled('expiry')) {
+    _computeExpiryBanners().forEach(b => {
+      if (!isBannerDismissedToday(b.id)) out.push(b);
+    });
+  }
+
+  // 3. AGREGATS — un banner per tipus, descartable per dia.
+  const aggregated = [
+    { id: 'mealReminder',      eval: _evalMealReminder,      emoji: '💡' },
+    { id: 'cookmeInspiration', eval: _evalCookmeInspiration, emoji: '🍳' },
+    { id: 'shoppingPending',   eval: _evalShoppingPending,   emoji: '🛒' },
+    { id: 'streakMotivation',  eval: _evalStreakMotivation,  emoji: '🔥' },
+    { id: 'reactivation',      eval: _evalReactivation,      emoji: '👋' },
+    { id: 'weeklyRecap',       eval: _evalWeeklyRecap,       emoji: '📊' },
+    { id: 'badgeProgress',     eval: _evalBadgeProgress,     emoji: '🎯' }
+  ];
+  aggregated.forEach(item => {
+    if (!_isTypeEnabled(item.id)) return;
+    if (isBannerDismissedToday(item.id)) return;
+
+    // Filtre semàntic addicional per a tipus amb dia configurat: el resum
+    // setmanal només té sentit el dia configurat, no cada dia.
+    if (item.id === 'weeklyRecap') {
+      const cfg = smartNotifSettings.types[item.id];
+      if (typeof cfg.day === 'number' && new Date().getDay() !== cfg.day) return;
+    }
+
+    let payload;
+    try { payload = item.eval(); } catch (e) { payload = null; }
+    if (!payload) return;
+    out.push({
+      id: item.id,
+      type: item.id,
+      emoji: item.emoji,
+      title: payload.title,
+      body: payload.body
+    });
+  });
+
   return out;
 }
 
@@ -250,22 +328,18 @@ function getActiveBanners() {
 //   ENVIAR NOTIFICACIÓ (push + banner)
 // ============================================
 
+// Envia el push del sistema. Els banners de l'app són independents — es
+// generen en viu via getActiveBanners(), per tant aquí NO es desa res al
+// store de banners. La gate de "ja s'ha enviat avui" segueix activa per
+// evitar push duplicats el mateix dia.
 function sendSmartNotification(typeId, data) {
-  // Tant si tenim permís com si no, el banner dins l'app es desa per a quan s'obri.
-  _addBanner(typeId, data);
-
-  // Push del navegador (només si tenim permís — lectura en directe).
   if (typeof hasNotificationPermission === 'function' && hasNotificationPermission()) {
     const title = (data && data.title) || '🔔 Buyte';
     const body = (data && data.body) || '';
     try { window.Notif.showNotification(title, body, { tag: 'buyte-' + typeId }); }
     catch (e) {}
   }
-
   markNotifiedToday(typeId);
-
-  // Re-renderitza banners si la home està carregada.
-  if (typeof renderSmartNotifBanners === 'function') renderSmartNotifBanners();
 }
 
 
@@ -658,14 +732,14 @@ function renderSmartNotifBanners() {
       card.querySelector('[data-action="see"]').addEventListener('click', () => {
         // Els urgents no es marquen com a descartats — han de tornar a sortir
         // si l'usuari només mira però no actua.
-        if (!b.urgent) dismissBannerToday(b.type);
+        if (!b.urgent) dismissBanner(b.id);
         action();
       });
     }
     if (!b.urgent) {
       const closeEl = card.querySelector('[data-action="close"]');
       if (closeEl) closeEl.addEventListener('click', () => {
-        dismissBannerToday(b.type);
+        dismissBanner(b.id);
         renderSmartNotifBanners();
       });
     }
