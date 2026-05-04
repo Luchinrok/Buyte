@@ -328,7 +328,6 @@ function renderSmartNotifSettingsScreen() {
   const recheckBtn = document.getElementById('smart-notif-recheck');
   const promptHint = document.getElementById('smart-notif-prompt-hint');
   const deniedHelp = document.getElementById('smart-notif-denied-help');
-  const grantedHelp = document.getElementById('smart-notif-granted-help');
   const typesBlock = document.getElementById('smart-notif-types-block');
 
   if (permCard) permCard.classList.remove('perm-banner-info','perm-banner-error','perm-banner-success','perm-banner-warning');
@@ -342,7 +341,6 @@ function renderSmartNotifSettingsScreen() {
     if (recheckBtn) recheckBtn.style.display = 'none';
     if (promptHint) promptHint.style.display = 'none';
     if (deniedHelp) deniedHelp.style.display = 'none';
-    if (grantedHelp) grantedHelp.style.display = 'block';
     if (typesBlock) typesBlock.classList.remove('is-disabled');
   } else if (permStatus === 'denied') {
     if (permIcon) permIcon.textContent = '🚫';
@@ -353,7 +351,6 @@ function renderSmartNotifSettingsScreen() {
     if (recheckBtn) recheckBtn.style.display = 'flex';
     if (promptHint) promptHint.style.display = 'none';
     if (deniedHelp) deniedHelp.style.display = 'block';
-    if (grantedHelp) grantedHelp.style.display = 'none';
     if (typesBlock) typesBlock.classList.add('is-disabled');
   } else if (permStatus === 'unsupported') {
     if (permIcon) permIcon.textContent = 'ℹ️';
@@ -364,7 +361,6 @@ function renderSmartNotifSettingsScreen() {
     if (recheckBtn) recheckBtn.style.display = 'none';
     if (promptHint) promptHint.style.display = 'none';
     if (deniedHelp) deniedHelp.style.display = 'none';
-    if (grantedHelp) grantedHelp.style.display = 'none';
     if (typesBlock) typesBlock.classList.add('is-disabled');
   } else {
     // 'default' — encara no demanat o usuari ha tancat el prompt
@@ -376,7 +372,6 @@ function renderSmartNotifSettingsScreen() {
     if (recheckBtn) recheckBtn.style.display = 'none';
     if (promptHint) promptHint.style.display = 'block';
     if (deniedHelp) deniedHelp.style.display = 'none';
-    if (grantedHelp) grantedHelp.style.display = 'none';
     if (typesBlock) typesBlock.classList.add('is-disabled');
   }
 

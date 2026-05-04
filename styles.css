@@ -6663,46 +6663,6 @@ h1 {
 .perm-denied-list li { margin-bottom: 6px; }
 .perm-denied-list li:last-child { margin-bottom: 0; }
 
-.perm-granted-instructions {
-  background: rgba(99, 153, 34, 0.06);
-  border: 1px solid rgba(99, 153, 34, 0.25);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
-}
-
-.perm-granted-title {
-  font-size: 13px;
-  font-weight: 700;
-  margin: 0 0 6px;
-  color: var(--text);
-}
-
-.perm-granted-intro {
-  font-size: 12.5px;
-  color: var(--text);
-  margin: 0 0 8px;
-  line-height: 1.45;
-}
-
-.perm-granted-list {
-  margin: 0 0 10px;
-  padding-left: 18px;
-  font-size: 12.5px;
-  color: var(--text);
-  line-height: 1.45;
-}
-.perm-granted-list li { margin-bottom: 6px; }
-.perm-granted-list li:last-child { margin-bottom: 0; }
-
-.perm-granted-alt {
-  font-size: 12.5px;
-  color: var(--text-soft);
-  margin: 0;
-  font-style: italic;
-  line-height: 1.45;
-}
-
 /* Bloc de tipus quan encara no hi ha permís: deixem un lleuger veil
    visual perquè es vegi que les notificacions no es lliuraran fins
    que es concedeixi el permís, però mantenim els toggles INTERACTIUS
