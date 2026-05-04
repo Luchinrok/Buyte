@@ -291,6 +291,216 @@ function startSmartNotifScheduler() {
 
 
 // ============================================
+//   AVALUADORS PER TIPUS (Phase 3)
+// ============================================
+
+// Helpers compartits
+function _smartProducts() {
+  return (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
+}
+
+function _smartShoppingItems() {
+  try {
+    const raw = localStorage.getItem('eatmefirst_shopping_items');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) { return []; }
+}
+
+function _smartHistory() {
+  try {
+    const raw = localStorage.getItem('eatmefirst_consumption_history');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) { return []; }
+}
+
+function _smartDaysUntil(dateStr) {
+  if (!dateStr) return Infinity;
+  if (typeof daysUntil === 'function') return daysUntil(dateStr);
+  // Fallback simple
+  const target = new Date(dateStr);
+  return Math.floor((target.getTime() - Date.now()) / 86400000);
+}
+
+// Top-level dispatcher cridat pel scheduler. Retorna `{title, body}` o null.
+function evaluateNotificationType(typeId, cfg) {
+  switch (typeId) {
+    case 'expiry':            return _evalExpiry();
+    case 'mealReminder':      return _evalMealReminder();
+    case 'cookmeInspiration': return _evalCookmeInspiration();
+    case 'shoppingPending':   return _evalShoppingPending();
+    case 'streakMotivation':  return _evalStreakMotivation();
+    case 'reactivation':      return _evalReactivation();
+    case 'weeklyRecap':       return _evalWeeklyRecap();
+    case 'badgeProgress':     return _evalBadgeProgress();
+  }
+  return null;
+}
+
+// 1. Caducitat imminent (avui o demà)
+function _evalExpiry() {
+  const today = [], tomorrow = [];
+  _smartProducts().forEach(p => {
+    if (p.noExpiry || !p.date) return;
+    const d = _smartDaysUntil(p.date);
+    if (!isFinite(d)) return;
+    if (d <= 0) today.push(p);
+    else if (d === 1) tomorrow.push(p);
+  });
+  if (today.length === 0 && tomorrow.length === 0) return null;
+
+  let body;
+  if (today.length === 1 && tomorrow.length === 0) {
+    body = '🚨 Avui caduca: ' + (today[0].emoji || '') + ' ' + (today[0].name || '');
+  } else if (today.length > 1 && tomorrow.length === 0) {
+    body = '🚨 Avui caduquen ' + today.length + ' productes';
+  } else if (today.length === 0 && tomorrow.length === 1) {
+    body = '⏰ Demà caduca: ' + (tomorrow[0].emoji || '') + ' ' + (tomorrow[0].name || '');
+  } else if (today.length === 0 && tomorrow.length > 1) {
+    body = '⏰ Demà caduquen ' + tomorrow.length + ' productes';
+  } else {
+    body = '⏰ ' + today.length + ' caduquen avui, ' + tomorrow.length + ' demà';
+  }
+  return { title: '🚨 Buyte', body: body };
+}
+
+// 2. Recordatori del dinar (productes que caduquen aviat)
+function _evalMealReminder() {
+  const list = _smartProducts()
+    .filter(p => !p.noExpiry && p.date)
+    .map(p => ({ p, d: _smartDaysUntil(p.date) }))
+    .filter(x => isFinite(x.d) && x.d >= 0 && x.d <= 5)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 3);
+  if (list.length === 0) return null;
+  const names = list.map(x => (x.p.emoji || '') + ' ' + (x.p.name || '') + ' (' + x.d + 'd)').join(', ');
+  return { title: '💡 Buyte', body: '💡 Avui menja: ' + names };
+}
+
+// 3. Inspiració culinària (receptes que pots fer al 100%)
+function _evalCookmeInspiration() {
+  if (typeof getAllRecipes !== 'function' || typeof calculateRecipeMatch !== 'function') return null;
+  const userProducts = _smartProducts();
+  const recipes = getAllRecipes();
+  const ready = recipes
+    .map(r => ({ r, m: calculateRecipeMatch(r, userProducts) }))
+    .filter(x => x.m && x.m.canMake);
+  if (ready.length === 0) return null;
+  let body;
+  if (ready.length === 1) {
+    body = "🍳 Avui pots fer '" + (ready[0].r.name || '') + "' amb el que tens";
+  } else if (ready.length <= 3) {
+    body = '🍳 Tens ' + ready.length + ' receptes a punt!';
+  } else {
+    body = '🍳 Tens ' + ready.length + ' receptes a punt — cuina alguna cosa avui!';
+  }
+  return { title: '🍳 Buyte', body: body };
+}
+
+// 4. Llista de la compra pendent (≥ 3 dies des de l'última actualització)
+function _evalShoppingPending() {
+  const items = _smartShoppingItems();
+  if (items.length === 0) return null;
+  const lastTs = items.reduce((mx, it) => Math.max(mx, it && it.addedAt ? it.addedAt : 0), 0);
+  if (!lastTs) return null;
+  const daysSince = Math.floor((Date.now() - lastTs) / 86400000);
+  if (daysSince < 3) return null;
+  return { title: '🛒 Buyte', body: '🛒 Tens ' + items.length + ' productes pendents al BuyMe' };
+}
+
+// 5. Motivació i ratxa: notifiquem en fites o quan estem a 1 dia d'una fita.
+function _evalStreakMotivation() {
+  if (typeof computeStreak !== 'function') return null;
+  const streak = computeStreak(_smartHistory());
+  if (!isFinite(streak) || streak < 1) return null;
+  const milestones = [3, 7, 15, 30, 60, 100, 365];
+  const isMilestone = milestones.includes(streak);
+  const next = milestones.find(m => m > streak);
+  const oneAway = next && (next - streak === 1);
+  if (!isMilestone && !oneAway) return null;
+  const body = isMilestone
+    ? '🔥 ' + streak + ' dies sense malgastar! Mantén la ratxa!'
+    : '🔥 ' + streak + ' dies! Demà arribes a ' + next + '!';
+  return { title: '🔥 Buyte', body: body };
+}
+
+// 6. Reactivació: l'usuari no ha obert l'app fa ≥ 3 dies
+function _evalReactivation() {
+  const lastOpen = localStorage.getItem('eatmefirst_last_open');
+  if (!lastOpen) return null; // primera vegada — no notifiquem
+  const lastDate = new Date(lastOpen);
+  if (isNaN(lastDate.getTime())) return null;
+  const days = Math.floor((Date.now() - lastDate.getTime()) / 86400000);
+  if (days < 3) return null;
+  // Compta productes propers a caducar per reforçar el motiu de tornar
+  const expiring = _smartProducts().filter(p => {
+    if (p.noExpiry || !p.date) return false;
+    const d = _smartDaysUntil(p.date);
+    return isFinite(d) && d <= 3;
+  }).length;
+  let body;
+  if (expiring > 0) {
+    body = '👋 Tens ' + expiring + (expiring === 1 ? ' producte' : ' productes') + ' que caduquen aviat. Vine a veure\'ls!';
+  } else {
+    body = "👋 Fa " + days + " dies que no obres l'app. Tot bé pel rebost?";
+  }
+  return { title: '👋 Buyte', body: body };
+}
+
+// 7. Resum setmanal (cada diumenge a la nit per defecte)
+function _evalWeeklyRecap() {
+  const history = _smartHistory();
+  const oneWeekAgo = Date.now() - 7 * 86400000;
+  const week = history.filter(e => {
+    const t = new Date(e.date).getTime();
+    return isFinite(t) && t >= oneWeekAgo;
+  });
+  if (week.length === 0) return null;
+  let saved = 0, wasted = 0;
+  let consumedCount = 0, totalCount = 0;
+  week.forEach(e => {
+    if (typeof entryAsProduct !== 'function' || typeof getProductPrice !== 'function' || typeof entryFactor !== 'function') return;
+    const product = entryAsProduct(e);
+    const total = getProductPrice(product) || 0;
+    const factor = entryFactor(e);
+    if (e.action === 'consumed') { saved += total * factor; consumedCount++; totalCount++; }
+    else if (e.action === 'trashed') { wasted += total * factor; totalCount++; }
+  });
+  if (totalCount === 0) return null;
+  const pct = Math.round((consumedCount / totalCount) * 100);
+  const fmt = (n) => (Math.round(n * 100) / 100).toString().replace('.', ',');
+  return {
+    title: '📊 Buyte',
+    body: '📊 Aquesta setmana: ' + fmt(saved) + '€ aprofitats, ' + pct + '% aprofitament'
+  };
+}
+
+// 8. Insignies properes (>=80% però no desbloquejada)
+function _evalBadgeProgress() {
+  if (typeof BADGES === 'undefined' || typeof computeGamificationStats !== 'function' || typeof evaluateBadge !== 'function') return null;
+  const stats = computeGamificationStats();
+  let best = null;
+  BADGES.forEach(b => {
+    if (typeof isBadgeUnlocked === 'function' && isBadgeUnlocked(b.id)) return;
+    const ev = evaluateBadge(b, stats);
+    if (!ev || !ev.hasProgress) return;
+    if (ev.percent >= 80 && ev.percent < 100) {
+      if (!best || ev.percent > best.percent) best = { badge: b, ev: ev };
+    }
+  });
+  if (!best) return null;
+  const remaining = Math.max(1, best.ev.target - best.ev.current);
+  return {
+    title: '🎯 Buyte',
+    body: "🎯 Estàs a " + Math.ceil(remaining) + " d'aconseguir '" + best.badge.name + "'!"
+  };
+}
+
+
+// ============================================
 //   INICIALITZACIÓ
 // ============================================
 
