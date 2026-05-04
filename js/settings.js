@@ -283,16 +283,40 @@ function renderSmartNotifSettingsScreen() {
   if (typeof getSmartNotifSettings !== 'function' || typeof SMART_NOTIF_TYPES === 'undefined') return;
   const settings = getSmartNotifSettings();
 
-  // Estat de permisos
-  const permStatus = window.Notif ? window.Notif.permissionStatus() : 'unsupported';
+  // Estat de permisos — sempre llegim Notification.permission en directe.
+  const permStatus = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+  const permCard = document.getElementById('smart-notif-perm');
+  const permIcon = document.getElementById('smart-notif-perm-icon');
   const permEl = document.getElementById('smart-notif-perm-status');
+  const permHelp = document.getElementById('smart-notif-perm-help');
   const reqBtn = document.getElementById('smart-notif-request-perm');
-  if (permEl) {
-    if (permStatus === 'granted') permEl.textContent = t('notifPermStatusGranted');
-    else if (permStatus === 'denied') permEl.textContent = t('notifPermStatusDenied');
-    else if (permStatus === 'unsupported') permEl.textContent = t('notifPermStatusUnsupported');
-    else permEl.textContent = t('notifPermStatusDefault');
+
+  // Reset classes d'estat
+  if (permCard) {
+    permCard.classList.remove('is-granted', 'is-denied', 'is-default', 'is-unsupported');
   }
+
+  let icon = '🔔', help = '';
+  if (permStatus === 'granted') {
+    icon = '✅';
+    if (permEl) permEl.textContent = t('notifPermStatusGranted');
+    if (permCard) permCard.classList.add('is-granted');
+  } else if (permStatus === 'denied') {
+    icon = '🚫';
+    if (permEl) permEl.textContent = t('notifPermStatusDenied');
+    help = t('notifPermDeniedHelp');
+    if (permCard) permCard.classList.add('is-denied');
+  } else if (permStatus === 'unsupported') {
+    icon = 'ℹ️';
+    if (permEl) permEl.textContent = t('notifPermStatusUnsupported');
+    if (permCard) permCard.classList.add('is-unsupported');
+  } else {
+    icon = '🔔';
+    if (permEl) permEl.textContent = t('notifPermStatusDefault');
+    if (permCard) permCard.classList.add('is-default');
+  }
+  if (permIcon) permIcon.textContent = icon;
+  if (permHelp) permHelp.textContent = help;
   if (reqBtn) reqBtn.style.display = (permStatus === 'default') ? 'flex' : 'none';
 
   // Master switch
@@ -368,8 +392,18 @@ function promptDayFor(typeId) {
 }
 
 async function handleRequestPermission() {
-  if (!window.Notif) return;
+  if (!window.Notif) {
+    console.log('[Buyte] requestPermission: window.Notif missing');
+    return;
+  }
+  console.log('[Buyte] requestPermission: before =', (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported');
   const result = await window.Notif.requestPermission();
+  console.log('[Buyte] requestPermission: result =', result);
+
+  // Sempre refresquem la UI després de la resposta del navegador.
+  renderSmartNotifSettingsScreen();
+  updateNotifStatus();
+
   if (result === 'granted') {
     if (typeof setSmartNotifMaster === 'function') setSmartNotifMaster(true);
     showToast('✅ ' + t('notifPermissionGranted'));
@@ -377,7 +411,9 @@ async function handleRequestPermission() {
     renderSmartNotifSettingsScreen();
   } else if (result === 'denied') {
     showToast('🚫 ' + t('notifPermissionDenied'));
-    renderSmartNotifSettingsScreen();
+  } else {
+    // 'default': l'usuari ha tancat el prompt sense respondre.
+    showToast(t('notifPermPromptClosed'));
   }
 }
 

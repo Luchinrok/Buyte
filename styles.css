@@ -6579,16 +6579,47 @@ h1 {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   margin-bottom: 16px;
+  transition: background 0.2s, border-color 0.2s;
 }
+
+.smart-notif-perm-icon {
+  font-size: 32px;
+  line-height: 1;
+  display: block;
+  margin-bottom: 6px;
+}
+
 .smart-notif-perm-status {
-  font-size: 13.5px;
-  font-weight: 600;
-  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 4px;
   color: var(--text);
 }
-.smart-notif-perm .primary-btn { margin: 0; }
+
+.smart-notif-perm-help {
+  font-size: 12.5px;
+  color: var(--text-soft);
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+.smart-notif-perm-help:empty { display: none; }
+
+.smart-notif-perm.is-default {
+  background: rgba(33, 150, 243, 0.08);
+  border-color: rgba(33, 150, 243, 0.35);
+}
+.smart-notif-perm.is-granted {
+  background: rgba(76, 175, 80, 0.10);
+  border-color: rgba(76, 175, 80, 0.35);
+}
+.smart-notif-perm.is-denied {
+  background: rgba(244, 67, 54, 0.10);
+  border-color: rgba(244, 67, 54, 0.35);
+}
+
+.smart-notif-perm .primary-btn { margin: 12px 0 0; }
 
 .smart-notif-types-list {
   display: flex;
