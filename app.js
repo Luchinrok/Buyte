@@ -416,40 +416,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (settingsNotif) settingsNotif.addEventListener('click', openNotificationsScreen);
 
   // Botó "Demanar permís"
-  const btnReqPerm = document.getElementById('btn-request-permission');
+  const btnReqPerm = document.getElementById('smart-notif-request-perm');
   if (btnReqPerm) btnReqPerm.addEventListener('click', handleRequestPermission);
 
-  // Toggles de configuració de notificacions
-  const togEnabled = document.getElementById('notif-toggle-enabled');
-  if (togEnabled) togEnabled.addEventListener('change', (e) => {
-    window.Notif.set({ enabled: e.target.checked });
+  // Master switch
+  const togMaster = document.getElementById('smart-notif-master');
+  if (togMaster) togMaster.addEventListener('change', (e) => {
+    if (typeof setSmartNotifMaster === 'function') setSmartNotifMaster(e.target.checked);
     updateNotifStatus();
     showToast(e.target.checked ? '✅ ' + t('notifActivated') : t('notifDeactivated'));
   });
 
-  const inpTime = document.getElementById('notif-daily-time');
-  if (inpTime) inpTime.addEventListener('change', (e) => {
-    window.Notif.set({ dailyTime: e.target.value });
-    updateNotifStatus();
-  });
-
-  const togOnOpen = document.getElementById('notif-toggle-onopen');
-  if (togOnOpen) togOnOpen.addEventListener('change', (e) => {
-    window.Notif.set({ notifyOnOpen: e.target.checked });
-  });
-
-  const togOrange = document.getElementById('notif-toggle-orange');
-  if (togOrange) togOrange.addEventListener('change', (e) => {
-    window.Notif.set({ includeOrange: e.target.checked });
-  });
-
-  const togRed = document.getElementById('notif-toggle-red');
-  if (togRed) togRed.addEventListener('change', (e) => {
-    window.Notif.set({ includeRed: e.target.checked });
-  });
-
   // Botó "Provar notificació"
-  const btnTest = document.getElementById('btn-test-notif');
+  const btnTest = document.getElementById('smart-notif-test-btn');
   if (btnTest) btnTest.addEventListener('click', testNotificationNow);
 
   const btnCreate = document.getElementById('btn-create-list');

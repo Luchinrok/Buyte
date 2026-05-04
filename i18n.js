@@ -578,6 +578,26 @@ const TRANSLATIONS = {
     initialBadgesSummary: (n) => '🏆 ' + (n === 1
       ? '1 insignia desbloquejada pel teu progrés inicial!'
       : n + ' insignies desbloquejades pel teu progrés inicial!'),
+    notifTitle: 'Notificacions',
+    notifMaster: 'Activar notificacions',
+    notifWhichTypes: 'Quins tipus vols rebre?',
+    notifTypeExpiry: 'Caducitat imminent',
+    notifTypeMealReminder: 'Recordatori del dinar',
+    notifTypeCookme: 'Inspiració culinària',
+    notifTypeShoppingPending: 'Llista de compra pendent',
+    notifTypeStreak: 'Motivació i ratxa',
+    notifTypeReactivation: 'Reactivació',
+    notifTypeWeekly: 'Resum setmanal',
+    notifTypeBadge: 'Insignies properes',
+    notifTestButton: 'Provar una notificació',
+    notifTestMessage: "Aquesta és una prova! Si la veus, les notificacions funcionen.",
+    notifInstallTip: "💡 Per rebre notificacions quan l'app està tancada, instal·la-la a la pantalla d'inici",
+    notifBannerSee: 'Veure',
+    notifPermStatusGranted: '✅ Permisos concedits',
+    notifPermStatusDenied: "❌ Permisos denegats. Has d'activar-los a la configuració del navegador.",
+    notifPermStatusDefault: 'Cal donar permís per rebre notificacions',
+    notifPermStatusUnsupported: 'El navegador no suporta notificacions',
+    notifDayShort: ['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'],
   }
 
 };

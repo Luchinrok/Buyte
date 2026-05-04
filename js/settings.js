@@ -234,7 +234,9 @@ function exposeForNotifications() {
 function initNotifications() {
   if (!window.Notif) return;
   exposeForNotifications();
-  window.Notif.init();
+  // El sistema antic queda com a capa low-level (showNotification / permisos)
+  // però sense el seu propi scheduler — el nou sistema porta el control.
+  if (typeof initSmartNotifications === 'function') initSmartNotifications();
   updateNotifStatus();
 }
 
@@ -243,68 +245,129 @@ function updateNotifStatus() {
   if (!subEl || !window.Notif) return;
 
   const perm = window.Notif.permissionStatus();
-  const s = window.Notif.get();
+  const s = (typeof getSmartNotifSettings === 'function') ? getSmartNotifSettings() : { enabled: false };
 
   if (perm === 'unsupported') {
     subEl.textContent = t('notifNotSupportedShort');
   } else if (perm !== 'granted' || !s.enabled) {
     subEl.textContent = t('notifInactive');
   } else {
-    subEl.textContent = '✓ ' + s.dailyTime;
+    // Mostra quants tipus té actius
+    const activeCount = Object.values(s.types || {}).filter(c => c && c.enabled).length;
+    subEl.textContent = '✓ ' + activeCount + ' actius';
   }
 }
 
 function openNotificationsScreen() {
   exposeForNotifications();
   if (!window.Notif) return;
-
-  const status = window.Notif.permissionStatus();
-  const noPerm = document.getElementById('notif-no-permission');
-  const blocked = document.getElementById('notif-blocked');
-  const config = document.getElementById('notif-config');
-
-  if (noPerm) noPerm.style.display = 'none';
-  if (blocked) blocked.style.display = 'none';
-  if (config) config.style.display = 'none';
-
-  if (status === 'unsupported' || status === 'denied') {
-    if (blocked) blocked.style.display = 'block';
-  } else if (status === 'default') {
-    if (noPerm) noPerm.style.display = 'block';
-  } else {
-    if (config) config.style.display = 'block';
-    fillNotifConfig();
-  }
-
+  renderSmartNotifSettingsScreen();
   showScreen('notifications');
 }
 
-function fillNotifConfig() {
-  if (!window.Notif) return;
-  const s = window.Notif.get();
-  const enabled = document.getElementById('notif-toggle-enabled');
-  const time = document.getElementById('notif-daily-time');
-  const onopen = document.getElementById('notif-toggle-onopen');
-  const orange = document.getElementById('notif-toggle-orange');
-  const red = document.getElementById('notif-toggle-red');
-  if (enabled) enabled.checked = !!s.enabled;
-  if (time) time.value = s.dailyTime || '13:00';
-  if (onopen) onopen.checked = !!s.notifyOnOpen;
-  if (orange) orange.checked = !!s.includeOrange;
-  if (red) red.checked = !!s.includeRed;
+// Pinta tota la pantalla de configuració de notificacions: estat de permisos
+// + master switch + llista de tipus. Cada tipus dibuixa un toggle i, si
+// correspon, els xips d'hora i dia. Tots els controls es lliguen en un sol
+// pas per simplificar el rerender després d'interaccions.
+function renderSmartNotifSettingsScreen() {
+  if (typeof getSmartNotifSettings !== 'function' || typeof SMART_NOTIF_TYPES === 'undefined') return;
+  const settings = getSmartNotifSettings();
+
+  // Estat de permisos
+  const permStatus = window.Notif ? window.Notif.permissionStatus() : 'unsupported';
+  const permEl = document.getElementById('smart-notif-perm-status');
+  const reqBtn = document.getElementById('smart-notif-request-perm');
+  if (permEl) {
+    if (permStatus === 'granted') permEl.textContent = t('notifPermStatusGranted');
+    else if (permStatus === 'denied') permEl.textContent = t('notifPermStatusDenied');
+    else if (permStatus === 'unsupported') permEl.textContent = t('notifPermStatusUnsupported');
+    else permEl.textContent = t('notifPermStatusDefault');
+  }
+  if (reqBtn) reqBtn.style.display = (permStatus === 'default') ? 'flex' : 'none';
+
+  // Master switch
+  const masterCb = document.getElementById('smart-notif-master');
+  if (masterCb) masterCb.checked = !!settings.enabled;
+
+  // Llista de tipus
+  const list = document.getElementById('smart-notif-types-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  SMART_NOTIF_TYPES.forEach(meta => {
+    const cfg = settings.types[meta.id] || { enabled: false };
+    const row = document.createElement('div');
+    row.className = 'smart-notif-type-row';
+    row.dataset.type = meta.id;
+
+    let chipsHtml = '';
+    if (meta.hasDay) {
+      const days = t('notifDayShort');
+      const dayLabel = (Array.isArray(days) ? days[(cfg.day || 0) % 7] : 'Dia');
+      chipsHtml += '<button type="button" class="smart-notif-chip" data-action="day">📅 ' + escapeHtml(dayLabel) + '</button>';
+    }
+    if (meta.hasHour) {
+      const hh = String(cfg.hour || 0).padStart(2, '0');
+      chipsHtml += '<button type="button" class="smart-notif-chip" data-action="hour">⏰ ' + hh + ':00</button>';
+    }
+
+    row.innerHTML =
+      '<div class="smart-notif-type-info">' +
+        '<p class="smart-notif-type-name">' + meta.emoji + ' <span>' + escapeHtml(t(meta.i18n)) + '</span></p>' +
+        '<div class="smart-notif-type-chips">' + chipsHtml + '</div>' +
+      '</div>' +
+      '<label class="toggle">' +
+        '<input type="checkbox" data-action="toggle"' + (cfg.enabled ? ' checked' : '') + '>' +
+        '<span class="toggle-slider"></span>' +
+      '</label>';
+    list.appendChild(row);
+
+    // Listeners de la fila
+    const cb = row.querySelector('[data-action="toggle"]');
+    if (cb) cb.addEventListener('change', (e) => {
+      setSmartNotifType(meta.id, { enabled: e.target.checked });
+      updateNotifStatus();
+    });
+    const hourBtn = row.querySelector('[data-action="hour"]');
+    if (hourBtn) hourBtn.addEventListener('click', () => promptHourFor(meta.id));
+    const dayBtn = row.querySelector('[data-action="day"]');
+    if (dayBtn) dayBtn.addEventListener('click', () => promptDayFor(meta.id));
+  });
+}
+
+function promptHourFor(typeId) {
+  const settings = getSmartNotifSettings();
+  const cur = (settings.types[typeId] && settings.types[typeId].hour) || 0;
+  const raw = window.prompt('Hora (0-23)', String(cur));
+  if (raw === null) return;
+  const n = parseInt(raw, 10);
+  if (!isFinite(n) || n < 0 || n > 23) return;
+  setSmartNotifType(typeId, { hour: n });
+  renderSmartNotifSettingsScreen();
+}
+
+function promptDayFor(typeId) {
+  const settings = getSmartNotifSettings();
+  const cur = (settings.types[typeId] && settings.types[typeId].day) || 0;
+  const raw = window.prompt('Dia (0=Diumenge, 1=Dilluns, ..., 6=Dissabte)', String(cur));
+  if (raw === null) return;
+  const n = parseInt(raw, 10);
+  if (!isFinite(n) || n < 0 || n > 6) return;
+  setSmartNotifType(typeId, { day: n });
+  renderSmartNotifSettingsScreen();
 }
 
 async function handleRequestPermission() {
   if (!window.Notif) return;
   const result = await window.Notif.requestPermission();
   if (result === 'granted') {
-    window.Notif.set({ enabled: true });
+    if (typeof setSmartNotifMaster === 'function') setSmartNotifMaster(true);
     showToast('✅ ' + t('notifPermissionGranted'));
     updateNotifStatus();
-    openNotificationsScreen();
+    renderSmartNotifSettingsScreen();
   } else if (result === 'denied') {
     showToast('🚫 ' + t('notifPermissionDenied'));
-    openNotificationsScreen();
+    renderSmartNotifSettingsScreen();
   }
 }
 

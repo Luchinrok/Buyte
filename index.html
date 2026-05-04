@@ -1480,85 +1480,35 @@
       <div style="width:40px"></div>
     </header>
 
-    <div id="notif-no-permission" style="display:none">
-      <div class="notif-permission-card">
-        <p style="font-size:48px;margin:0 0 10px 0">🔔</p>
-        <p class="notif-perm-title" data-i18n="notifPermissionTitle"></p>
-        <p class="notif-perm-sub" data-i18n="notifPermissionSub"></p>
-      </div>
-      <button id="btn-request-permission" class="primary-btn" data-i18n="notifRequestPermission"></button>
+    <!-- Estat dels permisos del navegador -->
+    <div class="smart-notif-perm" id="smart-notif-perm">
+      <p class="smart-notif-perm-status" id="smart-notif-perm-status">-</p>
+      <button type="button" id="smart-notif-request-perm" class="primary-btn" style="display:none" data-i18n="notifRequestPermission"></button>
     </div>
 
-    <div id="notif-blocked" style="display:none">
-      <div class="notif-permission-card notif-blocked-card">
-        <p style="font-size:48px;margin:0 0 10px 0">🚫</p>
-        <p class="notif-perm-title" data-i18n="notifBlockedTitle"></p>
-        <p class="notif-perm-sub" data-i18n="notifBlockedSub"></p>
+    <!-- Master switch -->
+    <div class="notif-row" id="smart-notif-master-row">
+      <div class="notif-row-info">
+        <p class="notif-row-title">🔔 <span data-i18n="notifMaster"></span></p>
       </div>
+      <label class="toggle">
+        <input type="checkbox" id="smart-notif-master">
+        <span class="toggle-slider"></span>
+      </label>
     </div>
 
-    <div id="notif-config" style="display:none">
-      <div class="notif-row">
-        <div class="notif-row-info">
-          <p class="notif-row-title" data-i18n="notifEnable"></p>
-          <p class="notif-row-sub" data-i18n="notifEnableSub"></p>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="notif-toggle-enabled">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
+    <!-- Llista de tipus -->
+    <p class="notif-section-title" data-i18n="notifWhichTypes"></p>
+    <div id="smart-notif-types-list" class="smart-notif-types-list"></div>
 
-      <div class="notif-section-title" data-i18n="notifWhenTitle"></div>
+    <!-- Botó de prova -->
+    <button id="smart-notif-test-btn" class="secondary-btn" style="margin-top:20px">
+      <span style="font-size:22px;margin-right:8px">🔔</span>
+      <span data-i18n="notifTestButton"></span>
+    </button>
 
-      <div class="notif-row">
-        <div class="notif-row-info">
-          <p class="notif-row-title" data-i18n="notifDailyTime"></p>
-          <p class="notif-row-sub" data-i18n="notifDailyTimeSub"></p>
-        </div>
-        <input type="time" id="notif-daily-time" class="time-input">
-      </div>
-
-      <div class="notif-row">
-        <div class="notif-row-info">
-          <p class="notif-row-title" data-i18n="notifOnOpen"></p>
-          <p class="notif-row-sub" data-i18n="notifOnOpenSub"></p>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="notif-toggle-onopen">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-
-      <div class="notif-section-title" data-i18n="notifWhatTitle"></div>
-
-      <div class="notif-row">
-        <div class="notif-row-info">
-          <p class="notif-row-title">🟠 <span data-i18n="notifIncludeOrange"></span></p>
-          <p class="notif-row-sub" data-i18n="notifIncludeOrangeSub"></p>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="notif-toggle-orange">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-
-      <div class="notif-row">
-        <div class="notif-row-info">
-          <p class="notif-row-title">🔴 <span data-i18n="notifIncludeRed"></span></p>
-          <p class="notif-row-sub" data-i18n="notifIncludeRedSub"></p>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="notif-toggle-red">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-
-      <button id="btn-test-notif" class="secondary-btn" style="margin-top:20px">
-        <span style="font-size:22px;margin-right:8px">🔔</span>
-        <span data-i18n="notifTest"></span>
-      </button>
-    </div>
+    <!-- Avís d'instal·lació PWA -->
+    <p class="smart-notif-install-tip" id="smart-notif-install-tip" data-i18n="notifInstallTip"></p>
   </div>
 
   <div id="screen-sync" class="screen">
