@@ -1173,6 +1173,104 @@ function attachSettingsAppListeners() {
   });
 }
 
+// ----- Sub-pantalla "Dades" (Esborrar / Exportar / Importar) -----
+let activeDataTab = 'esborrar';
+
+function openSettingsData() {
+  renderSettingsData();
+  showScreen('settings-data');
+}
+
+// Helper per pintar una card destructiva al tab Esborrar. Cada una porta
+// data-reset-action que el delegate mapeja a la funció corresponent.
+function _resetCardHtml(action, emoji, titleKey, subText, danger) {
+  const cls = danger ? 'settings-card danger-card' : 'settings-card danger-card-soft';
+  return '<button type="button" class="' + cls + '" data-reset-action="' + action + '">' +
+           '<div class="settings-card-icon"><span>' + emoji + '</span></div>' +
+           '<div class="settings-card-info">' +
+             '<p class="settings-card-title">' + escapeHtml(t(titleKey)) + '</p>' +
+             '<p class="settings-card-sub">' + escapeHtml(subText) + '</p>' +
+           '</div>' +
+           '<span class="settings-card-arrow">›</span>' +
+         '</button>';
+}
+
+function renderSettingsData() {
+  document.querySelectorAll('#screen-settings-data .sub-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.subtab === activeDataTab);
+  });
+  const area = document.getElementById('settings-data-area');
+  if (!area) return;
+
+  if (activeDataTab === 'esborrar') {
+    // Comptadors per als subtítols dinàmics — calculats inline perquè el
+    // contingut es regenera a cada render.
+    const productsN = (typeof products !== 'undefined' && Array.isArray(products)) ? products.length : 0;
+    const items = (typeof shoppingItems !== 'undefined' && Array.isArray(shoppingItems)) ? shoppingItems : [];
+    const supersWithItems = new Set(items.map(it => it && it.supermarketId).filter(Boolean));
+    let historyN = 0;
+    try {
+      const raw = localStorage.getItem('eatmefirst_consumption_history');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) historyN = parsed.length;
+      }
+    } catch (e) {}
+    const impactSubText = historyN > 0
+      ? (t('resetImpactSub') + ' · ' + historyN + ' ' + t('historyEntries'))
+      : t('resetImpactSub');
+
+    area.innerHTML =
+      '<div class="settings-cards reset-data-cards">' +
+        _resetCardHtml('biteme',        '🥗', 'resetBitemeTitle',        productsN + ' ' + t('productsCount'),         false) +
+        _resetCardHtml('shopping',      '🛒', 'resetShoppingTitle',      items.length + ' ' + t('productsAtShops', supersWithItems.size), false) +
+        _resetCardHtml('impact',        '📊', 'resetImpactTitle',        impactSubText,                                false) +
+        _resetCardHtml('recipe-usage',  '🍳', 'resetRecipeUsageTitle',   t('resetRecipeUsageSub'),                     false) +
+        _resetCardHtml('gamification',  '🏆', 'resetGamificationTitle',  t('resetGamificationSub'),                    false) +
+      '</div>' +
+      '<div class="reset-data-divider"></div>' +
+      _resetCardHtml('all', '🗑️', 'resetAllTitle', t('cantUndo'), true);
+  } else if (activeDataTab === 'exportar') {
+    const summary = '<p class="settings-sub-summary-soft">' + escapeHtml(t('exportSub')) + '</p>';
+    area.innerHTML = '';
+    area.appendChild(_subContentBlock(summary, '📤 ' + t('downloadMyData'), () => {
+      if (typeof exportData === 'function') exportData();
+    }));
+  } else if (activeDataTab === 'importar') {
+    const summary = '<p class="settings-sub-summary-soft">' + escapeHtml(t('importSub')) + '</p>';
+    area.innerHTML = '';
+    area.appendChild(_subContentBlock(summary, '📥 ' + t('importFromFile'), () => {
+      if (typeof importData === 'function') importData();
+    }));
+  }
+}
+
+function attachSettingsDataListeners() {
+  document.querySelectorAll('#screen-settings-data .sub-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeDataTab = tab.dataset.subtab || 'esborrar';
+      renderSettingsData();
+    });
+  });
+  // Delegate per als botons d'esborrar que es regeneren a cada render.
+  const area = document.getElementById('settings-data-area');
+  if (area && !area.__resetBound) {
+    area.__resetBound = true;
+    area.addEventListener('click', (e) => {
+      const btn = e.target.closest && e.target.closest('[data-reset-action]');
+      if (!btn) return;
+      switch (btn.dataset.resetAction) {
+        case 'biteme':       if (typeof resetBitemeProducts === 'function') resetBitemeProducts(); break;
+        case 'shopping':     if (typeof resetShoppingList === 'function') resetShoppingList(); break;
+        case 'impact':       if (typeof resetImpactHistory === 'function') resetImpactHistory(); break;
+        case 'recipe-usage': if (typeof confirmResetRecipeUsage === 'function') confirmResetRecipeUsage(); break;
+        case 'gamification': if (typeof confirmResetGamificationProgress === 'function') confirmResetGamificationProgress(); break;
+        case 'all':          if (typeof resetAll === 'function') resetAll(); break;
+      }
+    });
+  }
+}
+
 
 function openSettingsCategory(cat) {
   const map = {
@@ -1775,6 +1873,9 @@ function updateResetDataSubs() {
       impactSub.textContent = t('resetImpactSub');
     }
   }
+  // Si la sub-pantalla "Dades" està viva, la reasignem perquè els
+  // comptadors interns també es refresquin després d'un reset.
+  if (typeof renderSettingsData === 'function') renderSettingsData();
 }
 
 function openResetDataScreen() {
