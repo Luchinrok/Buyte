@@ -399,7 +399,8 @@ function renderSmartNotifSettingsScreen() {
     }
     if (meta.hasHour) {
       const hh = String(cfg.hour || 0).padStart(2, '0');
-      chipsHtml += '<button type="button" class="smart-notif-chip" data-action="hour">⏰ ' + hh + ':00</button>';
+      const mm = String(cfg.minute || 0).padStart(2, '0');
+      chipsHtml += '<button type="button" class="smart-notif-chip" data-action="hour">⏰ ' + hh + ':' + mm + '</button>';
     }
 
     row.innerHTML =
@@ -427,13 +428,86 @@ function renderSmartNotifSettingsScreen() {
 
 function promptHourFor(typeId) {
   const settings = getSmartNotifSettings();
-  const cur = (settings.types[typeId] && settings.types[typeId].hour) || 0;
-  const raw = window.prompt('Hora (0-23)', String(cur));
-  if (raw === null) return;
-  const n = parseInt(raw, 10);
-  if (!isFinite(n) || n < 0 || n > 23) return;
-  setSmartNotifType(typeId, { hour: n });
-  renderSmartNotifSettingsScreen();
+  const cfg = settings.types[typeId] || {};
+  const curHour = isFinite(cfg.hour) ? cfg.hour : 0;
+  const curMin = isFinite(cfg.minute) ? cfg.minute : 0;
+  const hh = String(curHour).padStart(2, '0');
+  const mm = String(curMin).padStart(2, '0');
+  openTimePickerModal(hh + ':' + mm, (newTime) => {
+    const [h, m] = newTime.split(':').map(n => parseInt(n, 10));
+    setSmartNotifType(typeId, { hour: h, minute: m });
+    renderSmartNotifSettingsScreen();
+  });
+}
+
+// Modal personalitzat per triar HH:MM. Substitueix el window.prompt que
+// l'usuari trobava poc estètic. Hora amb stepper [-][valor][+] (0-23, amb
+// wraparound), minuts en chips fixos (0/15/30/45) — els únics valors que
+// té sentit oferir per a una notificació.
+function openTimePickerModal(currentTime, onSave) {
+  const parts = (currentTime || '00:00').split(':');
+  let hour = parseInt(parts[0], 10);
+  if (!isFinite(hour) || hour < 0 || hour > 23) hour = 0;
+  let minute = parseInt(parts[1], 10);
+  if (!isFinite(minute) || minute < 0) minute = 0;
+  // Forcem el minut al chip més proper si no és 0/15/30/45
+  const allowedMinutes = [0, 15, 30, 45];
+  if (allowedMinutes.indexOf(minute) === -1) {
+    minute = allowedMinutes.reduce((best, m) => Math.abs(m - minute) < Math.abs(best - minute) ? m : best, 0);
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay time-picker-modal';
+  overlay.innerHTML =
+    '<div class="modal-content time-picker-content">' +
+      '<p class="modal-title">⏰ ' + escapeHtml(t('timePickerTitle')) + '</p>' +
+      '<div class="time-picker-section">' +
+        '<p class="time-picker-label">' + escapeHtml(t('timePickerHour')) + '</p>' +
+        '<div class="time-picker-hour-stepper">' +
+          '<button type="button" class="time-picker-step-btn" data-action="hour-down" aria-label="−">−</button>' +
+          '<span class="time-picker-hour-value">' + String(hour).padStart(2, '0') + '</span>' +
+          '<button type="button" class="time-picker-step-btn" data-action="hour-up" aria-label="+">+</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="time-picker-section">' +
+        '<p class="time-picker-label">' + escapeHtml(t('timePickerMinutes')) + '</p>' +
+        '<div class="time-picker-minutes">' +
+          allowedMinutes.map(m =>
+            '<button type="button" class="time-picker-min-chip' + (m === minute ? ' selected' : '') + '" data-min="' + m + '">:' + String(m).padStart(2, '0') + '</button>'
+          ).join('') +
+        '</div>' +
+      '</div>' +
+      '<div class="modal-buttons time-picker-buttons">' +
+        '<button type="button" class="modal-cancel" data-action="cancel">' + escapeHtml(t('cancel')) + '</button>' +
+        '<button type="button" class="modal-confirm" data-action="save">' + escapeHtml(t('save')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  const hourValueEl = overlay.querySelector('.time-picker-hour-value');
+  const setHour = (h) => {
+    hour = ((h % 24) + 24) % 24;
+    hourValueEl.textContent = String(hour).padStart(2, '0');
+  };
+  overlay.querySelector('[data-action="hour-down"]').addEventListener('click', () => setHour(hour - 1));
+  overlay.querySelector('[data-action="hour-up"]').addEventListener('click', () => setHour(hour + 1));
+
+  overlay.querySelectorAll('.time-picker-min-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      minute = parseInt(chip.dataset.min, 10);
+      overlay.querySelectorAll('.time-picker-min-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    });
+  });
+
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('[data-action="cancel"]').addEventListener('click', close);
+  overlay.querySelector('[data-action="save"]').addEventListener('click', () => {
+    close();
+    const out = String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+    try { onSave(out); } catch (e) { console.error(e); }
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 function promptDayFor(typeId) {

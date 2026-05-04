@@ -624,6 +624,9 @@ const TRANSLATIONS = {
     notifPermGrantedFirefox: "clica el cadenat 🔒 a la barra d'adreces, obre 'Permisos' i marca 'Bloquejar' per a notificacions.",
     notifPermGrantedSafari: "vés a Safari → Configuració → Llocs web → Notificacions i selecciona 'Denegar' per aquesta web.",
     notifPermGrantedAlt: "💡 També pots fer servir el master toggle de més amunt per pausar les notificacions sense canviar res al navegador.",
+    timePickerTitle: "Tria l'hora",
+    timePickerHour: 'Hora',
+    timePickerMinutes: 'Minuts',
   }
 
 };

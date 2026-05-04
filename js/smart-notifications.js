@@ -19,14 +19,14 @@
 const SMART_NOTIF_DEFAULTS = {
   enabled: true, // master switch
   types: {
-    expiry:            { enabled: true,  hour: 9 },
-    mealReminder:      { enabled: true,  hour: 11 },
-    cookmeInspiration: { enabled: true,  hour: 18 },
-    shoppingPending:   { enabled: false, hour: 18 },
-    streakMotivation:  { enabled: true,  hour: 21 },
-    reactivation:      { enabled: true,  hour: 10 },
-    weeklyRecap:       { enabled: true,  day: 0, hour: 19 }, // 0 = diumenge
-    badgeProgress:     { enabled: true,  hour: 12 }
+    expiry:            { enabled: true,  hour: 9,  minute: 0 },
+    mealReminder:      { enabled: true,  hour: 11, minute: 0 },
+    cookmeInspiration: { enabled: true,  hour: 18, minute: 0 },
+    shoppingPending:   { enabled: false, hour: 18, minute: 0 },
+    streakMotivation:  { enabled: true,  hour: 21, minute: 0 },
+    reactivation:      { enabled: true,  hour: 10, minute: 0 },
+    weeklyRecap:       { enabled: true,  day: 0,  hour: 19, minute: 0 }, // 0 = diumenge
+    badgeProgress:     { enabled: true,  hour: 12, minute: 0 }
   }
 };
 
@@ -274,16 +274,18 @@ function sendSmartNotification(typeId, data) {
 // ============================================
 
 // La cita d'una notificació horària és vàlida si l'hora local actual és
-// >= a l'hora configurada. (Es comprova si encara no s'ha enviat avui.)
-function _hourReady(targetHour) {
+// >= a l'hora configurada (HH:MM). (Es comprova si encara no s'ha enviat avui.)
+function _timeReady(targetHour, targetMinute) {
   const now = new Date();
-  return now.getHours() >= (targetHour || 0);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const tgtMin = (targetHour || 0) * 60 + (targetMinute || 0);
+  return nowMin >= tgtMin;
 }
 
 function _isWeeklyDayReady(typeCfg) {
   const now = new Date();
   if (typeof typeCfg.day === 'number' && now.getDay() !== typeCfg.day) return false;
-  return _hourReady(typeCfg.hour);
+  return _timeReady(typeCfg.hour, typeCfg.minute);
 }
 
 // Scheduler central. Per a cada tipus actiu, comprova condicions
@@ -302,7 +304,7 @@ function checkScheduledNotifications() {
     if (meta.id === 'weeklyRecap') {
       if (!_isWeeklyDayReady(cfg)) return;
     } else if (meta.hasHour) {
-      if (!_hourReady(cfg.hour)) return;
+      if (!_timeReady(cfg.hour, cfg.minute)) return;
     }
 
     // Avaluació semàntica + missatge final
