@@ -1203,30 +1203,16 @@ function renderSettingsData() {
   if (!area) return;
 
   if (activeDataTab === 'esborrar') {
-    // Comptadors per als subtítols dinàmics — calculats inline perquè el
-    // contingut es regenera a cada render.
-    const productsN = (typeof products !== 'undefined' && Array.isArray(products)) ? products.length : 0;
-    const items = (typeof shoppingItems !== 'undefined' && Array.isArray(shoppingItems)) ? shoppingItems : [];
-    const supersWithItems = new Set(items.map(it => it && it.supermarketId).filter(Boolean));
-    let historyN = 0;
-    try {
-      const raw = localStorage.getItem('eatmefirst_consumption_history');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) historyN = parsed.length;
-      }
-    } catch (e) {}
-    const impactSubText = historyN > 0
-      ? (t('resetImpactSub') + ' · ' + historyN + ' ' + t('historyEntries'))
-      : t('resetImpactSub');
-
+    // Subtítols estàtics que descriuen l'acció. Els comptadors s'han mogut
+    // fora per evitar la repetició "Esborrar X" + "X productes" — el
+    // títol diu el què, el subtítol diu què s'esborra.
     area.innerHTML =
       '<div class="settings-cards reset-data-cards">' +
-        _resetCardHtml('biteme',        '🥗', 'resetBitemeTitle',        productsN + ' ' + t('productsCount'),         false) +
-        _resetCardHtml('shopping',      '🛒', 'resetShoppingTitle',      items.length + ' ' + t('productsAtShops', supersWithItems.size), false) +
-        _resetCardHtml('impact',        '📊', 'resetImpactTitle',        impactSubText,                                false) +
-        _resetCardHtml('recipe-usage',  '🍳', 'resetRecipeUsageTitle',   t('resetRecipeUsageSub'),                     false) +
-        _resetCardHtml('gamification',  '🏆', 'resetGamificationTitle',  t('resetGamificationSub'),                    false) +
+        _resetCardHtml('biteme',        '🥗', 'resetBitemeTitle',        t('resetBitemeSub'),        false) +
+        _resetCardHtml('shopping',      '🛒', 'resetShoppingTitle',      t('resetShoppingSub'),      false) +
+        _resetCardHtml('impact',        '📊', 'resetImpactTitle',        t('resetImpactSub'),        false) +
+        _resetCardHtml('recipe-usage',  '🍳', 'resetRecipeUsageTitle',   t('resetRecipeUsageSub'),   false) +
+        _resetCardHtml('gamification',  '🏆', 'resetGamificationTitle',  t('resetGamificationSub'),  false) +
       '</div>' +
       '<div class="reset-data-divider"></div>' +
       _resetCardHtml('all', '🗑️', 'resetAllTitle', t('cantUndo'), true);
