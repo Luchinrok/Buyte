@@ -912,19 +912,28 @@ function openLocations(origin) {
 // Mentre l'embed és actiu, també redirigim el back-btn de pantalles "filles"
 // (les que s'obren des del cos embeddejat) cap al host de l'embed, perquè
 // la navegació interna torni al sub-pàgina i no a la destinació original.
-let _embeddedSourceId   = null;
-let _embeddedTargetEl   = null;
-let _embeddedHostId     = null;
-let _embeddedChildBacks = []; // [{el, originalBack}]
+//
+// Subtilesa: si l'usuari navega DES de la sub-pàgina a una de les filles
+// registrades, restaurem només el cos (els fills tornen al seu lloc
+// original) però MANTENIM les redireccions dels back-btns. Així, quan
+// l'usuari torni de la fill, el back l'envia de nou a la sub-pàgina.
+let _embeddedSourceId      = null;
+let _embeddedTargetEl      = null;
+let _embeddedHostId        = null;
+let _embeddedChildBacks    = []; // [{el, originalBack}]
+let _embeddedChildScreens  = []; // ['screen-supermarket-edit', ...]
 
-function restoreEmbeddedSettings() {
-  // Restaurem data-back dels back-btns que vam reescriure.
+function _revertEmbeddedChildBacks() {
   _embeddedChildBacks.forEach(rec => {
     if (!rec || !rec.el) return;
     if (rec.originalBack === undefined || rec.originalBack === null) rec.el.removeAttribute('data-back');
     else rec.el.dataset.back = rec.originalBack;
   });
   _embeddedChildBacks = [];
+  _embeddedChildScreens = [];
+}
+
+function _moveEmbeddedBodyHome() {
   if (!_embeddedSourceId || !_embeddedTargetEl) return;
   const src = document.getElementById(_embeddedSourceId);
   if (src) {
@@ -933,6 +942,13 @@ function restoreEmbeddedSettings() {
   _embeddedSourceId = null;
   _embeddedTargetEl = null;
   _embeddedHostId   = null;
+}
+
+// Restauració completa: torna el cos al seu lloc i reverteix els back-btns
+// dels fills. S'usa quan realment es deixa la sub-pàgina.
+function restoreEmbeddedSettings() {
+  _revertEmbeddedChildBacks();
+  _moveEmbeddedBodyHome();
 }
 
 function _embedStandaloneBody(targetEl, sourceScreenId, hostScreenId, childScreenIds) {
@@ -948,6 +964,7 @@ function _embedStandaloneBody(targetEl, sourceScreenId, hostScreenId, childScree
   _embeddedTargetEl = targetEl;
   _embeddedHostId   = hostScreenId;
   _embeddedChildBacks = [];
+  _embeddedChildScreens = (childScreenIds || []).slice();
   const newBack = hostScreenId.replace(/^screen-/, '');
   (childScreenIds || []).forEach(cid => {
     const cs = document.getElementById(cid);
@@ -960,7 +977,10 @@ function _embedStandaloneBody(targetEl, sourceScreenId, hostScreenId, childScree
 }
 
 // Embolcalla showScreen UNA SOLA VEGADA per restaurar contingut prestat
-// quan es navega a una pantalla diferent del host de l'embed.
+// quan es navega a una pantalla diferent del host de l'embed. Si el destí
+// és una pantalla "filla" registrada, només movem el cos a casa — els
+// back-btns dels fills romanen redirigits, així el back de la fill torna
+// a la sub-pàgina.
 (function wrapShowScreenForEmbedding() {
   if (typeof window === 'undefined' || typeof window.showScreen !== 'function') return;
   if (window.__settingsEmbedWrapped) return;
@@ -968,7 +988,10 @@ function _embedStandaloneBody(targetEl, sourceScreenId, hostScreenId, childScree
   const original = window.showScreen;
   window.showScreen = function (name) {
     if (_embeddedHostId && ('screen-' + name) !== _embeddedHostId) {
-      restoreEmbeddedSettings();
+      const targetId = 'screen-' + name;
+      const isChild = _embeddedChildScreens.indexOf(targetId) !== -1;
+      if (isChild) _moveEmbeddedBodyHome();
+      else restoreEmbeddedSettings();
     }
     return original.apply(this, arguments);
   };
