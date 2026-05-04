@@ -599,6 +599,8 @@ function openRecipeDetail(id) {
   currentRecipeId = id;
   currentServings = recipe.servings || 1;
   incrementRecipeView(id);
+  // El comptador de visites s'ha actualitzat: pot disparar 'first-cookme'.
+  if (typeof checkBadges === 'function') checkBadges();
   renderRecipeDetail();
   showScreen('recipe-detail');
 }

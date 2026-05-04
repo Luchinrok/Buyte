@@ -483,6 +483,8 @@ function recordScreenVisit(name) {
   if (!gamificationState.screensVisited.includes(name)) {
     gamificationState.screensVisited.push(name);
     saveGamificationState();
+    // Pantalla nova: pot disparar 'explorer' (≥10 pantalles distintes).
+    if (typeof checkBadges === 'function') checkBadges();
   }
 }
 
@@ -492,6 +494,8 @@ function recordHourTouch() {
   if (!gamificationState.touchedHours.includes(h)) {
     gamificationState.touchedHours.push(h);
     saveGamificationState();
+    // Hora nova: pot disparar 'nightowl' (0-4) o 'earlybird' (5-6).
+    if (typeof checkBadges === 'function') checkBadges();
   }
 }
 
