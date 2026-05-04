@@ -181,6 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('settings-theme').addEventListener('click', cycleTheme);
 
+  // Configuració amb pestanyes — wire-up dels clicks a les tabs.
+  if (typeof attachSettingsTabListeners === 'function') attachSettingsTabListeners();
+
   // Configuració → "Idioma i país" (pantalla unificada)
   const settingsLocale = document.getElementById('settings-locale');
   if (settingsLocale) settingsLocale.addEventListener('click', () => {

@@ -881,6 +881,50 @@ function openLocations(origin) {
   showScreen('locations');
 }
 
+// ============ TABS DE CONFIGURACIÓ ============
+// La pantalla de Configuració s'organitza en pestanyes horitzontals.
+// activeSettingsTab és null quan encara no s'ha triat cap (mostrem un
+// empty state). El valor es manté entre obertures de la pantalla per
+// recordar l'última pestanya que l'usuari va consultar.
+
+let activeSettingsTab = null;
+
+function setActiveSettingsTab(tab) {
+  activeSettingsTab = tab || null;
+  renderSettings();
+}
+
+// Marca la pestanya activa i pinta el contingut corresponent.
+function renderSettings() {
+  document.querySelectorAll('#settings-tabs .settings-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === activeSettingsTab);
+  });
+
+  // Amaguem la llista estàtica antiga (es retirarà a un commit posterior).
+  const legacy = document.querySelector('#screen-settings .settings-cards');
+  if (legacy) legacy.style.display = 'none';
+
+  const content = document.getElementById('settings-content');
+  if (!content) return;
+  if (!activeSettingsTab) {
+    content.innerHTML = '<div class="settings-empty-state"><p>👆 ' + escapeHtml(t('pickCategoryHint')) + '</p></div>';
+    return;
+  }
+  content.innerHTML = renderSettingsTabContent(activeSettingsTab) || '';
+}
+
+// Stub — a C3 retorna l'HTML real dels botons per cada pestanya.
+function renderSettingsTabContent(tab) {
+  return '<div class="settings-empty-state"><p>—</p></div>';
+}
+
+// Wire-up dels clicks a les pestanyes (es fa una sola vegada des de app.js).
+function attachSettingsTabListeners() {
+  document.querySelectorAll('#settings-tabs .settings-tab').forEach(btn => {
+    btn.addEventListener('click', () => setActiveSettingsTab(btn.dataset.tab));
+  });
+}
+
 // Pantalla unificada "Idioma i país". Es refresquen els dos sub-cards
 // (idioma i país) cada vegada perquè reflecteixin el valor actual,
 // independentment de canvis fets a sub-pantalles.
@@ -926,6 +970,7 @@ function openSettings(origin) {
   if (typeof updateCountryStatus === 'function') updateCountryStatus();
   if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
   if (typeof updateLocaleStatus === 'function') updateLocaleStatus();
+  if (typeof renderSettings === 'function') renderSettings();
   showScreen('settings');
 }
 
