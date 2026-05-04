@@ -6663,11 +6663,13 @@ h1 {
 .perm-denied-list li { margin-bottom: 6px; }
 .perm-denied-list li:last-child { margin-bottom: 0; }
 
-/* Bloc de tipus + test atenuat quan no es pot fer res sense permís */
+/* Bloc de tipus quan encara no hi ha permís: deixem un lleuger veil
+   visual perquè es vegi que les notificacions no es lliuraran fins
+   que es concedeixi el permís, però mantenim els toggles INTERACTIUS
+   — la decisió de quins tipus vol l'usuari és independent del permís
+   del navegador. */
 #smart-notif-types-block.is-disabled {
-  opacity: 0.5;
-  pointer-events: none;
-  filter: grayscale(40%);
+  opacity: 0.85;
 }
 
 .smart-notif-types-list {
