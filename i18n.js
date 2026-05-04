@@ -635,7 +635,7 @@ const TRANSLATIONS = {
     categoryDataSub:     'Esborrar, exportar, importar',
     subTabBotigues:    'Botigues',
     subTabZones:       'Zones',
-    subTabPopulars:    'Populars',
+    subTabPopulars:    'Productes',
     subTabReceptes:    'Receptes',
     manageStores:      'Gestionar botigues',
     manageZones:       'Gestionar zones',
