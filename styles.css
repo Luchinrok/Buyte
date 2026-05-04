@@ -6844,3 +6844,20 @@ h1 {
   line-height: 1;
 }
 .smart-notif-banner-close:active { transform: scale(0.92); }
+
+/* Banners URGENTS — productes ja caducats. Roig fort, sense X. Pulse subtil
+   per cridar l'atenció sense ser molest. */
+.smart-notif-banner-urgent {
+  background: linear-gradient(135deg, #E53935 0%, #B71C1C 100%);
+  box-shadow: 0 4px 14px rgba(183, 28, 28, 0.4);
+  animation: smart-notif-urgent-pulse 2.4s ease-in-out infinite;
+}
+
+.smart-notif-banner-urgent .smart-notif-banner-see {
+  color: #B71C1C;
+}
+
+@keyframes smart-notif-urgent-pulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(183, 28, 28, 0.4); }
+  50%      { box-shadow: 0 4px 22px rgba(229, 57, 53, 0.65); }
+}

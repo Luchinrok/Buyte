@@ -197,10 +197,46 @@ function _removeBanner(typeId) {
   }
 }
 
-// Llista pública dels banners actius avui (no descartats).
-function getActiveBanners() {
-  const banners = _readBanners();
+// Banners URGENTS: un per cada producte JA CADUCAT (daysUntilExpiry < 0).
+// Es generen LIVE des de products[] cada vegada — no es desen a localStorage,
+// no es poden descartar amb la X i no entren al log de descartats. Quan
+// l'usuari fa una acció sobre el producte (consumir/llençar/esborrar) o
+// modifica la data perquè ja no estigui caducat, el banner desapareix
+// automàticament a la propera renderitzada.
+function _computeUrgentBanners() {
+  const list = _smartProducts();
+  if (!list.length) return [];
   const out = [];
+  list.forEach(p => {
+    if (p.noExpiry || !p.date) return;
+    const d = _smartDaysUntil(p.date);
+    if (!isFinite(d) || d >= 0) return;
+    const days = Math.abs(d);
+    const dayWord = days === 1 ? 'dia' : 'dies';
+    out.push({
+      type: 'expired-' + p.id,
+      urgent: true,
+      emoji: '🚨',
+      productId: p.id,
+      body: '🚨 Ja ha caducat fa ' + days + ' ' + dayWord + ': ' + (p.emoji || '') + ' ' + (p.name || ''),
+      ts: Date.now()
+    });
+  });
+  // Els més caducats primer
+  out.sort((a, b) => {
+    const pa = list.find(x => x.id === a.productId);
+    const pb = list.find(x => x.id === b.productId);
+    if (!pa || !pb) return 0;
+    return _smartDaysUntil(pa.date) - _smartDaysUntil(pb.date);
+  });
+  return out;
+}
+
+// Llista pública dels banners actius avui. Primer els URGENTS (sempre
+// visibles, no descartables), després els NORMALS (descartables i emmagatzemats).
+function getActiveBanners() {
+  const out = _computeUrgentBanners();
+  const banners = _readBanners();
   SMART_NOTIF_TYPES.forEach(meta => {
     if (banners[meta.id] && shouldShowBannerToday(meta.id)) {
       out.push(Object.assign({ type: meta.id, emoji: meta.emoji }, banners[meta.id]));
@@ -341,14 +377,15 @@ function evaluateNotificationType(typeId, cfg) {
   return null;
 }
 
-// 1. Caducitat imminent (avui o demà)
+// 1. Caducitat imminent (avui o demà). Els ja caducats (d < 0) tenen el seu
+// propi banner urgent gestionat a part — vegeu _evalExpiredProducts().
 function _evalExpiry() {
   const today = [], tomorrow = [];
   _smartProducts().forEach(p => {
     if (p.noExpiry || !p.date) return;
     const d = _smartDaysUntil(p.date);
     if (!isFinite(d)) return;
-    if (d <= 0) today.push(p);
+    if (d === 0) today.push(p);
     else if (d === 1) tomorrow.push(p);
   });
   if (today.length === 0 && tomorrow.length === 0) return null;
@@ -514,6 +551,19 @@ function _evalBadgeProgress() {
 // Mapa: banner → acció al botó "Veure".
 // El banner pot tenir productId (un sol producte) o productIds (múltiples).
 function _smartBannerAction(banner) {
+  // Banners URGENTS (productes ja caducats) sempre van al detall del producte.
+  if (banner.urgent && banner.productId) {
+    return () => {
+      const list = (typeof products !== 'undefined') ? products : [];
+      const p = list.find(x => x.id === banner.productId);
+      if (p && typeof openProductDetail === 'function') {
+        openProductDetail(p, 'home');
+      } else {
+        // Si ja no existeix, només refresquem (el banner desapareixerà sol).
+        if (typeof renderSmartNotifBanners === 'function') renderSmartNotifBanners();
+      }
+    };
+  }
   const typeId = banner.type;
   switch (typeId) {
     case 'expiry': {
@@ -582,31 +632,41 @@ function renderSmartNotifBanners() {
 
   banners.forEach(b => {
     const card = document.createElement('div');
-    card.className = 'smart-notif-banner';
+    card.className = 'smart-notif-banner' + (b.urgent ? ' smart-notif-banner-urgent' : ' smart-notif-banner-normal');
     card.dataset.type = b.type;
 
     const action = _smartBannerAction(b);
     const seeBtn = action
       ? '<button type="button" class="smart-notif-banner-see" data-action="see">' + escapeHtml(t('notifBannerSee')) + '</button>'
       : '';
+    // Els banners URGENTS no es poden tancar amb X — només desapareixen quan
+    // l'usuari fa una acció sobre el producte.
+    const closeBtn = b.urgent
+      ? ''
+      : '<button type="button" class="smart-notif-banner-close" data-action="close" aria-label="Close">✕</button>';
 
     card.innerHTML =
       '<div class="smart-notif-banner-icon">' + (b.emoji || '🔔') + '</div>' +
       '<div class="smart-notif-banner-msg">' + escapeHtml(b.body || '') + '</div>' +
       seeBtn +
-      '<button type="button" class="smart-notif-banner-close" data-action="close" aria-label="Close">✕</button>';
+      closeBtn;
     container.appendChild(card);
 
     if (action) {
       card.querySelector('[data-action="see"]').addEventListener('click', () => {
-        dismissBannerToday(b.type);
+        // Els urgents no es marquen com a descartats — han de tornar a sortir
+        // si l'usuari només mira però no actua.
+        if (!b.urgent) dismissBannerToday(b.type);
         action();
       });
     }
-    card.querySelector('[data-action="close"]').addEventListener('click', () => {
-      dismissBannerToday(b.type);
-      renderSmartNotifBanners();
-    });
+    if (!b.urgent) {
+      const closeEl = card.querySelector('[data-action="close"]');
+      if (closeEl) closeEl.addEventListener('click', () => {
+        dismissBannerToday(b.type);
+        renderSmartNotifBanners();
+      });
+    }
   });
 }
 
