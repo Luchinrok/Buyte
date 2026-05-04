@@ -242,33 +242,46 @@ function initNotifications() {
 
 function updateNotifStatus() {
   const subEl = document.getElementById('notif-status');
-  if (!subEl || !window.Notif) return;
+  if (!subEl) return;
 
-  // Llegim Notification.permission EN DIRECTE — cap variable cachada.
+  // Llegim TOT en directe — Notification.permission del navegador i el
+  // master switch directament del localStorage, així no depenem de cap
+  // còpia in-memory que pogués estar obsoleta.
   const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
-  // Llegim el master directament del localStorage perquè reflecteixi canvis
-  // que hagin pogut fer-se en altres pestanyes/sub-pantalles.
-  let s = { enabled: false, types: {} };
-  if (typeof getSmartNotifSettings === 'function') s = getSmartNotifSettings();
+  let masterOn = false;
+  let activeCount = 0;
+  try {
+    const raw = localStorage.getItem('eatmefirst_smart_notif_v2');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      masterOn = parsed && parsed.enabled === true;
+      if (parsed && parsed.types) {
+        activeCount = Object.values(parsed.types).filter(c => c && c.enabled).length;
+      }
+    } else if (typeof getSmartNotifSettings === 'function') {
+      // Mai s'ha desat encara → fem servir els defaults en memòria.
+      const s = getSmartNotifSettings();
+      masterOn = !!s.enabled;
+      activeCount = Object.values(s.types || {}).filter(c => c && c.enabled).length;
+    }
+  } catch (e) {}
 
   if (perm === 'unsupported') {
     subEl.textContent = t('notifNotSupportedShort');
     return;
   }
-
-  // Reflectim l'estat del master switch (l'usuari el percep com a "estan
-  // activades o no?"). Els permisos del navegador són un detall ortogonal:
-  // si l'usuari ha activat el master però encara no hi ha permís, ho
-  // indiquem amb un sub-text.
-  if (!s.enabled) {
+  if (!masterOn) {
     subEl.textContent = t('notifStatusOff');
     return;
   }
-  const activeCount = Object.values(s.types || {}).filter(c => c && c.enabled).length;
-  if (perm !== 'granted') {
-    subEl.textContent = t('notifStatusOnNoPerm');
-  } else {
+  // master ON: el detall depèn de l'estat dels permisos
+  if (perm === 'granted') {
     subEl.textContent = t('notifStatusOn', activeCount);
+  } else if (perm === 'denied') {
+    subEl.textContent = t('notifStatusOnDenied');
+  } else {
+    // 'default' o qualsevol altre valor → cal demanar permís
+    subEl.textContent = t('notifStatusOnNoPerm');
   }
 }
 

@@ -606,8 +606,9 @@ const TRANSLATIONS = {
     notifPermStatusUnsupported: 'El navegador no suporta notificacions',
     notifDayShort: ['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'],
     notifStatusOff: 'Desactivades',
-    notifStatusOn: (n) => '✓ Activades · ' + n + (n === 1 ? ' tipus' : ' tipus'),
-    notifStatusOnNoPerm: 'Activades · falta permís',
+    notifStatusOn: (n) => '✓ Activades · ' + n + ' tipus',
+    notifStatusOnNoPerm: 'Activades · Cal permís',
+    notifStatusOnDenied: 'Activades · Permís denegat',
     notifPermDeniedHelp: "Per activar-los has d'anar a la configuració del navegador i permetre notificacions per aquesta web.",
     notifPermPromptClosed: "Has tancat el missatge sense respondre. Torna a clicar 'Permetre notificacions' per intentar-ho de nou",
   }
