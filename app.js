@@ -164,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Configuració — pantalla principal amb 5 cards de categoria. Cadascuna
   // obre una sub-pantalla amb pestanyes (instalada en commits posteriors).
   if (typeof attachSettingsCategoryListeners === 'function') attachSettingsCategoryListeners();
+  if (typeof attachSettingsRegionalListeners === 'function') attachSettingsRegionalListeners();
 
   // Banner de nivell (pantalla d'Impacte) → Els meus èxits
   const impactLevelBanner = document.getElementById('impact-level-banner');

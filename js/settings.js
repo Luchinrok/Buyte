@@ -887,6 +887,49 @@ function openLocations(origin) {
 // pestanyes (nivell 2) que viuen a screen-settings-{cat}. Aquí només
 // despatxem el clic — les sub-pantalles s'engeguen amb funcions
 // openSettings<Cat>() definides als seus propis commits.
+
+// ----- Sub-pantalla "Regional" (Idioma + País amb pestanyes) -----
+let activeRegionalTab = 'idioma';
+
+function openSettingsRegional() {
+  renderSettingsRegional();
+  showScreen('settings-regional');
+}
+
+function renderSettingsRegional() {
+  document.querySelectorAll('#screen-settings-regional .sub-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.subtab === activeRegionalTab);
+  });
+  const area = document.getElementById('settings-regional-area');
+  if (!area) return;
+  area.innerHTML = '';
+  if (activeRegionalTab === 'idioma') {
+    const wrap = document.createElement('div');
+    wrap.className = 'lang-list';
+    area.appendChild(wrap);
+    if (typeof renderLangListInto === 'function') renderLangListInto(wrap);
+  } else if (activeRegionalTab === 'pais') {
+    const hint = document.createElement('p');
+    hint.className = 'section-hint';
+    hint.textContent = t('countryHint');
+    area.appendChild(hint);
+    const wrap = document.createElement('div');
+    wrap.className = 'welcome-country-list';
+    area.appendChild(wrap);
+    if (typeof renderCountryListInto === 'function') renderCountryListInto(wrap);
+  }
+}
+
+function attachSettingsRegionalListeners() {
+  document.querySelectorAll('#screen-settings-regional .sub-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeRegionalTab = tab.dataset.subtab || 'idioma';
+      renderSettingsRegional();
+    });
+  });
+}
+
+
 function openSettingsCategory(cat) {
   const map = {
     regional: typeof openSettingsRegional === 'function' ? openSettingsRegional : null,
@@ -997,7 +1040,14 @@ function updatePopularCount() {
 }
 
 function renderLangList() {
-  const container = document.getElementById('lang-list');
+  renderLangListInto(document.getElementById('lang-list'));
+}
+
+// Pinta la llista d'idiomes a un contenidor arbitrari. Permet reusar la
+// mateixa UI tant a la pantalla autònoma com dins de la sub-pantalla
+// "Regional" amb pestanyes.
+function renderLangListInto(container) {
+  if (!container) return;
   container.innerHTML = '';
 
   // Mentre fem el refactor només deixem català.

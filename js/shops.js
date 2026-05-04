@@ -187,7 +187,12 @@ function openCountryScreen() {
 
 
 function renderCountryList() {
-  const container = document.getElementById('country-list');
+  renderCountryListInto(document.getElementById('country-list'));
+}
+
+// Pinta la llista de països a un contenidor arbitrari (pantalla autònoma
+// o sub-pantalla "Regional" amb pestanyes).
+function renderCountryListInto(container) {
   if (!container) return;
   container.innerHTML = '';
 
@@ -245,6 +250,9 @@ function showCountryChangeModal(countryCode) {
     changeCountry(countryCode);
     updateCountryStatus();
     renderCountryList();
+    // Si la sub-pantalla "Regional" està visible, també cal refrescar-la
+    // per actualitzar el check del país actiu dins el seu propi container.
+    if (typeof renderSettingsRegional === 'function') renderSettingsRegional();
     showToast('✓ ' + t(country.nameKey));
   });
   overlay.addEventListener('click', (e) => {

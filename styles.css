@@ -684,6 +684,44 @@ h1 {
   color: white;
 }
 
+/* Pestanyes (pills) per a les sub-pantalles de Configuració. Scroll-x si
+   no caben en pantalles estretes. */
+.sub-tabs-container {
+  display: flex;
+  gap: 8px;
+  padding: 8px 4px 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.sub-tabs-container::-webkit-scrollbar { display: none; }
+
+.sub-tab {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+.sub-tab:hover { background: rgba(76, 175, 42, 0.1); }
+.sub-tab:active { transform: scale(0.96); }
+.sub-tab.active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #FFFFFF;
+  border-color: var(--primary-dark);
+  box-shadow: 0 2px 8px rgba(76, 175, 42, 0.3);
+}
+
 .settings-card:active:not(.settings-card-disabled) {
   transform: scale(0.98);
 }
