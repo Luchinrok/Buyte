@@ -953,22 +953,12 @@
       <!-- ===== REGIONAL ===== -->
       <p class="settings-section-title" data-i18n="sectionRegional"></p>
 
-      <!-- IDIOMA -->
-      <button class="settings-card settings-card-language" id="settings-language">
+      <!-- IDIOMA + PAÍS (pantalla unificada) -->
+      <button class="settings-card settings-card-language" id="settings-locale">
         <div class="settings-card-icon"><span>🌐</span></div>
         <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="language"></p>
-          <p class="settings-card-sub" id="language-status">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- PAÍS -->
-      <button class="settings-card settings-card-country" id="settings-country">
-        <div class="settings-card-icon"><span>🚩</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="country"></p>
-          <p class="settings-card-sub" id="country-status">-</p>
+          <p class="settings-card-title" data-i18n="localeTitle"></p>
+          <p class="settings-card-sub" id="locale-status">-</p>
         </div>
         <span class="settings-card-arrow">›</span>
       </button>
@@ -1192,9 +1182,40 @@
   </div>
 
   <!-- PANTALLA SELECCIONAR PAÍS (des de configuració) -->
-  <div id="screen-country" class="screen">
+  <!-- PANTALLA UNIFICADA IDIOMA + PAÍS -->
+  <div id="screen-locale" class="screen">
     <header class="top-bar">
       <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <h1 data-i18n="localeTitle"></h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="settings-cards">
+      <p class="settings-section-title" data-i18n="localeIdiomaSection"></p>
+      <button class="settings-card settings-card-language" id="locale-language">
+        <div class="settings-card-icon"><span>🌐</span></div>
+        <div class="settings-card-info">
+          <p class="settings-card-title" data-i18n="language"></p>
+          <p class="settings-card-sub" id="language-status">-</p>
+        </div>
+        <span class="settings-card-arrow">›</span>
+      </button>
+
+      <p class="settings-section-title" data-i18n="localeCountrySection"></p>
+      <button class="settings-card settings-card-country" id="locale-country">
+        <div class="settings-card-icon"><span>🚩</span></div>
+        <div class="settings-card-info">
+          <p class="settings-card-title" data-i18n="country"></p>
+          <p class="settings-card-sub" id="country-status">-</p>
+        </div>
+        <span class="settings-card-arrow">›</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="screen-country" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="locale" aria-label="Back">‹</button>
       <h1 data-i18n="country"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1775,7 +1796,7 @@
   <!-- PANTALLA IDIOMES -->
   <div id="screen-language" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="locale" aria-label="Back">‹</button>
       <h1 data-i18n="language"></h1>
       <div style="width:40px"></div>
     </header>

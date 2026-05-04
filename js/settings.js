@@ -887,6 +887,33 @@ function openLocations(origin) {
   showScreen('locations');
 }
 
+// Pantalla unificada "Idioma i país". Es refresquen els dos sub-cards
+// (idioma i país) cada vegada perquè reflecteixin el valor actual,
+// independentment de canvis fets a sub-pantalles.
+function openLocaleScreen() {
+  if (typeof updateLangStatus === 'function') updateLangStatus();
+  if (typeof updateCountryStatus === 'function') updateCountryStatus();
+  if (typeof updateLocaleStatus === 'function') updateLocaleStatus();
+  showScreen('locale');
+}
+
+// Subtítol del card "Idioma i país" a Configuració: "Català · Espanya".
+// Si el país encara no està resolt (welcome), només mostra l'idioma.
+function updateLocaleStatus() {
+  const el = document.getElementById('locale-status');
+  if (!el) return;
+  const lang = (typeof getCurrentLang === 'function') ? getCurrentLang() : 'ca';
+  const langName = (typeof LANGUAGE_NAMES !== 'undefined' && LANGUAGE_NAMES[lang]) ? LANGUAGE_NAMES[lang] : lang;
+  let countryName = '';
+  try {
+    if (typeof COUNTRIES !== 'undefined' && typeof currentCountry !== 'undefined') {
+      const c = COUNTRIES.find(x => x.code === currentCountry);
+      if (c) countryName = t(c.nameKey);
+    }
+  } catch (e) {}
+  el.textContent = countryName ? (langName + ' · ' + countryName) : langName;
+}
+
 // Obre la pantalla de configuració recordant d'on s'ha cridat
 // origin: 'home' (des del tracker) o 'launcher' (des de la pantalla inicial)
 function openSettings(origin) {
@@ -904,6 +931,7 @@ function openSettings(origin) {
   if (typeof updateNotifStatus === 'function') updateNotifStatus();
   if (typeof updateCountryStatus === 'function') updateCountryStatus();
   if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
+  if (typeof updateLocaleStatus === 'function') updateLocaleStatus();
   showScreen('settings');
 }
 

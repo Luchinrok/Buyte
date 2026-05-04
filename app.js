@@ -142,6 +142,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof updateSyncStatus === 'function') updateSyncStatus();
         if (typeof updateCountryStatus === 'function') updateCountryStatus();
         if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
+        if (typeof updateLocaleStatus === 'function') updateLocaleStatus();
+      }
+      else if (target === 'locale') {
+        // Tornem a la pantalla "Idioma i país" — refresquem els dos sub-cards.
+        if (typeof updateLangStatus === 'function') updateLangStatus();
+        if (typeof updateCountryStatus === 'function') updateCountryStatus();
       }
       else if (target === 'list' && typeof openShelf === 'function' && currentLevel) {
         openShelf(currentLevel);
@@ -174,10 +180,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('settings-theme').addEventListener('click', cycleTheme);
-  document.getElementById('settings-language').addEventListener('click', () => {
+
+  // Configuració → "Idioma i país" (pantalla unificada)
+  const settingsLocale = document.getElementById('settings-locale');
+  if (settingsLocale) settingsLocale.addEventListener('click', () => {
+    if (typeof openLocaleScreen === 'function') openLocaleScreen();
+  });
+  // Dins de la pantalla locale: dos sub-botons que obren les pickers existents
+  const localeLang = document.getElementById('locale-language');
+  if (localeLang) localeLang.addEventListener('click', () => {
     renderLangList();
     showScreen('language');
   });
+  const localeCountry = document.getElementById('locale-country');
+  if (localeCountry) localeCountry.addEventListener('click', openCountryScreen);
+
   document.getElementById('settings-stats').addEventListener('click', showStats);
 
   // El meu impacte
@@ -307,10 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsSync = document.getElementById('settings-sync');
   if (settingsSync) settingsSync.addEventListener('click', openSyncScreen);
 
-  // País i Supermercats
-  const settingsCountry = document.getElementById('settings-country');
-  if (settingsCountry) settingsCountry.addEventListener('click', openCountryScreen);
-
+  // Supermercats (el botó de País viu ara dins la pantalla "Idioma i país")
   const settingsSupermarkets = document.getElementById('settings-supermarkets');
   if (settingsSupermarkets) settingsSupermarkets.addEventListener('click', () => openManageSupermarkets('settings'));
 
