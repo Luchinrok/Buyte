@@ -898,7 +898,13 @@ function openNewRecipeForm() {
   };
   selectedRecipeEmoji = '🍳';
   const backBtn = document.getElementById('recipe-edit-back-btn');
-  if (backBtn) backBtn.dataset.back = 'cookme';
+  // Si la sub-pantalla de Configuració > Contingut ha redirigit el back a
+  // 'settings-content' (embed actiu), respectem-ho — així el back retorna
+  // a la sub-pàgina i no a la pantalla autònoma del CookMe.
+  if (backBtn) {
+    const cur = backBtn.dataset.back || '';
+    if (cur.indexOf('settings-') !== 0) backBtn.dataset.back = 'cookme';
+  }
   renderRecipeEditForm();
   showScreen('recipe-edit');
 }
@@ -920,7 +926,12 @@ function openEditRecipeForm(id) {
   }
   selectedRecipeEmoji = editingRecipeData.emoji || '🍳';
   const backBtn = document.getElementById('recipe-edit-back-btn');
-  if (backBtn) backBtn.dataset.back = 'recipe-detail';
+  // Mateix raonament que a openNewRecipeForm: respectem la redirecció
+  // 'settings-*' si l'embed l'ha posada.
+  if (backBtn) {
+    const cur = backBtn.dataset.back || '';
+    if (cur.indexOf('settings-') !== 0) backBtn.dataset.back = 'recipe-detail';
+  }
   renderRecipeEditForm();
   showScreen('recipe-edit');
 }
