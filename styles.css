@@ -755,6 +755,40 @@ h1 {
   width: 100%;
 }
 
+/* Bloc d'acció dins la pestanya combinada de Dades (Descarregar / Importar).
+   Cada bloc té emoji + títol + descripció + botó, separats per un divisor. */
+.data-action-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 18px 20px 4px;
+}
+.data-action-emoji {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.data-action-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.data-action-desc {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 0 0 8px;
+  line-height: 1.4;
+  max-width: 320px;
+}
+.data-action-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 14px 24px;
+}
+
 /* Chips per a la selecció ràpida de tema (Clar / Fosc) dins la sub-pantalla
    "Aplicació". Comparteixen estil amb els pills de tabs però fonen més
    amb el bloc de contingut. */

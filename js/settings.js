@@ -1297,18 +1297,23 @@ function renderSettingsData() {
       '</div>' +
       '<div class="reset-data-divider"></div>' +
       _resetCardHtml('all', '🗑️', 'resetAllTitle', t('cantUndo'), true);
-  } else if (activeDataTab === 'exportar') {
-    const summary = '<p class="settings-sub-summary-soft">' + escapeHtml(t('exportSub')) + '</p>';
-    area.innerHTML = '';
-    area.appendChild(_subContentBlock(summary, '📤 ' + t('downloadMyData'), () => {
-      if (typeof exportData === 'function') exportData();
-    }));
-  } else if (activeDataTab === 'importar') {
-    const summary = '<p class="settings-sub-summary-soft">' + escapeHtml(t('importSub')) + '</p>';
-    area.innerHTML = '';
-    area.appendChild(_subContentBlock(summary, '📥 ' + t('importFromFile'), () => {
-      if (typeof importData === 'function') importData();
-    }));
+  } else if (activeDataTab === 'data') {
+    // Pestanya combinada Exportar + Importar. Dos blocs centrats separats
+    // per un divisor: descàrrega de backup JSON i pujada d'un fitxer.
+    area.innerHTML =
+      '<div class="data-action-block">' +
+        '<div class="data-action-emoji">📤</div>' +
+        '<p class="data-action-title">' + escapeHtml(t('downloadDataTitle')) + '</p>' +
+        '<p class="data-action-desc">' + escapeHtml(t('downloadDataSub')) + '</p>' +
+        '<button type="button" class="primary-btn settings-sub-btn" data-data-action="export">' + escapeHtml(t('downloadDataBtn')) + '</button>' +
+      '</div>' +
+      '<div class="data-action-divider"></div>' +
+      '<div class="data-action-block">' +
+        '<div class="data-action-emoji">📥</div>' +
+        '<p class="data-action-title">' + escapeHtml(t('importDataTitle')) + '</p>' +
+        '<p class="data-action-desc">' + escapeHtml(t('importDataSub')) + '</p>' +
+        '<button type="button" class="primary-btn settings-sub-btn" data-data-action="import">' + escapeHtml(t('importDataBtn')) + '</button>' +
+      '</div>';
   }
 }
 
@@ -1319,20 +1324,29 @@ function attachSettingsDataListeners() {
       renderSettingsData();
     });
   });
-  // Delegate per als botons d'esborrar que es regeneren a cada render.
+  // Delegate per als botons d'esborrar i de export/import que es regeneren
+  // a cada render.
   const area = document.getElementById('settings-data-area');
   if (area && !area.__resetBound) {
     area.__resetBound = true;
     area.addEventListener('click', (e) => {
-      const btn = e.target.closest && e.target.closest('[data-reset-action]');
-      if (!btn) return;
-      switch (btn.dataset.resetAction) {
-        case 'biteme':       if (typeof resetBitemeProducts === 'function') resetBitemeProducts(); break;
-        case 'shopping':     if (typeof resetShoppingList === 'function') resetShoppingList(); break;
-        case 'impact':       if (typeof resetImpactHistory === 'function') resetImpactHistory(); break;
-        case 'recipe-usage': if (typeof confirmResetRecipeUsage === 'function') confirmResetRecipeUsage(); break;
-        case 'gamification': if (typeof confirmResetGamificationProgress === 'function') confirmResetGamificationProgress(); break;
-        case 'all':          if (typeof resetAll === 'function') resetAll(); break;
+      const resetBtn = e.target.closest && e.target.closest('[data-reset-action]');
+      if (resetBtn) {
+        switch (resetBtn.dataset.resetAction) {
+          case 'biteme':       if (typeof resetBitemeProducts === 'function') resetBitemeProducts(); break;
+          case 'shopping':     if (typeof resetShoppingList === 'function') resetShoppingList(); break;
+          case 'impact':       if (typeof resetImpactHistory === 'function') resetImpactHistory(); break;
+          case 'recipe-usage': if (typeof confirmResetRecipeUsage === 'function') confirmResetRecipeUsage(); break;
+          case 'gamification': if (typeof confirmResetGamificationProgress === 'function') confirmResetGamificationProgress(); break;
+          case 'all':          if (typeof resetAll === 'function') resetAll(); break;
+        }
+        return;
+      }
+      const dataBtn = e.target.closest && e.target.closest('[data-data-action]');
+      if (!dataBtn) return;
+      switch (dataBtn.dataset.dataAction) {
+        case 'export': if (typeof exportData === 'function') exportData(); break;
+        case 'import': if (typeof importData === 'function') importData(); break;
       }
     });
   }
