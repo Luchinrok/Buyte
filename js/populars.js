@@ -186,10 +186,15 @@ function openPopularEdit(idx) {
   const delBtn = document.getElementById('btn-delete-popular');
   if (delBtn) delBtn.style.display = isNew ? 'none' : 'block';
 
-  // Defensiu: el back de popular-edit sempre torna a la llista de populars,
-  // que al seu torn coneix el seu origen (settings/add/shopping) via popularOrigin.
+  // Defensiu: el back de popular-edit torna a la llista de populars,
+  // EXCEPTE si la sub-pantalla de Configuració > Contingut ha redirigit el
+  // back a 'settings-content' (embed actiu) — en aquest cas el respectem
+  // perquè el back retorni a la sub-pàgina i no a la llista standalone.
   const editBack = document.querySelector('#screen-popular-edit .back-btn');
-  if (editBack) editBack.dataset.back = 'popular';
+  if (editBack) {
+    const cur = editBack.dataset.back || '';
+    if (cur.indexOf('settings-') !== 0) editBack.dataset.back = 'popular';
+  }
 
   showScreen('popular-edit');
 }
