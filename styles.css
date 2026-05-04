@@ -2493,14 +2493,18 @@ h1 {
   border: none;
   background: rgba(0, 0, 0, 0.06);
   color: var(--text-soft);
-  font-size: 16px;
-  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: inherit;
+  padding: 0;
   transition: background 0.15s;
+}
+.impact-card-info-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .impact-card-info-btn:active {
