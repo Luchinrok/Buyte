@@ -365,7 +365,13 @@ function _evalExpiry() {
   } else {
     body = '⏰ ' + today.length + ' caduquen avui, ' + tomorrow.length + ' demà';
   }
-  return { title: '🚨 Buyte', body: body };
+  // Metadata per a la navegació del botó "Veure": un sol producte → detall;
+  // múltiples → llista d'alertes (BiteMe).
+  const all = today.concat(tomorrow);
+  const meta = (all.length === 1)
+    ? { productId: all[0].id }
+    : { productIds: all.map(p => p.id) };
+  return Object.assign({ title: '🚨 Buyte', body: body }, meta);
 }
 
 // 2. Recordatori del dinar (productes que caduquen aviat)
@@ -505,17 +511,43 @@ function _evalBadgeProgress() {
 //   BANNERS A LA HOME (Phase 4)
 // ============================================
 
-// Mapa: tipus de notificació → acció al botó "Veure".
-function _smartBannerAction(typeId) {
+// Mapa: banner → acció al botó "Veure".
+// El banner pot tenir productId (un sol producte) o productIds (múltiples).
+function _smartBannerAction(banner) {
+  const typeId = banner.type;
   switch (typeId) {
-    case 'expiry':
+    case 'expiry': {
+      // 1 producte → detall; >1 → pantalla d'alertes (productes urgents).
+      if (banner.productId) {
+        return () => {
+          const list = (typeof products !== 'undefined') ? products : [];
+          const p = list.find(x => x.id === banner.productId);
+          if (p && typeof openProductDetail === 'function') {
+            openProductDetail(p, 'home');
+          } else {
+            // Producte ja no existeix — caigut a la llista general.
+            if (typeof renderAlerts === 'function') renderAlerts();
+            showScreen('alerts');
+          }
+        };
+      }
+      return () => {
+        if (typeof renderAlerts === 'function') renderAlerts();
+        showScreen('alerts');
+      };
+    }
     case 'mealReminder':
       return () => {
-        if (typeof renderHome === 'function') renderHome();
-        showScreen('home');
+        // BiteMe → "Veure-ho tot" ordenat per caducitat (els més imminents a dalt).
+        if (typeof viewAllSortMode !== 'undefined') viewAllSortMode = 'expiry';
+        if (typeof openViewAll === 'function') openViewAll();
+        else { if (typeof renderViewAll === 'function') renderViewAll(); showScreen('view-all'); }
       };
     case 'cookmeInspiration':
       return () => {
+        // CookMe filtre "Disponibles".
+        if (typeof setRecipeFilter === 'function') setRecipeFilter('available');
+        else if (typeof currentRecipeFilter !== 'undefined') currentRecipeFilter = 'available';
         if (typeof openCookMe === 'function') openCookMe();
       };
     case 'shoppingPending':
@@ -534,6 +566,8 @@ function _smartBannerAction(typeId) {
         else showScreen('impact');
       };
     case 'reactivation':
+      // Tornar al launcher (home de l'app).
+      return () => { showScreen('launcher'); };
     default:
       return null;
   }
@@ -551,7 +585,7 @@ function renderSmartNotifBanners() {
     card.className = 'smart-notif-banner';
     card.dataset.type = b.type;
 
-    const action = _smartBannerAction(b.type);
+    const action = _smartBannerAction(b);
     const seeBtn = action
       ? '<button type="button" class="smart-notif-banner-see" data-action="see">' + escapeHtml(t('notifBannerSee')) + '</button>'
       : '';
