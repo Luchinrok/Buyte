@@ -1078,18 +1078,17 @@ function renderSettingsContent() {
     return;
   }
 
-  area.innerHTML = '';
-
-  let summary = '', label = '', action = null;
   if (activeContentTab === 'receptes') {
-    const n = (typeof getAllRecipes === 'function') ? getAllRecipes().length : 0;
-    summary = '<p class="settings-sub-summary">🍳 ' + n + ' ' + escapeHtml(t('recipesCount')) + '</p>';
-    label = t('manageRecipes');
-    action = () => {
-      if (typeof openCookMe === 'function') openCookMe('settings-content');
-    };
+    // Embolcalla el cos de screen-cookme dins la pestanya. Filtres,
+    // cercador, llista i botó "Afegir recepta nova" funcionen igual.
+    // screen-recipe-detail i screen-recipe-edit es registren com a fills
+    // perquè el back torni al sub-pàgina mentre l'embed és actiu.
+    _embedStandaloneBody(area, 'screen-cookme', 'screen-settings-content', ['screen-recipe-detail', 'screen-recipe-edit']);
+    if (typeof recipeEditMode !== 'undefined') recipeEditMode = false;
+    if (typeof updateRecipeEditModeBtn === 'function') updateRecipeEditModeBtn();
+    if (typeof renderCookMe === 'function') renderCookMe();
+    return;
   }
-  if (label) area.appendChild(_subContentBlock(summary, label, action));
 }
 
 function attachSettingsContentListeners() {
