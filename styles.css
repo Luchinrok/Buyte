@@ -669,6 +669,21 @@ h1 {
   flex: 1;
 }
 
+/* Separador discret entre seccions de Configuració. El primer títol no
+   necessita gaire espai a sobre — la secció ja arrenca a dalt de tot. */
+.settings-section-title {
+  padding: 16px 4px 0 4px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+}
+.settings-cards > .settings-section-title:first-child {
+  padding-top: 4px;
+}
+
 .settings-card {
   display: flex;
   align-items: center;
