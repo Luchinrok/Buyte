@@ -272,7 +272,10 @@ function updateCountryStatus() {
 function openManageSupermarkets(origin) {
   manageSupermarketsMode = 'view';
   const backBtn = document.getElementById('manage-supermarkets-back-btn');
-  if (backBtn) backBtn.dataset.back = (origin === 'settings') ? 'settings' : 'shopping';
+  // Tornem a 'settings' o a la sub-pantalla 'settings-*' segons l'origen,
+  // si no a 'shopping' (cas BuyMe).
+  const isSettings = origin === 'settings' || (typeof origin === 'string' && origin.indexOf('settings-') === 0);
+  if (backBtn) backBtn.dataset.back = isSettings ? origin : 'shopping';
   renderManageSupermarkets();
   showScreen('manage-supermarkets');
 }

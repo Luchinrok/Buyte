@@ -726,6 +726,35 @@ h1 {
   box-shadow: 0 2px 8px rgba(76, 175, 42, 0.3);
 }
 
+/* Layout compartit per al contingut centrat de cada pestanya: resum +
+   botó d'acció. S'usa a Content / Activity / App / Data. */
+.settings-sub-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 20px 20px;
+  text-align: center;
+}
+.settings-sub-summary {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.4;
+}
+.settings-sub-summary-soft {
+  font-size: 14px;
+  color: var(--text-soft);
+  margin: 0;
+  line-height: 1.4;
+}
+.settings-sub-btn {
+  min-width: 220px;
+  max-width: 320px;
+  width: 100%;
+}
+
 .settings-card:active:not(.settings-card-disabled) {
   transform: scale(0.98);
 }

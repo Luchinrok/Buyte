@@ -165,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // obre una sub-pantalla amb pestanyes (instalada en commits posteriors).
   if (typeof attachSettingsCategoryListeners === 'function') attachSettingsCategoryListeners();
   if (typeof attachSettingsRegionalListeners === 'function') attachSettingsRegionalListeners();
+  if (typeof attachSettingsContentListeners === 'function') attachSettingsContentListeners();
 
   // Banner de nivell (pantalla d'Impacte) → Els meus èxits
   const impactLevelBanner = document.getElementById('impact-level-banner');

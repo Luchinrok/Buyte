@@ -873,10 +873,14 @@ function recalcDateByLocation() {
 }
 
 // Obre la pantalla d'ubicacions recordant d'on s'ha cridat
-// origin: 'add' (des del formulari) o 'settings' (des de la configuració)
+// origin: 'add' (des del formulari), 'settings' (des de Configuració), o
+// 'settings-content' (des de la sub-pantalla Contingut). Si l'origen és
+// settings o una sub-pantalla settings-*, hi tornem; en cas contrari
+// 'add' és el defecte.
 function openLocations(origin) {
   const backBtn = document.getElementById('locations-back-btn');
-  if (backBtn) backBtn.dataset.back = (origin === 'settings') ? 'settings' : 'add';
+  const isSettings = origin === 'settings' || (typeof origin === 'string' && origin.indexOf('settings-') === 0);
+  if (backBtn) backBtn.dataset.back = isSettings ? origin : 'add';
   renderLocationsList();
   showScreen('locations');
 }
@@ -925,6 +929,75 @@ function attachSettingsRegionalListeners() {
     tab.addEventListener('click', () => {
       activeRegionalTab = tab.dataset.subtab || 'idioma';
       renderSettingsRegional();
+    });
+  });
+}
+
+// ----- Sub-pantalla "Contingut" (Botigues / Zones / Populars / Receptes) -----
+let activeContentTab = 'botigues';
+
+function openSettingsContent() {
+  renderSettingsContent();
+  showScreen('settings-content');
+}
+
+// Helper compartit per pintar el bloc "resum + botó d'acció" centrat.
+function _subContentBlock(summaryHtml, btnLabel, onClick) {
+  const wrap = document.createElement('div');
+  wrap.className = 'settings-sub-content';
+  wrap.innerHTML = summaryHtml +
+    '<button type="button" class="primary-btn settings-sub-btn">' + escapeHtml(btnLabel) + '</button>';
+  wrap.querySelector('button').addEventListener('click', onClick);
+  return wrap;
+}
+
+function renderSettingsContent() {
+  document.querySelectorAll('#screen-settings-content .sub-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.subtab === activeContentTab);
+  });
+  const area = document.getElementById('settings-content-area');
+  if (!area) return;
+  area.innerHTML = '';
+
+  let summary = '', label = '', action = null;
+  if (activeContentTab === 'botigues') {
+    const enabled = (typeof getEnabledSupermarkets === 'function') ? getEnabledSupermarkets().length : 0;
+    summary = '<p class="settings-sub-summary">🏪 ' + enabled + ' ' + escapeHtml(t('storesActive')) + '</p>';
+    label = t('manageStores');
+    action = () => {
+      if (typeof openManageSupermarkets === 'function') openManageSupermarkets('settings-content');
+    };
+  } else if (activeContentTab === 'zones') {
+    const n = (typeof locations !== 'undefined' && Array.isArray(locations)) ? locations.length : 0;
+    summary = '<p class="settings-sub-summary">📍 ' + n + ' ' + escapeHtml(t('zonesCount')) + '</p>';
+    label = t('manageZones');
+    action = () => {
+      if (typeof openLocations === 'function') openLocations('settings-content');
+    };
+  } else if (activeContentTab === 'populars') {
+    const n = (typeof getPopularProducts === 'function') ? getPopularProducts().length : 0;
+    summary = '<p class="settings-sub-summary">⭐ ' + n + ' ' + escapeHtml(t('popularsCount')) + '</p>';
+    label = t('managePopulars');
+    action = () => {
+      if (typeof openPopular === 'function') openPopular('settings-content');
+      else { showScreen('popular'); if (typeof renderPopularList === 'function') renderPopularList(); }
+    };
+  } else if (activeContentTab === 'receptes') {
+    const n = (typeof getAllRecipes === 'function') ? getAllRecipes().length : 0;
+    summary = '<p class="settings-sub-summary">🍳 ' + n + ' ' + escapeHtml(t('recipesCount')) + '</p>';
+    label = t('manageRecipes');
+    action = () => {
+      if (typeof openCookMe === 'function') openCookMe('settings-content');
+    };
+  }
+  if (label) area.appendChild(_subContentBlock(summary, label, action));
+}
+
+function attachSettingsContentListeners() {
+  document.querySelectorAll('#screen-settings-content .sub-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeContentTab = tab.dataset.subtab || 'botigues';
+      renderSettingsContent();
     });
   });
 }

@@ -264,7 +264,8 @@ function openCookMe(origin) {
 function applyCookMeBackTarget() {
   const backBtn = document.querySelector('#screen-cookme .back-btn');
   if (!backBtn) return;
-  backBtn.dataset.back = (cookmeOrigin === 'settings') ? 'settings' : 'launcher';
+  const isSettings = cookmeOrigin === 'settings' || (typeof cookmeOrigin === 'string' && cookmeOrigin.indexOf('settings-') === 0);
+  backBtn.dataset.back = isSettings ? cookmeOrigin : 'launcher';
 }
 
 // Activa o desactiva el mode d'edició de la llista de receptes.

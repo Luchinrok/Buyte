@@ -272,12 +272,14 @@ function openPopular(origin) {
   popularSearchQuery = '';
   const searchInput = document.getElementById('popular-search');
   if (searchInput) searchInput.value = '';
-  // Reset back-button: 'settings' des de configuració, 'shopping-item-edit'
-  // des del BuyMe, 'add' (formulari del BiteMe) per defecte.
+  // Reset back-button: 'settings' o sub-pantalla 'settings-*' des de
+  // Configuració, 'shopping-item-edit' des del BuyMe, 'add' (formulari del
+  // BiteMe) per defecte.
   const backBtn = document.querySelector('#screen-popular .back-btn');
   if (backBtn) {
-    if (popularOrigin === 'settings') backBtn.dataset.back = 'settings';
-    else if (popularOrigin === 'shopping') backBtn.dataset.back = 'shopping-item-edit';
+    if (popularOrigin === 'settings' || (typeof popularOrigin === 'string' && popularOrigin.indexOf('settings-') === 0)) {
+      backBtn.dataset.back = popularOrigin;
+    } else if (popularOrigin === 'shopping') backBtn.dataset.back = 'shopping-item-edit';
     else backBtn.dataset.back = 'add';
   }
   renderPopularList();
