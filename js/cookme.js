@@ -869,26 +869,6 @@ function addItemsToShop(supermarketId, items) {
   if (typeof addXp === 'function' && items.length > 0) addXp(25, 'cookme-cook');
 }
 
-// Actualitza el comptador de receptes que es poden fer ja al botó del launcher.
-function renderCookMeBadge() {
-  const badge = document.getElementById('btn-cookme-count');
-  if (!badge) return;
-  const recipes = getAllRecipes();
-  const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
-  let ready = 0;
-  for (let i = 0; i < recipes.length; i++) {
-    const m = calculateRecipeMatch(recipes[i], userProducts);
-    if (m.canMake) ready++;
-  }
-  if (ready > 0) {
-    badge.textContent = String(ready);
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
-
 // ============================================
 //   CUSTOM RECIPES (MILLORA 5)
 // ============================================

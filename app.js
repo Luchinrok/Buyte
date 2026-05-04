@@ -534,8 +534,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof adjustRecipeServings === 'function') adjustRecipeServings(1);
   });
 
-  // Comptador inicial al botó CookMe del launcher
-  if (typeof renderCookMeBadge === 'function') renderCookMeBadge();
+  // (El botó CookMe del launcher ja no mostra cap badge: era confús perquè
+  //  semblava un avís pendent. La pantalla CookMe en si ja indica les receptes
+  //  disponibles via el filtre 'Disponibles'.)
 
   // Pantalla de supermercats
   const btnManageSm = document.getElementById('btn-manage-supermarkets');

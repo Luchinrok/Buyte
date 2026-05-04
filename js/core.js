@@ -615,8 +615,6 @@ function showScreen(name) {
       void gear.offsetWidth;
       gear.classList.add('gear-spin-once');
     }
-    // Refresca el comptador de receptes que es poden fer ja
-    if (typeof renderCookMeBadge === 'function') renderCookMeBadge();
     // Refresca els banners de notificacions intel·ligents
     if (typeof renderSmartNotifBanners === 'function') renderSmartNotifBanners();
   }
