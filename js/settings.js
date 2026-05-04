@@ -906,6 +906,24 @@ function renderSettings() {
     return;
   }
   content.innerHTML = renderSettingsTabContent(activeSettingsTab) || '';
+  refreshSettingsSubtitles();
+}
+
+// Crida totes les update*Status. Cada una és no-op si el seu element no
+// existeix (la card de la tab no està visible), de manera que cridar-les
+// totes és segur i no fa falta saber quina tab és l'activa.
+function refreshSettingsSubtitles() {
+  if (typeof updateThemeStatus === 'function') updateThemeStatus();
+  if (typeof updateLangStatus === 'function') updateLangStatus();
+  if (typeof updateStatsSub === 'function') updateStatsSub();
+  if (typeof updateImpactSub === 'function') updateImpactSub();
+  if (typeof updateLocationsCount === 'function') updateLocationsCount();
+  if (typeof updatePopularCount === 'function') updatePopularCount();
+  if (typeof updateRecipesCount === 'function') updateRecipesCount();
+  if (typeof updateSyncStatus === 'function') updateSyncStatus();
+  if (typeof updateNotifStatus === 'function') updateNotifStatus();
+  if (typeof updateCountryStatus === 'function') updateCountryStatus();
+  if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
 }
 
 // Helper per construir una card de Configuració. action és el valor de
@@ -1035,21 +1053,9 @@ function attachSettingsContentDelegation() {
 function openSettings(origin) {
   const backBtn = document.getElementById('settings-back-btn');
   if (backBtn) backBtn.dataset.back = (origin === 'launcher') ? 'launcher' : 'home';
-
-  // Render PRIMER perquè els subtítols (#sync-status, #notif-status, etc.)
-  // existeixin abans que update*Status els intentin omplir.
+  // renderSettings ja crida refreshSettingsSubtitles internament, que
+  // executa totes les update*Status (no-op les que no toquen aquesta tab).
   if (typeof renderSettings === 'function') renderSettings();
-  if (typeof updateThemeStatus === 'function') updateThemeStatus();
-  if (typeof updateLangStatus === 'function') updateLangStatus();
-  if (typeof updateStatsSub === 'function') updateStatsSub();
-  if (typeof updateImpactSub === 'function') updateImpactSub();
-  if (typeof updateLocationsCount === 'function') updateLocationsCount();
-  if (typeof updatePopularCount === 'function') updatePopularCount();
-  if (typeof updateRecipesCount === 'function') updateRecipesCount();
-  if (typeof updateSyncStatus === 'function') updateSyncStatus();
-  if (typeof updateNotifStatus === 'function') updateNotifStatus();
-  if (typeof updateCountryStatus === 'function') updateCountryStatus();
-  if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
   showScreen('settings');
 }
 

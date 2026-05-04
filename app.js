@@ -129,21 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (target === 'popular' && typeof renderPopularList === 'function') renderPopularList();
       else if (target === 'cookme' && typeof renderCookMe === 'function') renderCookMe();
       else if (target === 'settings') {
-        // Re-renderitza la tab activa primer perquè els elements amb
-        // ids #sync-status, #notif-status, etc. existeixin abans que les
-        // funcions update*Status els intentin omplir.
+        // renderSettings re-pinta la tab activa i refresca tots els
+        // subtítols dinàmics via refreshSettingsSubtitles.
         if (typeof renderSettings === 'function') renderSettings();
-        if (typeof updateNotifStatus === 'function') updateNotifStatus();
-        if (typeof updateThemeStatus === 'function') updateThemeStatus();
-        if (typeof updateLangStatus === 'function') updateLangStatus();
-        if (typeof updateStatsSub === 'function') updateStatsSub();
-        if (typeof updateImpactSub === 'function') updateImpactSub();
-        if (typeof updateLocationsCount === 'function') updateLocationsCount();
-        if (typeof updatePopularCount === 'function') updatePopularCount();
-        if (typeof updateRecipesCount === 'function') updateRecipesCount();
-        if (typeof updateSyncStatus === 'function') updateSyncStatus();
-        if (typeof updateCountryStatus === 'function') updateCountryStatus();
-        if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
       }
       else if (target === 'list' && typeof openShelf === 'function' && currentLevel) {
         openShelf(currentLevel);
