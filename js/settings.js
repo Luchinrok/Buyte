@@ -1114,56 +1114,43 @@ function renderSettingsActivity() {
   });
   const area = document.getElementById('settings-activity-area');
   if (!area) return;
-  area.innerHTML = '';
 
-  let summary = '', action = null;
   if (activeActivityTab === 'impacte') {
-    // Reusem la mateixa lògica que updateImpactSub: estalvi del mes en curs
-    // o, si no hi ha historial, un teaser.
+    // Embolcalla tot el cos de screen-impact. El banner de nivell, els
+    // pills de període, els gràfics i les targetes funcionen igual.
+    // screen-achievements és el destí del banner de nivell — el registrem
+    // perquè el back torni a la sub-pàgina.
+    _embedStandaloneBody(area, 'screen-impact', 'screen-settings-activity', ['screen-achievements']);
+    if (typeof openImpact === 'function') {
+      // Re-execució del setup de la pantalla d'impacte (period, render,
+      // banner) sense canviar de pantalla — fem servir les funcions
+      // internes mitjançant un atajamiento: cridem renderImpact directe.
+      if (typeof impactPeriod !== 'undefined') impactPeriod = 'month';
+      document.querySelectorAll('#impact-period-pills .impact-period-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.period === 'month');
+      });
+      if (typeof renderImpact === 'function') renderImpact();
+      if (typeof renderImpactLevelBanner === 'function') renderImpactLevelBanner();
+    }
+    return;
+  }
+
+  if (activeActivityTab === 'estadistiques') {
+    // Embolcalla el cos de screen-stats. Si hi ha empty state es mostra
+    // ell mateix; si hi ha dades, renderitzem el body amb renderStatsBody.
+    _embedStandaloneBody(area, 'screen-stats', 'screen-settings-activity');
+    const empty = document.getElementById('stats-empty');
+    const body = document.getElementById('stats-body');
     const history = (typeof loadConsumptionHistory === 'function') ? loadConsumptionHistory() : [];
     if (!history || history.length === 0) {
-      summary = '<p class="settings-sub-summary">📊 ' + escapeHtml(t('impactSubEmpty')) + '</p>';
+      if (empty) empty.style.display = 'block';
+      if (body) body.innerHTML = '';
     } else {
-      const now = new Date();
-      const y = now.getFullYear();
-      const mIdx = now.getMonth();
-      const monthEntries = history.filter(e => {
-        if (!e || !e.date) return false;
-        const d = new Date(e.date);
-        return d.getFullYear() === y && d.getMonth() === mIdx;
-      });
-      const m = (typeof computeMetrics === 'function') ? computeMetrics(monthEntries) : { savedEur: 0 };
-      const eur = (typeof fmtEur === 'function') ? fmtEur(m.savedEur) : (m.savedEur + '€');
-      summary = '<p class="settings-sub-summary">💚 ' + eur + ' ' + escapeHtml(t('savedThisMonth')) + '</p>';
+      if (empty) empty.style.display = 'none';
+      if (body && typeof renderStatsBody === 'function') body.innerHTML = renderStatsBody(history);
     }
-    action = () => {
-      if (typeof openImpact === 'function') openImpact('settings-activity');
-    };
-  } else if (activeActivityTab === 'estadistiques') {
-    // Reusem la lògica d'updateStatsSub: % global d'aprofitament o teaser.
-    let consumed = 0, trashed = 0;
-    try {
-      const raw = localStorage.getItem('eatmefirst_consumption_history');
-      if (raw) {
-        const hist = JSON.parse(raw);
-        if (Array.isArray(hist)) hist.forEach(h => {
-          if (h && h.action === 'consumed') consumed++;
-          else if (h && h.action === 'trashed') trashed++;
-        });
-      }
-    } catch (e) {}
-    const total = consumed + trashed;
-    if (total === 0) {
-      summary = '<p class="settings-sub-summary">📈 ' + escapeHtml(t('statsSubEmpty')) + '</p>';
-    } else {
-      const pct = Math.round((consumed / total) * 100);
-      summary = '<p class="settings-sub-summary">📈 ' + pct + '% ' + escapeHtml(t('statsSubGlobal')) + '</p>';
-    }
-    action = () => {
-      if (typeof showStats === 'function') showStats('settings-activity');
-    };
+    return;
   }
-  if (action) area.appendChild(_subContentBlock(summary, t('viewDetail'), action));
 }
 
 function attachSettingsActivityListeners() {
