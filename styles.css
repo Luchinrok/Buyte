@@ -6142,10 +6142,15 @@ h1 {
   font-weight: 800;
 }
 
-/* Accions del pas (↑ / ↓ / ✕) en columna a la dreta de la textarea */
+/* Accions del pas (↑ / ↓ / ✕) en una sola fila a la dreta de la textarea —
+   així cada pas ocupa només una línia visual com els ingredients. En
+   pantalles molt estretes permetem flex-wrap perquè els botons baixin a
+   una segona línia en lloc de desbordar. */
 .step-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 4px;
   flex-shrink: 0;
 }
