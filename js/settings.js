@@ -1002,6 +1002,81 @@ function attachSettingsContentListeners() {
   });
 }
 
+// ----- Sub-pantalla "Activitat" (Impacte / Estadístiques) -----
+let activeActivityTab = 'impacte';
+
+function openSettingsActivity() {
+  renderSettingsActivity();
+  showScreen('settings-activity');
+}
+
+function renderSettingsActivity() {
+  document.querySelectorAll('#screen-settings-activity .sub-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.subtab === activeActivityTab);
+  });
+  const area = document.getElementById('settings-activity-area');
+  if (!area) return;
+  area.innerHTML = '';
+
+  let summary = '', action = null;
+  if (activeActivityTab === 'impacte') {
+    // Reusem la mateixa lògica que updateImpactSub: estalvi del mes en curs
+    // o, si no hi ha historial, un teaser.
+    const history = (typeof loadConsumptionHistory === 'function') ? loadConsumptionHistory() : [];
+    if (!history || history.length === 0) {
+      summary = '<p class="settings-sub-summary">📊 ' + escapeHtml(t('impactSubEmpty')) + '</p>';
+    } else {
+      const now = new Date();
+      const y = now.getFullYear();
+      const mIdx = now.getMonth();
+      const monthEntries = history.filter(e => {
+        if (!e || !e.date) return false;
+        const d = new Date(e.date);
+        return d.getFullYear() === y && d.getMonth() === mIdx;
+      });
+      const m = (typeof computeMetrics === 'function') ? computeMetrics(monthEntries) : { savedEur: 0 };
+      const eur = (typeof fmtEur === 'function') ? fmtEur(m.savedEur) : (m.savedEur + '€');
+      summary = '<p class="settings-sub-summary">💚 ' + eur + ' ' + escapeHtml(t('savedThisMonth')) + '</p>';
+    }
+    action = () => {
+      if (typeof openImpact === 'function') openImpact('settings-activity');
+    };
+  } else if (activeActivityTab === 'estadistiques') {
+    // Reusem la lògica d'updateStatsSub: % global d'aprofitament o teaser.
+    let consumed = 0, trashed = 0;
+    try {
+      const raw = localStorage.getItem('eatmefirst_consumption_history');
+      if (raw) {
+        const hist = JSON.parse(raw);
+        if (Array.isArray(hist)) hist.forEach(h => {
+          if (h && h.action === 'consumed') consumed++;
+          else if (h && h.action === 'trashed') trashed++;
+        });
+      }
+    } catch (e) {}
+    const total = consumed + trashed;
+    if (total === 0) {
+      summary = '<p class="settings-sub-summary">📈 ' + escapeHtml(t('statsSubEmpty')) + '</p>';
+    } else {
+      const pct = Math.round((consumed / total) * 100);
+      summary = '<p class="settings-sub-summary">📈 ' + pct + '% ' + escapeHtml(t('statsSubGlobal')) + '</p>';
+    }
+    action = () => {
+      if (typeof showStats === 'function') showStats('settings-activity');
+    };
+  }
+  if (action) area.appendChild(_subContentBlock(summary, t('viewDetail'), action));
+}
+
+function attachSettingsActivityListeners() {
+  document.querySelectorAll('#screen-settings-activity .sub-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeActivityTab = tab.dataset.subtab || 'impacte';
+      renderSettingsActivity();
+    });
+  });
+}
+
 
 function openSettingsCategory(cat) {
   const map = {
@@ -1161,10 +1236,16 @@ function renderLangListInto(container) {
 // Càrrega l'historial de consum i el calcula tot per pintar cards de resum,
 // gràfics, distribució per zona, tops i mitjanes. Si no hi ha entrades,
 // ensenya un empty state.
-function showStats() {
+function showStats(origin) {
   const empty = document.getElementById('stats-empty');
   const body = document.getElementById('stats-body');
   const history = (typeof loadConsumptionHistory === 'function') ? loadConsumptionHistory() : [];
+  // Back-button: tornem al sub-screen 'settings-*' si en ve, si no 'settings'.
+  const backBtn = document.querySelector('#screen-stats .back-btn');
+  if (backBtn) {
+    const isSettings = origin === 'settings' || (typeof origin === 'string' && origin.indexOf('settings-') === 0);
+    backBtn.dataset.back = isSettings ? origin : 'settings';
+  }
 
   if (!history || history.length === 0) {
     if (empty) empty.style.display = 'block';

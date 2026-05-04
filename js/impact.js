@@ -201,11 +201,18 @@ function fmtKm(n) {
 }
 
 
-function openImpact() {
+function openImpact(origin) {
   impactPeriod = 'month';
   document.querySelectorAll('#impact-period-pills .impact-period-pill').forEach(p => {
     p.classList.toggle('active', p.dataset.period === impactPeriod);
   });
+  // Back-button: si venim de Configuració o d'una sub-pantalla settings-*,
+  // hi tornem; altrament queda a 'settings' (defecte de l'HTML).
+  const backBtn = document.querySelector('#screen-impact .back-btn');
+  if (backBtn) {
+    const isSettings = origin === 'settings' || (typeof origin === 'string' && origin.indexOf('settings-') === 0);
+    backBtn.dataset.back = isSettings ? origin : 'settings';
+  }
   renderImpact();
   if (typeof renderImpactLevelBanner === 'function') renderImpactLevelBanner();
   showScreen('impact');
