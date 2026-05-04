@@ -756,6 +756,12 @@ function initSmartNotifications() {
   // Marca l'última obertura per al disparador 'reactivation' (per la propera vegada).
   try { localStorage.setItem('eatmefirst_last_open', _todayKey()); } catch (e) {}
 
+  // Neteja les entrades de descart d'altres dies — el descart caduca a
+  // mitjanit. Si l'usuari va descartar un banner ahir, avui ha de tornar
+  // a sortir. Aquest pas és redundant amb la prune-on-read, però fa la
+  // intenció explícita en la inicialització.
+  _readDismissed();
+
   // Defensiu: si la versió antiga (notifications.js) tenia el seu scheduler
   // engegat, l'aturem perquè no entri en col·lisió amb el nou. Mantenim
   // accés a window.Notif per al low-level (showNotification, permisos).
