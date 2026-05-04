@@ -48,6 +48,14 @@ function getPermissionStatus() {
   return Notification.permission;
 }
 
+// Helper públic per a comprovacions ràpides "té permís?". Llegeix l'API
+// del navegador en directe — mai una variable cachada — perquè
+// Notification.permission pot canviar entre crides sense avisar.
+function hasNotificationPermission() {
+  return ('Notification' in window) && Notification.permission === 'granted';
+}
+window.hasNotificationPermission = hasNotificationPermission;
+
 async function requestPermission() {
   if (!('Notification' in window)) return 'unsupported';
   if (Notification.permission === 'granted') return 'granted';

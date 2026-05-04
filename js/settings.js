@@ -244,8 +244,12 @@ function updateNotifStatus() {
   const subEl = document.getElementById('notif-status');
   if (!subEl || !window.Notif) return;
 
-  const perm = window.Notif.permissionStatus();
-  const s = (typeof getSmartNotifSettings === 'function') ? getSmartNotifSettings() : { enabled: false };
+  // Llegim Notification.permission EN DIRECTE — cap variable cachada.
+  const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+  // Llegim el master directament del localStorage perquè reflecteixi canvis
+  // que hagin pogut fer-se en altres pestanyes/sub-pantalles.
+  let s = { enabled: false, types: {} };
+  if (typeof getSmartNotifSettings === 'function') s = getSmartNotifSettings();
 
   if (perm === 'unsupported') {
     subEl.textContent = t('notifNotSupportedShort');

@@ -218,8 +218,8 @@ function sendSmartNotification(typeId, data) {
   // Tant si tenim permís com si no, el banner dins l'app es desa per a quan s'obri.
   _addBanner(typeId, data);
 
-  // Push del navegador (només si tenim permís).
-  if (typeof window !== 'undefined' && window.Notif && window.Notif.permissionStatus() === 'granted') {
+  // Push del navegador (només si tenim permís — lectura en directe).
+  if (typeof hasNotificationPermission === 'function' && hasNotificationPermission()) {
     const title = (data && data.title) || '🔔 Buyte';
     const body = (data && data.body) || '';
     try { window.Notif.showNotification(title, body, { tag: 'buyte-' + typeId }); }
