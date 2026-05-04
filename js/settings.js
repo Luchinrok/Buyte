@@ -443,29 +443,62 @@ function promptDayFor(typeId) {
 }
 
 async function handleRequestPermission() {
-  if (!window.Notif) {
-    console.log('[Buyte] requestPermission: window.Notif missing');
+  console.log('[NOTIF] === requestPermission flow START ===');
+
+  if (!('Notification' in window)) {
+    console.log('[NOTIF] Notification API not supported in this browser');
+    showToast(t('notifNotSupportedShort'));
     return;
   }
-  console.log('[Buyte] requestPermission: before =', (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported');
-  const result = await window.Notif.requestPermission();
-  console.log('[Buyte] requestPermission: result =', result);
 
-  // Sempre refresquem la UI després de la resposta del navegador.
-  renderSmartNotifSettingsScreen();
-  updateNotifStatus();
+  console.log('[NOTIF] Click captured. Notification.permission BEFORE =', Notification.permission);
 
-  if (result === 'granted') {
-    if (typeof setSmartNotifMaster === 'function') setSmartNotifMaster(true);
-    showToast('✅ ' + t('notifPermissionGranted'));
+  try {
+    // Cridem Notification.requestPermission() directament — sense passar per
+    // window.Notif perquè el wrapper té un short-circuit que retorna el valor
+    // actual sense re-prompted i podia confondre. El navegador només mostrarà
+    // un prompt nou si Notification.permission és 'default'.
+    let result;
+    const ret = Notification.requestPermission();
+
+    if (ret && typeof ret.then === 'function') {
+      // API moderna: retorna Promise
+      console.log('[NOTIF] Using Promise-based requestPermission');
+      result = await ret;
+    } else {
+      // API antiga (Safari < 16): callback-based
+      console.log('[NOTIF] Using callback-based requestPermission');
+      result = ret || await new Promise(resolve => {
+        try { Notification.requestPermission(resolve); }
+        catch (e) { console.error('[NOTIF] callback shim failed:', e); resolve('default'); }
+      });
+    }
+
+    console.log('[NOTIF] Browser response:', result, '· Notification.permission AFTER =', Notification.permission);
+
+    // SEMPRE refresquem la UI després de la resposta, abans de qualsevol
+    // missatge: així l'estat visual queda alineat amb la decisió del navegador.
+    if (typeof renderSmartNotifSettingsScreen === 'function') renderSmartNotifSettingsScreen();
     updateNotifStatus();
-    renderSmartNotifSettingsScreen();
-  } else if (result === 'denied') {
-    showToast('🚫 ' + t('notifPermissionDenied'));
-  } else {
-    // 'default': l'usuari ha tancat el prompt sense respondre.
-    showToast(t('notifPermPromptClosed'));
+
+    if (result === 'granted') {
+      if (typeof setSmartNotifMaster === 'function') setSmartNotifMaster(true);
+      showToast('✅ ' + t('notifPermissionGranted'));
+      // Refresquem un cop més perquè el master pot haver canviat el bloc visible.
+      if (typeof renderSmartNotifSettingsScreen === 'function') renderSmartNotifSettingsScreen();
+      updateNotifStatus();
+    } else if (result === 'denied') {
+      showToast('🚫 ' + t('notifPermissionDenied'));
+    } else {
+      // 'default' — l'usuari ha tancat el prompt sense respondre.
+      showToast(t('notifPermPromptClosed'));
+    }
+  } catch (err) {
+    console.error('[NOTIF] Error requesting permission:', err);
+    showToast('Error: ' + (err && err.message ? err.message : 'unknown'));
   }
+
+  console.log('[NOTIF] === requestPermission flow END ===');
 }
 
 async function testNotificationNow() {

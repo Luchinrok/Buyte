@@ -430,9 +430,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsNotif = document.getElementById('settings-notifications');
   if (settingsNotif) settingsNotif.addEventListener('click', openNotificationsScreen);
 
-  // Botó "Demanar permís"
-  const btnReqPerm = document.getElementById('smart-notif-request-perm');
-  if (btnReqPerm) btnReqPerm.addEventListener('click', handleRequestPermission);
+  // Botó "Permetre notificacions": event delegation al document perquè
+  // funcioni encara que la pantalla s'estigui re-renderitzant. Així
+  // quedem resilient a qualsevol mutació del DOM dins #smart-notif-perm.
+  document.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest && e.target.closest('#smart-notif-request-perm');
+    if (btn) {
+      console.log('[NOTIF] Delegation: click on #smart-notif-request-perm');
+      handleRequestPermission();
+    }
+  });
 
   // Master switch — re-renderitza tota la pantalla per mostrar/amagar el bloc
   // condicional segons l'estat.
