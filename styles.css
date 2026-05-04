@@ -684,10 +684,14 @@ h1 {
   color: white;
 }
 
-/* Pestanyes (pills) per a les sub-pantalles de Configuració. Scroll-x si
-   no caben en pantalles estretes. */
+/* Pestanyes (pills) per a les sub-pantalles de Configuració. Centrades
+   horitzontalment; amb scroll-x quan no caben totes en pantalles estretes
+   (justify-content: center es manté igualment per als casos típics de
+   2-4 pills). */
 .sub-tabs-container {
   display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 8px 4px 14px;
   overflow-x: auto;
