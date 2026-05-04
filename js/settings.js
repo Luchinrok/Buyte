@@ -1209,11 +1209,12 @@ function renderSettingsApp() {
 
   if (activeAppTab === 'aparenca') {
     // Chips Clar / Fosc — modifiquen el tema directament, sense canvi de pantalla.
+    // El títol "Aparença" ja viu a la capçalera de la sub-pantalla, així
+    // que aquí no el repetim.
     const wrap = document.createElement('div');
     wrap.className = 'settings-sub-content';
     const cur = _currentThemeMode();
     wrap.innerHTML =
-      '<p class="settings-sub-summary-soft">🎨 ' + escapeHtml(t('appearance')) + '</p>' +
       '<div class="theme-chips">' +
         '<button type="button" class="theme-chip' + (cur === 'light' ? ' active' : '') + '" data-mode="light">🌞 ' + escapeHtml(t('lightMode')) + '</button>' +
         '<button type="button" class="theme-chip' + (cur === 'dark'  ? ' active' : '') + '" data-mode="dark">🌙 ' + escapeHtml(t('darkMode')) + '</button>' +
