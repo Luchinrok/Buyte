@@ -669,59 +669,6 @@ h1 {
   flex: 1;
 }
 
-/* Pestanyes (tabs) horitzontals al capdamunt de Configuració. Es desplacen
-   amb scroll horitzontal en pantalles estretes per no comprimir-se. */
-.settings-tabs-container {
-  display: flex;
-  gap: 8px;
-  padding: 12px 4px 14px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.settings-tabs-container::-webkit-scrollbar { display: none; }
-
-.settings-tab {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
-  border-radius: 999px;
-  border: 2px solid var(--primary);
-  background: transparent;
-  color: var(--primary);
-  font-family: inherit;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s, transform 0.12s;
-}
-.settings-tab:hover { background: rgba(76, 175, 42, 0.1); }
-.settings-tab:active { transform: scale(0.96); }
-.settings-tab.active {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: #FFFFFF;
-  border-color: var(--primary-dark);
-  box-shadow: 0 2px 8px rgba(76, 175, 42, 0.3);
-}
-
-/* Separador discret entre seccions de Configuració. El primer títol no
-   necessita gaire espai a sobre — la secció ja arrenca a dalt de tot. */
-.settings-section-title {
-  padding: 16px 4px 0 4px;
-  margin: 0;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: var(--text-soft);
-  text-transform: uppercase;
-}
-.settings-cards > .settings-section-title:first-child {
-  padding-top: 4px;
-}
-
 .settings-card {
   display: flex;
   align-items: center;
@@ -847,6 +794,28 @@ h1 {
   background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
   box-shadow: 0 3px 10px rgba(229, 57, 53, 0.35);
   margin-top: 8px;
+}
+
+/* Colors de les 5 cards de categoria principal de Configuració. */
+.settings-card-regional {
+  background: linear-gradient(135deg, #42A5F5 0%, #1565C0 100%);
+  box-shadow: 0 3px 10px rgba(33, 150, 243, 0.3);
+}
+.settings-card-content {
+  background: linear-gradient(135deg, #FFCA28 0%, #FFA000 100%);
+  box-shadow: 0 3px 10px rgba(255, 193, 7, 0.3);
+}
+.settings-card-activity {
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  box-shadow: 0 3px 10px rgba(46, 125, 50, 0.3);
+}
+.settings-card-app {
+  background: linear-gradient(135deg, #7E57C2 0%, #4527A0 100%);
+  box-shadow: 0 3px 10px rgba(126, 87, 194, 0.3);
+}
+.settings-card-data {
+  background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
+  box-shadow: 0 3px 10px rgba(229, 57, 53, 0.35);
 }
 
 /* Divisor visual entre les opcions parcials i el "Esborrar TOT" */

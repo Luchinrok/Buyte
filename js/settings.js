@@ -881,180 +881,31 @@ function openLocations(origin) {
   showScreen('locations');
 }
 
-// ============ TABS DE CONFIGURACIÓ ============
-// La pantalla de Configuració s'organitza en pestanyes horitzontals.
-// Sempre n'hi ha una d'activa — la primera obertura usa 'regional' per
-// defecte, i el valor:
-//   - es manté en memòria entre obertures de la pantalla, així que tornar
-//     des d'una sub-pantalla (ex: Botigues → back) restaura la tab activa.
-//   - es persisteix a localStorage perquè també es recordi entre sessions.
-
-const SETTINGS_TAB_STORAGE_KEY = 'eatmefirst_settings_active_tab';
-const VALID_SETTINGS_TABS = ['regional', 'content', 'activity', 'app', 'data'];
-const DEFAULT_SETTINGS_TAB = 'regional';
-
-let activeSettingsTab = (function () {
-  try {
-    const raw = localStorage.getItem(SETTINGS_TAB_STORAGE_KEY);
-    if (raw && VALID_SETTINGS_TABS.indexOf(raw) !== -1) return raw;
-  } catch (e) {}
-  return DEFAULT_SETTINGS_TAB;
-})();
-
-function setActiveSettingsTab(tab) {
-  activeSettingsTab = (tab && VALID_SETTINGS_TABS.indexOf(tab) !== -1) ? tab : DEFAULT_SETTINGS_TAB;
-  try { localStorage.setItem(SETTINGS_TAB_STORAGE_KEY, activeSettingsTab); } catch (e) {}
-  renderSettings();
+// ============ CONFIGURACIÓ — 2 NIVELLS ============
+// Nivell 1: pantalla principal amb 5 cards de categoria (regional /
+// content / activity / app / data). Cadascuna obre una sub-pantalla amb
+// pestanyes (nivell 2) que viuen a screen-settings-{cat}. Aquí només
+// despatxem el clic — les sub-pantalles s'engeguen amb funcions
+// openSettings<Cat>() definides als seus propis commits.
+function openSettingsCategory(cat) {
+  const map = {
+    regional: typeof openSettingsRegional === 'function' ? openSettingsRegional : null,
+    content:  typeof openSettingsContent  === 'function' ? openSettingsContent  : null,
+    activity: typeof openSettingsActivity === 'function' ? openSettingsActivity : null,
+    app:      typeof openSettingsApp      === 'function' ? openSettingsApp      : null,
+    data:     typeof openSettingsData     === 'function' ? openSettingsData     : null
+  };
+  const fn = map[cat];
+  if (fn) fn();
+  else if (typeof showToast === 'function') showToast('Pendent');
 }
 
-// Marca la pestanya activa i pinta el contingut corresponent.
-function renderSettings() {
-  if (!activeSettingsTab) activeSettingsTab = DEFAULT_SETTINGS_TAB;
-  document.querySelectorAll('#settings-tabs .settings-tab').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === activeSettingsTab);
-  });
-  const content = document.getElementById('settings-content');
-  if (!content) return;
-  content.innerHTML = renderSettingsTabContent(activeSettingsTab) || '';
-  refreshSettingsSubtitles();
-}
-
-// Crida totes les update*Status. Cada una és no-op si el seu element no
-// existeix (la card de la tab no està visible), de manera que cridar-les
-// totes és segur i no fa falta saber quina tab és l'activa.
-function refreshSettingsSubtitles() {
-  if (typeof updateThemeStatus === 'function') updateThemeStatus();
-  if (typeof updateLangStatus === 'function') updateLangStatus();
-  if (typeof updateStatsSub === 'function') updateStatsSub();
-  if (typeof updateImpactSub === 'function') updateImpactSub();
-  if (typeof updateLocationsCount === 'function') updateLocationsCount();
-  if (typeof updatePopularCount === 'function') updatePopularCount();
-  if (typeof updateRecipesCount === 'function') updateRecipesCount();
-  if (typeof updateSyncStatus === 'function') updateSyncStatus();
-  if (typeof updateNotifStatus === 'function') updateNotifStatus();
-  if (typeof updateCountryStatus === 'function') updateCountryStatus();
-  if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
-}
-
-// Helper per construir una card de Configuració. action és el valor de
-// data-action que farà servir el delegat d'esdeveniments per encaminar
-// el clic. subId és l'id del subtítol — alguns valors es pinten després
-// via update*Status() (sync, notif, theme...).
-function _settingsCard(action, colorClass, emoji, titleKey, subId, subText) {
-  return '<button type="button" class="settings-card ' + colorClass + '" data-action="' + action + '">' +
-           '<div class="settings-card-icon"><span>' + emoji + '</span></div>' +
-           '<div class="settings-card-info">' +
-             '<p class="settings-card-title">' + escapeHtml(t(titleKey)) + '</p>' +
-             '<p class="settings-card-sub"' + (subId ? ' id="' + subId + '"' : '') + '>' + escapeHtml(subText || '-') + '</p>' +
-           '</div>' +
-           '<span class="settings-card-arrow">›</span>' +
-         '</button>';
-}
-
-function renderSettingsTabContent(tab) {
-  switch (tab) {
-    case 'regional': return renderRegionalTab();
-    case 'content':  return renderContentTab();
-    case 'activity': return renderActivityTab();
-    case 'app':      return renderAppTab();
-    case 'data':     return renderDataTab();
-  }
-  return '';
-}
-
-function renderRegionalTab() {
-  return _settingsCard('open-language', 'settings-card-language', '🌐', 'language', 'language-status', '-') +
-         _settingsCard('open-country',  'settings-card-country',  '🚩', 'country',  'country-status',  '-');
-}
-
-function renderContentTab() {
-  return _settingsCard('open-supermarkets', 'settings-card-supermarkets', '🏪', 'mySupermarkets',      'supermarkets-status', '-') +
-         _settingsCard('open-locations',    'settings-card-locations',    '📍', 'storageZones',        'locations-count',     '-') +
-         _settingsCard('open-popular',      'settings-card-popular',      '⭐', 'popularProductsCard', 'popular-count',       '-') +
-         _settingsCard('open-recipes',      'settings-card-recipes',      '🍳', 'recipes',             'recipes-count',       '-');
-}
-
-function renderActivityTab() {
-  return _settingsCard('open-impact', 'settings-card-impact', '🌱', 'impactTitle', 'impact-sub', '-') +
-         _settingsCard('open-stats',  'settings-card-stats',  '📊', 'stats',       'stats-sub',  '-');
-}
-
-function renderAppTab() {
-  return _settingsCard('toggle-theme',  'settings-card-theme',         '🎨', 'appearance',     'theme-status', '-') +
-         _settingsCard('open-notif',    'settings-card-notifications', '🔔', 'notifications',  'notif-status', '-') +
-         _settingsCard('open-sync',     'settings-card-sync',          '🔄', 'syncTitle',      'sync-status',  '-');
-}
-
-function renderDataTab() {
-  // Reset usa una variant 'danger-card-soft' en lloc dels colors de marca.
-  return '<button type="button" class="settings-card danger-card-soft" data-action="open-reset">' +
-           '<div class="settings-card-icon"><span>🗑️</span></div>' +
-           '<div class="settings-card-info">' +
-             '<p class="settings-card-title">' + escapeHtml(t('resetDataTitle')) + '</p>' +
-             '<p class="settings-card-sub">' + escapeHtml(t('dataManagementSub')) + '</p>' +
-           '</div>' +
-           '<span class="settings-card-arrow">›</span>' +
-         '</button>';
-}
-
-// Wire-up dels clicks a les pestanyes (es fa una sola vegada des de app.js).
-function attachSettingsTabListeners() {
-  document.querySelectorAll('#settings-tabs .settings-tab').forEach(btn => {
-    btn.addEventListener('click', () => setActiveSettingsTab(btn.dataset.tab));
-  });
-}
-
-// Delegat d'esdeveniments per als botons renderitzats dinàmicament a
-// #settings-content. Cada card té un data-action que mapem aquí a la
-// crida d'obrir la pantalla corresponent.
-function attachSettingsContentDelegation() {
-  const root = document.getElementById('settings-content');
-  if (!root || root.__settingsBound) return;
-  root.__settingsBound = true;
-  root.addEventListener('click', (e) => {
-    const btn = e.target.closest && e.target.closest('[data-action]');
-    if (!btn) return;
-    switch (btn.dataset.action) {
-      case 'open-language':
-        if (typeof renderLangList === 'function') renderLangList();
-        showScreen('language');
-        break;
-      case 'open-country':
-        if (typeof openCountryScreen === 'function') openCountryScreen();
-        break;
-      case 'open-supermarkets':
-        if (typeof openManageSupermarkets === 'function') openManageSupermarkets('settings');
-        break;
-      case 'open-locations':
-        if (typeof openLocations === 'function') openLocations('settings');
-        break;
-      case 'open-popular':
-        if (typeof openPopular === 'function') openPopular('settings');
-        else { showScreen('popular'); if (typeof renderPopularList === 'function') renderPopularList(); }
-        break;
-      case 'open-recipes':
-        if (typeof openCookMe === 'function') openCookMe('settings');
-        break;
-      case 'open-impact':
-        if (typeof openImpact === 'function') openImpact();
-        break;
-      case 'open-stats':
-        if (typeof showStats === 'function') showStats();
-        break;
-      case 'toggle-theme':
-        if (typeof cycleTheme === 'function') cycleTheme();
-        break;
-      case 'open-notif':
-        if (typeof openNotificationsScreen === 'function') openNotificationsScreen();
-        break;
-      case 'open-sync':
-        if (typeof openSyncScreen === 'function') openSyncScreen();
-        break;
-      case 'open-reset':
-        if (typeof openResetDataScreen === 'function') openResetDataScreen();
-        else showScreen('reset-data');
-        break;
-    }
+// Wire-up dels clicks de les 5 cards de categoria. Es crida una sola
+// vegada des de app.js a la inicialització.
+function attachSettingsCategoryListeners() {
+  ['regional','content','activity','app','data'].forEach(cat => {
+    const btn = document.getElementById('settings-' + cat);
+    if (btn) btn.addEventListener('click', () => openSettingsCategory(cat));
   });
 }
 
@@ -1063,9 +914,6 @@ function attachSettingsContentDelegation() {
 function openSettings(origin) {
   const backBtn = document.getElementById('settings-back-btn');
   if (backBtn) backBtn.dataset.back = (origin === 'launcher') ? 'launcher' : 'home';
-  // renderSettings ja crida refreshSettingsSubtitles internament, que
-  // executa totes les update*Status (no-op les que no toquen aquesta tab).
-  if (typeof renderSettings === 'function') renderSettings();
   showScreen('settings');
 }
 

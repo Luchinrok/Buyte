@@ -128,11 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (target === 'section' && typeof renderSection === 'function') renderSection();
       else if (target === 'popular' && typeof renderPopularList === 'function') renderPopularList();
       else if (target === 'cookme' && typeof renderCookMe === 'function') renderCookMe();
-      else if (target === 'settings') {
-        // renderSettings re-pinta la tab activa i refresca tots els
-        // subtítols dinàmics via refreshSettingsSubtitles.
-        if (typeof renderSettings === 'function') renderSettings();
-      }
+      // (No cal cap refresc en tornar a 'settings' — la pantalla principal
+      // només té 5 cards de categoria estàtiques. Els subtítols dinàmics
+      // viuen dins les sub-pantalles, que ja es re-renderitzen quan s'obren.)
       else if (target === 'list' && typeof openShelf === 'function' && currentLevel) {
         openShelf(currentLevel);
         return; // openShelf ja fa showScreen
@@ -163,11 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Configuració amb pestanyes — wire-up de les tabs i del delegate del
-  // contingut. Els botons de cada tab es renderitzen dinàmicament i les
-  // seves accions es despatxen via data-action.
-  if (typeof attachSettingsTabListeners === 'function') attachSettingsTabListeners();
-  if (typeof attachSettingsContentDelegation === 'function') attachSettingsContentDelegation();
+  // Configuració — pantalla principal amb 5 cards de categoria. Cadascuna
+  // obre una sub-pantalla amb pestanyes (instalada en commits posteriors).
+  if (typeof attachSettingsCategoryListeners === 'function') attachSettingsCategoryListeners();
 
   // Banner de nivell (pantalla d'Impacte) → Els meus èxits
   const impactLevelBanner = document.getElementById('impact-level-banner');
