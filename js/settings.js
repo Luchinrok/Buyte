@@ -1205,6 +1205,11 @@ function renderSettingsApp() {
   });
   const area = document.getElementById('settings-app-area');
   if (!area) return;
+  // Si hi ha contingut prestat d'una visita anterior (Notif/Sync), tornem-lo
+  // a casa ABANS de tocar l'innerHTML. Sense aquest pas, la pestanya
+  // Aparença (no-embed) destruiria el cos de screen-notifications /
+  // screen-sync i la propera visita d'aquelles pestanyes quedaria buida.
+  if (typeof restoreEmbeddedSettings === 'function') restoreEmbeddedSettings();
   area.innerHTML = '';
 
   if (activeAppTab === 'aparenca') {
