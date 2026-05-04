@@ -435,41 +435,37 @@ function promptHourFor(typeId) {
   });
 }
 
-// Modal personalitzat per triar HH:MM. Substitueix el window.prompt que
-// l'usuari trobava poc estètic. Hora amb stepper [-][valor][+] (0-23, amb
-// wraparound), minuts en chips fixos (0/15/30/45) — els únics valors que
-// té sentit oferir per a una notificació.
+// Modal personalitzat per triar HH:MM. Hora i minuts amb input editable
+// (es poden escriure directament) + steppers [−][+] al costat per als que
+// prefereixin clicar. Es valida i es fa clamp al perdre focus i al guardar.
 function openTimePickerModal(currentTime, onSave) {
   const parts = (currentTime || '00:00').split(':');
   let hour = parseInt(parts[0], 10);
   if (!isFinite(hour) || hour < 0 || hour > 23) hour = 0;
   let minute = parseInt(parts[1], 10);
-  if (!isFinite(minute) || minute < 0) minute = 0;
-  // Forcem el minut al chip més proper si no és 0/15/30/45
-  const allowedMinutes = [0, 15, 30, 45];
-  if (allowedMinutes.indexOf(minute) === -1) {
-    minute = allowedMinutes.reduce((best, m) => Math.abs(m - minute) < Math.abs(best - minute) ? m : best, 0);
-  }
+  if (!isFinite(minute) || minute < 0 || minute > 59) minute = 0;
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay time-picker-modal';
   overlay.innerHTML =
     '<div class="modal-content time-picker-content">' +
       '<p class="modal-title">⏰ ' + escapeHtml(t('timePickerTitle')) + '</p>' +
-      '<div class="time-picker-section">' +
-        '<p class="time-picker-label">' + escapeHtml(t('timePickerHour')) + '</p>' +
-        '<div class="time-picker-hour-stepper">' +
-          '<button type="button" class="time-picker-step-btn" data-action="hour-down" aria-label="−">−</button>' +
-          '<span class="time-picker-hour-value">' + String(hour).padStart(2, '0') + '</span>' +
-          '<button type="button" class="time-picker-step-btn" data-action="hour-up" aria-label="+">+</button>' +
+      '<div class="time-picker-row">' +
+        '<div class="time-picker-section">' +
+          '<p class="time-picker-label">' + escapeHtml(t('timePickerHour')) + '</p>' +
+          '<div class="time-picker-stepper">' +
+            '<button type="button" class="time-picker-step-btn" data-action="hour-down" aria-label="−">−</button>' +
+            '<input type="number" class="time-picker-input" data-field="hour" min="0" max="23" inputmode="numeric" value="' + String(hour).padStart(2, '0') + '">' +
+            '<button type="button" class="time-picker-step-btn" data-action="hour-up" aria-label="+">+</button>' +
+          '</div>' +
         '</div>' +
-      '</div>' +
-      '<div class="time-picker-section">' +
-        '<p class="time-picker-label">' + escapeHtml(t('timePickerMinutes')) + '</p>' +
-        '<div class="time-picker-minutes">' +
-          allowedMinutes.map(m =>
-            '<button type="button" class="time-picker-min-chip' + (m === minute ? ' selected' : '') + '" data-min="' + m + '">:' + String(m).padStart(2, '0') + '</button>'
-          ).join('') +
+        '<div class="time-picker-section">' +
+          '<p class="time-picker-label">' + escapeHtml(t('timePickerMinutes')) + '</p>' +
+          '<div class="time-picker-stepper">' +
+            '<button type="button" class="time-picker-step-btn" data-action="min-down" aria-label="−">−</button>' +
+            '<input type="number" class="time-picker-input" data-field="minute" min="0" max="59" inputmode="numeric" value="' + String(minute).padStart(2, '0') + '">' +
+            '<button type="button" class="time-picker-step-btn" data-action="min-up" aria-label="+">+</button>' +
+          '</div>' +
         '</div>' +
       '</div>' +
       '<div class="modal-buttons time-picker-buttons">' +
@@ -479,25 +475,57 @@ function openTimePickerModal(currentTime, onSave) {
     '</div>';
   document.body.appendChild(overlay);
 
-  const hourValueEl = overlay.querySelector('.time-picker-hour-value');
-  const setHour = (h) => {
-    hour = ((h % 24) + 24) % 24;
-    hourValueEl.textContent = String(hour).padStart(2, '0');
-  };
-  overlay.querySelector('[data-action="hour-down"]').addEventListener('click', () => setHour(hour - 1));
-  overlay.querySelector('[data-action="hour-up"]').addEventListener('click', () => setHour(hour + 1));
+  const hourInput = overlay.querySelector('[data-field="hour"]');
+  const minInput = overlay.querySelector('[data-field="minute"]');
 
-  overlay.querySelectorAll('.time-picker-min-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      minute = parseInt(chip.dataset.min, 10);
-      overlay.querySelectorAll('.time-picker-min-chip').forEach(c => c.classList.remove('selected'));
-      chip.classList.add('selected');
-    });
-  });
+  // Wrap-around per a steppers, clamp dur per a inputs (mai un valor il·legal
+  // quan l'usuari escriu un número fora del rang).
+  const clampHour = (h) => Math.max(0, Math.min(23, h));
+  const clampMin  = (m) => Math.max(0, Math.min(59, m));
+  const wrapHour  = (h) => ((h % 24) + 24) % 24;
+  const wrapMin   = (m) => ((m % 60) + 60) % 60;
+
+  const setHour = (h, fmt) => {
+    hour = h;
+    if (fmt !== false) hourInput.value = String(hour).padStart(2, '0');
+  };
+  const setMin = (m, fmt) => {
+    minute = m;
+    if (fmt !== false) minInput.value = String(minute).padStart(2, '0');
+  };
+
+  overlay.querySelector('[data-action="hour-down"]').addEventListener('click', () => setHour(wrapHour(hour - 1)));
+  overlay.querySelector('[data-action="hour-up"]').addEventListener('click',   () => setHour(wrapHour(hour + 1)));
+  overlay.querySelector('[data-action="min-down"]').addEventListener('click',  () => setMin(wrapMin(minute - 1)));
+  overlay.querySelector('[data-action="min-up"]').addEventListener('click',    () => setMin(wrapMin(minute + 1)));
+
+  // Mentre l'usuari escriu, només actualitzem la variable interna sense
+  // re-formatar (per no esborrar-li els dígits a mig camí). El padding a
+  // dos dígits es fa al perdre el focus.
+  const onInput = (input, setter, clamp) => {
+    const raw = parseInt(input.value, 10);
+    if (!isFinite(raw)) return;
+    setter(clamp(raw), false);
+  };
+  hourInput.addEventListener('input', () => onInput(hourInput, setHour, clampHour));
+  minInput .addEventListener('input', () => onInput(minInput,  setMin,  clampMin));
+
+  const onBlur = (input, setter, clamp) => {
+    const raw = parseInt(input.value, 10);
+    setter(isFinite(raw) ? clamp(raw) : 0, true);
+  };
+  hourInput.addEventListener('blur', () => onBlur(hourInput, setHour, clampHour));
+  minInput .addEventListener('blur', () => onBlur(minInput,  setMin,  clampMin));
+
+  // Selecciona tot el text al focus per facilitar reescriure.
+  [hourInput, minInput].forEach(inp => inp.addEventListener('focus', () => inp.select()));
 
   const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
   overlay.querySelector('[data-action="cancel"]').addEventListener('click', close);
   overlay.querySelector('[data-action="save"]').addEventListener('click', () => {
+    // Validació final per si un input encara no ha disparat blur (p.e. enter directe).
+    onBlur(hourInput, setHour, clampHour);
+    onBlur(minInput,  setMin,  clampMin);
     close();
     const out = String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
     try { onSave(out); } catch (e) { console.error(e); }

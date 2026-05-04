@@ -6805,16 +6805,24 @@ h1 {
 }
 .smart-notif-banner-close:active { transform: scale(0.92); }
 
-/* Time picker modal — substitut del window.prompt. Hora amb stepper i
-   minuts en chips fixos (0/15/30/45). */
+/* Time picker modal — hora i minuts amb input editable + steppers a banda
+   i banda. L'usuari pot escriure directament o clicar [−][+]. */
 .time-picker-content {
-  max-width: 320px;
+  max-width: 340px;
   text-align: center;
 }
 
-.time-picker-section {
+.time-picker-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 18px;
   margin-top: 18px;
-  margin-bottom: 4px;
+}
+
+.time-picker-section {
+  flex: 1;
+  min-width: 0;
 }
 
 .time-picker-label {
@@ -6826,17 +6834,18 @@ h1 {
   margin: 0 0 8px;
 }
 
-.time-picker-hour-stepper {
+.time-picker-stepper {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 6px;
 }
 
 .time-picker-step-btn {
-  width: 44px;
+  width: 36px;
   height: 44px;
-  border-radius: 50%;
+  flex-shrink: 0;
+  border-radius: 10px;
   border: 1.5px solid var(--border);
   background: var(--bg-card);
   color: var(--text);
@@ -6849,47 +6858,37 @@ h1 {
   justify-content: center;
   line-height: 1;
   transition: all 0.15s;
+  padding: 0;
 }
 .time-picker-step-btn:hover { border-color: var(--primary); color: var(--primary); }
 .time-picker-step-btn:active { transform: scale(0.92); }
 
-.time-picker-hour-value {
-  display: inline-block;
-  min-width: 70px;
-  font-size: 38px;
-  font-weight: 800;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 1px;
-}
-
-.time-picker-minutes {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.time-picker-min-chip {
-  padding: 8px 14px;
-  border-radius: 999px;
+.time-picker-input {
+  width: 70px;
+  height: 44px;
   border: 1.5px solid var(--border);
+  border-radius: 10px;
   background: var(--bg-card);
   color: var(--text);
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
   font-variant-numeric: tabular-nums;
-  transition: all 0.15s;
+  padding: 0 4px;
+  -moz-appearance: textfield;
 }
-.time-picker-min-chip:hover { border-color: var(--primary); }
-.time-picker-min-chip.selected {
-  background: var(--primary);
+.time-picker-input:focus {
+  outline: none;
   border-color: var(--primary);
-  color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(99, 153, 34, 0.18);
 }
-.time-picker-min-chip:active { transform: scale(0.94); }
+/* Amaga els botons natius de l'input number — fem servir els nostres steppers */
+.time-picker-input::-webkit-outer-spin-button,
+.time-picker-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 
 .time-picker-buttons {
   margin-top: 22px;
