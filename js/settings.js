@@ -902,6 +902,56 @@ function openLocations(origin) {
 // despatxem el clic — les sub-pantalles s'engeguen amb funcions
 // openSettings<Cat>() definides als seus propis commits.
 
+// ----- "Embedding" del cos d'una pantalla autònoma dins una sub-pantalla -----
+// Per evitar duplicar l'HTML i els listeners, MOVEM els fills d'una pantalla
+// existent dins l'àrea de contingut d'una sub-pantalla. Quan l'usuari surt
+// de la sub-pantalla (showScreen() amb destí diferent), els fills tornen al
+// seu lloc original. Aquesta tècnica preserva tots els event listeners i
+// l'estat intern dels widgets.
+let _embeddedSourceId = null;
+let _embeddedTargetEl = null;
+let _embeddedHostId   = null;
+
+function restoreEmbeddedSettings() {
+  if (!_embeddedSourceId || !_embeddedTargetEl) return;
+  const src = document.getElementById(_embeddedSourceId);
+  if (src) {
+    Array.from(_embeddedTargetEl.children).forEach(child => src.appendChild(child));
+  }
+  _embeddedSourceId = null;
+  _embeddedTargetEl = null;
+  _embeddedHostId   = null;
+}
+
+function _embedStandaloneBody(targetEl, sourceScreenId, hostScreenId) {
+  restoreEmbeddedSettings();
+  if (!targetEl) return;
+  targetEl.innerHTML = '';
+  const src = document.getElementById(sourceScreenId);
+  if (!src) return;
+  Array.from(src.children).forEach(child => {
+    if (!child.classList.contains('top-bar')) targetEl.appendChild(child);
+  });
+  _embeddedSourceId = sourceScreenId;
+  _embeddedTargetEl = targetEl;
+  _embeddedHostId   = hostScreenId;
+}
+
+// Embolcalla showScreen UNA SOLA VEGADA per restaurar contingut prestat
+// quan es navega a una pantalla diferent del host de l'embed.
+(function wrapShowScreenForEmbedding() {
+  if (typeof window === 'undefined' || typeof window.showScreen !== 'function') return;
+  if (window.__settingsEmbedWrapped) return;
+  window.__settingsEmbedWrapped = true;
+  const original = window.showScreen;
+  window.showScreen = function (name) {
+    if (_embeddedHostId && ('screen-' + name) !== _embeddedHostId) {
+      restoreEmbeddedSettings();
+    }
+    return original.apply(this, arguments);
+  };
+})();
+
 // ----- Sub-pantalla "Regional" (Idioma + País amb pestanyes) -----
 let activeRegionalTab = 'idioma';
 
@@ -967,17 +1017,22 @@ function renderSettingsContent() {
   });
   const area = document.getElementById('settings-content-area');
   if (!area) return;
+
+  if (activeContentTab === 'botigues') {
+    // Incrustem el cos de screen-manage-supermarkets directament dins la
+    // pestanya. Tots els listeners (checkbox, fletxes, edit, delete, toggle
+    // edit mode, afegir custom) continuen funcionant perquè els elements
+    // són els mateixos — només viuen temporalment dins la sub-pantalla.
+    _embedStandaloneBody(area, 'screen-manage-supermarkets', 'screen-settings-content');
+    if (typeof manageSupermarketsMode !== 'undefined') manageSupermarketsMode = 'view';
+    if (typeof renderManageSupermarkets === 'function') renderManageSupermarkets();
+    return;
+  }
+
   area.innerHTML = '';
 
   let summary = '', label = '', action = null;
-  if (activeContentTab === 'botigues') {
-    const enabled = (typeof getEnabledSupermarkets === 'function') ? getEnabledSupermarkets().length : 0;
-    summary = '<p class="settings-sub-summary">🏪 ' + enabled + ' ' + escapeHtml(t('storesActive')) + '</p>';
-    label = t('manageStores');
-    action = () => {
-      if (typeof openManageSupermarkets === 'function') openManageSupermarkets('settings-content');
-    };
-  } else if (activeContentTab === 'zones') {
+  if (activeContentTab === 'zones') {
     const n = (typeof locations !== 'undefined' && Array.isArray(locations)) ? locations.length : 0;
     summary = '<p class="settings-sub-summary">📍 ' + n + ' ' + escapeHtml(t('zonesCount')) + '</p>';
     label = t('manageZones');

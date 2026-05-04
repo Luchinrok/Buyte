@@ -128,6 +128,13 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (target === 'section' && typeof renderSection === 'function') renderSection();
       else if (target === 'popular' && typeof renderPopularList === 'function') renderPopularList();
       else if (target === 'cookme' && typeof renderCookMe === 'function') renderCookMe();
+      // Re-renderitzem la sub-pantalla de Configuració al tornar — així les
+      // que tenen contingut prestat (embedding) recuperen els seus fills.
+      else if (target === 'settings-regional' && typeof renderSettingsRegional === 'function') renderSettingsRegional();
+      else if (target === 'settings-content'  && typeof renderSettingsContent  === 'function') renderSettingsContent();
+      else if (target === 'settings-activity' && typeof renderSettingsActivity === 'function') renderSettingsActivity();
+      else if (target === 'settings-app'      && typeof renderSettingsApp      === 'function') renderSettingsApp();
+      else if (target === 'settings-data'     && typeof renderSettingsData     === 'function') renderSettingsData();
       // (No cal cap refresc en tornar a 'settings' — la pantalla principal
       // només té 5 cards de categoria estàtiques. Els subtítols dinàmics
       // viuen dins les sub-pantalles, que ja es re-renderitzen quan s'obren.)
