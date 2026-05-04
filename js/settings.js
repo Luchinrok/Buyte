@@ -899,11 +899,6 @@ function renderSettings() {
   document.querySelectorAll('#settings-tabs .settings-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === activeSettingsTab);
   });
-
-  // Amaguem la llista estàtica antiga (es retirarà a un commit posterior).
-  const legacy = document.querySelector('#screen-settings .settings-cards');
-  if (legacy) legacy.style.display = 'none';
-
   const content = document.getElementById('settings-content');
   if (!content) return;
   if (!activeSettingsTab) {
@@ -913,9 +908,65 @@ function renderSettings() {
   content.innerHTML = renderSettingsTabContent(activeSettingsTab) || '';
 }
 
-// Stub — a C3 retorna l'HTML real dels botons per cada pestanya.
+// Helper per construir una card de Configuració. action és el valor de
+// data-action que farà servir el delegat d'esdeveniments per encaminar
+// el clic. subId és l'id del subtítol — alguns valors es pinten després
+// via update*Status() (sync, notif, theme...).
+function _settingsCard(action, colorClass, emoji, titleKey, subId, subText) {
+  return '<button type="button" class="settings-card ' + colorClass + '" data-action="' + action + '">' +
+           '<div class="settings-card-icon"><span>' + emoji + '</span></div>' +
+           '<div class="settings-card-info">' +
+             '<p class="settings-card-title">' + escapeHtml(t(titleKey)) + '</p>' +
+             '<p class="settings-card-sub"' + (subId ? ' id="' + subId + '"' : '') + '>' + escapeHtml(subText || '-') + '</p>' +
+           '</div>' +
+           '<span class="settings-card-arrow">›</span>' +
+         '</button>';
+}
+
 function renderSettingsTabContent(tab) {
-  return '<div class="settings-empty-state"><p>—</p></div>';
+  switch (tab) {
+    case 'regional': return renderRegionalTab();
+    case 'content':  return renderContentTab();
+    case 'activity': return renderActivityTab();
+    case 'app':      return renderAppTab();
+    case 'data':     return renderDataTab();
+  }
+  return '';
+}
+
+function renderRegionalTab() {
+  return _settingsCard('open-language', 'settings-card-language', '🌐', 'language', 'language-status', '-') +
+         _settingsCard('open-country',  'settings-card-country',  '🚩', 'country',  'country-status',  '-');
+}
+
+function renderContentTab() {
+  return _settingsCard('open-supermarkets', 'settings-card-supermarkets', '🏪', 'mySupermarkets',      'supermarkets-status', '-') +
+         _settingsCard('open-locations',    'settings-card-locations',    '📍', 'storageZones',        'locations-count',     '-') +
+         _settingsCard('open-popular',      'settings-card-popular',      '⭐', 'popularProductsCard', 'popular-count',       '-') +
+         _settingsCard('open-recipes',      'settings-card-recipes',      '🍳', 'recipes',             'recipes-count',       '-');
+}
+
+function renderActivityTab() {
+  return _settingsCard('open-impact', 'settings-card-impact', '🌱', 'impactTitle', 'impact-sub', '-') +
+         _settingsCard('open-stats',  'settings-card-stats',  '📊', 'stats',       'stats-sub',  '-');
+}
+
+function renderAppTab() {
+  return _settingsCard('toggle-theme',  'settings-card-theme',         '🎨', 'appearance',     'theme-status', '-') +
+         _settingsCard('open-notif',    'settings-card-notifications', '🔔', 'notifications',  'notif-status', '-') +
+         _settingsCard('open-sync',     'settings-card-sync',          '🔄', 'syncTitle',      'sync-status',  '-');
+}
+
+function renderDataTab() {
+  // Reset usa una variant 'danger-card-soft' en lloc dels colors de marca.
+  return '<button type="button" class="settings-card danger-card-soft" data-action="open-reset">' +
+           '<div class="settings-card-icon"><span>🗑️</span></div>' +
+           '<div class="settings-card-info">' +
+             '<p class="settings-card-title">' + escapeHtml(t('resetDataTitle')) + '</p>' +
+             '<p class="settings-card-sub">' + escapeHtml(t('dataManagementSub')) + '</p>' +
+           '</div>' +
+           '<span class="settings-card-arrow">›</span>' +
+         '</button>';
 }
 
 // Wire-up dels clicks a les pestanyes (es fa una sola vegada des de app.js).
@@ -925,31 +976,58 @@ function attachSettingsTabListeners() {
   });
 }
 
-// Pantalla unificada "Idioma i país". Es refresquen els dos sub-cards
-// (idioma i país) cada vegada perquè reflecteixin el valor actual,
-// independentment de canvis fets a sub-pantalles.
-function openLocaleScreen() {
-  if (typeof updateLangStatus === 'function') updateLangStatus();
-  if (typeof updateCountryStatus === 'function') updateCountryStatus();
-  if (typeof updateLocaleStatus === 'function') updateLocaleStatus();
-  showScreen('locale');
-}
-
-// Subtítol del card "Idioma i país" a Configuració: "Català · Espanya".
-// Si el país encara no està resolt (welcome), només mostra l'idioma.
-function updateLocaleStatus() {
-  const el = document.getElementById('locale-status');
-  if (!el) return;
-  const lang = (typeof getCurrentLang === 'function') ? getCurrentLang() : 'ca';
-  const langName = (typeof LANGUAGE_NAMES !== 'undefined' && LANGUAGE_NAMES[lang]) ? LANGUAGE_NAMES[lang] : lang;
-  let countryName = '';
-  try {
-    if (typeof COUNTRIES !== 'undefined' && typeof currentCountry !== 'undefined') {
-      const c = COUNTRIES.find(x => x.code === currentCountry);
-      if (c) countryName = t(c.nameKey);
+// Delegat d'esdeveniments per als botons renderitzats dinàmicament a
+// #settings-content. Cada card té un data-action que mapem aquí a la
+// crida d'obrir la pantalla corresponent.
+function attachSettingsContentDelegation() {
+  const root = document.getElementById('settings-content');
+  if (!root || root.__settingsBound) return;
+  root.__settingsBound = true;
+  root.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-action]');
+    if (!btn) return;
+    switch (btn.dataset.action) {
+      case 'open-language':
+        if (typeof renderLangList === 'function') renderLangList();
+        showScreen('language');
+        break;
+      case 'open-country':
+        if (typeof openCountryScreen === 'function') openCountryScreen();
+        break;
+      case 'open-supermarkets':
+        if (typeof openManageSupermarkets === 'function') openManageSupermarkets('settings');
+        break;
+      case 'open-locations':
+        if (typeof openLocations === 'function') openLocations('settings');
+        break;
+      case 'open-popular':
+        if (typeof openPopular === 'function') openPopular('settings');
+        else { showScreen('popular'); if (typeof renderPopularList === 'function') renderPopularList(); }
+        break;
+      case 'open-recipes':
+        if (typeof openCookMe === 'function') openCookMe('settings');
+        break;
+      case 'open-impact':
+        if (typeof openImpact === 'function') openImpact();
+        break;
+      case 'open-stats':
+        if (typeof showStats === 'function') showStats();
+        break;
+      case 'toggle-theme':
+        if (typeof cycleTheme === 'function') cycleTheme();
+        break;
+      case 'open-notif':
+        if (typeof openNotificationsScreen === 'function') openNotificationsScreen();
+        break;
+      case 'open-sync':
+        if (typeof openSyncScreen === 'function') openSyncScreen();
+        break;
+      case 'open-reset':
+        if (typeof openResetDataScreen === 'function') openResetDataScreen();
+        else showScreen('reset-data');
+        break;
     }
-  } catch (e) {}
-  el.textContent = countryName ? (langName + ' · ' + countryName) : langName;
+  });
 }
 
 // Obre la pantalla de configuració recordant d'on s'ha cridat
@@ -958,6 +1036,9 @@ function openSettings(origin) {
   const backBtn = document.getElementById('settings-back-btn');
   if (backBtn) backBtn.dataset.back = (origin === 'launcher') ? 'launcher' : 'home';
 
+  // Render PRIMER perquè els subtítols (#sync-status, #notif-status, etc.)
+  // existeixin abans que update*Status els intentin omplir.
+  if (typeof renderSettings === 'function') renderSettings();
   if (typeof updateThemeStatus === 'function') updateThemeStatus();
   if (typeof updateLangStatus === 'function') updateLangStatus();
   if (typeof updateStatsSub === 'function') updateStatsSub();
@@ -969,8 +1050,6 @@ function openSettings(origin) {
   if (typeof updateNotifStatus === 'function') updateNotifStatus();
   if (typeof updateCountryStatus === 'function') updateCountryStatus();
   if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
-  if (typeof updateLocaleStatus === 'function') updateLocaleStatus();
-  if (typeof renderSettings === 'function') renderSettings();
   showScreen('settings');
 }
 

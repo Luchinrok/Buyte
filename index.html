@@ -963,132 +963,6 @@
          activa. Per defecte conté l'empty state que s'amaga quan hi ha tab. -->
     <div id="settings-content"></div>
 
-    <div class="settings-cards">
-      <!-- ===== REGIONAL ===== -->
-      <p class="settings-section-title" data-i18n="sectionRegional"></p>
-
-      <!-- IDIOMA + PAÍS (pantalla unificada) -->
-      <button class="settings-card settings-card-language" id="settings-locale">
-        <div class="settings-card-icon"><span>🌐</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="localeTitle"></p>
-          <p class="settings-card-sub" id="locale-status">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- ===== EL MEU CONTINGUT ===== -->
-      <p class="settings-section-title" data-i18n="sectionMyContent"></p>
-
-      <!-- ELS MEUS SUPERMERCATS -->
-      <button class="settings-card settings-card-supermarkets" id="settings-supermarkets">
-        <div class="settings-card-icon"><span>🏪</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="mySupermarkets"></p>
-          <p class="settings-card-sub" id="supermarkets-status">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- ZONES D'EMMAGATZEMATGE -->
-      <button class="settings-card settings-card-locations" id="settings-locations">
-        <div class="settings-card-icon"><span>📍</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="storageZones"></p>
-          <p class="settings-card-sub" id="locations-count">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- PRODUCTES POPULARS -->
-      <button class="settings-card settings-card-popular" id="settings-popular">
-        <div class="settings-card-icon"><span>⭐</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="popularProductsCard"></p>
-          <p class="settings-card-sub" id="popular-count">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- RECEPTES -->
-      <button class="settings-card settings-card-recipes" id="settings-recipes">
-        <div class="settings-card-icon"><span>🍳</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="recipes"></p>
-          <p class="settings-card-sub" id="recipes-count">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- ===== ACTIVITAT ===== -->
-      <p class="settings-section-title" data-i18n="sectionActivity"></p>
-
-      <!-- EL MEU IMPACTE -->
-      <button class="settings-card settings-card-impact" id="settings-impact">
-        <div class="settings-card-icon"><span>🌱</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="impactTitle"></p>
-          <p class="settings-card-sub" id="impact-sub">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- ESTADÍSTIQUES -->
-      <button class="settings-card settings-card-stats" id="settings-stats">
-        <div class="settings-card-icon"><span>📊</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="stats"></p>
-          <p class="settings-card-sub" id="stats-sub" data-i18n="statsEmpty"></p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- ===== APLICACIÓ ===== -->
-      <p class="settings-section-title" data-i18n="sectionApp"></p>
-
-      <!-- APARENÇA -->
-      <button class="settings-card settings-card-theme" id="settings-theme">
-        <div class="settings-card-icon"><span>🎨</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="appearance"></p>
-          <p class="settings-card-sub" id="theme-status">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- NOTIFICACIONS -->
-      <button class="settings-card settings-card-notifications" id="settings-notifications">
-        <div class="settings-card-icon"><span>🔔</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="notifications"></p>
-          <p class="settings-card-sub" id="notif-status">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- SINCRONITZACIÓ -->
-      <button class="settings-card settings-card-sync" id="settings-sync">
-        <div class="settings-card-icon"><span>🔄</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="syncTitle"></p>
-          <p class="settings-card-sub" id="sync-status">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <!-- ===== AVANÇAT ===== -->
-      <p class="settings-section-title" data-i18n="sectionAdvanced"></p>
-
-      <!-- ESBORRAR DADES (entrada al submenú) -->
-      <button class="settings-card danger-card-soft" id="settings-reset">
-        <div class="settings-card-icon"><span>🗑️</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="resetDataTitle"></p>
-          <p class="settings-card-sub" data-i18n="dataManagementSub"></p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-    </div>
 
     <p class="app-version">Buyte · v2.0</p>
   </div>
@@ -1196,40 +1070,9 @@
   </div>
 
   <!-- PANTALLA SELECCIONAR PAÍS (des de configuració) -->
-  <!-- PANTALLA UNIFICADA IDIOMA + PAÍS -->
-  <div id="screen-locale" class="screen">
-    <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
-      <h1 data-i18n="localeTitle"></h1>
-      <div style="width:40px"></div>
-    </header>
-
-    <div class="settings-cards">
-      <p class="settings-section-title" data-i18n="localeIdiomaSection"></p>
-      <button class="settings-card settings-card-language" id="locale-language">
-        <div class="settings-card-icon"><span>🌐</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="language"></p>
-          <p class="settings-card-sub" id="language-status">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-
-      <p class="settings-section-title" data-i18n="localeCountrySection"></p>
-      <button class="settings-card settings-card-country" id="locale-country">
-        <div class="settings-card-icon"><span>🚩</span></div>
-        <div class="settings-card-info">
-          <p class="settings-card-title" data-i18n="country"></p>
-          <p class="settings-card-sub" id="country-status">-</p>
-        </div>
-        <span class="settings-card-arrow">›</span>
-      </button>
-    </div>
-  </div>
-
   <div id="screen-country" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="locale" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
       <h1 data-i18n="country"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1810,7 +1653,7 @@
   <!-- PANTALLA IDIOMES -->
   <div id="screen-language" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="locale" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
       <h1 data-i18n="language"></h1>
       <div style="width:40px"></div>
     </header>

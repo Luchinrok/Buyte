@@ -129,8 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (target === 'popular' && typeof renderPopularList === 'function') renderPopularList();
       else if (target === 'cookme' && typeof renderCookMe === 'function') renderCookMe();
       else if (target === 'settings') {
-        // Refresca tots els subtítols de Configuració (notificacions, idioma,
-        // pais, etc.) per reflectir canvis fets a les sub-pantalles.
+        // Re-renderitza la tab activa primer perquè els elements amb
+        // ids #sync-status, #notif-status, etc. existeixin abans que les
+        // funcions update*Status els intentin omplir.
+        if (typeof renderSettings === 'function') renderSettings();
         if (typeof updateNotifStatus === 'function') updateNotifStatus();
         if (typeof updateThemeStatus === 'function') updateThemeStatus();
         if (typeof updateLangStatus === 'function') updateLangStatus();
@@ -142,12 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof updateSyncStatus === 'function') updateSyncStatus();
         if (typeof updateCountryStatus === 'function') updateCountryStatus();
         if (typeof updateSupermarketsStatus === 'function') updateSupermarketsStatus();
-        if (typeof updateLocaleStatus === 'function') updateLocaleStatus();
-      }
-      else if (target === 'locale') {
-        // Tornem a la pantalla "Idioma i país" — refresquem els dos sub-cards.
-        if (typeof updateLangStatus === 'function') updateLangStatus();
-        if (typeof updateCountryStatus === 'function') updateCountryStatus();
       }
       else if (target === 'list' && typeof openShelf === 'function' && currentLevel) {
         openShelf(currentLevel);
@@ -179,30 +175,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.getElementById('settings-theme').addEventListener('click', cycleTheme);
-
-  // Configuració amb pestanyes — wire-up dels clicks a les tabs.
+  // Configuració amb pestanyes — wire-up de les tabs i del delegate del
+  // contingut. Els botons de cada tab es renderitzen dinàmicament i les
+  // seves accions es despatxen via data-action.
   if (typeof attachSettingsTabListeners === 'function') attachSettingsTabListeners();
-
-  // Configuració → "Idioma i país" (pantalla unificada)
-  const settingsLocale = document.getElementById('settings-locale');
-  if (settingsLocale) settingsLocale.addEventListener('click', () => {
-    if (typeof openLocaleScreen === 'function') openLocaleScreen();
-  });
-  // Dins de la pantalla locale: dos sub-botons que obren les pickers existents
-  const localeLang = document.getElementById('locale-language');
-  if (localeLang) localeLang.addEventListener('click', () => {
-    renderLangList();
-    showScreen('language');
-  });
-  const localeCountry = document.getElementById('locale-country');
-  if (localeCountry) localeCountry.addEventListener('click', openCountryScreen);
-
-  document.getElementById('settings-stats').addEventListener('click', showStats);
-
-  // El meu impacte
-  const btnImpact = document.getElementById('settings-impact');
-  if (btnImpact) btnImpact.addEventListener('click', openImpact);
+  if (typeof attachSettingsContentDelegation === 'function') attachSettingsContentDelegation();
 
   // Banner de nivell (pantalla d'Impacte) → Els meus èxits
   const impactLevelBanner = document.getElementById('impact-level-banner');
@@ -217,11 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof showImpactInfoModal === 'function') showImpactInfoModal(btn.dataset.info);
     });
   });
-  // Entrada al submenú "Esborrar dades" (al menú principal de Configuració)
-  document.getElementById('settings-reset').addEventListener('click', () => {
-    if (typeof openResetDataScreen === 'function') openResetDataScreen();
-    else showScreen('reset-data');
-  });
+  // (L'entrada "Esborrar dades" del menú es despatxa via data-action des
+  // del delegate de #settings-content.)
 
   // Botons del submenú "Esborrar dades"
   const btnResetBiteme = document.getElementById('reset-biteme');
@@ -319,17 +293,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnImportData = document.getElementById('import-data');
   if (btnImportData) btnImportData.addEventListener('click', importData);
 
-  // Ubicacions des de configuració
-  const settingsLoc = document.getElementById('settings-locations');
-  if (settingsLoc) settingsLoc.addEventListener('click', () => openLocations('settings'));
-
-  // SINCRONITZACIÓ
-  const settingsSync = document.getElementById('settings-sync');
-  if (settingsSync) settingsSync.addEventListener('click', openSyncScreen);
-
-  // Supermercats (el botó de País viu ara dins la pantalla "Idioma i país")
-  const settingsSupermarkets = document.getElementById('settings-supermarkets');
-  if (settingsSupermarkets) settingsSupermarkets.addEventListener('click', () => openManageSupermarkets('settings'));
+  // (Ubicacions / Sincronització / Supermercats des de Configuració es
+  // despatxen via data-action des del delegate de #settings-content.)
 
   // Botó Editar les meves botigues
   const btnToggleEditShops = document.getElementById('btn-toggle-edit-shops');
@@ -371,18 +336,8 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(t('saved'));
   });
 
-  // Productes populars des de configuració
-  const settingsPopular = document.getElementById('settings-popular');
-  if (settingsPopular) settingsPopular.addEventListener('click', () => {
-    if (typeof openPopular === 'function') openPopular('settings');
-    else { showScreen('popular'); renderPopularList(); }
-  });
-
-  // Receptes des de configuració
-  const settingsRecipes = document.getElementById('settings-recipes');
-  if (settingsRecipes) settingsRecipes.addEventListener('click', () => {
-    if (typeof openCookMe === 'function') openCookMe('settings');
-  });
+  // (Populars / Receptes des de Configuració es despatxen via data-action
+  // des del delegate de #settings-content.)
 
   // "Què tinc a casa"
   const btnWhatIHave = document.getElementById('btn-what-i-have');
@@ -443,9 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderViewAll();
   });
 
-  // NOTIFICACIONS: targeta a la configuració
-  const settingsNotif = document.getElementById('settings-notifications');
-  if (settingsNotif) settingsNotif.addEventListener('click', openNotificationsScreen);
+  // (Notificacions des de Configuració es despatxa via data-action des del
+  // delegate de #settings-content.)
 
   // Botó "Permetre notificacions": event delegation al document perquè
   // funcioni encara que la pantalla s'estigui re-renderitzant. Així
