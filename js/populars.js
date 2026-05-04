@@ -426,6 +426,7 @@ function updatePopularButtons() {
   const addBtn = document.getElementById('popular-add-custom');
   const sortBtn = document.getElementById('popular-sort-alpha');
   const saveBtn = document.getElementById('btn-save-popular-changes');
+  const toolbar = document.getElementById('popular-toolbar');
 
   // El botó del header sempre visible: actua com a toggle (edita/desa).
   if (editBtn) {
@@ -438,10 +439,14 @@ function updatePopularButtons() {
     if (addBtn) addBtn.style.display = 'flex';
     if (sortBtn) sortBtn.style.display = 'flex';
     if (saveBtn) saveBtn.style.display = 'block';
+    if (toolbar) toolbar.classList.remove('is-empty');
   } else {
     if (addBtn) addBtn.style.display = 'none';
     if (sortBtn) sortBtn.style.display = 'none';
     if (saveBtn) saveBtn.style.display = 'none';
+    // En mode view la barra no té cap botó visible: la col·lapsem
+    // perquè no deixi un buit entre el cercador i la llista.
+    if (toolbar) toolbar.classList.add('is-empty');
   }
 
   // Manté el botó d'acció de la sub-pantalla Configuració > Contingut

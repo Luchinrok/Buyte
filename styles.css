@@ -1830,7 +1830,18 @@ h1 {
 .popular-toolbar {
   display: flex;
   gap: 8px;
+  margin-top: 6px;
   margin-bottom: 14px;
+}
+.popular-toolbar.is-empty { display: none; }
+
+/* Save changes "sticky" al final de la pantalla: sempre accessible mentre
+   l'usuari fa scroll per la llista en mode edició. */
+.popular-save-sticky {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  margin-top: 14px;
 }
 
 .popular-tool-btn {

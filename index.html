@@ -944,18 +944,21 @@
 
     <input type="search" id="popular-search" class="popular-search" autocomplete="off">
 
-    <div id="popular-list" class="popular-list"></div>
-
-    <div class="popular-toolbar" style="margin-top:12px">
-      <button class="popular-tool-btn" id="popular-sort-alpha" style="display:none">
-        🔤 <span data-i18n="sortAlpha"></span>
-      </button>
+    <!-- Barra d'acció a dalt: Afegir + Ordenar. Sempre visible quan
+         estem en mode edició perquè l'usuari no hagi de baixar fins al
+         final d'una llista llarga. -->
+    <div class="popular-toolbar" id="popular-toolbar">
       <button class="popular-tool-btn" id="popular-add-custom" style="display:none">
         ➕ <span data-i18n="addCustomPopular"></span>
       </button>
+      <button class="popular-tool-btn" id="popular-sort-alpha" style="display:none">
+        🔤 <span data-i18n="sortAlpha"></span>
+      </button>
     </div>
 
-    <button class="primary-btn" id="btn-save-popular-changes" style="display:none;margin-top:10px">
+    <div id="popular-list" class="popular-list"></div>
+
+    <button class="primary-btn popular-save-sticky" id="btn-save-popular-changes" style="display:none">
       <span data-i18n="saveChanges"></span>
     </button>
   </div>
