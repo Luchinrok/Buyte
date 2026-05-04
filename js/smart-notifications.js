@@ -501,6 +501,82 @@ function _evalBadgeProgress() {
 
 
 // ============================================
+//   BANNERS A LA HOME (Phase 4)
+// ============================================
+
+// Mapa: tipus de notificació → acció al botó "Veure".
+function _smartBannerAction(typeId) {
+  switch (typeId) {
+    case 'expiry':
+    case 'mealReminder':
+      return () => {
+        if (typeof renderHome === 'function') renderHome();
+        showScreen('home');
+      };
+    case 'cookmeInspiration':
+      return () => {
+        if (typeof openCookMe === 'function') openCookMe();
+      };
+    case 'shoppingPending':
+      return () => {
+        if (typeof openShoppingList === 'function') openShoppingList();
+        else showScreen('shopping');
+      };
+    case 'streakMotivation':
+    case 'badgeProgress':
+      return () => {
+        if (typeof openAchievements === 'function') openAchievements();
+      };
+    case 'weeklyRecap':
+      return () => {
+        if (typeof openImpact === 'function') openImpact();
+        else showScreen('impact');
+      };
+    case 'reactivation':
+    default:
+      return null;
+  }
+}
+
+function renderSmartNotifBanners() {
+  const container = document.getElementById('smart-notif-banners');
+  if (!container) return;
+  const banners = getActiveBanners();
+  container.innerHTML = '';
+  if (banners.length === 0) return;
+
+  banners.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'smart-notif-banner';
+    card.dataset.type = b.type;
+
+    const action = _smartBannerAction(b.type);
+    const seeBtn = action
+      ? '<button type="button" class="smart-notif-banner-see" data-action="see">' + escapeHtml(t('notifBannerSee')) + '</button>'
+      : '';
+
+    card.innerHTML =
+      '<div class="smart-notif-banner-icon">' + (b.emoji || '🔔') + '</div>' +
+      '<div class="smart-notif-banner-msg">' + escapeHtml(b.body || '') + '</div>' +
+      seeBtn +
+      '<button type="button" class="smart-notif-banner-close" data-action="close" aria-label="Close">✕</button>';
+    container.appendChild(card);
+
+    if (action) {
+      card.querySelector('[data-action="see"]').addEventListener('click', () => {
+        dismissBannerToday(b.type);
+        action();
+      });
+    }
+    card.querySelector('[data-action="close"]').addEventListener('click', () => {
+      dismissBannerToday(b.type);
+      renderSmartNotifBanners();
+    });
+  });
+}
+
+
+// ============================================
 //   INICIALITZACIÓ
 // ============================================
 
