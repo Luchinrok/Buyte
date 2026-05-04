@@ -949,6 +949,20 @@
       <div style="width:40px"></div>
     </header>
 
+    <!-- Pestanyes horitzontals (scroll-x si no caben en pantalles estretes).
+         La pestanya activa es marca via JS afegint la classe .active. -->
+    <div class="settings-tabs-container" id="settings-tabs">
+      <button type="button" class="settings-tab" data-tab="regional">🌍 <span data-i18n="tabRegional"></span></button>
+      <button type="button" class="settings-tab" data-tab="content">📦 <span data-i18n="tabContent"></span></button>
+      <button type="button" class="settings-tab" data-tab="activity">📊 <span data-i18n="tabActivity"></span></button>
+      <button type="button" class="settings-tab" data-tab="app">🎨 <span data-i18n="tabApp"></span></button>
+      <button type="button" class="settings-tab" data-tab="data">🗑️ <span data-i18n="tabData"></span></button>
+    </div>
+
+    <!-- Contingut dinàmic — populat per renderSettings() segons la pestanya
+         activa. Per defecte conté l'empty state que s'amaga quan hi ha tab. -->
+    <div id="settings-content"></div>
+
     <div class="settings-cards">
       <!-- ===== REGIONAL ===== -->
       <p class="settings-section-title" data-i18n="sectionRegional"></p>

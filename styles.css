@@ -669,6 +669,56 @@ h1 {
   flex: 1;
 }
 
+/* Pestanyes (tabs) horitzontals al capdamunt de Configuració. Es desplacen
+   amb scroll horitzontal en pantalles estretes per no comprimir-se. */
+.settings-tabs-container {
+  display: flex;
+  gap: 8px;
+  padding: 12px 4px 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.settings-tabs-container::-webkit-scrollbar { display: none; }
+
+.settings-tab {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+.settings-tab:hover { background: rgba(76, 175, 42, 0.1); }
+.settings-tab:active { transform: scale(0.96); }
+.settings-tab.active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #FFFFFF;
+  border-color: var(--primary-dark);
+  box-shadow: 0 2px 8px rgba(76, 175, 42, 0.3);
+}
+
+/* Empty state quan encara no s'ha triat cap pestanya. */
+.settings-empty-state {
+  padding: 64px 20px;
+  text-align: center;
+  color: var(--text-soft);
+}
+.settings-empty-state p {
+  font-size: 15px;
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* Separador discret entre seccions de Configuració. El primer títol no
    necessita gaire espai a sobre — la secció ja arrenca a dalt de tot. */
 .settings-section-title {
