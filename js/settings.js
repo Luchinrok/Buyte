@@ -373,11 +373,12 @@ async function handleRequestPermission() {
 
 function testNotificationNow() {
   if (!window.Notif) return;
-  if (window.Notif.permissionStatus() !== 'granted') {
+  const perm = window.Notif.permissionStatus();
+  if (perm !== 'granted') {
     showToast(t('notifPermRequired'));
     return;
   }
-  const ok = window.Notif.testNotification();
+  const ok = window.Notif.showNotification('🔔 Buyte', t('notifTestMessage'), { tag: 'buyte-test' });
   if (ok) showToast('🔔 ' + t('notifTestSent'));
   else showToast(t('notifTestError'));
 }
