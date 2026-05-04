@@ -14,33 +14,34 @@
    ============================================ */
 
 
-// Configuració per defecte. Cada tipus pot tenir camps extra (hour, day, ...).
+// Configuració per defecte. Cada tipus té hora configurable; weeklyRecap
+// també té dia de la setmana.
 const SMART_NOTIF_DEFAULTS = {
   enabled: true, // master switch
   types: {
     expiry:            { enabled: true,  hour: 9 },
     mealReminder:      { enabled: true,  hour: 11 },
     cookmeInspiration: { enabled: true,  hour: 18 },
-    shoppingPending:   { enabled: false },
+    shoppingPending:   { enabled: false, hour: 18 },
     streakMotivation:  { enabled: true,  hour: 21 },
-    reactivation:      { enabled: true },
+    reactivation:      { enabled: true,  hour: 10 },
     weeklyRecap:       { enabled: true,  day: 0, hour: 19 }, // 0 = diumenge
-    badgeProgress:     { enabled: true }
+    badgeProgress:     { enabled: true,  hour: 12 }
   }
 };
 
 // Lista en ordre fix: serveix tant per al render de la pantalla de
 // configuració com per al scheduler. Cada entrada inclou les metadades
-// que la UI ha de mostrar.
+// que la UI ha de mostrar. Tots els tipus tenen hora configurable.
 const SMART_NOTIF_TYPES = [
   { id: 'expiry',            emoji: '🚨', i18n: 'notifTypeExpiry',           hasHour: true,  hasDay: false },
   { id: 'mealReminder',      emoji: '💡', i18n: 'notifTypeMealReminder',     hasHour: true,  hasDay: false },
   { id: 'cookmeInspiration', emoji: '🍳', i18n: 'notifTypeCookme',           hasHour: true,  hasDay: false },
-  { id: 'shoppingPending',   emoji: '🛒', i18n: 'notifTypeShoppingPending',  hasHour: false, hasDay: false },
+  { id: 'shoppingPending',   emoji: '🛒', i18n: 'notifTypeShoppingPending',  hasHour: true,  hasDay: false },
   { id: 'streakMotivation',  emoji: '🔥', i18n: 'notifTypeStreak',           hasHour: true,  hasDay: false },
-  { id: 'reactivation',      emoji: '👋', i18n: 'notifTypeReactivation',     hasHour: false, hasDay: false },
+  { id: 'reactivation',      emoji: '👋', i18n: 'notifTypeReactivation',     hasHour: true,  hasDay: false },
   { id: 'weeklyRecap',       emoji: '📊', i18n: 'notifTypeWeekly',           hasHour: true,  hasDay: true  },
-  { id: 'badgeProgress',     emoji: '🎯', i18n: 'notifTypeBadge',            hasHour: false, hasDay: false }
+  { id: 'badgeProgress',     emoji: '🎯', i18n: 'notifTypeBadge',            hasHour: true,  hasDay: false }
 ];
 
 
