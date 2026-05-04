@@ -381,13 +381,34 @@ async function handleRequestPermission() {
   }
 }
 
-function testNotificationNow() {
+async function testNotificationNow() {
   if (!window.Notif) return;
-  const perm = window.Notif.permissionStatus();
-  if (perm !== 'granted') {
-    showToast(t('notifPermRequired'));
+  // Llegim Notification.permission EN DIRECTE — sense cache. Algun navegador
+  // pot canviar el valor sense notificar-nos i una variable local quedaria
+  // obsoleta.
+  const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+  console.log('[Buyte] Test notification — permission =', perm);
+
+  if (perm === 'unsupported') {
+    showToast(t('notifNotSupportedShort'));
     return;
   }
+  if (perm === 'denied') {
+    showToast('🚫 ' + t('notifPermissionDenied'));
+    return;
+  }
+  // Si encara estem a 'default' (l'usuari no ha respost cap prompt),
+  // demanem permís primer i reintentem si l'accepta.
+  if (perm !== 'granted') {
+    const result = await window.Notif.requestPermission();
+    console.log('[Buyte] Test notification — after requestPermission:', result);
+    renderSmartNotifSettingsScreen();
+    if (result !== 'granted') {
+      showToast(result === 'denied' ? ('🚫 ' + t('notifPermissionDenied')) : t('notifPermRequired'));
+      return;
+    }
+  }
+
   const ok = window.Notif.showNotification('🔔 Buyte', t('notifTestMessage'), { tag: 'buyte-test' });
   if (ok) showToast('🔔 ' + t('notifTestSent'));
   else showToast(t('notifTestError'));

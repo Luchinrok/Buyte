@@ -60,7 +60,14 @@ async function requestPermission() {
 }
 
 function showNotification(title, body, opts) {
-  if (getPermissionStatus() !== 'granted') return false;
+  // Llegim el permís EN DIRECTE en lloc de cap variable cachada — alguns
+  // navegadors poden canviar Notification.permission entre crides sense
+  // que se'n notifiqui l'app.
+  const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+  if (perm !== 'granted') {
+    console.log('[Buyte] showNotification skipped — permission =', perm);
+    return false;
+  }
   const options = {
     body: body,
     icon: 'icons/icon-192.png',
@@ -74,10 +81,17 @@ function showNotification(title, body, opts) {
     const n = new Notification(title, options);
     n.onclick = () => { window.focus(); n.close(); };
     return true;
-  } catch(e) {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options)).catch(() => {});
+  } catch (e) {
+    // Mobile (Android Chrome) i PWA iOS exigeixen anar pel Service Worker.
+    // Si tenim SW registrat (no necessàriament controller), provem-ho.
+    if ('serviceWorker' in navigator) {
+      try {
+        navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options)).catch(() => {});
+        // Optimista: assumim que el SW ho farà; el caller no s'ha de queixar.
+        return true;
+      } catch (e2) {}
     }
+    console.log('[Buyte] showNotification fallback failed:', e);
     return false;
   }
 }
