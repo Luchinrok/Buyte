@@ -502,36 +502,92 @@ async function handleRequestPermission() {
 }
 
 async function testNotificationNow() {
-  if (!window.Notif) return;
-  // Llegim Notification.permission EN DIRECTE — sense cache. Algun navegador
-  // pot canviar el valor sense notificar-nos i una variable local quedaria
-  // obsoleta.
-  const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
-  console.log('[Buyte] Test notification — permission =', perm);
+  console.log('[NOTIF] === Test button clicked ===');
 
-  if (perm === 'unsupported') {
+  if (!('Notification' in window)) {
+    console.log('[NOTIF] Notification API not supported');
     showToast(t('notifNotSupportedShort'));
     return;
   }
-  if (perm === 'denied') {
-    showToast('🚫 ' + t('notifPermissionDenied'));
-    return;
-  }
-  // Si encara estem a 'default' (l'usuari no ha respost cap prompt),
-  // demanem permís primer i reintentem si l'accepta.
-  if (perm !== 'granted') {
-    const result = await window.Notif.requestPermission();
-    console.log('[Buyte] Test notification — after requestPermission:', result);
-    renderSmartNotifSettingsScreen();
-    if (result !== 'granted') {
-      showToast(result === 'denied' ? ('🚫 ' + t('notifPermissionDenied')) : t('notifPermRequired'));
+
+  console.log('[NOTIF] Permission BEFORE:', Notification.permission);
+
+  // Si encara estem a 'default', demanem permís primer.
+  if (Notification.permission === 'default') {
+    console.log('[NOTIF] Requesting permission first...');
+    try {
+      const result = await Notification.requestPermission();
+      console.log('[NOTIF] Permission after request:', result);
+      if (typeof renderSmartNotifSettingsScreen === 'function') renderSmartNotifSettingsScreen();
+      if (result !== 'granted') {
+        showToast(result === 'denied' ? ('🚫 ' + t('notifPermissionDenied')) : t('notifPermRequired'));
+        return;
+      }
+    } catch (e) {
+      console.error('[NOTIF] requestPermission error:', e);
+      showToast('Error: ' + (e && e.message ? e.message : 'unknown'));
       return;
     }
   }
 
-  const ok = window.Notif.showNotification('🔔 Buyte', t('notifTestMessage'), { tag: 'buyte-test' });
-  if (ok) showToast('🔔 ' + t('notifTestSent'));
-  else showToast(t('notifTestError'));
+  if (Notification.permission === 'denied') {
+    console.log('[NOTIF] Permission denied — cannot send');
+    showToast('🚫 ' + t('notifPermissionDenied'));
+    return;
+  }
+
+  if (Notification.permission !== 'granted') {
+    console.log('[NOTIF] Permission not granted (' + Notification.permission + ')');
+    showToast(t('notifPermRequired'));
+    return;
+  }
+
+  // Notificació directa amb new Notification(). Provem sense icon — algunes
+  // implementacions del navegador fallen silenciosament si la URL no carrega.
+  try {
+    console.log('[NOTIF] Creating notification...');
+    const notif = new Notification('🍳 BuyTe', {
+      body: t('notifTestMessage'),
+      tag: 'buyte-test'
+    });
+    console.log('[NOTIF] Notification object created:', notif);
+
+    notif.onshow = () => {
+      console.log('[NOTIF] onshow fired');
+    };
+    notif.onclick = () => {
+      console.log('[NOTIF] onclick fired');
+      window.focus();
+      notif.close();
+    };
+    notif.onerror = (e) => {
+      console.error('[NOTIF] onerror fired:', e);
+      showToast(t('notifTestError'));
+    };
+    notif.onclose = () => {
+      console.log('[NOTIF] onclose fired');
+    };
+
+    showToast('🔔 ' + t('notifTestSent'));
+  } catch (err) {
+    console.error('[NOTIF] new Notification() threw:', err);
+    // Mòbil/PWA pot exigir Service Worker. Si en tenim un de registrat, provem-ho.
+    if ('serviceWorker' in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        console.log('[NOTIF] Trying via Service Worker:', reg);
+        await reg.showNotification('🍳 BuyTe', {
+          body: t('notifTestMessage'),
+          tag: 'buyte-test'
+        });
+        showToast('🔔 ' + t('notifTestSent'));
+        return;
+      } catch (swErr) {
+        console.error('[NOTIF] Service Worker fallback failed:', swErr);
+      }
+    }
+    showToast('Error: ' + (err && err.message ? err.message : t('notifTestError')));
+  }
 }
 
 
