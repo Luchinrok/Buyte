@@ -883,43 +883,38 @@ function openLocations(origin) {
 
 // ============ TABS DE CONFIGURACIÓ ============
 // La pantalla de Configuració s'organitza en pestanyes horitzontals.
-// activeSettingsTab és null quan encara no s'ha triat cap (mostrem un
-// empty state). El valor:
+// Sempre n'hi ha una d'activa — la primera obertura usa 'regional' per
+// defecte, i el valor:
 //   - es manté en memòria entre obertures de la pantalla, així que tornar
 //     des d'una sub-pantalla (ex: Botigues → back) restaura la tab activa.
 //   - es persisteix a localStorage perquè també es recordi entre sessions.
-//     Si és la primera obertura mai, queda null i es veu l'empty state.
 
 const SETTINGS_TAB_STORAGE_KEY = 'eatmefirst_settings_active_tab';
 const VALID_SETTINGS_TABS = ['regional', 'content', 'activity', 'app', 'data'];
+const DEFAULT_SETTINGS_TAB = 'regional';
 
 let activeSettingsTab = (function () {
   try {
     const raw = localStorage.getItem(SETTINGS_TAB_STORAGE_KEY);
-    return (raw && VALID_SETTINGS_TABS.indexOf(raw) !== -1) ? raw : null;
-  } catch (e) { return null; }
+    if (raw && VALID_SETTINGS_TABS.indexOf(raw) !== -1) return raw;
+  } catch (e) {}
+  return DEFAULT_SETTINGS_TAB;
 })();
 
 function setActiveSettingsTab(tab) {
-  activeSettingsTab = (tab && VALID_SETTINGS_TABS.indexOf(tab) !== -1) ? tab : null;
-  try {
-    if (activeSettingsTab) localStorage.setItem(SETTINGS_TAB_STORAGE_KEY, activeSettingsTab);
-    else localStorage.removeItem(SETTINGS_TAB_STORAGE_KEY);
-  } catch (e) {}
+  activeSettingsTab = (tab && VALID_SETTINGS_TABS.indexOf(tab) !== -1) ? tab : DEFAULT_SETTINGS_TAB;
+  try { localStorage.setItem(SETTINGS_TAB_STORAGE_KEY, activeSettingsTab); } catch (e) {}
   renderSettings();
 }
 
 // Marca la pestanya activa i pinta el contingut corresponent.
 function renderSettings() {
+  if (!activeSettingsTab) activeSettingsTab = DEFAULT_SETTINGS_TAB;
   document.querySelectorAll('#settings-tabs .settings-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === activeSettingsTab);
   });
   const content = document.getElementById('settings-content');
   if (!content) return;
-  if (!activeSettingsTab) {
-    content.innerHTML = '<div class="settings-empty-state"><p>👆 ' + escapeHtml(t('pickCategoryHint')) + '</p></div>';
-    return;
-  }
   content.innerHTML = renderSettingsTabContent(activeSettingsTab) || '';
   refreshSettingsSubtitles();
 }

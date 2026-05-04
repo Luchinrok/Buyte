@@ -707,18 +707,6 @@ h1 {
   box-shadow: 0 2px 8px rgba(76, 175, 42, 0.3);
 }
 
-/* Empty state quan encara no s'ha triat cap pestanya. */
-.settings-empty-state {
-  padding: 64px 20px;
-  text-align: center;
-  color: var(--text-soft);
-}
-.settings-empty-state p {
-  font-size: 15px;
-  margin: 0;
-  line-height: 1.5;
-}
-
 /* Separador discret entre seccions de Configuració. El primer títol no
    necessita gaire espai a sobre — la secció ja arrenca a dalt de tot. */
 .settings-section-title {

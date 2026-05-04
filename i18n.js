@@ -628,7 +628,6 @@ const TRANSLATIONS = {
     tabActivity: 'Activitat',
     tabApp: 'Aplicació',
     tabData: 'Dades',
-    pickCategoryHint: 'Tria una categoria',
     localeTitle: 'Idioma i país',
     localeIdiomaSection: 'Idioma',
     localeCountrySection: 'País',
