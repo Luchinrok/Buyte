@@ -611,7 +611,7 @@ const TRANSLATIONS = {
     notifStatusOnDenied: 'Activades · Permís denegat',
     notifPermDeniedHelp: "Per activar-los has d'anar a la configuració del navegador i permetre notificacions per aquesta web.",
     notifPermPromptClosed: "Has tancat el missatge sense respondre. Torna a clicar 'Permetre notificacions' per intentar-ho de nou",
-    notifMasterOffHint: 'Activa el toggle per començar',
+    notifMasterOffHint: 'Activa les notificacions per començar',
     notifPromptHint: 'El navegador et demanarà permís quan cliquis aquest botó.',
     notifPermRecheck: 'Tornar a comprovar',
     notifPermDeniedTitle: 'Com tornar a permetre notificacions',
