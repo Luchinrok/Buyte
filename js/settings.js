@@ -884,13 +884,28 @@ function openLocations(origin) {
 // ============ TABS DE CONFIGURACIÓ ============
 // La pantalla de Configuració s'organitza en pestanyes horitzontals.
 // activeSettingsTab és null quan encara no s'ha triat cap (mostrem un
-// empty state). El valor es manté entre obertures de la pantalla per
-// recordar l'última pestanya que l'usuari va consultar.
+// empty state). El valor:
+//   - es manté en memòria entre obertures de la pantalla, així que tornar
+//     des d'una sub-pantalla (ex: Botigues → back) restaura la tab activa.
+//   - es persisteix a localStorage perquè també es recordi entre sessions.
+//     Si és la primera obertura mai, queda null i es veu l'empty state.
 
-let activeSettingsTab = null;
+const SETTINGS_TAB_STORAGE_KEY = 'eatmefirst_settings_active_tab';
+const VALID_SETTINGS_TABS = ['regional', 'content', 'activity', 'app', 'data'];
+
+let activeSettingsTab = (function () {
+  try {
+    const raw = localStorage.getItem(SETTINGS_TAB_STORAGE_KEY);
+    return (raw && VALID_SETTINGS_TABS.indexOf(raw) !== -1) ? raw : null;
+  } catch (e) { return null; }
+})();
 
 function setActiveSettingsTab(tab) {
-  activeSettingsTab = tab || null;
+  activeSettingsTab = (tab && VALID_SETTINGS_TABS.indexOf(tab) !== -1) ? tab : null;
+  try {
+    if (activeSettingsTab) localStorage.setItem(SETTINGS_TAB_STORAGE_KEY, activeSettingsTab);
+    else localStorage.removeItem(SETTINGS_TAB_STORAGE_KEY);
+  } catch (e) {}
   renderSettings();
 }
 
