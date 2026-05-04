@@ -783,10 +783,9 @@ h1 {
   line-height: 1.4;
   max-width: 320px;
 }
+/* Espaiat invisible entre els dos blocs (Descarregar / Importar). */
 .data-action-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 14px 24px;
+  height: 14px;
 }
 
 /* Chips per a la selecció ràpida de tema (Clar / Fosc) dins la sub-pantalla
