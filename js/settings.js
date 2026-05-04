@@ -576,8 +576,24 @@ function updateLangStatus() {
 function updateStatsSub() {
   const el = document.getElementById('stats-sub');
   if (!el) return;
-  const total = stats.consumed + stats.trashed;
-  if (total > 0) el.textContent = t('statsText', stats.consumed, stats.trashed);
+  // Font de veritat: l'historial de consums/llençaments. El comptador antic
+  // (stats.consumed/trashed) podia quedar inflat amb dades d'altres dispositius
+  // o de versions anteriors, mentre l'usuari ja havia esborrat l'historial.
+  let consumed = 0, trashed = 0;
+  try {
+    const raw = localStorage.getItem('eatmefirst_consumption_history');
+    if (raw) {
+      const hist = JSON.parse(raw);
+      if (Array.isArray(hist)) {
+        hist.forEach(h => {
+          if (h && h.action === 'consumed') consumed++;
+          else if (h && h.action === 'trashed') trashed++;
+        });
+      }
+    }
+  } catch (e) {}
+  const total = consumed + trashed;
+  if (total > 0) el.textContent = t('statsText', consumed, trashed);
   else el.textContent = t('statsEmpty');
 }
 
