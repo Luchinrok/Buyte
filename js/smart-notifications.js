@@ -584,6 +584,14 @@ function initSmartNotifications() {
   loadSmartNotifSettings();
   // Marca l'última obertura per al disparador 'reactivation' (per la propera vegada).
   try { localStorage.setItem('eatmefirst_last_open', _todayKey()); } catch (e) {}
+
+  // Defensiu: si la versió antiga (notifications.js) tenia el seu scheduler
+  // engegat, l'aturem perquè no entri en col·lisió amb el nou. Mantenim
+  // accés a window.Notif per al low-level (showNotification, permisos).
+  if (typeof window !== 'undefined' && window.Notif && typeof window.Notif.scheduleDaily === 'function') {
+    window.Notif.scheduleDaily = function () {};
+  }
+
   startSmartNotifScheduler();
 
   // Quan l'usuari torna a la pestanya, reavaluem (potser ha canviat l'hora del dia).
