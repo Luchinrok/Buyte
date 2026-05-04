@@ -1226,16 +1226,21 @@ function renderSettingsApp() {
       });
     });
   } else if (activeAppTab === 'notif') {
-    const summary = '<p class="settings-sub-summary">🔔 ' + escapeHtml(_notifSummaryText()) + '</p>';
-    area.appendChild(_subContentBlock(summary, t('configureNotif'), () => {
-      if (typeof openNotificationsScreen === 'function') openNotificationsScreen('settings-app');
-    }));
+    // Embolcalla el cos de screen-notifications dins la pestanya. Master
+    // toggle, banner de permisos, llista de tipus i botó de prova
+    // continuen funcionant.
+    _embedStandaloneBody(area, 'screen-notifications', 'screen-settings-app');
+    if (typeof exposeForNotifications === 'function') exposeForNotifications();
+    if (typeof renderSmartNotifSettingsScreen === 'function') renderSmartNotifSettingsScreen();
+    return;
   } else if (activeAppTab === 'sync') {
-    const status = (typeof syncEnabled !== 'undefined' && syncEnabled) ? t('syncOn') : t('syncOff');
-    const summary = '<p class="settings-sub-summary">🔄 ' + escapeHtml(status) + '</p>';
-    area.appendChild(_subContentBlock(summary, t('configureSync'), () => {
-      if (typeof openSyncScreen === 'function') openSyncScreen('settings-app');
-    }));
+    // Embolcalla el cos de screen-sync dins la pestanya. Crear/connectar
+    // llista, copiar codi i desconnectar funcionen igual. screen-sync-join
+    // (introduir codi) es registra com a fill perquè el back torni al
+    // sub-pàgina.
+    _embedStandaloneBody(area, 'screen-sync', 'screen-settings-app', ['screen-sync-join']);
+    if (typeof updateSyncScreen === 'function') updateSyncScreen();
+    return;
   }
 }
 
