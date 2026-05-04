@@ -908,11 +908,23 @@ function openLocations(origin) {
 // de la sub-pantalla (showScreen() amb destí diferent), els fills tornen al
 // seu lloc original. Aquesta tècnica preserva tots els event listeners i
 // l'estat intern dels widgets.
-let _embeddedSourceId = null;
-let _embeddedTargetEl = null;
-let _embeddedHostId   = null;
+//
+// Mentre l'embed és actiu, també redirigim el back-btn de pantalles "filles"
+// (les que s'obren des del cos embeddejat) cap al host de l'embed, perquè
+// la navegació interna torni al sub-pàgina i no a la destinació original.
+let _embeddedSourceId   = null;
+let _embeddedTargetEl   = null;
+let _embeddedHostId     = null;
+let _embeddedChildBacks = []; // [{el, originalBack}]
 
 function restoreEmbeddedSettings() {
+  // Restaurem data-back dels back-btns que vam reescriure.
+  _embeddedChildBacks.forEach(rec => {
+    if (!rec || !rec.el) return;
+    if (rec.originalBack === undefined || rec.originalBack === null) rec.el.removeAttribute('data-back');
+    else rec.el.dataset.back = rec.originalBack;
+  });
+  _embeddedChildBacks = [];
   if (!_embeddedSourceId || !_embeddedTargetEl) return;
   const src = document.getElementById(_embeddedSourceId);
   if (src) {
@@ -923,7 +935,7 @@ function restoreEmbeddedSettings() {
   _embeddedHostId   = null;
 }
 
-function _embedStandaloneBody(targetEl, sourceScreenId, hostScreenId) {
+function _embedStandaloneBody(targetEl, sourceScreenId, hostScreenId, childScreenIds) {
   restoreEmbeddedSettings();
   if (!targetEl) return;
   targetEl.innerHTML = '';
@@ -935,6 +947,16 @@ function _embedStandaloneBody(targetEl, sourceScreenId, hostScreenId) {
   _embeddedSourceId = sourceScreenId;
   _embeddedTargetEl = targetEl;
   _embeddedHostId   = hostScreenId;
+  _embeddedChildBacks = [];
+  const newBack = hostScreenId.replace(/^screen-/, '');
+  (childScreenIds || []).forEach(cid => {
+    const cs = document.getElementById(cid);
+    if (!cs) return;
+    const cbtn = cs.querySelector('.back-btn');
+    if (!cbtn) return;
+    _embeddedChildBacks.push({ el: cbtn, originalBack: cbtn.dataset.back });
+    cbtn.dataset.back = newBack;
+  });
 }
 
 // Embolcalla showScreen UNA SOLA VEGADA per restaurar contingut prestat
@@ -1023,23 +1045,29 @@ function renderSettingsContent() {
     // pestanya. Tots els listeners (checkbox, fletxes, edit, delete, toggle
     // edit mode, afegir custom) continuen funcionant perquè els elements
     // són els mateixos — només viuen temporalment dins la sub-pantalla.
-    _embedStandaloneBody(area, 'screen-manage-supermarkets', 'screen-settings-content');
+    // Registrem screen-supermarket-edit com a fill perquè el seu back torni
+    // al sub-page mentre estem en aquest flux.
+    _embedStandaloneBody(area, 'screen-manage-supermarkets', 'screen-settings-content', ['screen-supermarket-edit']);
     if (typeof manageSupermarketsMode !== 'undefined') manageSupermarketsMode = 'view';
     if (typeof renderManageSupermarkets === 'function') renderManageSupermarkets();
+    return;
+  }
+
+  if (activeContentTab === 'zones') {
+    // Embolcalla el cos de screen-locations dins la pestanya. La llista,
+    // les fletxes de reordenació i el botó "Nova ubicació" continuen
+    // funcionant tal com ho fan a la pantalla autònoma. Editar una zona
+    // navega a screen-location-edit; mentre l'embed és actiu, el seu back
+    // torna a la sub-pàgina.
+    _embedStandaloneBody(area, 'screen-locations', 'screen-settings-content', ['screen-location-edit']);
+    if (typeof renderLocationsList === 'function') renderLocationsList();
     return;
   }
 
   area.innerHTML = '';
 
   let summary = '', label = '', action = null;
-  if (activeContentTab === 'zones') {
-    const n = (typeof locations !== 'undefined' && Array.isArray(locations)) ? locations.length : 0;
-    summary = '<p class="settings-sub-summary">📍 ' + n + ' ' + escapeHtml(t('zonesCount')) + '</p>';
-    label = t('manageZones');
-    action = () => {
-      if (typeof openLocations === 'function') openLocations('settings-content');
-    };
-  } else if (activeContentTab === 'populars') {
+  if (activeContentTab === 'populars') {
     const n = (typeof getPopularProducts === 'function') ? getPopularProducts().length : 0;
     summary = '<p class="settings-sub-summary">⭐ ' + n + ' ' + escapeHtml(t('popularsCount')) + '</p>';
     label = t('managePopulars');
