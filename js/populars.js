@@ -254,8 +254,7 @@ function savePopularEdit() {
   }
   savePopularProducts(list);
   showToast(t('saved'));
-  showScreen('popular');
-  renderPopularList();
+  _returnFromPopularEdit();
 }
 
 function deletePopularEdit() {
@@ -264,6 +263,19 @@ function deletePopularEdit() {
   const list = getPopularProducts();
   list.splice(editingPopularIdx, 1);
   savePopularProducts(list);
+  _returnFromPopularEdit();
+}
+
+// Després de guardar / esborrar des de popular-edit, tornem a la
+// pantalla d'origen: si venim de Configuració > Contingut > Productes
+// re-renderitzem la sub-pantalla; si venim de la llista standalone hi
+// tornem.
+function _returnFromPopularEdit() {
+  if (popularOrigin === 'settings') {
+    if (typeof renderSettingsContent === 'function') renderSettingsContent();
+    showScreen('settings-content');
+    return;
+  }
   showScreen('popular');
   renderPopularList();
 }
@@ -430,6 +442,15 @@ function updatePopularButtons() {
     if (addBtn) addBtn.style.display = 'none';
     if (sortBtn) sortBtn.style.display = 'none';
     if (saveBtn) saveBtn.style.display = 'none';
+  }
+
+  // Manté el botó d'acció de la sub-pantalla Configuració > Contingut
+  // sincronitzat quan el mode canvia des de fora (p.e. "Guardar canvis").
+  const subActionBtn = document.getElementById('settings-content-action-btn');
+  if (subActionBtn && subActionBtn.dataset.role === 'popular') {
+    subActionBtn.textContent = popularMode === 'edit' ? '✓' : '✏️';
+    subActionBtn.classList.toggle('is-active', popularMode === 'edit');
+    subActionBtn.setAttribute('aria-label', popularMode === 'edit' ? 'Done' : 'Edit');
   }
 }
 

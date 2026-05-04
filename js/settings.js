@@ -1056,6 +1056,54 @@ function _subContentBlock(summaryHtml, btnLabel, onClick) {
   return wrap;
 }
 
+// Configura el botó d'acció (✏️/✓) de la capçalera de Configuració >
+// Contingut segons la pestanya activa. Per a tabs amb mode edició
+// (Botigues, Productes, Receptes) mostrem un toggle; per a Zones l'amaguem.
+function _updateSettingsContentActionBtn() {
+  const btn = document.getElementById('settings-content-action-btn');
+  if (!btn) return;
+  // Reset estats anteriors
+  btn.onclick = null;
+  btn.classList.remove('is-active');
+  btn.style.display = 'none';
+  btn.dataset.role = '';
+
+  if (activeContentTab === 'populars') {
+    btn.style.display = 'flex';
+    btn.dataset.role = 'popular';
+    const inEdit = (typeof popularMode !== 'undefined' && popularMode === 'edit');
+    btn.textContent = inEdit ? '✓' : '✏️';
+    btn.setAttribute('aria-label', inEdit ? 'Done' : 'Edit');
+    btn.classList.toggle('is-active', inEdit);
+    btn.onclick = () => {
+      if (typeof togglePopularEditMode === 'function') togglePopularEditMode();
+      _updateSettingsContentActionBtn();
+    };
+  } else if (activeContentTab === 'botigues') {
+    btn.style.display = 'flex';
+    btn.dataset.role = 'shops';
+    const inEdit = (typeof manageSupermarketsMode !== 'undefined' && manageSupermarketsMode === 'edit');
+    btn.textContent = inEdit ? '✓' : '✏️';
+    btn.setAttribute('aria-label', inEdit ? 'Done' : 'Edit');
+    btn.classList.toggle('is-active', inEdit);
+    btn.onclick = () => {
+      if (typeof toggleEditShopsMode === 'function') toggleEditShopsMode();
+      _updateSettingsContentActionBtn();
+    };
+  } else if (activeContentTab === 'receptes') {
+    btn.style.display = 'flex';
+    btn.dataset.role = 'recipes';
+    const inEdit = (typeof recipeEditMode !== 'undefined' && recipeEditMode === true);
+    btn.textContent = inEdit ? '✓' : '✏️';
+    btn.setAttribute('aria-label', inEdit ? 'Done' : 'Edit');
+    btn.classList.toggle('is-active', inEdit);
+    btn.onclick = () => {
+      if (typeof toggleRecipeEditMode === 'function') toggleRecipeEditMode();
+      _updateSettingsContentActionBtn();
+    };
+  }
+}
+
 function renderSettingsContent() {
   document.querySelectorAll('#screen-settings-content .sub-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.subtab === activeContentTab);
@@ -1073,6 +1121,7 @@ function renderSettingsContent() {
     _embedStandaloneBody(area, 'screen-manage-supermarkets', 'screen-settings-content', ['screen-supermarket-edit']);
     if (typeof manageSupermarketsMode !== 'undefined') manageSupermarketsMode = 'view';
     if (typeof renderManageSupermarkets === 'function') renderManageSupermarkets();
+    _updateSettingsContentActionBtn();
     return;
   }
 
@@ -1084,6 +1133,7 @@ function renderSettingsContent() {
     // torna a la sub-pàgina.
     _embedStandaloneBody(area, 'screen-locations', 'screen-settings-content', ['screen-location-edit']);
     if (typeof renderLocationsList === 'function') renderLocationsList();
+    _updateSettingsContentActionBtn();
     return;
   }
 
@@ -1092,12 +1142,16 @@ function renderSettingsContent() {
     // llista, toolbar (sort/add custom) i botó "Guardar canvis" continuen
     // funcionant. Editar un popular obre screen-popular-edit — registrem-lo
     // com a fill perquè el back torni al sub-pàgina.
+    // popularOrigin='settings' és CRÍTIC: sense això, clicar una fila
+    // dispara openAddForm (BiteMe) en comptes d'editar el popular.
     _embedStandaloneBody(area, 'screen-popular', 'screen-settings-content', ['screen-popular-edit']);
+    if (typeof popularOrigin !== 'undefined') popularOrigin = 'settings';
     if (typeof popularMode !== 'undefined') popularMode = 'view';
     if (typeof popularSearchQuery !== 'undefined') popularSearchQuery = '';
     const searchInput = document.getElementById('popular-search');
     if (searchInput) searchInput.value = '';
     if (typeof renderPopularList === 'function') renderPopularList();
+    _updateSettingsContentActionBtn();
     return;
   }
 
@@ -1110,6 +1164,7 @@ function renderSettingsContent() {
     if (typeof recipeEditMode !== 'undefined') recipeEditMode = false;
     if (typeof updateRecipeEditModeBtn === 'function') updateRecipeEditModeBtn();
     if (typeof renderCookMe === 'function') renderCookMe();
+    _updateSettingsContentActionBtn();
     return;
   }
 }
