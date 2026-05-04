@@ -49,14 +49,8 @@ function saveCustomRecipes() {
 function updateRecipesCount() {
   const el = document.getElementById('recipes-count');
   if (!el) return;
-  const customN = Array.isArray(customRecipes) ? customRecipes.length : 0;
-  const overrideN = recipeOverrides ? Object.keys(recipeOverrides).length : 0;
-  const total = customN + overrideN;
-  if (total > 0) {
-    el.textContent = t('recipesCustomCount', total);
-  } else {
-    el.textContent = t('recipesEmptySub');
-  }
+  const total = (typeof getAllRecipes === 'function') ? getAllRecipes().length : 0;
+  el.textContent = total + ' ' + t('recipesCount');
 }
 
 function loadRecipeOverrides() {

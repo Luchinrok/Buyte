@@ -81,13 +81,7 @@ function pushToServer() {
 function updateSyncStatus() {
   const subEl = document.getElementById('sync-status');
   if (!subEl) return;
-
-  if (syncEnabled) {
-    const code = window.FBSync.getCurrentListId();
-    subEl.textContent = '✓ ' + (code || '');
-  } else {
-    subEl.textContent = t('syncNotActive');
-  }
+  subEl.textContent = syncEnabled ? t('syncOn') : t('syncOff');
 }
 
 function updateSyncScreen() {
@@ -939,8 +933,7 @@ function updateSupermarketsStatus() {
   const el = document.getElementById('supermarkets-status');
   if (!el) return;
   const enabled = getEnabledSupermarkets().length;
-  const total = supermarkets.length;
-  el.textContent = enabled + ' / ' + total + ' ' + t('active');
+  el.textContent = enabled + ' ' + t('storesActive');
 }
 
 // CONFIGURACIÓ
@@ -994,21 +987,25 @@ function updateStatsSub() {
     }
   } catch (e) {}
   const total = consumed + trashed;
-  if (total > 0) el.textContent = t('statsText', consumed, trashed);
-  else el.textContent = t('statsEmpty');
+  if (total === 0) {
+    el.textContent = t('statsSubEmpty');
+    return;
+  }
+  const pct = Math.round((consumed / total) * 100);
+  el.textContent = pct + '% ' + t('statsSubGlobal');
 }
 
 function updateLocationsCount() {
   const el = document.getElementById('locations-count');
   if (!el) return;
-  el.textContent = locations.length + ' ' + (locations.length === 1 ? t('locationSingular') : t('locationPlural'));
+  el.textContent = locations.length + ' ' + t('zonesCount');
 }
 
 function updatePopularCount() {
   const el = document.getElementById('popular-count');
   if (!el) return;
   const n = (typeof getPopularProducts === 'function') ? getPopularProducts().length : 0;
-  el.textContent = n + ' ' + (n === 1 ? t('productSingular') : t('productPlural'));
+  el.textContent = n + ' ' + t('popularsCount');
 }
 
 function renderLangList() {

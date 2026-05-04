@@ -397,15 +397,25 @@ function showImpactInfoModal(kind) {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
-// Resum curt per la card de configuració.
+// Resum curt per la card de configuració. Si no hi ha historial mostrem
+// un teaser; si n'hi ha, l'estalvi del mes corrent (entries amb data dins
+// del mes natural actual).
 function updateImpactSub() {
   const el = document.getElementById('impact-sub');
   if (!el) return;
   const history = loadConsumptionHistory();
-  if (history.length === 0) {
-    el.textContent = t('impactEmpty');
+  if (!history || history.length === 0) {
+    el.textContent = t('impactSubEmpty');
     return;
   }
-  const m = computeMetrics(history);
-  el.textContent = fmtEur(m.savedEur) + ' · ' + fmtCo2(m.savedCo2);
+  const now = new Date();
+  const y = now.getFullYear();
+  const mIdx = now.getMonth();
+  const monthEntries = history.filter(e => {
+    if (!e || !e.date) return false;
+    const d = new Date(e.date);
+    return d.getFullYear() === y && d.getMonth() === mIdx;
+  });
+  const m = computeMetrics(monthEntries);
+  el.textContent = fmtEur(m.savedEur) + ' ' + t('savedThisMonth');
 }
