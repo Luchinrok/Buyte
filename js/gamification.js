@@ -409,6 +409,28 @@ function _checkBadgesSilent() {
   return newly;
 }
 
+// Comprovació inicial després d'instal·lar la gamificació: desbloqueja
+// retroactivament totes les insignies que ja toquen segons les dades
+// existents (productes, BuyMe, historial, receptes, supers...) sense
+// disparar 5-10 toasts encadenats. Mostra un únic toast resum.
+// Idempotent: només s'executa la primera vegada gràcies al flag
+// `eatmefirst_initial_check_done`.
+function checkInitialBadges() {
+  if (localStorage.getItem('eatmefirst_initial_check_done') === 'true') return [];
+  // Marquem el flag ABANS del check perquè un error enmig no provoqui
+  // que es repeteixi a cada arrencada.
+  try { localStorage.setItem('eatmefirst_initial_check_done', 'true'); } catch (e) {}
+
+  const newly = _checkBadgesSilent();
+  saveGamificationState();
+
+  if (newly.length > 0 && typeof showToast === 'function') {
+    // Petit retard perquè el toast no s'ofegui amb altres rerenders del boot.
+    setTimeout(() => showToast(t('initialBadgesSummary', newly.length)), 600);
+  }
+  return newly;
+}
+
 // Punt d'entrada públic: comprova insignies i mostra la cua de recompenses.
 // Calcula el nivell ABANS i DESPRÉS, així si una insignia (via xpReward)
 // fa pujar de nivell, també n'emetem l'esdeveniment.
@@ -741,6 +763,9 @@ function resetGamificationProgress() {
     localStorage.removeItem('eatmefirst_buyme_added_count');
     localStorage.removeItem('eatmefirst_shops_completed_count');
     localStorage.removeItem('eatmefirst_special_lists_used');
+    // Esborrem també el flag perquè el proper boot torni a fer el check
+    // retroactiu i, si l'usuari ja té dades, mostri el toast resum.
+    localStorage.removeItem('eatmefirst_initial_check_done');
   } catch (e) {}
 }
 

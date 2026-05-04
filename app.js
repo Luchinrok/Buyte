@@ -16,7 +16,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof loadRecipeOverrides === 'function') loadRecipeOverrides();
   if (typeof loadGamificationState === 'function') {
     loadGamificationState();
-    // Comprovem insígnies a l'arrencada per si s'han desbloquejat estant offline.
+    // Primer boot després d'instal·lar la gamificació: desbloca retroactivament
+    // les insignies que l'usuari ja s'hauria guanyat amb les dades existents.
+    if (typeof checkInitialBadges === 'function') checkInitialBadges();
+    // Després, comprovació regular per si s'ha desbloquejat alguna mentre
+    // l'app estava tancada (streak, etc.).
     if (typeof checkBadges === 'function') checkBadges();
   }
 

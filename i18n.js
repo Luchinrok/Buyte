@@ -575,6 +575,9 @@ const TRANSLATIONS = {
     resetGamificationTitle: 'Esborrar progrés de gamificació',
     resetGamificationSub: 'Esborra XP, insignies i comptadors',
     resetGamificationConfirm: "Vols esborrar tot el progrés de gamificació (XP, insignies i comptadors)? Aquesta acció no es pot desfer.",
+    initialBadgesSummary: (n) => '🏆 ' + (n === 1
+      ? '1 insignia desbloquejada pel teu progrés inicial!'
+      : n + ' insignies desbloquejades pel teu progrés inicial!'),
   }
 
 };
