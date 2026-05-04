@@ -584,10 +584,12 @@ function _showLevelUpToast(level, onDone) {
 //   PANTALLA "ELS MEUS ÈXITS"
 // ============================================
 
-let achievementsFilter = 'all';
+// Filtre per defecte = 'inici': la llista sencera és llarga (45 insignies)
+// i els primers passos són els més rellevants quan obres la pantalla.
+let achievementsFilter = 'inici';
 
 function openAchievements() {
-  achievementsFilter = 'all';
+  achievementsFilter = 'inici';
   renderAchievements();
   showScreen('achievements');
 }
