@@ -1657,26 +1657,27 @@
       <div style="width:40px"></div>
     </header>
 
+    <!-- Banner de nivell + entrada a "Els meus èxits" — sempre visible,
+         independentment de si hi ha o no historial de consumicions. -->
+    <button type="button" class="level-banner level-banner-clickable" id="impact-level-banner">
+      <div class="level-banner-avatar" id="impact-level-avatar">🌱</div>
+      <div class="level-banner-body">
+        <p class="level-banner-tier" id="impact-level-tier">-</p>
+        <p class="level-banner-name" id="impact-level-name">-</p>
+        <div class="level-banner-progress">
+          <div class="level-banner-progress-fill" id="impact-level-progress-fill" style="width:0%"></div>
+        </div>
+        <p class="level-banner-entry" id="impact-level-entry">-</p>
+      </div>
+      <span class="level-banner-arrow">›</span>
+    </button>
+
     <div id="impact-empty" class="impact-empty" style="display:none">
       <div class="celebrate-emoji">📊</div>
       <p class="celebrate-title" data-i18n="noImpactData"></p>
     </div>
 
     <div id="impact-body">
-      <!-- Banner de nivell + entrada a "Els meus èxits" -->
-      <button type="button" class="level-banner level-banner-clickable" id="impact-level-banner">
-        <div class="level-banner-avatar" id="impact-level-avatar">🌱</div>
-        <div class="level-banner-body">
-          <p class="level-banner-tier" id="impact-level-tier">-</p>
-          <p class="level-banner-name" id="impact-level-name">-</p>
-          <div class="level-banner-progress">
-            <div class="level-banner-progress-fill" id="impact-level-progress-fill" style="width:0%"></div>
-          </div>
-          <p class="level-banner-entry" id="impact-level-entry">-</p>
-        </div>
-        <span class="level-banner-arrow">›</span>
-      </button>
-
       <div class="impact-period-pills" id="impact-period-pills">
         <button class="impact-period-pill" data-period="week" data-i18n="thisWeek"></button>
         <button class="impact-period-pill active" data-period="month" data-i18n="thisMonth"></button>
