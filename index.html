@@ -1484,18 +1484,11 @@
       <div style="width:40px"></div>
     </header>
 
-    <!-- Estat dels permisos del navegador -->
-    <div class="smart-notif-perm" id="smart-notif-perm">
-      <span class="smart-notif-perm-icon" id="smart-notif-perm-icon">🔔</span>
-      <p class="smart-notif-perm-status" id="smart-notif-perm-status">-</p>
-      <p class="smart-notif-perm-help" id="smart-notif-perm-help"></p>
-      <button type="button" id="smart-notif-request-perm" class="primary-btn" style="display:none" data-i18n="notifRequestPermission"></button>
-    </div>
-
-    <!-- Master switch -->
+    <!-- Master switch — sempre visible -->
     <div class="notif-row" id="smart-notif-master-row">
       <div class="notif-row-info">
         <p class="notif-row-title">🔔 <span data-i18n="notifMaster"></span></p>
+        <p class="notif-row-sub" id="smart-notif-master-sub" data-i18n="notifMasterOffHint"></p>
       </div>
       <label class="toggle">
         <input type="checkbox" id="smart-notif-master">
@@ -1503,18 +1496,48 @@
       </label>
     </div>
 
-    <!-- Llista de tipus -->
-    <p class="notif-section-title" data-i18n="notifWhichTypes"></p>
-    <div id="smart-notif-types-list" class="smart-notif-types-list"></div>
+    <!-- Tot el bloc inferior només es mostra si master està activat -->
+    <div id="smart-notif-when-on" style="display:none">
 
-    <!-- Botó de prova -->
-    <button id="smart-notif-test-btn" class="secondary-btn" style="margin-top:20px">
-      <span style="font-size:22px;margin-right:8px">🔔</span>
-      <span data-i18n="notifTestButton"></span>
-    </button>
+      <!-- Banner d'estat dels permisos del navegador -->
+      <div class="perm-banner" id="smart-notif-perm">
+        <span class="perm-banner-icon" id="smart-notif-perm-icon">🔔</span>
+        <div class="perm-banner-body">
+          <p class="perm-banner-title" id="smart-notif-perm-status">-</p>
+          <p class="perm-banner-help" id="smart-notif-perm-help"></p>
+        </div>
+        <button type="button" id="smart-notif-request-perm" class="primary-btn" style="display:none" data-i18n="notifRequestPermission"></button>
+        <button type="button" id="smart-notif-recheck" class="secondary-btn" style="display:none" data-i18n="notifPermRecheck"></button>
+      </div>
 
-    <!-- Avís d'instal·lació PWA -->
-    <p class="smart-notif-install-tip" id="smart-notif-install-tip" data-i18n="notifInstallTip"></p>
+      <!-- Hint sota el botó "Permetre notificacions" -->
+      <p class="smart-notif-prompt-hint" id="smart-notif-prompt-hint" style="display:none" data-i18n="notifPromptHint"></p>
+
+      <!-- Instruccions per quan els permisos estan denegats -->
+      <div class="perm-denied-instructions" id="smart-notif-denied-help" style="display:none">
+        <p class="perm-denied-title" data-i18n="notifPermDeniedTitle"></p>
+        <ul class="perm-denied-list">
+          <li><strong>Chrome/Edge:</strong> <span data-i18n="notifPermDeniedChrome"></span></li>
+          <li><strong>Firefox:</strong> <span data-i18n="notifPermDeniedFirefox"></span></li>
+          <li><strong>Safari:</strong> <span data-i18n="notifPermDeniedSafari"></span></li>
+        </ul>
+      </div>
+
+      <!-- Llista de tipus (atenuada si no hi ha permís) -->
+      <div id="smart-notif-types-block">
+        <p class="notif-section-title" data-i18n="notifWhichTypes"></p>
+        <div id="smart-notif-types-list" class="smart-notif-types-list"></div>
+
+        <!-- Botó de prova -->
+        <button id="smart-notif-test-btn" class="secondary-btn" style="margin-top:20px">
+          <span style="font-size:22px;margin-right:8px">🔔</span>
+          <span data-i18n="notifTestButton"></span>
+        </button>
+      </div>
+
+      <!-- Avís d'instal·lació PWA -->
+      <p class="smart-notif-install-tip" id="smart-notif-install-tip" data-i18n="notifInstallTip"></p>
+    </div>
   </div>
 
   <div id="screen-sync" class="screen">

@@ -611,6 +611,13 @@ const TRANSLATIONS = {
     notifStatusOnDenied: 'Activades · Permís denegat',
     notifPermDeniedHelp: "Per activar-los has d'anar a la configuració del navegador i permetre notificacions per aquesta web.",
     notifPermPromptClosed: "Has tancat el missatge sense respondre. Torna a clicar 'Permetre notificacions' per intentar-ho de nou",
+    notifMasterOffHint: 'Activa el toggle per començar',
+    notifPromptHint: 'El navegador et demanarà permís quan cliquis aquest botó.',
+    notifPermRecheck: 'Tornar a comprovar',
+    notifPermDeniedTitle: 'Com tornar a permetre notificacions',
+    notifPermDeniedChrome: "Clica el cadenat de la barra d'adreces, busca 'Notificacions' i selecciona 'Permetre'. Després torna aquí i clica 'Tornar a comprovar'.",
+    notifPermDeniedFirefox: "Clica el cadenat, obre 'Més informació', vés a 'Permisos' i marca 'Permetre' per a notificacions.",
+    notifPermDeniedSafari: "Vés a Safari → Configuració → Llocs web → Notificacions i selecciona 'Permetre' per aquesta web.",
   }
 
 };

@@ -292,53 +292,88 @@ function openNotificationsScreen() {
   showScreen('notifications');
 }
 
-// Pinta tota la pantalla de configuració de notificacions: estat de permisos
-// + master switch + llista de tipus. Cada tipus dibuixa un toggle i, si
-// correspon, els xips d'hora i dia. Tots els controls es lliguen en un sol
-// pas per simplificar el rerender després d'interaccions.
+// Pinta tota la pantalla de configuració de notificacions amb els 4 estats:
+//  1) master OFF: només master + sub explicatiu, resta amagada
+//  2) master ON + permís 'granted': perm banner verd + tipus + test
+//  3) master ON + permís 'default': perm banner groc + botó "Permetre" +
+//     tipus atenuats
+//  4) master ON + permís 'denied': perm banner vermell + instruccions de
+//     navegador + botó "Tornar a comprovar" + tipus atenuats
 function renderSmartNotifSettingsScreen() {
   if (typeof getSmartNotifSettings !== 'function' || typeof SMART_NOTIF_TYPES === 'undefined') return;
   const settings = getSmartNotifSettings();
 
-  // Estat de permisos — sempre llegim Notification.permission en directe.
+  // Estat live
   const permStatus = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+  const masterOn = !!settings.enabled;
+
+  // Master switch + sub
+  const masterCb = document.getElementById('smart-notif-master');
+  if (masterCb) masterCb.checked = masterOn;
+  const masterSub = document.getElementById('smart-notif-master-sub');
+  if (masterSub) masterSub.textContent = masterOn ? '' : t('notifMasterOffHint');
+
+  // Bloc condicional
+  const whenOn = document.getElementById('smart-notif-when-on');
+  if (whenOn) whenOn.style.display = masterOn ? 'block' : 'none';
+
+  if (!masterOn) return;
+
+  // Banner de permisos (només quan master ON)
   const permCard = document.getElementById('smart-notif-perm');
   const permIcon = document.getElementById('smart-notif-perm-icon');
   const permEl = document.getElementById('smart-notif-perm-status');
   const permHelp = document.getElementById('smart-notif-perm-help');
   const reqBtn = document.getElementById('smart-notif-request-perm');
+  const recheckBtn = document.getElementById('smart-notif-recheck');
+  const promptHint = document.getElementById('smart-notif-prompt-hint');
+  const deniedHelp = document.getElementById('smart-notif-denied-help');
+  const typesBlock = document.getElementById('smart-notif-types-block');
 
-  // Reset classes d'estat
-  if (permCard) {
-    permCard.classList.remove('is-granted', 'is-denied', 'is-default', 'is-unsupported');
-  }
+  if (permCard) permCard.classList.remove('perm-banner-info','perm-banner-error','perm-banner-success','perm-banner-warning');
 
-  let icon = '🔔', help = '';
   if (permStatus === 'granted') {
-    icon = '✅';
+    if (permIcon) permIcon.textContent = '✅';
     if (permEl) permEl.textContent = t('notifPermStatusGranted');
-    if (permCard) permCard.classList.add('is-granted');
+    if (permHelp) permHelp.textContent = '';
+    if (permCard) permCard.classList.add('perm-banner-success');
+    if (reqBtn) reqBtn.style.display = 'none';
+    if (recheckBtn) recheckBtn.style.display = 'none';
+    if (promptHint) promptHint.style.display = 'none';
+    if (deniedHelp) deniedHelp.style.display = 'none';
+    if (typesBlock) typesBlock.classList.remove('is-disabled');
   } else if (permStatus === 'denied') {
-    icon = '🚫';
+    if (permIcon) permIcon.textContent = '🚫';
     if (permEl) permEl.textContent = t('notifPermStatusDenied');
-    help = t('notifPermDeniedHelp');
-    if (permCard) permCard.classList.add('is-denied');
+    if (permHelp) permHelp.textContent = '';
+    if (permCard) permCard.classList.add('perm-banner-error');
+    if (reqBtn) reqBtn.style.display = 'none';
+    if (recheckBtn) recheckBtn.style.display = 'flex';
+    if (promptHint) promptHint.style.display = 'none';
+    if (deniedHelp) deniedHelp.style.display = 'block';
+    if (typesBlock) typesBlock.classList.add('is-disabled');
   } else if (permStatus === 'unsupported') {
-    icon = 'ℹ️';
+    if (permIcon) permIcon.textContent = 'ℹ️';
     if (permEl) permEl.textContent = t('notifPermStatusUnsupported');
-    if (permCard) permCard.classList.add('is-unsupported');
+    if (permHelp) permHelp.textContent = '';
+    if (permCard) permCard.classList.add('perm-banner-warning');
+    if (reqBtn) reqBtn.style.display = 'none';
+    if (recheckBtn) recheckBtn.style.display = 'none';
+    if (promptHint) promptHint.style.display = 'none';
+    if (deniedHelp) deniedHelp.style.display = 'none';
+    if (typesBlock) typesBlock.classList.add('is-disabled');
   } else {
-    icon = '🔔';
+    // 'default' — encara no demanat o usuari ha tancat el prompt
+    if (permIcon) permIcon.textContent = '⚠️';
     if (permEl) permEl.textContent = t('notifPermStatusDefault');
-    if (permCard) permCard.classList.add('is-default');
+    if (permHelp) permHelp.textContent = '';
+    if (permCard) permCard.classList.add('perm-banner-info');
+    if (reqBtn) reqBtn.style.display = 'flex';
+    if (recheckBtn) recheckBtn.style.display = 'none';
+    if (promptHint) promptHint.style.display = 'block';
+    if (deniedHelp) deniedHelp.style.display = 'none';
+    if (typesBlock) typesBlock.classList.add('is-disabled');
   }
-  if (permIcon) permIcon.textContent = icon;
-  if (permHelp) permHelp.textContent = help;
-  if (reqBtn) reqBtn.style.display = (permStatus === 'default') ? 'flex' : 'none';
-
-  // Master switch
-  const masterCb = document.getElementById('smart-notif-master');
-  if (masterCb) masterCb.checked = !!settings.enabled;
 
   // Llista de tipus
   const list = document.getElementById('smart-notif-types-list');
@@ -373,7 +408,6 @@ function renderSmartNotifSettingsScreen() {
       '</label>';
     list.appendChild(row);
 
-    // Listeners de la fila
     const cb = row.querySelector('[data-action="toggle"]');
     if (cb) cb.addEventListener('change', (e) => {
       setSmartNotifType(meta.id, { enabled: e.target.checked });

@@ -6574,52 +6574,101 @@ h1 {
 }
 
 /* ===== SMART NOTIFICATIONS — Pantalla de configuració ===== */
-.smart-notif-perm {
+.perm-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px 18px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   transition: background 0.2s, border-color 0.2s;
 }
 
-.smart-notif-perm-icon {
+.perm-banner-icon {
   font-size: 32px;
   line-height: 1;
-  display: block;
   margin-bottom: 6px;
 }
 
-.smart-notif-perm-status {
+.perm-banner-body { width: 100%; }
+
+.perm-banner-title {
   font-size: 14px;
   font-weight: 700;
   margin: 0 0 4px;
   color: var(--text);
 }
 
-.smart-notif-perm-help {
+.perm-banner-help {
   font-size: 12.5px;
   color: var(--text-soft);
   margin: 4px 0 0;
   line-height: 1.4;
 }
-.smart-notif-perm-help:empty { display: none; }
+.perm-banner-help:empty { display: none; }
 
-.smart-notif-perm.is-default {
-  background: rgba(33, 150, 243, 0.08);
-  border-color: rgba(33, 150, 243, 0.35);
+.perm-banner-info {
+  background: rgba(255, 213, 79, 0.18);
+  border-color: rgba(245, 127, 23, 0.45);
 }
-.smart-notif-perm.is-granted {
-  background: rgba(76, 175, 80, 0.10);
-  border-color: rgba(76, 175, 80, 0.35);
+.perm-banner-warning {
+  background: rgba(255, 213, 79, 0.18);
+  border-color: rgba(245, 127, 23, 0.45);
 }
-.smart-notif-perm.is-denied {
+.perm-banner-success {
+  background: rgba(76, 175, 80, 0.12);
+  border-color: rgba(76, 175, 80, 0.45);
+}
+.perm-banner-error {
   background: rgba(244, 67, 54, 0.10);
-  border-color: rgba(244, 67, 54, 0.35);
+  border-color: rgba(244, 67, 54, 0.45);
 }
 
-.smart-notif-perm .primary-btn { margin: 12px 0 0; }
+.perm-banner .primary-btn,
+.perm-banner .secondary-btn { margin: 12px 0 0; max-width: 280px; }
+
+.smart-notif-prompt-hint {
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--text-soft);
+  margin: -8px 0 14px;
+  font-style: italic;
+}
+
+.perm-denied-instructions {
+  background: rgba(244, 67, 54, 0.06);
+  border: 1px solid rgba(244, 67, 54, 0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.perm-denied-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+
+.perm-denied-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.45;
+}
+.perm-denied-list li { margin-bottom: 6px; }
+.perm-denied-list li:last-child { margin-bottom: 0; }
+
+/* Bloc de tipus + test atenuat quan no es pot fer res sense permís */
+#smart-notif-types-block.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  filter: grayscale(40%);
+}
 
 .smart-notif-types-list {
   display: flex;

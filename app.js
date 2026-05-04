@@ -434,12 +434,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnReqPerm = document.getElementById('smart-notif-request-perm');
   if (btnReqPerm) btnReqPerm.addEventListener('click', handleRequestPermission);
 
-  // Master switch
+  // Master switch — re-renderitza tota la pantalla per mostrar/amagar el bloc
+  // condicional segons l'estat.
   const togMaster = document.getElementById('smart-notif-master');
   if (togMaster) togMaster.addEventListener('change', (e) => {
     if (typeof setSmartNotifMaster === 'function') setSmartNotifMaster(e.target.checked);
+    if (typeof renderSmartNotifSettingsScreen === 'function') renderSmartNotifSettingsScreen();
     updateNotifStatus();
     showToast(e.target.checked ? '✅ ' + t('notifActivated') : t('notifDeactivated'));
+  });
+
+  // Botó "Tornar a comprovar" en estat denied: només refresca l'estat
+  const btnRecheck = document.getElementById('smart-notif-recheck');
+  if (btnRecheck) btnRecheck.addEventListener('click', () => {
+    if (typeof renderSmartNotifSettingsScreen === 'function') renderSmartNotifSettingsScreen();
+    updateNotifStatus();
   });
 
   // Botó "Provar notificació"
