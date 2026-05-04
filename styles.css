@@ -685,25 +685,25 @@ h1 {
 }
 
 /* Pestanyes (pills) per a les sub-pantalles de Configuració. Centrades
-   horitzontalment; amb scroll-x quan no caben totes en pantalles estretes
-   (justify-content: center es manté igualment per als casos típics de
-   2-4 pills). */
+   horitzontalment, amb wrap per defecte: amb 4 pills cauen 2+2 gràcies a
+   min-width al pill (no surt 3+1); amb 2 o 3 pills queden en una sola fila. */
 .sub-tabs-container {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   gap: 8px;
   padding: 8px 4px 14px;
-  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 .sub-tabs-container::-webkit-scrollbar { display: none; }
 
 .sub-tab {
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 130px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 9px 16px;
   border-radius: 999px;
