@@ -1064,18 +1064,24 @@ function renderSettingsContent() {
     return;
   }
 
+  if (activeContentTab === 'populars') {
+    // Embolcalla el cos de screen-popular dins la pestanya. Cercador,
+    // llista, toolbar (sort/add custom) i botó "Guardar canvis" continuen
+    // funcionant. Editar un popular obre screen-popular-edit — registrem-lo
+    // com a fill perquè el back torni al sub-pàgina.
+    _embedStandaloneBody(area, 'screen-popular', 'screen-settings-content', ['screen-popular-edit']);
+    if (typeof popularMode !== 'undefined') popularMode = 'view';
+    if (typeof popularSearchQuery !== 'undefined') popularSearchQuery = '';
+    const searchInput = document.getElementById('popular-search');
+    if (searchInput) searchInput.value = '';
+    if (typeof renderPopularList === 'function') renderPopularList();
+    return;
+  }
+
   area.innerHTML = '';
 
   let summary = '', label = '', action = null;
-  if (activeContentTab === 'populars') {
-    const n = (typeof getPopularProducts === 'function') ? getPopularProducts().length : 0;
-    summary = '<p class="settings-sub-summary">⭐ ' + n + ' ' + escapeHtml(t('popularsCount')) + '</p>';
-    label = t('managePopulars');
-    action = () => {
-      if (typeof openPopular === 'function') openPopular('settings-content');
-      else { showScreen('popular'); if (typeof renderPopularList === 'function') renderPopularList(); }
-    };
-  } else if (activeContentTab === 'receptes') {
+  if (activeContentTab === 'receptes') {
     const n = (typeof getAllRecipes === 'function') ? getAllRecipes().length : 0;
     summary = '<p class="settings-sub-summary">🍳 ' + n + ' ' + escapeHtml(t('recipesCount')) + '</p>';
     label = t('manageRecipes');
