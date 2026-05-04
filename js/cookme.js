@@ -7,8 +7,11 @@
    ============================================ */
 
 
-// Filtre actiu: 'all' (per defecte) | 'available' | 'used' | 'mine' | 'edited'
-let currentRecipeFilter = 'all';
+// Filtre actiu: 'available' (per defecte) | 'all' | 'used' | 'mine' | 'edited'.
+// Persisteix entre obertures de CookMe dins de la sessió: la primera vegada
+// l'usuari aterra a "Disponibles" perquè vegi directament què pot cuinar; a
+// partir d'aquí, l'app recorda l'última tria fins que es recarrega la pàgina.
+let currentRecipeFilter = 'available';
 // D'on s'ha obert CookMe: 'home' (per defecte) o 'settings'. Determina la
 // pantalla a la qual torna el botó back.
 let cookmeOrigin = 'home';
@@ -241,13 +244,14 @@ function calculateRecipeMatch(recipe, userProducts) {
 // botó "back" — així es pot reutilitzar la mateixa pantalla des de Configuració.
 function openCookMe(origin) {
   cookmeOrigin = origin || 'home';
-  currentRecipeFilter = 'all';
+  // Filtre: NO el resetegem perquè es recordi entre obertures dins la sessió.
+  // El valor inicial al primer boot és 'available' (vegeu currentRecipeFilter).
   cookmeSearch = '';
   cookmeSort = 'percent';
   recipeEditMode = false;
   updateRecipeEditModeBtn();
   applyCookMeBackTarget();
-  // Sincronitza estat visual dels filtres
+  // Sincronitza l'estat visual dels filtres amb el valor actiu
   document.querySelectorAll('#cookme-filters .cookme-filter').forEach(b => {
     b.classList.toggle('active', b.dataset.filter === currentRecipeFilter);
   });
