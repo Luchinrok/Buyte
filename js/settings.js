@@ -101,8 +101,13 @@ function updateSyncScreen() {
   }
 }
 
-function openSyncScreen() {
+function openSyncScreen(origin) {
   updateSyncScreen();
+  const backBtn = document.querySelector('#screen-sync .back-btn');
+  if (backBtn) {
+    const isSettings = origin === 'settings' || (typeof origin === 'string' && origin.indexOf('settings-') === 0);
+    backBtn.dataset.back = isSettings ? origin : 'settings';
+  }
   showScreen('sync');
 }
 
@@ -279,10 +284,15 @@ function updateNotifStatus() {
   }
 }
 
-function openNotificationsScreen() {
+function openNotificationsScreen(origin) {
   exposeForNotifications();
   if (!window.Notif) return;
   renderSmartNotifSettingsScreen();
+  const backBtn = document.querySelector('#screen-notifications .back-btn');
+  if (backBtn) {
+    const isSettings = origin === 'settings' || (typeof origin === 'string' && origin.indexOf('settings-') === 0);
+    backBtn.dataset.back = isSettings ? origin : 'settings';
+  }
   showScreen('notifications');
 }
 
@@ -1073,6 +1083,92 @@ function attachSettingsActivityListeners() {
     tab.addEventListener('click', () => {
       activeActivityTab = tab.dataset.subtab || 'impacte';
       renderSettingsActivity();
+    });
+  });
+}
+
+// ----- Sub-pantalla "Aplicació" (Aparença / Notificacions / Sincronització) -----
+let activeAppTab = 'aparenca';
+
+function openSettingsApp() {
+  renderSettingsApp();
+  showScreen('settings-app');
+}
+
+// Llegeix el tema actiu del DOM (data-theme), preferint 'light' com a defecte.
+function _currentThemeMode() {
+  const m = document.documentElement.getAttribute('data-theme');
+  return (m === 'dark') ? 'dark' : 'light';
+}
+
+function _notifSummaryText() {
+  const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+  let masterOn = false;
+  let count = 0;
+  try {
+    const raw = localStorage.getItem('eatmefirst_smart_notif_v2');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      masterOn = parsed && parsed.enabled === true;
+      if (parsed && parsed.types) count = Object.values(parsed.types).filter(c => c && c.enabled).length;
+    } else if (typeof getSmartNotifSettings === 'function') {
+      const s = getSmartNotifSettings();
+      masterOn = !!s.enabled;
+      count = Object.values(s.types || {}).filter(c => c && c.enabled).length;
+    }
+  } catch (e) {}
+  if (perm === 'unsupported') return t('notifNotSupportedShort');
+  if (!masterOn) return t('notifStatusOff');
+  if (perm === 'granted') return t('notifStatusOn', count);
+  if (perm === 'denied') return t('notifStatusOnDenied');
+  return t('notifStatusOnNoPerm');
+}
+
+function renderSettingsApp() {
+  document.querySelectorAll('#screen-settings-app .sub-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.subtab === activeAppTab);
+  });
+  const area = document.getElementById('settings-app-area');
+  if (!area) return;
+  area.innerHTML = '';
+
+  if (activeAppTab === 'aparenca') {
+    // Chips Clar / Fosc — modifiquen el tema directament, sense canvi de pantalla.
+    const wrap = document.createElement('div');
+    wrap.className = 'settings-sub-content';
+    const cur = _currentThemeMode();
+    wrap.innerHTML =
+      '<p class="settings-sub-summary-soft">🎨 ' + escapeHtml(t('appearance')) + '</p>' +
+      '<div class="theme-chips">' +
+        '<button type="button" class="theme-chip' + (cur === 'light' ? ' active' : '') + '" data-mode="light">🌞 ' + escapeHtml(t('lightMode')) + '</button>' +
+        '<button type="button" class="theme-chip' + (cur === 'dark'  ? ' active' : '') + '" data-mode="dark">🌙 ' + escapeHtml(t('darkMode')) + '</button>' +
+      '</div>';
+    area.appendChild(wrap);
+    wrap.querySelectorAll('.theme-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (typeof applyTheme === 'function') applyTheme(chip.dataset.mode);
+        renderSettingsApp();
+      });
+    });
+  } else if (activeAppTab === 'notif') {
+    const summary = '<p class="settings-sub-summary">🔔 ' + escapeHtml(_notifSummaryText()) + '</p>';
+    area.appendChild(_subContentBlock(summary, t('configureNotif'), () => {
+      if (typeof openNotificationsScreen === 'function') openNotificationsScreen('settings-app');
+    }));
+  } else if (activeAppTab === 'sync') {
+    const status = (typeof syncEnabled !== 'undefined' && syncEnabled) ? t('syncOn') : t('syncOff');
+    const summary = '<p class="settings-sub-summary">🔄 ' + escapeHtml(status) + '</p>';
+    area.appendChild(_subContentBlock(summary, t('configureSync'), () => {
+      if (typeof openSyncScreen === 'function') openSyncScreen('settings-app');
+    }));
+  }
+}
+
+function attachSettingsAppListeners() {
+  document.querySelectorAll('#screen-settings-app .sub-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeAppTab = tab.dataset.subtab || 'aparenca';
+      renderSettingsApp();
     });
   });
 }

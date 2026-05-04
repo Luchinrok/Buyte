@@ -167,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof attachSettingsRegionalListeners === 'function') attachSettingsRegionalListeners();
   if (typeof attachSettingsContentListeners === 'function') attachSettingsContentListeners();
   if (typeof attachSettingsActivityListeners === 'function') attachSettingsActivityListeners();
+  if (typeof attachSettingsAppListeners === 'function') attachSettingsAppListeners();
 
   // Banner de nivell (pantalla d'Impacte) → Els meus èxits
   const impactLevelBanner = document.getElementById('impact-level-banner');
