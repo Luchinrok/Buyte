@@ -475,6 +475,15 @@ function renderAlerts() {
 }
 
 // LLISTA - mostra productes d'un nivell DINS de la secció actual
+// Empty states per nivell — icona + títol + missatge curt amb to
+// positiu (especialment a Alerta: és bo no tenir res aquí).
+const SHELF_EMPTY_STATES = {
+  green:  { icon: '🌿', title: 'Cap producte tranquil aquí', message: 'Tot el que tens està més proper a caducar' },
+  yellow: { icon: '✨', title: 'Res a vigilar de moment!',   message: 'No hi ha productes en aquest rang de dates' },
+  orange: { icon: '🌟', title: 'Cap urgència!',              message: 'No tens res que caduqui aviat' },
+  red:    { icon: '🎉', title: 'Excel·lent!',                 message: 'No tens cap producte caducat ni que caduqui avui' }
+};
+
 function openShelf(level) {
   currentLevel = level;
   const cat = currentSection;
@@ -496,7 +505,17 @@ function openShelf(level) {
   listEl.innerHTML = '';
 
   if (shelfProducts.length === 0) {
-    emptyEl.style.display = 'block';
+    const state = SHELF_EMPTY_STATES[level] || SHELF_EMPTY_STATES.green;
+    const iconEl = document.getElementById('empty-list-icon');
+    const titleEl = document.getElementById('empty-list-title');
+    const msgEl = document.getElementById('empty-list-message');
+    if (iconEl) iconEl.textContent = state.icon;
+    if (titleEl) {
+      titleEl.removeAttribute('data-i18n');
+      titleEl.textContent = state.title;
+    }
+    if (msgEl) msgEl.textContent = state.message;
+    emptyEl.style.display = 'flex';
   } else {
     emptyEl.style.display = 'none';
     shelfProducts.forEach(p => {

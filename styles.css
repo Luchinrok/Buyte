@@ -599,11 +599,52 @@ h1 {
 
 .product-item-arrow { color: var(--text-hint); font-size: 20px; }
 
+/* Estat buit ric (icona + títol + missatge). El selector base
+   funciona també amb només text dins (fallback per a llocs que
+   encara no fan servir l'estructura completa). */
 .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 20px;
   text-align: center;
-  padding: 40px 20px;
   color: var(--text-soft);
   font-size: 14px;
+  min-height: 280px;
+}
+
+.empty-state-icon {
+  font-size: 76px;
+  line-height: 1;
+  margin-bottom: 22px;
+  opacity: 0.92;
+  animation: empty-state-float 3.4s ease-in-out infinite;
+}
+
+.empty-state-title {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+
+.empty-state-message {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--text-soft);
+  max-width: 280px;
+  margin: 0;
+}
+
+@keyframes empty-state-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .empty-state-icon { animation: none; }
 }
 
 /* Detall producte */
@@ -4032,13 +4073,6 @@ h1 {
 
 .shopping-item-bought:active {
   transform: scale(0.95);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 32px 16px;
-  color: var(--text-soft);
-  font-size: 14px;
 }
 
 /* ===== SINCRONITZACIÓ ===== */
