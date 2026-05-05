@@ -348,6 +348,8 @@ function renderSection() {
       const subEl = shelf.querySelector('[data-shelf-sub]');
       const countEl = shelf.querySelector('[data-shelf-count]');
       if (countEl) countEl.textContent = counts[level];
+      // Card "apagada" quan no hi ha productes en aquest nivell.
+      shelf.classList.toggle('shelf-empty', counts[level] === 0);
       if (!subEl) return;
       if (level === 'green') subEl.textContent = t('moreThan', scale.green) + ' ' + t('days');
       else if (level === 'yellow') subEl.textContent = scale.yellow + '-' + scale.green + ' ' + t('days');

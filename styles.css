@@ -266,34 +266,72 @@ h1 {
 
 .shelf {
   flex: 1;
-  border-radius: 14px;
-  padding: 16px 20px;
+  border-radius: 16px;
+  padding: 18px 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  transition: transform 0.12s;
   border: 2px solid transparent;
   min-height: 0;
+  /* Profunditat: ombra suau + lleugera ombra d'inset al bord superior
+     per donar sensació de card aixecada (com el menú principal). */
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 0.12s, box-shadow 0.18s, opacity 0.18s, filter 0.18s;
 }
 
-.shelf:active { transform: scale(0.98); }
+.shelf:active {
+  transform: scale(0.98);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
 
-.shelf-green { background: var(--green-bg); border-color: var(--green-border); }
-.shelf-yellow { background: var(--yellow-bg); border-color: var(--yellow-border); }
-.shelf-orange { background: var(--orange-bg); border-color: var(--orange-border); }
-.shelf-red { background: var(--red-bg); border-color: var(--red-border); }
+/* Gradients per nivell — usem la parella var(--*-bg) (clar) i
+   var(--*-border) (fosc) com a stops per mantenir la paleta sota
+   control de tema. El degradat 135deg dóna sensació 3D. */
+.shelf-green {
+  background: linear-gradient(135deg, var(--green-bg), var(--green-border));
+  border-color: var(--green-border);
+}
+.shelf-yellow {
+  background: linear-gradient(135deg, var(--yellow-bg), var(--yellow-border));
+  border-color: var(--yellow-border);
+}
+.shelf-orange {
+  background: linear-gradient(135deg, var(--orange-bg), var(--orange-border));
+  border-color: var(--orange-border);
+}
+.shelf-red {
+  background: linear-gradient(135deg, var(--red-bg), var(--red-border));
+  border-color: var(--red-border);
+}
+
+/* Estat buit (count = 0): card desaturada per fer-la "apagada"
+   visualment, sense amagar-la. La classe es posa des de
+   renderSection() a js/biteme.js. */
+.shelf-empty {
+  opacity: 0.55;
+  filter: saturate(0.6);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
 
 .shelf-title {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
 }
 
 .shelf-sub {
-  font-size: 12px;
-  margin-top: 2px;
-  opacity: 0.85;
+  font-size: 12.5px;
+  margin-top: 3px;
+  opacity: 0.9;
+  font-weight: 500;
 }
 
 .shelf-green .shelf-title { color: var(--green-text); }
@@ -308,9 +346,11 @@ h1 {
 .shelf-count {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 32px;
-  font-weight: 700;
+  gap: 8px;
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .shelf-green .shelf-count { color: var(--green-text); }
@@ -318,7 +358,11 @@ h1 {
 .shelf-orange .shelf-count { color: var(--orange-text); }
 .shelf-red .shelf-count { color: var(--red-text); }
 
-.shelf-arrow { font-size: 22px; font-weight: 400; opacity: 0.6; }
+.shelf-arrow {
+  font-size: 22px;
+  font-weight: 600;
+  opacity: 0.55;
+}
 
 /* Botó principal verd viu */
 .primary-btn {
