@@ -290,23 +290,27 @@ h1 {
     0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Gradients vibrants per nivell — paleta Material coherent amb les
-   tiles del launcher i els botons de Configuració, amb prou saturació
-   per fer-les ressaltar dins del fridge frame. */
+/* Gradients que reutilitzen EXACTAMENT la paleta dels 4 elements
+   principals de la home, perquè cada nivell d'urgència parli el
+   mateix idioma visual que la zona de la qual prové:
+     Tranquil → tile BiteMe (.launcher-card-tracker)
+     Atenció  → tile BuyMe  (.launcher-card-shopping)
+     Urgent   → tile CookMe (.launcher-card-cookme)
+     Alerta   → botó Alerts (.section-alerts) */
 .shelf-green {
-  background: linear-gradient(135deg, #66BB6A, #2E7D32);
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
   border-color: #2E7D32;
 }
 .shelf-yellow {
-  background: linear-gradient(135deg, #FFCA28, #FFA000);
-  border-color: #FFA000;
+  background: linear-gradient(135deg, #42A5F5 0%, #1565C0 100%);
+  border-color: #1565C0;
 }
 .shelf-orange {
-  background: linear-gradient(135deg, #FF7043, #E64A19);
-  border-color: #E64A19;
+  background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
+  border-color: #E65100;
 }
 .shelf-red {
-  background: linear-gradient(135deg, #EF5350, #C62828);
+  background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
   border-color: #C62828;
 }
 
@@ -334,18 +338,17 @@ h1 {
   font-weight: 500;
 }
 
-/* Text de contrast sobre els nous gradients vibrants. Groc/ambre
-   manté text fosc (millor contraste amb fons clar); la resta usen
-   blanc per llegibilitat sobre vermells/taronges/verds saturats. */
+/* Tots 4 nivells usen ara fons saturats foscos (verd 2E7D32, blau
+   1565C0, taronja E65100, vermell C62828) — text blanc dóna el
+   millor contrast a tots quatre. */
 .shelf-green .shelf-title,
+.shelf-yellow .shelf-title,
 .shelf-orange .shelf-title,
 .shelf-red .shelf-title { color: #FFFFFF; }
 .shelf-green .shelf-sub,
+.shelf-yellow .shelf-sub,
 .shelf-orange .shelf-sub,
 .shelf-red .shelf-sub { color: rgba(255, 255, 255, 0.92); }
-
-.shelf-yellow .shelf-title { color: #4E2A00; }
-.shelf-yellow .shelf-sub { color: rgba(78, 42, 0, 0.85); }
 
 .shelf-count {
   display: flex;
@@ -358,9 +361,9 @@ h1 {
 }
 
 .shelf-green .shelf-count,
+.shelf-yellow .shelf-count,
 .shelf-orange .shelf-count,
 .shelf-red .shelf-count { color: #FFFFFF; }
-.shelf-yellow .shelf-count { color: #4E2A00; }
 
 .shelf-arrow {
   font-size: 22px;
