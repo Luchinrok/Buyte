@@ -118,6 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.back-btn').forEach(b => {
     b.addEventListener('click', () => {
       const target = b.dataset.back;
+      // Si l'usuari surt de l'add form (screen-add) sense desar, descartem
+      // qualsevol flux pendent de "Comprat" del BuyMe — sinó, el següent
+      // saveNewProduct() continuaria creient que estem dins d'aquell flux
+      // i traient l'item d'una compra que ja no és l'actual.
+      if (b.id === 'screen-add-back') {
+        if (typeof pendingShoppingItemId !== 'undefined') pendingShoppingItemId = null;
+        if (typeof pendingShoppingSupermarketId !== 'undefined') pendingShoppingSupermarketId = null;
+      }
       // Refresc de la pantalla a la qual tornem (sobretot per quan venim
       // del detall del producte i hem editat qty, data, zona, etc.)
       if (target === 'shopping') renderSupermarkets();

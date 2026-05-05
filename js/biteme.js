@@ -703,7 +703,12 @@ function openAddForm(prefill) {
       titleEl.setAttribute('data-i18n', 'addProductTitle');
       titleEl.textContent = t('addProductTitle');
     }
-    if (backBtn) backBtn.dataset.back = 'add-choice';
+    // Si venim del flux "Comprat" del BuyMe (un item del supermercat
+    // que estem comprant), back ha de tornar a la pantalla del super,
+    // no a la tria genèrica "Afegir producte" del BiteMe.
+    if (backBtn) {
+      backBtn.dataset.back = pendingShoppingItemId ? 'supermarket' : 'add-choice';
+    }
     if (popularBtn) popularBtn.style.display = '';
     if (saveBtnEl) {
       saveBtnEl.setAttribute('data-i18n', 'save');
