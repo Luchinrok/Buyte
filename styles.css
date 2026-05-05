@@ -7090,6 +7090,28 @@ h1 {
   50%      { box-shadow: 0 4px 22px rgba(229, 57, 53, 0.65); }
 }
 
+/* Banner especial "🧠 Suggeriment de patrons" — gradient lila per
+   indicar el caràcter "intel·ligent" de la recomanació. Es mostra
+   sempre DESPRÉS dels altres banners (la cua a getActiveBanners()
+   ja l'afegeix al final) i només n'hi ha 1 per render. */
+.smart-notif-banner.smart-notif-banner-pattern {
+  background: linear-gradient(135deg, #7E57C2 0%, #4527A0 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(69, 39, 160, 0.35);
+}
+.smart-notif-banner-pattern .smart-notif-banner-icon { font-size: 28px; }
+.smart-notif-banner-pattern .smart-notif-banner-msg  { color: #FFFFFF; }
+.smart-notif-banner-pattern .smart-notif-banner-see {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.smart-notif-banner-pattern .smart-notif-banner-see:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.smart-notif-banner-pattern .smart-notif-banner-close { color: #FFFFFF; }
+
 /* ============================================
    Sub-pestanya "🧠 Suggeriments" (Activitat)
    ============================================ */

@@ -322,6 +322,27 @@ function getActiveBanners() {
     });
   });
 
+  // 4. PATTERN-SUGGESTION — màxim 1 banner. Sempre s'afegeix DESPRÉS dels
+  //    altres tipus per no saturar; només mostra HIGH no descartats avui.
+  if (typeof getHighPrioritySuggestions === 'function') {
+    try {
+      const high = getHighPrioritySuggestions();
+      for (let i = 0; i < high.length; i++) {
+        const s = high[i];
+        const bid = 'pattern-suggestion-' + s.id;
+        if (isBannerDismissedToday(bid)) continue;
+        out.push({
+          id: bid,
+          type: 'pattern-suggestion',
+          emoji: '🧠',
+          body: '🧠 ' + (s.title || 'Tinc un suggeriment per tu'),
+          patternId: s.id
+        });
+        break; // només 1
+      }
+    } catch (e) {}
+  }
+
   return out;
 }
 
@@ -696,6 +717,13 @@ function _smartBannerAction(banner) {
     case 'reactivation':
       // Tornar al launcher (home de l'app).
       return () => { showScreen('launcher'); };
+    case 'pattern-suggestion':
+      // Obre Configuració > Activitat amb la pestanya 'suggeriments' activa.
+      return () => {
+        if (typeof activeActivityTab !== 'undefined') activeActivityTab = 'suggeriments';
+        if (typeof openSettingsActivity === 'function') openSettingsActivity();
+        else showScreen('settings-activity');
+      };
     default:
       return null;
   }
@@ -713,7 +741,9 @@ function renderSmartNotifBanners() {
     // Els productes ja caducats mantenen un estil visual diferenciat (vermell
     // més fort) per remarcar la urgència, però es comporten com qualsevol
     // altre banner: descartables i tornen l'endemà.
-    const variantClass = b.type === 'expired' ? ' smart-notif-banner-expired' : '';
+    let variantClass = '';
+    if (b.type === 'expired') variantClass = ' smart-notif-banner-expired';
+    else if (b.type === 'pattern-suggestion') variantClass = ' smart-notif-banner-pattern';
     card.className = 'smart-notif-banner' + variantClass;
     card.dataset.type = b.type;
 
