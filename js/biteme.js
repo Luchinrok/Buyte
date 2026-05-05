@@ -320,10 +320,33 @@ function renderSectionDots() {
   if (!dots) return;
   dots.innerHTML = '';
   SECTION_ORDER.forEach(cat => {
-    const dot = document.createElement('span');
+    const dot = document.createElement('button');
+    dot.type = 'button';
     dot.className = 'section-dot' + (cat === currentSection ? ' active' : '');
+    dot.setAttribute('aria-label', cat);
+    if (cat === currentSection) dot.setAttribute('aria-current', 'true');
+    dot.addEventListener('click', () => goToSection(cat));
     dots.appendChild(dot);
   });
+}
+
+// Salta directament a una zona qualsevol (sense wrap-around). La direcció
+// d'animació es deriva de l'índex relatiu dins SECTION_ORDER, per donar
+// feedback visual coherent amb la posició a la fila de dots.
+function goToSection(cat) {
+  if (cat === currentSection) return;
+  const fromIdx = SECTION_ORDER.indexOf(currentSection);
+  const toIdx = SECTION_ORDER.indexOf(cat);
+  if (toIdx < 0 || fromIdx < 0) return;
+  const direction = toIdx > fromIdx ? +1 : -1;
+  currentSection = cat;
+  const screen = document.getElementById('screen-section');
+  if (screen) {
+    screen.classList.remove('slide-in-left', 'slide-in-right');
+    void screen.offsetWidth;
+    screen.classList.add(direction > 0 ? 'slide-in-right' : 'slide-in-left');
+  }
+  renderSection();
 }
 
 function navigateSection(direction) {
@@ -334,11 +357,13 @@ function navigateSection(direction) {
   if (newIdx >= SECTION_ORDER.length) newIdx = 0;
   currentSection = SECTION_ORDER[newIdx];
 
-  // Animació de transició (slide)
+  // Animació de transició (slide). Diferent de goToSection perquè aquí
+  // la direcció ve donada pel sentit del prev/next o el swipe — així el
+  // wrap-around (último → primer) manté l'animació "endavant" coherent.
   const screen = document.getElementById('screen-section');
   if (screen) {
     screen.classList.remove('slide-in-left', 'slide-in-right');
-    void screen.offsetWidth; // reset animation
+    void screen.offsetWidth;
     screen.classList.add(direction > 0 ? 'slide-in-right' : 'slide-in-left');
   }
 
