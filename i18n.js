@@ -634,7 +634,7 @@ const TRANSLATIONS = {
     categoryContent:     'Contingut',
     categoryContentSub:  'Botigues, zones, populars, receptes',
     categoryActivity:    'Activitat',
-    categoryActivitySub: 'Impacte i estadístiques',
+    categoryActivitySub: 'Impacte, estadístiques i suggeriments',
     categoryApp:         'Aplicació',
     categoryAppSub:      'Aparença, notificacions, sincronització',
     categoryData:        'Dades',
