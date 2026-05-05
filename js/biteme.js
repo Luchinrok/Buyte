@@ -174,8 +174,37 @@ const neviMoods = {
   red:   { body: '#F09595', border: '#E24B4A', eyes: '#501313', mouth: 'M 25 64 Q 35 56 45 64' }
 };
 
+// Missatges del mascot Nevi.
+//
+// La versió històrica (flat: { green, yellow, orange, red }) servia
+// per a la nevera. Però els llindars de freezer i pantry són molt
+// diferents (vegeu ALERT_SCALES a js/core.js): "orange" al congelador
+// són 8-29 dies — dir "Avui o demà toca menjar això" és incorrecte.
+//
+// Ara la versió `ca` és nested per zona; la resta de llengües es
+// mantenen flat com a fallback (totes les zones comparteixen text)
+// fins que es tradueixin. _getNeviMessage gestiona els dos formats.
 const neviMessages = {
-  ca: { green: 'Tot guai! Res no caduca pròximament.', yellow: 'Comença a pensar què fer amb aquests productes.', orange: 'Avui o demà toca menjar això!', red: 'Oh! Hem d\'actuar ràpid!' },
+  ca: {
+    fridge: {
+      green:  'Tens temps de sobres per consumir aquests productes',
+      yellow: 'Aviat caduquen. Planeja el menú dels propers dies',
+      orange: "S'han d'usar en 1-2 dies. Què cuinaràs?",
+      red:    'Avui o ja caducat! Consumeix-ho com sigui'
+    },
+    freezer: {
+      green:  'Encara tenen molt marge al congelador',
+      yellow: 'Comencen a tenir mesos. Considera fer-los servir aviat',
+      orange: "S'estan apropant al límit. Fes-los servir en setmanes",
+      red:    'Convé descongelar-los i consumir aquesta setmana'
+    },
+    pantry: {
+      green:  'Productes amb molt de marge',
+      yellow: 'Fes-los servir aviat',
+      orange: "Comencen a apropar-se al límit",
+      red:    'Convé fer-los servir aquesta setmana'
+    }
+  },
   es: { green: '¡Todo bien! Nada caduca próximamente.', yellow: 'Empieza a pensar qué hacer con estos.', orange: '¡Hoy o mañana hay que comerlos!', red: '¡Tenemos que actuar rápido!' },
   en: { green: 'All good! Nothing expiring soon.', yellow: 'Start thinking what to do with these.', orange: 'Today or tomorrow we eat these!', red: 'Oh no! We need to act fast!' },
   fr: { green: 'Tout va bien !', yellow: 'Commence à réfléchir à quoi faire.', orange: 'Aujourd\'hui ou demain !', red: 'Oh non ! Il faut faire vite !' },
@@ -185,7 +214,19 @@ const neviMessages = {
   zh: { green: '一切都好!', yellow: '开始考虑怎么处理。', orange: '今天或明天!', red: '需要快速行动!' }
 };
 
-function setNevi(level) {
+function _getNeviMessage(lang, cat, level) {
+  const langMsgs = neviMessages[lang] || neviMessages.ca;
+  if (!langMsgs) return '';
+  // Format nested per zona (ca actualment): { fridge: {green: ...}, ... }
+  const zoneMsgs = langMsgs[cat || 'fridge'];
+  if (zoneMsgs && typeof zoneMsgs === 'object' && zoneMsgs[level]) {
+    return zoneMsgs[level];
+  }
+  // Format flat (la resta de llengües, encara per traduir per zona).
+  return langMsgs[level] || '';
+}
+
+function setNevi(level, cat) {
   const m = neviMoods[level];
   const lang = getCurrentLang();
   document.getElementById('nevi-body').setAttribute('fill', m.body);
@@ -195,7 +236,7 @@ function setNevi(level) {
   document.getElementById('nevi-eye-right').setAttribute('fill', m.eyes);
   document.getElementById('nevi-mouth').setAttribute('stroke', m.eyes);
   document.getElementById('nevi-mouth').setAttribute('d', m.mouth);
-  document.getElementById('nevi-message').textContent = (neviMessages[lang] || neviMessages.ca)[level];
+  document.getElementById('nevi-message').textContent = _getNeviMessage(lang, cat, level);
 }
 
 function renderHome() {
@@ -530,7 +571,7 @@ function openShelf(level) {
     });
   }
 
-  setNevi(level);
+  setNevi(level, cat);
   showScreen('list');
 }
 
