@@ -170,21 +170,211 @@ function _makeSuggestion(opts) {
 }
 
 // ---------- Detectors ----------
-// Cada funció retorna 0 o més suggeriments. Les implementacions concretes
-// arriben a les FASE 2 (els 4 principals) i FASE 4 (els 4 restants).
+// Cada funció retorna 0 o més suggeriments.
+// Els 4 restants (weekly/category/activeHours/favoriteRecipes) són FASE 4.
 
-function analyzeFrequentlyTrashed(/* history */) { return []; }
-function analyzeLastMinuteConsume(/* history */) { return []; }
+// 1. PRODUCTES QUE SEMPRE LLENCES
+// ≥3 entrades 'trashed' significatives (≥5%) del mateix producte en 60 dies.
+function analyzeFrequentlyTrashed(history) {
+  const cutoff = Date.now() - 60 * 86400000;
+  const trashes = {};
+  history.forEach(e => {
+    if (e.action !== 'trashed') return;
+    if (!e.percent || e.percent < 5) return;
+    const d = new Date(e.date).getTime();
+    if (!isFinite(d) || d < cutoff) return;
+    const key = (e.productName || '').toLowerCase().trim();
+    if (!key) return;
+    if (!trashes[key]) {
+      trashes[key] = { name: e.productName, emoji: e.productEmoji || '🥫', count: 0 };
+    }
+    trashes[key].count += 1;
+  });
+
+  const out = [];
+  Object.values(trashes).forEach(rec => {
+    if (rec.count < 3) return;
+    const id = 'pattern-frequentlyTrashed-' + rec.name.toLowerCase().trim().replace(/\s+/g, '-');
+    out.push(_makeSuggestion({
+      id,
+      type: 'frequentlyTrashed',
+      priority: 'high',
+      title: rec.emoji + ' ' + rec.name,
+      description: 'Has llençat ' + rec.name.toLowerCase() + ' ' + rec.count + ' cops aquest mes. '
+        + (rec.count >= 5
+            ? "Suggerim comprar-ne menys o avisar-te abans que caduqui."
+            : "Compra'n menys o adapta la quantitat."),
+      emoji: rec.emoji,
+      showAsBanner: true,
+      action: {
+        label: 'Activa avís 4 dies abans',
+        handler: 'patternEnableEarlyAlert',
+        payload: { productName: rec.name }
+      }
+    }));
+  });
+  return out;
+}
+
+// 2. PRODUCTES QUE CADUQUEN A L'ÚLTIM DIA
+// 70%+ del consum del mateix producte té daysFromExpiry ∈ {0, 1}, mín 4 mostres.
+function analyzeLastMinuteConsume(history) {
+  const buckets = {};
+  history.forEach(e => {
+    if (e.action !== 'consumed') return;
+    if (e.daysFromExpiry === null || e.daysFromExpiry === undefined) return;
+    const key = (e.productName || '').toLowerCase().trim();
+    if (!key) return;
+    if (!buckets[key]) {
+      buckets[key] = { name: e.productName, emoji: e.productEmoji || '🥫', total: 0, lastMinute: 0 };
+    }
+    buckets[key].total += 1;
+    if (e.daysFromExpiry <= 1) buckets[key].lastMinute += 1;
+  });
+
+  const out = [];
+  Object.values(buckets).forEach(rec => {
+    if (rec.total < 4) return;
+    const ratio = rec.lastMinute / rec.total;
+    if (ratio < 0.7) return;
+    const id = 'pattern-lastMinuteConsume-' + rec.name.toLowerCase().trim().replace(/\s+/g, '-');
+    out.push(_makeSuggestion({
+      id,
+      type: 'lastMinuteConsume',
+      priority: 'high',
+      title: rec.emoji + ' ' + rec.name,
+      description: "Sempre menges " + rec.name.toLowerCase() + " l'últim dia. Vols comprar-ne quantitats més petites?",
+      emoji: rec.emoji,
+      action: {
+        label: 'Editar producte popular',
+        handler: 'patternOpenPopularEditor',
+        payload: { productName: rec.name }
+      }
+    }));
+  });
+  return out;
+}
+
+// 7. TENDÈNCIA D'ESTALVI
+// Compara % aprofitament aquesta setmana vs l'anterior. Llindar ±10%.
+function analyzeSavingsTrend(history) {
+  const now = Date.now();
+  const day = 86400000;
+  const thisWeekStart = now - 7 * day;
+  const lastWeekStart = now - 14 * day;
+  const lastWeekEnd = thisWeekStart;
+
+  let thisSaved = 0, thisWasted = 0;
+  let lastSaved = 0, lastWasted = 0;
+  history.forEach(e => {
+    const d = new Date(e.date).getTime();
+    if (!isFinite(d)) return;
+    const f = Math.max(0, Math.min(100, e.percent || 0)) / 100;
+    if (f === 0) return;
+    if (d >= thisWeekStart && d <= now) {
+      if (e.action === 'consumed') thisSaved += f;
+      else if (e.action === 'trashed') thisWasted += f;
+    } else if (d >= lastWeekStart && d < lastWeekEnd) {
+      if (e.action === 'consumed') lastSaved += f;
+      else if (e.action === 'trashed') lastWasted += f;
+    }
+  });
+
+  const thisTotal = thisSaved + thisWasted;
+  const lastTotal = lastSaved + lastWasted;
+  // Necessitem prou dades a totes dues setmanes per comparar.
+  if (thisTotal < 1 || lastTotal < 1) return [];
+
+  const thisPct = (thisSaved / thisTotal) * 100;
+  const lastPct = (lastSaved / lastTotal) * 100;
+  const diff = Math.round(thisPct - lastPct);
+
+  if (diff >= 10) {
+    return [_makeSuggestion({
+      id: 'pattern-savingsTrend-up',
+      type: 'savingsTrend',
+      priority: 'info',
+      title: 'Has millorat un ' + diff + '%!',
+      description: 'Aquesta setmana has aprofitat un ' + diff + '% més de menjar que la setmana passada. Bona feina! 🎉',
+      emoji: '🎉',
+      action: null
+    })];
+  }
+  if (diff <= -10) {
+    const drop = Math.abs(diff);
+    return [_makeSuggestion({
+      id: 'pattern-savingsTrend-down',
+      type: 'savingsTrend',
+      priority: 'high',
+      title: 'Estem llençant un ' + drop + '% més',
+      description: "Aquesta setmana has llençat un " + drop + "% més que la setmana passada. Què ha passat? Revisa què tens a punt de caducar.",
+      emoji: '⚠️',
+      showAsBanner: true,
+      action: null
+    })];
+  }
+  return [];
+}
+
+// 8. PRODUCTES OBLIDATS
+// Items al BuyMe amb addedAt > 14 dies (i no comprats encara).
+function analyzeForgottenItems(shopping) {
+  const cutoff = Date.now() - 14 * 86400000;
+  const out = [];
+  shopping.forEach(item => {
+    if (!item || !item.addedAt) return;
+    if (item.addedAt > cutoff) return;
+    const days = Math.floor((Date.now() - item.addedAt) / 86400000);
+    const id = 'pattern-forgottenItems-' + item.id;
+    out.push(_makeSuggestion({
+      id,
+      type: 'forgottenItems',
+      priority: 'medium',
+      title: (item.emoji || '🛒') + ' ' + (item.name || 'Item'),
+      description: "Tens " + (item.name || 'aquest item').toLowerCase() + " al BuyMe des de fa " + days + " dies sense comprar-lo. Vols treure'l?",
+      emoji: item.emoji || '🛒',
+      action: {
+        label: 'Esborrar del BuyMe',
+        handler: 'patternRemoveShoppingItem',
+        payload: { itemId: item.id }
+      }
+    }));
+  });
+  return out;
+}
+
+// Detectors restants: stubs fins a la FASE 4.
 function analyzeWeeklyShopping(/* history, shopping */) { return []; }
 function analyzeCategoryBalance(/* history */) { return []; }
 function analyzeActiveHours(/* activity */) { return []; }
 function analyzeFavoriteRecipes(/* recipeUsage */) { return []; }
-function analyzeSavingsTrend(/* history */) { return []; }
-function analyzeForgottenItems(/* shopping */) { return []; }
 
 // ---------- Action handlers ----------
-// Es resolen pel nom (string) per evitar serialitzar funcions als suggeriments.
+// Es resolen pel nom (string) perquè els suggeriments siguin serialitzables.
 // La pantalla de Suggeriments farà: resolvePatternHandler(action.handler)(action.payload, suggestion).
+
+function patternEnableEarlyAlert(/* payload */) {
+  if (typeof showToast === 'function') showToast('🔔 Avís activat (pendent FASE 7)');
+}
+
+function patternOpenPopularEditor(payload) {
+  if (typeof openPopular === 'function') {
+    openPopular('add');
+  } else if (typeof showToast === 'function') {
+    showToast('⚙️ Edita "' + (payload && payload.productName || '') + '" als populars');
+  }
+}
+
+function patternRemoveShoppingItem(payload) {
+  if (!payload || !payload.itemId) return;
+  if (typeof shoppingItems === 'undefined' || !Array.isArray(shoppingItems)) return;
+  const idx = shoppingItems.findIndex(it => it && it.id === payload.itemId);
+  if (idx < 0) return;
+  shoppingItems.splice(idx, 1);
+  if (typeof saveShoppingData === 'function') saveShoppingData();
+  if (typeof renderShoppingItems === 'function') renderShoppingItems();
+  if (typeof showToast === 'function') showToast('🗑️ Tret del BuyMe');
+}
 
 function resolvePatternHandler(name) {
   if (!name) return null;
