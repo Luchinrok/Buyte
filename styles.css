@@ -2079,7 +2079,9 @@ h1 {
   box-sizing: border-box;
 }
 
-/* Barres horizontals amples i prominents, com Instagram Stories */
+/* Barres horizontals amples i prominents, com Instagram Stories.
+   Renderitzades com a <button> perquè siguin clicables i saltin al
+   supermercat corresponent (dot.addEventListener a renderSupermarketDots). */
 .sm-dots-container .sm-dot {
   height: 4px;
   border-radius: 3px;
@@ -2091,6 +2093,19 @@ h1 {
   overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
   transition: background 0.25s ease;
+  /* Reset estils natius del <button> */
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sm-dots-container .sm-dot:focus { outline: none; }
+.sm-dots-container .sm-dot:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .sm-dots-container .sm-dot::before {

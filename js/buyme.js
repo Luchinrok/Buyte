@@ -219,8 +219,15 @@ function renderSupermarketDots() {
   dotsContainer.innerHTML = '';
   const visible = getBuyMeVisibleSupermarkets();
   visible.forEach(sm => {
-    const dot = document.createElement('div');
+    const dot = document.createElement('button');
+    dot.type = 'button';
     dot.className = 'sm-dot' + (sm.id === currentSupermarketId ? ' active' : '');
+    dot.setAttribute('aria-label', sm.name);
+    if (sm.id === currentSupermarketId) dot.setAttribute('aria-current', 'true');
+    dot.addEventListener('click', () => {
+      if (sm.id === currentSupermarketId) return;
+      openSupermarket(sm.id);
+    });
     dotsContainer.appendChild(dot);
   });
 }
