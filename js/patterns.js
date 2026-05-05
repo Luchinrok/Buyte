@@ -114,6 +114,23 @@ function resetPatternData() {
   } catch (e) {}
 }
 
+function confirmResetPatternData() {
+  const onYes = () => {
+    resetPatternData();
+    if (typeof showToast === 'function') showToast(t('doneReset'));
+    // Si la pestanya Suggeriments és visible, refresquem el contingut
+    if (typeof activeActivityTab !== 'undefined' && activeActivityTab === 'suggeriments') {
+      const area = document.getElementById('settings-activity-area');
+      if (area && typeof renderPatternsSubTab === 'function') renderPatternsSubTab(area);
+    }
+  };
+  if (typeof showConfirmDangerModal === 'function') {
+    showConfirmDangerModal('🧠', t('resetPatternsTitle'), t('resetPatternsConfirm'), onYes);
+  } else if (window.confirm(t('resetPatternsConfirm'))) {
+    onYes();
+  }
+}
+
 // ---------- Activity tracking ----------
 // Registre minimalista d'obertures de l'app per detectar l'hora i el dia
 // preferits de l'usuari. Cada entrada: { timestamp, dayOfWeek, hour }.

@@ -1391,6 +1391,7 @@ function renderSettingsData() {
         _resetCardHtml('impact',        '📊', 'resetImpactTitle',        t('resetImpactSub'),        false) +
         _resetCardHtml('recipe-usage',  '🍳', 'resetRecipeUsageTitle',   t('resetRecipeUsageSub'),   false) +
         _resetCardHtml('gamification',  '🏆', 'resetGamificationTitle',  t('resetGamificationSub'),  false) +
+        _resetCardHtml('patterns',      '🧠', 'resetPatternsTitle',      t('resetPatternsSub'),      false) +
       '</div>' +
       '<div class="reset-data-divider"></div>' +
       _resetCardHtml('all', '🗑️', 'resetAllTitle', t('cantUndo'), true);
@@ -1435,6 +1436,7 @@ function attachSettingsDataListeners() {
           case 'impact':       if (typeof resetImpactHistory === 'function') resetImpactHistory(); break;
           case 'recipe-usage': if (typeof confirmResetRecipeUsage === 'function') confirmResetRecipeUsage(); break;
           case 'gamification': if (typeof confirmResetGamificationProgress === 'function') confirmResetGamificationProgress(); break;
+          case 'patterns':     if (typeof confirmResetPatternData === 'function') confirmResetPatternData(); break;
           case 'all':          if (typeof resetAll === 'function') resetAll(); break;
         }
         return;

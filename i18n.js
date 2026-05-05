@@ -584,6 +584,9 @@ const TRANSLATIONS = {
     resetGamificationTitle: 'Esborrar progrés de gamificació',
     resetGamificationSub: 'Esborra XP, insignies i comptadors',
     resetGamificationConfirm: "Vols esborrar tot el progrés de gamificació (XP, insignies i comptadors)? Aquesta acció no es pot desfer.",
+    resetPatternsTitle: "Dades d'aprenentatge",
+    resetPatternsSub: "Esborrar suggeriments, activitat i descarts",
+    resetPatternsConfirm: "Vols esborrar les dades d'aprenentatge (activitat, descarts i suggeriments aplicats)? L'historial de consum es manté intacte.",
     initialBadgesSummary: (n) => '🏆 ' + (n === 1
       ? '1 insignia desbloquejada pel teu progrés inicial!'
       : n + ' insignies desbloquejades pel teu progrés inicial!'),
