@@ -1351,7 +1351,8 @@
     <p class="section-hint" id="supermarket-summary">-</p>
 
     <!-- Barra d'acció sticky a dalt: el botó "Afegir" sempre queda
-         accessible per molt llarga que sigui la llista. -->
+         accessible per molt llarga que sigui la llista. Els items
+         s'afegeixen al supermercat actualment visible. -->
     <div class="shop-actions-bar">
       <button class="add-supermarket-btn" id="btn-add-shopping-item">
         <span style="font-size:22px;margin-right:8px">➕</span>
@@ -1359,9 +1360,11 @@
       </button>
     </div>
 
-    <div class="shopping-items-list" id="shopping-items-list">
-      <!-- Es genera dinàmicament -->
-    </div>
+    <!-- Slider continu: una pàgina per supermercat visible. La
+         navegació es fa amb scroll-snap natiu (touch / wheel /
+         teclat). El títol i els dots de dalt s'actualitzen segons
+         quina pàgina està centrada. -->
+    <div class="shops-slider" id="shops-slider"></div>
   </div>
 
   <!-- PANTALLA AFEGIR/EDITAR SUPERMERCAT -->
@@ -1785,7 +1788,7 @@
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260505-3"></script>
   <script src="js/shops.js?v=20260503-3"></script>
-  <script src="js/buyme.js?v=20260505-1"></script>
+  <script src="js/buyme.js?v=20260505-2"></script>
   <script src="js/populars.js?v=20260503-3"></script>
   <script src="js/special-lists.js?v=20260503-3"></script>
   <script src="js/settings.js?v=20260503-3"></script>

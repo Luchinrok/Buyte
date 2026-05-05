@@ -188,15 +188,42 @@ function openSupermarket(id, options) {
   currentSupermarketId = id;
   const sm = getSupermarketById(id);
   if (!sm) return;
-  document.getElementById('supermarket-title').textContent = sm.emoji + ' ' + sm.name;
   // Per defecte, en obrir un super, comencem en mode visualització.
   // Si tornem d'editar/eliminar un item, conservem el mode amb preserveMode.
   if (!opts.preserveMode) supermarketItemsMode = 'view';
   updateSupermarketEditBtn();
   renderShoppingItems();
   renderSupermarketDots();
+  _updateSupermarketHeader();
   showScreen('supermarket');
-  setupSupermarketSwipe();
+  // Salt instantani a la pàgina del super escollit un cop el slider és
+  // visible (cal layout per saber clientWidth).
+  requestAnimationFrame(() => _scrollToSupermarket(currentSupermarketId, false));
+}
+
+function _scrollToSupermarket(id, smooth) {
+  const slider = document.getElementById('shops-slider');
+  if (!slider) return;
+  const supers = getBuyMeVisibleSupermarkets();
+  const idx = supers.findIndex(s => s.id === id);
+  if (idx < 0) return;
+  const x = idx * slider.clientWidth;
+  if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
+  else slider.scrollLeft = x;
+}
+
+function _updateSupermarketHeader() {
+  const sm = getSupermarketById(currentSupermarketId);
+  if (!sm) return;
+  const titleEl = document.getElementById('supermarket-title');
+  if (titleEl) titleEl.textContent = sm.emoji + ' ' + sm.name;
+  const summaryEl = document.getElementById('supermarket-summary');
+  if (summaryEl) {
+    const items = getShoppingItemsBySupermarket(currentSupermarketId);
+    summaryEl.textContent = items.length === 0
+      ? t('shoppingEmptyHint')
+      : t('shoppingItemsCount', items.length);
+  }
 }
 
 let supermarketItemsMode = 'view';
@@ -226,111 +253,64 @@ function renderSupermarketDots() {
     if (sm.id === currentSupermarketId) dot.setAttribute('aria-current', 'true');
     dot.addEventListener('click', () => {
       if (sm.id === currentSupermarketId) return;
-      openSupermarket(sm.id);
+      // El scroll listener actualitzarà currentSupermarketId i la
+      // resta d'UI quan acabi el snap.
+      _scrollToSupermarket(sm.id, true);
     });
     dotsContainer.appendChild(dot);
   });
 }
 
-// Configuració del swipe
-let _swipeSetup = false;
-function setupSupermarketSwipe() {
-  if (_swipeSetup) return;
-  _swipeSetup = true;
+// El swipe entre supermercats ara el gestiona scroll-snap natiu del
+// .shops-slider (vegeu styles.css). Conservem la funció com a hook
+// buit perquè openSupermarket encara la crida.
+function setupSupermarketSwipe() {}
 
-  const screen = document.getElementById('screen-supermarket');
-  if (!screen) return;
-
-  let startX = 0, startY = 0, currentX = 0, isSwiping = false;
-
-  screen.addEventListener('touchstart', (e) => {
-    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    currentX = startX;
-    isSwiping = true;
-  }, { passive: true });
-
-  screen.addEventListener('touchmove', (e) => {
-    if (!isSwiping) return;
-    currentX = e.touches[0].clientX;
-    const dx = currentX - startX;
-    const dy = e.touches[0].clientY - startY;
-    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 20) {
-      isSwiping = false;
-      screen.style.transform = '';
-      return;
-    }
-    // Segueix el dit horitzontalment (estil Instagram Stories)
-    if (Math.abs(dx) > 8) {
-      screen.style.transform = `translateX(${dx * 0.85}px)`;
-    }
-  }, { passive: true });
-
-  screen.addEventListener('touchend', () => {
-    if (!isSwiping) return;
-    isSwiping = false;
-    const dx = currentX - startX;
-
-    // Animació de retorn suau (només transform, sense fade)
-    screen.style.transition = 'transform 0.25s cubic-bezier(0.0, 0.0, 0.2, 1)';
-    screen.style.transform = '';
-    setTimeout(() => { screen.style.transition = ''; }, 250);
-
-    if (Math.abs(dx) < 80) return;
-
-    const visible = getBuyMeVisibleSupermarkets();
-    const idx = visible.findIndex(s => s.id === currentSupermarketId);
-    if (idx < 0) return;
-
-    if (dx < 0 && idx < visible.length - 1) {
-      // Swipe esquerra → següent: animació d'entrada des de la dreta
-      animateScreenSlide(screen, 'left', () => openSupermarket(visible[idx + 1].id));
-    } else if (dx > 0 && idx > 0) {
-      // Swipe dreta → anterior: animació d'entrada des de l'esquerra
-      animateScreenSlide(screen, 'right', () => openSupermarket(visible[idx - 1].id));
-    }
-  });
-
-  screen.addEventListener('touchcancel', () => {
-    isSwiping = false;
-    screen.style.transition = 'transform 0.22s cubic-bezier(0.0, 0.0, 0.2, 1)';
-    screen.style.transform = '';
-    setTimeout(() => { screen.style.transition = ''; }, 220);
-  });
-}
-
-function animateScreenSlide(screen, direction, callback) {
-  const distance = direction === 'left' ? -100 : 100;
-  screen.style.transition = 'transform 0.22s cubic-bezier(0.4, 0.0, 0.2, 1)';
-  screen.style.transform = `translateX(${distance}%)`;
-
-  setTimeout(() => {
-    callback();
-    // Apareix des de l'altre costat amb slide horitzontal pur
-    screen.style.transition = 'none';
-    screen.style.transform = `translateX(${-distance}%)`;
-    requestAnimationFrame(() => {
-      screen.style.transition = 'transform 0.28s cubic-bezier(0.0, 0.0, 0.2, 1)';
-      screen.style.transform = '';
-      setTimeout(() => { screen.style.transition = ''; }, 280);
-    });
-  }, 220);
-}
-
-// Indicadors (punts) a la part superior, estil Stories
-// Configuració del swipe
+// Construeix les pàgines del slider (#shops-slider) i ompla cadascuna
+// amb els items del seu supermercat. Només la pàgina del supermercat
+// actual mostra el mode d'edició actiu (la resta es renderitzen en
+// mode 'view' per evitar UI inconsistent en pàgines no-visibles).
 function renderShoppingItems() {
-  const container = document.getElementById('shopping-items-list');
-  const summary = document.getElementById('supermarket-summary');
-  if (!container) return;
-  container.innerHTML = '';
+  const slider = document.getElementById('shops-slider');
+  if (!slider) return;
 
-  const items = getShoppingItemsBySupermarket(currentSupermarketId);
+  const supers = getBuyMeVisibleSupermarkets();
 
-  if (summary) {
-    summary.textContent = items.length === 0 ? t('shoppingEmptyHint') : t('shoppingItemsCount', items.length);
+  // Construïm les pàgines un sol cop (o si canvia el conjunt de supers).
+  const existingIds = Array.from(slider.children).map(c => c.dataset.smId);
+  const wantedIds = supers.map(s => s.id);
+  const sameSet = existingIds.length === wantedIds.length
+    && existingIds.every((id, i) => id === wantedIds[i]);
+  if (!sameSet) {
+    slider.innerHTML = '';
+    supers.forEach(sm => {
+      const page = document.createElement('div');
+      page.className = 'shop-page';
+      page.dataset.smId = sm.id;
+      const list = document.createElement('div');
+      list.className = 'shopping-items-list';
+      page.appendChild(list);
+      slider.appendChild(page);
+    });
+    _setupShopsSliderScrollListener(slider);
   }
+
+  // Renderitzem els items de cada pàgina.
+  supers.forEach(sm => {
+    const page = slider.querySelector('.shop-page[data-sm-id="' + sm.id + '"]');
+    if (!page) return;
+    const list = page.querySelector('.shopping-items-list');
+    if (!list) return;
+    const mode = (sm.id === currentSupermarketId) ? supermarketItemsMode : 'view';
+    _renderShopPageItems(sm.id, list, mode);
+  });
+
+  _updateSupermarketHeader();
+}
+
+function _renderShopPageItems(smId, listEl, mode) {
+  listEl.innerHTML = '';
+  const items = getShoppingItemsBySupermarket(smId);
 
   if (items.length === 0) {
     const empty = document.createElement('div');
@@ -340,7 +320,7 @@ function renderShoppingItems() {
       <p class="celebrate-title">${t('shoppingDone')}</p>
       <p class="celebrate-sub">${t('shoppingDoneSub')}</p>
     `;
-    container.appendChild(empty);
+    listEl.appendChild(empty);
     return;
   }
 
@@ -348,12 +328,12 @@ function renderShoppingItems() {
     const isFirst = idx === 0;
     const isLast = idx === items.length - 1;
     const div = document.createElement('div');
-    div.className = 'shopping-item' + (supermarketItemsMode === 'edit' ? ' shopping-item-edit-mode' : '');
+    div.className = 'shopping-item' + (mode === 'edit' ? ' shopping-item-edit-mode' : '');
     const meta = item.notes
       ? `<p class="shopping-item-meta">${escapeHtml(item.notes)}</p>`
       : '';
 
-    if (supermarketItemsMode === 'edit') {
+    if (mode === 'edit') {
       div.innerHTML = `
         <div class="shopping-item-emoji">${item.emoji}</div>
         <div class="shopping-item-info">
@@ -386,8 +366,36 @@ function renderShoppingItems() {
       div.querySelector('[data-action="bought"]').addEventListener('click', () => buyShoppingItem(item));
     }
 
-    container.appendChild(div);
+    listEl.appendChild(div);
   });
+}
+
+let _shopsSliderScrollListenerWired = false;
+function _setupShopsSliderScrollListener(slider) {
+  if (_shopsSliderScrollListenerWired) return;
+  _shopsSliderScrollListenerWired = true;
+  let scrollTimer = null;
+  slider.addEventListener('scroll', () => {
+    if (scrollTimer) clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      const w = slider.clientWidth;
+      if (!w) return;
+      const idx = Math.round(slider.scrollLeft / w);
+      const supers = getBuyMeVisibleSupermarkets();
+      const sm = supers[idx];
+      if (sm && sm.id !== currentSupermarketId) {
+        currentSupermarketId = sm.id;
+        // En canviar de super, sortim del mode d'edició: cada super
+        // hauria de començar net en mode visualització.
+        supermarketItemsMode = 'view';
+        updateSupermarketEditBtn();
+        // Re-renderitzem per assegurar que la pàgina anterior queda en
+        // mode view (per si tenia edició) i actualitzem títol/comptador.
+        renderShoppingItems();
+        renderSupermarketDots();
+      }
+    }, 80);
+  }, { passive: true });
 }
 
 // Afegir/editar supermercat

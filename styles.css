@@ -227,6 +227,43 @@ h1 {
 
 .zone-page > .fridge { margin-bottom: 0; }
 
+/* ===== SLIDER CONTINU DE SUPERMERCATS (#shops-slider dins
+   #screen-supermarket). Mateix patró que .zones-slider: scroll-snap
+   natiu, una .shop-page per supermercat, sense espais blancs als
+   laterals durant el lliscament. ===== */
+.shops-slider {
+  flex: 1;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  width: 100%;
+  min-height: 0;
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.shops-slider::-webkit-scrollbar { display: none; }
+
+.shop-page {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 0 20px;
+  overflow-y: auto;
+}
+
+.shop-page::-webkit-scrollbar { display: none; }
+.shop-page { scrollbar-width: none; }
+
+.shop-page > .shopping-items-list { flex: 1; }
+
 .shelf {
   flex: 1;
   border-radius: 14px;
