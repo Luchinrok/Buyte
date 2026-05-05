@@ -343,11 +343,206 @@ function analyzeForgottenItems(shopping) {
   return out;
 }
 
-// Detectors restants: stubs fins a la FASE 4.
-function analyzeWeeklyShopping(/* history, shopping */) { return []; }
-function analyzeCategoryBalance(/* history */) { return []; }
-function analyzeActiveHours(/* activity */) { return []; }
-function analyzeFavoriteRecipes(/* recipeUsage */) { return []; }
+// 3. PATRONS DE COMPRA SETMANALS
+// Heurística: un producte amb ≥3 entrades a l'historial els últims 90 dies
+// i interval mediana ∈ [5, 10] dies suggereix compra setmanal. Usem el dia
+// de la setmana més freqüent com a etiqueta. (No tenim historial de compres
+// real — usem el de consum com a proxy.)
+const _CA_WEEKDAYS = ['diumenge', 'dilluns', 'dimarts', 'dimecres', 'dijous', 'divendres', 'dissabte'];
+
+function _median(arr) {
+  if (!arr.length) return null;
+  const s = arr.slice().sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 === 0 ? (s[mid - 1] + s[mid]) / 2 : s[mid];
+}
+
+function analyzeWeeklyShopping(history /*, shopping */) {
+  const cutoff = Date.now() - 90 * 86400000;
+  const byProduct = {};
+  history.forEach(e => {
+    if (!e || !e.date) return;
+    const t = new Date(e.date).getTime();
+    if (!isFinite(t) || t < cutoff) return;
+    const key = (e.productName || '').toLowerCase().trim();
+    if (!key) return;
+    if (!byProduct[key]) {
+      byProduct[key] = { name: e.productName, emoji: e.productEmoji || '🥫', dates: [] };
+    }
+    byProduct[key].dates.push(t);
+  });
+
+  const out = [];
+  Object.values(byProduct).forEach(rec => {
+    if (rec.dates.length < 3) return;
+    rec.dates.sort((a, b) => a - b);
+    const intervals = [];
+    for (let i = 1; i < rec.dates.length; i++) {
+      intervals.push((rec.dates[i] - rec.dates[i - 1]) / 86400000);
+    }
+    const med = _median(intervals);
+    if (med == null || med < 5 || med > 10) return;
+
+    // Dia de la setmana més freqüent
+    const weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
+    rec.dates.forEach(t => { weekdayCounts[new Date(t).getDay()]++; });
+    let bestDay = 0, bestCount = -1;
+    for (let i = 0; i < 7; i++) {
+      if (weekdayCounts[i] > bestCount) { bestCount = weekdayCounts[i]; bestDay = i; }
+    }
+    const dayLabel = _CA_WEEKDAYS[bestDay];
+    const id = 'pattern-weeklyShopping-' + rec.name.toLowerCase().trim().replace(/\s+/g, '-');
+    out.push(_makeSuggestion({
+      id,
+      type: 'weeklyShopping',
+      priority: 'medium',
+      title: rec.emoji + ' ' + rec.name,
+      description: 'Cada ' + dayLabel + ' sembla que toca ' + rec.name.toLowerCase() + '. Vols un recordatori automàtic?',
+      emoji: rec.emoji,
+      action: {
+        label: 'Activa recordatori setmanal',
+        handler: 'patternEnableWeeklyReminder',
+        payload: { productName: rec.name, dayOfWeek: bestDay }
+      }
+    }));
+  });
+  return out;
+}
+
+// 4. CATEGORIES PREFERIDES
+// Distribució per categoria d'emoji dels productes consumits l'última setmana.
+// Si una categoria és >70% del total, suggerim varietat.
+const _CA_CATEGORY_LABEL = {
+  dairy: 'lacti', redMeat: 'carn vermella', whiteMeat: 'carn blanca',
+  fish: 'peix', fruit: 'fruita', vegetable: 'verdura',
+  bread: 'pa', pasta: 'pasta', drinks: 'begudes',
+  sweets: 'dolços', canned: 'conserves', default: 'altres'
+};
+
+function analyzeCategoryBalance(history) {
+  const cutoff = Date.now() - 7 * 86400000;
+  const counts = {};
+  let total = 0;
+  history.forEach(e => {
+    if (e.action !== 'consumed') return;
+    const t = new Date(e.date).getTime();
+    if (!isFinite(t) || t < cutoff) return;
+    const cat = (typeof getCategoryFromEmoji === 'function')
+      ? getCategoryFromEmoji(e.productEmoji)
+      : 'default';
+    counts[cat] = (counts[cat] || 0) + 1;
+    total += 1;
+  });
+  if (total < 5) return [];
+
+  const ranked = Object.keys(counts)
+    .map(k => ({ cat: k, count: counts[k], pct: Math.round((counts[k] / total) * 100) }))
+    .sort((a, b) => b.count - a.count);
+  const summary = ranked.slice(0, 3)
+    .map(r => r.pct + '% ' + (_CA_CATEGORY_LABEL[r.cat] || r.cat))
+    .join(' · ');
+
+  // Si la més gran té >70% suggerim equilibri; si no, només resum informatiu.
+  const top = ranked[0];
+  if (top && top.pct > 70) {
+    // Recomanem la més absent dins del trio "saludable"
+    const targets = ['vegetable', 'fruit', 'fish'].filter(c => c !== top.cat);
+    const missing = targets.find(c => !counts[c]) || targets[0];
+    return [_makeSuggestion({
+      id: 'pattern-categoryBalance-skewed',
+      type: 'categoryBalance',
+      priority: 'info',
+      title: 'Aquesta setmana: ' + summary,
+      description: 'Has menjat principalment ' + (_CA_CATEGORY_LABEL[top.cat] || top.cat)
+        + '. Pots provar més ' + (_CA_CATEGORY_LABEL[missing] || missing) + '?',
+      emoji: '🥗',
+      action: null
+    })];
+  }
+  return [_makeSuggestion({
+    id: 'pattern-categoryBalance-summary',
+    type: 'categoryBalance',
+    priority: 'info',
+    title: 'Aquesta setmana: ' + summary,
+    description: 'Bona variació al teu plat aquesta setmana 👌',
+    emoji: '🥗',
+    action: null
+  })];
+}
+
+// 5. HORES ACTIVES
+// Llegeix 'eatmefirst_app_activity' (FASE 5). Si una hora concreta concentra
+// >40% de les obertures, suggerim adaptar les notificacions a aquesta hora.
+function analyzeActiveHours(/* activity */) {
+  const activity = _readJSON('eatmefirst_app_activity', []);
+  if (!Array.isArray(activity) || activity.length < 10) return [];
+  const counts = new Array(24).fill(0);
+  activity.forEach(a => {
+    if (!a) return;
+    const h = (typeof a.hour === 'number') ? a.hour : new Date(a.timestamp || 0).getHours();
+    if (isFinite(h) && h >= 0 && h <= 23) counts[h]++;
+  });
+  const total = counts.reduce((a, b) => a + b, 0);
+  if (total < 10) return [];
+  let bestHour = 0, bestCount = -1;
+  for (let i = 0; i < 24; i++) {
+    if (counts[i] > bestCount) { bestCount = counts[i]; bestHour = i; }
+  }
+  if (bestCount / total < 0.4) return [];
+
+  const hh = String(bestHour).padStart(2, '0');
+  return [_makeSuggestion({
+    id: 'pattern-activeHours-' + bestHour,
+    type: 'activeHours',
+    priority: 'low',
+    title: '⏰ Hora preferida: ' + hh + ':00',
+    description: "Veig que sempre obres l'app cap a les " + hh + 'h. Adaptem les notificacions a aquesta hora?',
+    emoji: '⏰',
+    action: {
+      label: 'Sí, adaptar',
+      handler: 'patternAdaptNotifHours',
+      payload: { hour: bestHour }
+    }
+  })];
+}
+
+// 6. RECEPTES PREFERIDES
+// Receptes amb ≥3 visualitzacions al recipeUsage que ARA podem fer (canMake).
+function analyzeFavoriteRecipes(/* recipeUsage */) {
+  const usage = _readJSON('eatmefirst_recipe_usage', {});
+  if (!usage || typeof usage !== 'object') return [];
+  if (typeof getAllRecipes !== 'function' || typeof calculateRecipeMatch !== 'function') return [];
+
+  const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
+  const recipes = getAllRecipes();
+  const candidates = [];
+  recipes.forEach(r => {
+    const u = usage[r.id];
+    if (!u || (u.views || 0) < 3) return;
+    const m = calculateRecipeMatch(r, userProducts);
+    if (!m || !m.canMake) return;
+    candidates.push({ r, views: u.views, lastUsed: u.lastUsed || 0 });
+  });
+  if (candidates.length === 0) return [];
+  candidates.sort((a, b) => b.views - a.views || b.lastUsed - a.lastUsed);
+
+  // Només mostrem la millor candidata per no saturar
+  const best = candidates[0];
+  const id = 'pattern-favoriteRecipes-' + best.r.id;
+  return [_makeSuggestion({
+    id,
+    type: 'favoriteRecipes',
+    priority: 'low',
+    title: (best.r.emoji || '🍽️') + ' ' + (best.r.name || ''),
+    description: "Sembla que t'agrada " + (best.r.name || '') + ". Ara mateix tens els ingredients per fer-la!",
+    emoji: best.r.emoji || '🍽️',
+    action: {
+      label: 'Veure recepta',
+      handler: 'patternOpenRecipe',
+      payload: { recipeId: best.r.id }
+    }
+  })];
+}
 
 // ---------- Action handlers ----------
 // Es resolen pel nom (string) perquè els suggeriments siguin serialitzables.
@@ -374,6 +569,31 @@ function patternRemoveShoppingItem(payload) {
   if (typeof saveShoppingData === 'function') saveShoppingData();
   if (typeof renderShoppingItems === 'function') renderShoppingItems();
   if (typeof showToast === 'function') showToast('🗑️ Tret del BuyMe');
+}
+
+function patternEnableWeeklyReminder(/* payload */) {
+  // Recordatori per producte: encara no tenim infraestructura per a custom
+  // reminders. Per ara confirmem la intenció — quan tinguem el sistema de
+  // recordatoris personalitzats, aquí es crearà l'entrada.
+  if (typeof showToast === 'function') showToast('📅 Recordatori setmanal anotat');
+}
+
+function patternAdaptNotifHours(payload) {
+  if (!payload || typeof payload.hour !== 'number') return;
+  if (typeof setSmartNotifType !== 'function') return;
+  // Adaptem els tipus configurables més rellevants a l'hora preferida.
+  ['expiry', 'mealReminder', 'cookmeInspiration'].forEach(tid => {
+    setSmartNotifType(tid, { hour: payload.hour, minute: 0 });
+  });
+  if (typeof showToast === 'function') {
+    const hh = String(payload.hour).padStart(2, '0');
+    showToast('⏰ Notificacions ajustades a les ' + hh + ':00');
+  }
+}
+
+function patternOpenRecipe(payload) {
+  if (!payload || !payload.recipeId) return;
+  if (typeof openRecipeDetail === 'function') openRecipeDetail(payload.recipeId);
 }
 
 function resolvePatternHandler(name) {
