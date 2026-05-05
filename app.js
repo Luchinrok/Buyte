@@ -569,6 +569,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicia notificacions
   initNotifications();
 
+  // Primer render dels banners del launcher. Cal fer-ho amb un petit delay
+  // perquè (1) initNotifications() pugui carregar smartNotifSettings i
+  // (2) el DOM del launcher quedi muntat. A les navegacions posteriors,
+  // showScreen('launcher') ja invoca renderSmartNotifBanners() pel seu compte.
+  setTimeout(() => {
+    if (typeof renderSmartNotifBanners === 'function') renderSmartNotifBanners();
+  }, 200);
+
   // Productes populars (des del formulari Add)
   document.getElementById('popular-btn').addEventListener('click', () => {
     if (typeof openPopular === 'function') openPopular('add');
@@ -604,6 +612,12 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     if (typeof recordAppActivity === 'function') recordAppActivity();
     renderHome();
+    // Si tornem amb el launcher visible, refresquem els banners — l'estat
+    // pot haver canviat (caducitats noves, suggeriments nous, etc.).
+    const launcher = document.getElementById('screen-launcher');
+    if (launcher && launcher.classList.contains('active') && typeof renderSmartNotifBanners === 'function') {
+      renderSmartNotifBanners();
+    }
   } else {
     stopScanner();
   }
