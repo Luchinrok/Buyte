@@ -46,7 +46,7 @@ const TRANSLATIONS = {
     error: 'Error',
     nameRequired: "Cal posar-li un nom",
     needDate: "Cal posar una data o marcar 'No caduca'",
-    menu: 'Menú',
+    menu: 'Configuració',
     appearance: 'Aparença',
     themeLight: 'Mode clar',
     themeDark: 'Mode fosc',
