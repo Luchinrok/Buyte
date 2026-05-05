@@ -838,7 +838,12 @@ function _renderPatternsLearningState(area, readiness) {
 }
 
 function _renderPatternsList(area, suggestions, readiness) {
-  const toImprove = suggestions.filter(s => s.priority === 'high' || s.priority === 'medium');
+  // HIGH/MEDIUM/LOW → "Per fer millor" · INFO → "Bones notícies".
+  // (Si LOW no s'inclou aquí, suggeriments com activeHours o
+  // favoriteRecipes queden orfes i no es renderitzen mai.)
+  const toImprove = suggestions.filter(s =>
+    s.priority === 'high' || s.priority === 'medium' || s.priority === 'low'
+  );
   const goodNews = suggestions.filter(s => s.priority === 'info');
 
   // "Patrons detectats": mínim viable a la FASE 3 — quan FASE 4-5 entrin,
