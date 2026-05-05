@@ -43,6 +43,26 @@ function _writeJSON(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
 }
 
+// Acceptem dues formes d'entrada a l'historial:
+//   - Format actual de recordConsumption(): { date: ISO string, productEmoji }
+//   - Format de dades antigues / altres fonts:  { timestamp: number, emoji }
+// Els detectors han de funcionar amb totes dues, perquè quan canvia el format
+// l'historial existent encara s'analitza correctament.
+function _entryTimestamp(e) {
+  if (!e) return NaN;
+  if (typeof e.timestamp === 'number' && isFinite(e.timestamp)) return e.timestamp;
+  if (e.date) {
+    const t = new Date(e.date).getTime();
+    if (isFinite(t)) return t;
+  }
+  return NaN;
+}
+
+function _entryEmoji(e) {
+  if (!e) return '';
+  return e.productEmoji || e.emoji || '';
+}
+
 function loadPatternDismissed() {
   const map = _readJSON('eatmefirst_pattern_dismissed', {});
   return (map && typeof map === 'object' && !Array.isArray(map)) ? map : {};
@@ -290,17 +310,18 @@ function _makeSuggestion(opts) {
 // 1. PRODUCTES QUE SEMPRE LLENCES
 // ≥3 entrades 'trashed' significatives (≥5%) del mateix producte en 60 dies.
 function analyzeFrequentlyTrashed(history) {
+  if (!Array.isArray(history)) history = _loadConsumptionHistorySafe();
   const cutoff = Date.now() - 60 * 86400000;
   const trashes = {};
   history.forEach(e => {
-    if (e.action !== 'trashed') return;
+    if (!e || e.action !== 'trashed') return;
     if (!e.percent || e.percent < 5) return;
-    const d = new Date(e.date).getTime();
+    const d = _entryTimestamp(e);
     if (!isFinite(d) || d < cutoff) return;
     const key = (e.productName || '').toLowerCase().trim();
     if (!key) return;
     if (!trashes[key]) {
-      trashes[key] = { name: e.productName, emoji: e.productEmoji || '🥫', count: 0 };
+      trashes[key] = { name: e.productName, emoji: _entryEmoji(e) || '🥫', count: 0 };
     }
     trashes[key].count += 1;
   });
@@ -333,14 +354,15 @@ function analyzeFrequentlyTrashed(history) {
 // 2. PRODUCTES QUE CADUQUEN A L'ÚLTIM DIA
 // 70%+ del consum del mateix producte té daysFromExpiry ∈ {0, 1}, mín 4 mostres.
 function analyzeLastMinuteConsume(history) {
+  if (!Array.isArray(history)) history = _loadConsumptionHistorySafe();
   const buckets = {};
   history.forEach(e => {
-    if (e.action !== 'consumed') return;
+    if (!e || e.action !== 'consumed') return;
     if (e.daysFromExpiry === null || e.daysFromExpiry === undefined) return;
     const key = (e.productName || '').toLowerCase().trim();
     if (!key) return;
     if (!buckets[key]) {
-      buckets[key] = { name: e.productName, emoji: e.productEmoji || '🥫', total: 0, lastMinute: 0 };
+      buckets[key] = { name: e.productName, emoji: _entryEmoji(e) || '🥫', total: 0, lastMinute: 0 };
     }
     buckets[key].total += 1;
     if (e.daysFromExpiry <= 1) buckets[key].lastMinute += 1;
@@ -372,6 +394,7 @@ function analyzeLastMinuteConsume(history) {
 // 7. TENDÈNCIA D'ESTALVI
 // Compara % aprofitament aquesta setmana vs l'anterior. Llindar ±10%.
 function analyzeSavingsTrend(history) {
+  if (!Array.isArray(history)) history = _loadConsumptionHistorySafe();
   const now = Date.now();
   const day = 86400000;
   const thisWeekStart = now - 7 * day;
@@ -381,7 +404,8 @@ function analyzeSavingsTrend(history) {
   let thisSaved = 0, thisWasted = 0;
   let lastSaved = 0, lastWasted = 0;
   history.forEach(e => {
-    const d = new Date(e.date).getTime();
+    if (!e) return;
+    const d = _entryTimestamp(e);
     if (!isFinite(d)) return;
     const f = Math.max(0, Math.min(100, e.percent || 0)) / 100;
     if (f === 0) return;
@@ -433,6 +457,7 @@ function analyzeSavingsTrend(history) {
 // 8. PRODUCTES OBLIDATS
 // Items al BuyMe amb addedAt > 14 dies (i no comprats encara).
 function analyzeForgottenItems(shopping) {
+  if (!Array.isArray(shopping)) shopping = _loadShoppingItemsSafe();
   const cutoff = Date.now() - 14 * 86400000;
   const out = [];
   shopping.forEach(item => {
@@ -472,16 +497,17 @@ function _median(arr) {
 }
 
 function analyzeWeeklyShopping(history /*, shopping */) {
+  if (!Array.isArray(history)) history = _loadConsumptionHistorySafe();
   const cutoff = Date.now() - 90 * 86400000;
   const byProduct = {};
   history.forEach(e => {
-    if (!e || !e.date) return;
-    const t = new Date(e.date).getTime();
+    if (!e) return;
+    const t = _entryTimestamp(e);
     if (!isFinite(t) || t < cutoff) return;
     const key = (e.productName || '').toLowerCase().trim();
     if (!key) return;
     if (!byProduct[key]) {
-      byProduct[key] = { name: e.productName, emoji: e.productEmoji || '🥫', dates: [] };
+      byProduct[key] = { name: e.productName, emoji: _entryEmoji(e) || '🥫', dates: [] };
     }
     byProduct[key].dates.push(t);
   });
@@ -534,15 +560,16 @@ const _CA_CATEGORY_LABEL = {
 };
 
 function analyzeCategoryBalance(history) {
+  if (!Array.isArray(history)) history = _loadConsumptionHistorySafe();
   const cutoff = Date.now() - 7 * 86400000;
   const counts = {};
   let total = 0;
   history.forEach(e => {
-    if (e.action !== 'consumed') return;
-    const t = new Date(e.date).getTime();
+    if (!e || e.action !== 'consumed') return;
+    const t = _entryTimestamp(e);
     if (!isFinite(t) || t < cutoff) return;
     const cat = (typeof getCategoryFromEmoji === 'function')
-      ? getCategoryFromEmoji(e.productEmoji)
+      ? getCategoryFromEmoji(_entryEmoji(e))
       : 'default';
     counts[cat] = (counts[cat] || 0) + 1;
     total += 1;
