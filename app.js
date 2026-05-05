@@ -91,18 +91,28 @@ document.addEventListener('DOMContentLoaded', () => {
     b.addEventListener('click', () => openSection(b.dataset.cat));
   });
 
-  // Clic als prestatges DINS de la secció
-  document.querySelectorAll('#screen-section .shelf').forEach(s => {
-    s.addEventListener('click', () => openShelf(s.dataset.level));
-  });
+  // Clic als prestatges DINS de la secció. Els shelves es construeixen
+  // dinàmicament dins #zones-slider per renderSection() — usem event
+  // delegation per cobrir-los tots, no un querySelectorAll a l'init.
+  const sectionScreen = document.getElementById('screen-section');
+  if (sectionScreen) {
+    sectionScreen.addEventListener('click', (e) => {
+      const shelf = e.target.closest('.shelf');
+      if (!shelf || !sectionScreen.contains(shelf)) return;
+      const level = shelf.dataset.level;
+      const zone = shelf.dataset.zone;
+      // Si s'ha clicat un shelf d'una zona que NO és l'actual (perquè el
+      // slider ensenya parcialment una pàgina veïna), saltem-hi primer.
+      if (zone && zone !== currentSection && typeof goToSection === 'function') {
+        goToSection(zone);
+        return;
+      }
+      openShelf(level);
+    });
+  }
 
-  // Botons de navegació entre seccions (fletxes a la capçalera)
-  const prevBtn = document.getElementById('section-prev');
-  const nextBtn = document.getElementById('section-next');
-  if (prevBtn) prevBtn.addEventListener('click', () => navigateSection(-1));
-  if (nextBtn) nextBtn.addEventListener('click', () => navigateSection(+1));
-
-  // Swipe horitzontal entre seccions
+  // El swipe entre zones és scroll-snap natiu (vegeu .zones-slider a
+  // styles.css). Mantenim setupSwipeNavigation() com a hook buit.
   setupSwipeNavigation();
 
   document.getElementById('add-btn').addEventListener('click', () => showScreen('add-choice'));

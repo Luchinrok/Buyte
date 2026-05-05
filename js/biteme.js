@@ -264,6 +264,8 @@ function setBadge(elemId, count) {
 let currentSection = 'fridge';
 const SECTION_ORDER = ['fridge', 'freezer', 'pantry'];
 
+const SECTION_TITLE_EMOJI = { fridge: '🧊', freezer: '❄️', pantry: '🥫' };
+
 function openSection(category) {
   currentSection = category;
   if (category === 'alerts') {
@@ -273,46 +275,126 @@ function openSection(category) {
   }
   renderSection();
   showScreen('section');
+  // Salt instantani a la pàgina de la zona escollida un cop el slider
+  // és visible (cal layout calculat per saber clientWidth).
+  requestAnimationFrame(() => _scrollToSection(currentSection, false));
+}
+
+// Mou el slider a la pàgina de la zona indicada. `smooth` controla si
+// és una animació suau (interaccions in-screen) o un salt (entrada).
+function _scrollToSection(cat, smooth) {
+  const slider = document.getElementById('zones-slider');
+  if (!slider) return;
+  const idx = SECTION_ORDER.indexOf(cat);
+  if (idx < 0) return;
+  const x = idx * slider.clientWidth;
+  if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
+  else slider.scrollLeft = x;
 }
 
 function renderSection() {
-  const cat = currentSection;
-  const scale = ALERT_SCALES[cat];
+  const slider = document.getElementById('zones-slider');
+  if (!slider) return;
 
-  // Títol
-  const titles = {
-    fridge: '🧊 ' + t('catFridge'),
-    freezer: '❄️ ' + t('catFreezer'),
-    pantry: '🥫 ' + t('catPantry')
-  };
-  document.getElementById('section-title').textContent = titles[cat];
-
-  // Subtítols dels prestatges adaptats a l'escala
-  document.getElementById('shelf-sub-green').textContent = t('moreThan', scale.green) + ' ' + t('days');
-  document.getElementById('shelf-sub-yellow').textContent = scale.yellow + '-' + scale.green + ' ' + t('days');
-  document.getElementById('shelf-sub-orange').textContent = scale.orange + '-' + (scale.yellow - 1) + ' ' + t('days');
-  if (scale.orange === 1) {
-    document.getElementById('shelf-sub-red').textContent = t('todayOrExpired');
-  } else {
-    document.getElementById('shelf-sub-red').textContent = t('lessThan', scale.orange) + ' ' + t('days');
+  // Construïm les pàgines un sol cop (o si canvia el nombre de zones).
+  // La majoria de re-renders només actualitzen comptadors i subtítols.
+  if (slider.children.length !== SECTION_ORDER.length) {
+    slider.innerHTML = '';
+    SECTION_ORDER.forEach(cat => {
+      const page = document.createElement('div');
+      page.className = 'zone-page';
+      page.dataset.zone = cat;
+      const fridge = document.createElement('div');
+      fridge.className = 'fridge';
+      ['green', 'yellow', 'orange', 'red'].forEach(level => {
+        const shelf = document.createElement('div');
+        shelf.className = 'shelf shelf-' + level;
+        shelf.dataset.level = level;
+        shelf.dataset.zone = cat;
+        const titleKey = 'shelf' + level.charAt(0).toUpperCase() + level.slice(1);
+        shelf.innerHTML =
+          '<div class="shelf-text">' +
+            '<p class="shelf-title">' + t(titleKey) + '</p>' +
+            '<p class="shelf-sub" data-shelf-sub></p>' +
+          '</div>' +
+          '<div class="shelf-count">' +
+            '<span data-shelf-count>0</span>' +
+            '<span class="shelf-arrow">›</span>' +
+          '</div>';
+        fridge.appendChild(shelf);
+      });
+      page.appendChild(fridge);
+      slider.appendChild(page);
+    });
+    _setupSliderScrollListener(slider);
   }
 
-  // Comptem productes filtrats per categoria
-  const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
-  products.forEach(p => {
-    const loc = getLocationById(p.location || 'fridge');
-    const pcat = loc ? loc.category : 'fridge';
-    if (pcat !== cat) return;
-    counts[getLevel(daysUntil(p.date), cat)]++;
+  // Actualitzem comptadors i subtítols per a totes les zones.
+  SECTION_ORDER.forEach(cat => {
+    const page = slider.querySelector('.zone-page[data-zone="' + cat + '"]');
+    if (!page) return;
+    const scale = ALERT_SCALES[cat];
+
+    const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
+    products.forEach(p => {
+      const loc = getLocationById(p.location || 'fridge');
+      const pcat = loc ? loc.category : 'fridge';
+      if (pcat !== cat) return;
+      counts[getLevel(daysUntil(p.date), cat)]++;
+    });
+
+    page.querySelectorAll('.shelf').forEach(shelf => {
+      const level = shelf.dataset.level;
+      const subEl = shelf.querySelector('[data-shelf-sub]');
+      const countEl = shelf.querySelector('[data-shelf-count]');
+      if (countEl) countEl.textContent = counts[level];
+      if (!subEl) return;
+      if (level === 'green') subEl.textContent = t('moreThan', scale.green) + ' ' + t('days');
+      else if (level === 'yellow') subEl.textContent = scale.yellow + '-' + scale.green + ' ' + t('days');
+      else if (level === 'orange') subEl.textContent = scale.orange + '-' + (scale.yellow - 1) + ' ' + t('days');
+      else if (level === 'red') {
+        subEl.textContent = scale.orange === 1 ? t('todayOrExpired') : t('lessThan', scale.orange) + ' ' + t('days');
+      }
+    });
   });
 
-  document.getElementById('count-green').textContent = counts.green;
-  document.getElementById('count-yellow').textContent = counts.yellow;
-  document.getElementById('count-orange').textContent = counts.orange;
-  document.getElementById('count-red').textContent = counts.red;
-
-  // Punts indicadors
+  _updateSectionTitle();
   renderSectionDots();
+}
+
+function _updateSectionTitle() {
+  const titleEl = document.getElementById('section-title');
+  if (!titleEl) return;
+  const titles = {
+    fridge: SECTION_TITLE_EMOJI.fridge + ' ' + t('catFridge'),
+    freezer: SECTION_TITLE_EMOJI.freezer + ' ' + t('catFreezer'),
+    pantry: SECTION_TITLE_EMOJI.pantry + ' ' + t('catPantry')
+  };
+  titleEl.textContent = titles[currentSection] || '';
+}
+
+let _sliderScrollListenerWired = false;
+function _setupSliderScrollListener(slider) {
+  if (_sliderScrollListenerWired) return;
+  _sliderScrollListenerWired = true;
+  let scrollTimer = null;
+  slider.addEventListener('scroll', () => {
+    if (scrollTimer) clearTimeout(scrollTimer);
+    // Petit debounce: només actualitzem currentSection un cop el scroll
+    // s'ha aturat (snap completat). Així evitem renders intermedis.
+    scrollTimer = setTimeout(() => {
+      const w = slider.clientWidth;
+      if (!w) return;
+      const idx = Math.round(slider.scrollLeft / w);
+      const cat = SECTION_ORDER[idx];
+      if (cat && cat !== currentSection) {
+        currentSection = cat;
+        _updateSectionTitle();
+        // Re-renderitzem només els dots (no cal rebuild de pàgines).
+        renderSectionDots();
+      }
+    }, 80);
+  }, { passive: true });
 }
 
 function renderSectionDots() {
@@ -330,23 +412,11 @@ function renderSectionDots() {
   });
 }
 
-// Salta directament a una zona qualsevol (sense wrap-around). La direcció
-// d'animació es deriva de l'índex relatiu dins SECTION_ORDER, per donar
-// feedback visual coherent amb la posició a la fila de dots.
 function goToSection(cat) {
   if (cat === currentSection) return;
-  const fromIdx = SECTION_ORDER.indexOf(currentSection);
-  const toIdx = SECTION_ORDER.indexOf(cat);
-  if (toIdx < 0 || fromIdx < 0) return;
-  const direction = toIdx > fromIdx ? +1 : -1;
-  currentSection = cat;
-  const screen = document.getElementById('screen-section');
-  if (screen) {
-    screen.classList.remove('slide-in-left', 'slide-in-right');
-    void screen.offsetWidth;
-    screen.classList.add(direction > 0 ? 'slide-in-right' : 'slide-in-left');
-  }
-  renderSection();
+  if (SECTION_ORDER.indexOf(cat) < 0) return;
+  _scrollToSection(cat, true);
+  // currentSection s'actualitzarà via el scroll listener quan acabi el snap.
 }
 
 function navigateSection(direction) {
@@ -355,19 +425,7 @@ function navigateSection(direction) {
   let newIdx = idx + direction;
   if (newIdx < 0) newIdx = SECTION_ORDER.length - 1;
   if (newIdx >= SECTION_ORDER.length) newIdx = 0;
-  currentSection = SECTION_ORDER[newIdx];
-
-  // Animació de transició (slide). Diferent de goToSection perquè aquí
-  // la direcció ve donada pel sentit del prev/next o el swipe — així el
-  // wrap-around (último → primer) manté l'animació "endavant" coherent.
-  const screen = document.getElementById('screen-section');
-  if (screen) {
-    screen.classList.remove('slide-in-left', 'slide-in-right');
-    void screen.offsetWidth;
-    screen.classList.add(direction > 0 ? 'slide-in-right' : 'slide-in-left');
-  }
-
-  renderSection();
+  _scrollToSection(SECTION_ORDER[newIdx], true);
 }
 
 // PANTALLA D'ALERTES
@@ -1782,34 +1840,7 @@ async function searchManualBarcode() {
 
 // EVENTS
 
-function setupSwipeNavigation() {
-  const screen = document.getElementById('screen-section');
-  if (!screen) return;
-
-  let startX = 0;
-  let startY = 0;
-  let isTracking = false;
-  const MIN_DISTANCE = 60;   // Mínim de píxels horitzontals per detectar swipe
-  const MAX_VERTICAL = 50;   // Màxim moviment vertical (perquè no es confongui amb scroll)
-
-  screen.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) { isTracking = false; return; }
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    isTracking = true;
-  }, { passive: true });
-
-  screen.addEventListener('touchend', (e) => {
-    if (!isTracking) return;
-    isTracking = false;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - startX;
-    const dy = Math.abs(t.clientY - startY);
-
-    if (dy > MAX_VERTICAL) return; // moviment massa vertical → ignorem
-    if (Math.abs(dx) < MIN_DISTANCE) return; // moviment massa curt
-
-    if (dx > 0) navigateSection(-1); // swipe dreta = anterior
-    else navigateSection(+1);         // swipe esquerra = següent
-  }, { passive: true });
-}
+// El swipe entre zones ara el gestiona scroll-snap natiu del .zones-slider
+// (vegeu styles.css). Conservem la funció com a no-op perquè app.js encara
+// la crida durant la inicialització, i altres scripts poden referenciar-la.
+function setupSwipeNavigation() {}
