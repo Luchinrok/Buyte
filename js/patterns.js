@@ -414,3 +414,155 @@ function analyzePatterns() {
 function getHighPrioritySuggestions() {
   return analyzePatterns().filter(s => s.priority === 'high' && s.showAsBanner);
 }
+
+// ---------- UI ----------
+// Render a la sub-pestanya "🧠 Suggeriments" (Configuració > Activitat).
+
+function _patternsEscape(s) {
+  if (typeof escapeHtml === 'function') return escapeHtml(s);
+  const div = document.createElement('div');
+  div.textContent = s == null ? '' : String(s);
+  return div.innerHTML;
+}
+
+function _renderSuggestionCardHTML(s) {
+  const cls = 'suggestion-card ' + (s.priority || 'low');
+  const actionsHtml = s.action
+    ? `<button class="btn-apply" data-pattern-apply="${_patternsEscape(s.id)}">${_patternsEscape(s.action.label || t('applyAction'))}</button>
+       <button class="btn-dismiss" data-pattern-dismiss="${_patternsEscape(s.id)}">${_patternsEscape(t('dismissAction'))}</button>`
+    : (s.canDismiss
+        ? `<button class="btn-dismiss" data-pattern-dismiss="${_patternsEscape(s.id)}">${_patternsEscape(t('dismissAction'))}</button>`
+        : '');
+  const actions = actionsHtml
+    ? `<div class="suggestion-actions">${actionsHtml}</div>`
+    : '';
+  return `
+    <div class="${cls}">
+      <div class="header">
+        <span class="suggestion-emoji">${_patternsEscape(s.emoji || '🧠')}</span>
+        <div class="suggestion-content">
+          <h4>${_patternsEscape(s.title)}</h4>
+          <p>${_patternsEscape(s.description)}</p>
+        </div>
+      </div>
+      ${actions}
+    </div>
+  `;
+}
+
+function _renderPatternsLearningState(area, readiness) {
+  const daysPct = Math.min(100, Math.round((readiness.days / readiness.daysRequired) * 100));
+  const entriesPct = Math.min(100, Math.round((readiness.entries / readiness.entriesRequired) * 100));
+  area.innerHTML = `
+    <div class="suggestions-empty">
+      <div class="suggestions-icon">🧠</div>
+      <h3>${_patternsEscape(t('learningStill'))}</h3>
+      <p>${_patternsEscape(t('learningDescription'))}</p>
+
+      <div class="progress-row">
+        <span>${_patternsEscape(t('daysAccumulated'))}</span>
+        <span><strong>${readiness.days}</strong> / ${readiness.daysRequired}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${daysPct}%"></div></div>
+
+      <div class="progress-row">
+        <span>${_patternsEscape(t('historyEntries'))}</span>
+        <span><strong>${readiness.entries}</strong> / ${readiness.entriesRequired}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${entriesPct}%"></div></div>
+
+      <p class="hint">${_patternsEscape(t('learningHint'))}</p>
+    </div>
+  `;
+}
+
+function _renderPatternsList(area, suggestions, readiness) {
+  const toImprove = suggestions.filter(s => s.priority === 'high' || s.priority === 'medium');
+  const goodNews = suggestions.filter(s => s.priority === 'info');
+
+  // "Patrons detectats": mínim viable a la FASE 3 — quan FASE 4-5 entrin,
+  // afegirem aquí els insights d'hores actives, categoria preferida, etc.
+  const infoRows = [
+    { emoji: '📅', text: t('patternDays', readiness.days) },
+    { emoji: '📦', text: t('patternEntries', readiness.entries) }
+  ];
+
+  const sectionHTML = (title, list) => list.length === 0 ? '' : `
+    <section class="suggestions-section">
+      <h3 class="suggestions-section-title">${_patternsEscape(title)}</h3>
+      ${list.map(_renderSuggestionCardHTML).join('')}
+    </section>
+  `;
+
+  const noneHTML = (toImprove.length === 0 && goodNews.length === 0)
+    ? `<p class="suggestions-empty-msg">${_patternsEscape(t('suggestionsEmpty'))}</p>`
+    : '';
+
+  area.innerHTML = `
+    <div class="suggestions-wrap">
+      <h2 class="suggestions-heading">${_patternsEscape(t('suggestionsTitle'))}</h2>
+      ${sectionHTML(t('toImproveTitle'), toImprove)}
+      ${sectionHTML(t('goodNewsTitle'), goodNews)}
+      ${noneHTML}
+      <section class="suggestions-section">
+        <h3 class="suggestions-section-title">${_patternsEscape(t('patternsTitle'))}</h3>
+        ${infoRows.map(r => `
+          <div class="pattern-info-row">
+            <span>${_patternsEscape(r.emoji)}</span>
+            <span>${_patternsEscape(r.text)}</span>
+          </div>
+        `).join('')}
+      </section>
+      <p class="privacy-note">${_patternsEscape(t('privacyNote'))}</p>
+    </div>
+  `;
+}
+
+function renderPatternsSubTab(area) {
+  if (!area) area = document.getElementById('settings-activity-area');
+  if (!area) return;
+  const readiness = getPatternReadiness();
+  if (!readiness.ready) {
+    _renderPatternsLearningState(area, readiness);
+    return;
+  }
+  const suggestions = analyzePatterns();
+  _renderPatternsList(area, suggestions, readiness);
+}
+
+// Event delegation: connecta UNA SOLA VEGADA els botons Aplicar/Descartar
+// a #settings-activity-area. Resilient a re-renders (els botons es re-creen).
+(function _wirePatternsActions() {
+  if (typeof document === 'undefined') return;
+  if (window.__patternsActionsWired) return;
+  window.__patternsActionsWired = true;
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    if (!target || !target.closest) return;
+    const dismissBtn = target.closest('[data-pattern-dismiss]');
+    if (dismissBtn) {
+      const id = dismissBtn.getAttribute('data-pattern-dismiss');
+      dismissPattern(id);
+      const area = document.getElementById('settings-activity-area');
+      if (area) renderPatternsSubTab(area);
+      return;
+    }
+    const applyBtn = target.closest('[data-pattern-apply]');
+    if (applyBtn) {
+      const id = applyBtn.getAttribute('data-pattern-apply');
+      const all = analyzePatterns();
+      const s = all.find(x => x.id === id);
+      if (s && s.action) {
+        const fn = resolvePatternHandler(s.action.handler);
+        if (fn) {
+          try { fn(s.action.payload || {}, s); } catch (err) { console.error('[patterns] handler error', err); }
+        }
+        applyPattern(id);
+      }
+      // Aplicar també descarta (s'ha d'amagar fins que la condició torni a aparèixer).
+      dismissPattern(id);
+      const area = document.getElementById('settings-activity-area');
+      if (area) renderPatternsSubTab(area);
+    }
+  });
+})();

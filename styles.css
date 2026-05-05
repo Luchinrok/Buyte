@@ -7089,3 +7089,160 @@ h1 {
   0%, 100% { box-shadow: 0 4px 14px rgba(183, 28, 28, 0.4); }
   50%      { box-shadow: 0 4px 22px rgba(229, 57, 53, 0.65); }
 }
+
+/* ============================================
+   Sub-pestanya "🧠 Suggeriments" (Activitat)
+   ============================================ */
+.suggestions-wrap {
+  padding: 8px 16px 24px;
+}
+.suggestions-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 8px 0 16px 0;
+  text-align: center;
+}
+
+.suggestions-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text);
+}
+.suggestions-empty h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+.suggestions-empty p {
+  margin: 0 0 16px 0;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+.suggestions-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 0 4px 0;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.progress-bar {
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s;
+}
+
+.hint {
+  margin-top: 24px;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+
+.suggestions-section {
+  margin: 24px 0;
+}
+.suggestions-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-soft);
+  margin: 0 0 12px 0;
+}
+.suggestions-empty-msg {
+  margin: 16px 0;
+  color: var(--text-soft);
+  font-size: 14px;
+  text-align: center;
+}
+
+.suggestion-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-left: 4px solid var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.suggestion-card.high   { border-left-color: #EF5350; }
+.suggestion-card.medium { border-left-color: #FFA726; }
+.suggestion-card.low    { border-left-color: #42A5F5; }
+.suggestion-card.info {
+  background: rgba(76, 175, 80, 0.08);
+  border-left-color: #66BB6A;
+}
+
+.suggestion-card .header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.suggestion-emoji { font-size: 32px; line-height: 1; }
+.suggestion-content { flex: 1; min-width: 0; }
+.suggestion-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: var(--text);
+}
+.suggestion-content p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.suggestion-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.suggestion-actions button {
+  flex: 1;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+}
+.suggestion-actions button:active { transform: scale(0.97); }
+.suggestion-actions .btn-apply {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary-dark);
+}
+.suggestion-actions .btn-apply:hover { background: var(--primary-dark); }
+.suggestion-actions .btn-dismiss:hover { background: var(--border); }
+
+.pattern-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+}
+.pattern-info-row:last-child { border-bottom: none; }
+
+.privacy-note {
+  margin-top: 32px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-soft);
+}

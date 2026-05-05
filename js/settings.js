@@ -1229,6 +1229,15 @@ function renderSettingsActivity() {
     }
     return;
   }
+
+  if (activeActivityTab === 'suggeriments') {
+    // No depèn de cap pantalla externa: renderitzem directament. Restaurem
+    // qualsevol embed previ perquè el contingut prestat torni a casa.
+    restoreEmbeddedSettings();
+    if (typeof renderPatternsSubTab === 'function') renderPatternsSubTab(area);
+    else area.innerHTML = '';
+    return;
+  }
 }
 
 function attachSettingsActivityListeners() {
