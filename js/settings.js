@@ -395,6 +395,11 @@ function renderSmartNotifSettingsScreen() {
       const days = t('notifDayShort');
       const dayLabel = (Array.isArray(days) ? days[(cfg.day || 0) % 7] : 'Dia');
       chipsHtml += '<button type="button" class="smart-notif-chip" data-action="day">📅 ' + escapeHtml(dayLabel) + '</button>';
+    } else if (typeof meta.fixedDay === 'number') {
+      // Dia imposat (no editable) — mostrem el nom com a chip read-only.
+      const days = t('notifDayShort');
+      const dayLabel = (Array.isArray(days) ? days[meta.fixedDay % 7] : 'Dia');
+      chipsHtml += '<span class="smart-notif-chip smart-notif-chip-readonly">📅 ' + escapeHtml(dayLabel) + '</span>';
     }
     if (meta.hasHour) {
       const hh = String(cfg.hour || 0).padStart(2, '0');

@@ -6901,6 +6901,14 @@ h1 {
   border-color: rgba(33, 150, 243, 0.4);
   color: #1565C0;
 }
+.smart-notif-chip-readonly,
+.smart-notif-chip-readonly:hover {
+  cursor: default;
+  background: var(--bg-secondary);
+  border-color: var(--border);
+  color: var(--text-soft);
+  opacity: 0.85;
+}
 
 .smart-notif-install-tip {
   margin-top: 16px;
