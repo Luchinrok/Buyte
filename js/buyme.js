@@ -748,14 +748,10 @@ function showAddToShoppingModal(product) {
 
   overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
     document.body.removeChild(overlay);
-    // Si només hi ha 1 supermercat, l'afegim directament
-    if (supermarkets.length === 1) {
-      addToShoppingList(supermarkets[0].id, product);
-      showToast('🛒 ' + t('addedToShopping', supermarkets[0].name));
-      return;
-    }
-    // Si n'hi ha més, mostrem el selector de supermercats
-    showSupermarketPicker(product);
+    // Sempre mostrem el modal complet (qty + selector de super amb tots
+    // els actius, preferits i no preferits). Així l'usuari pot ajustar
+    // la quantitat abans d'afegir, no només el super.
+    showManualAddToBuyMeModal(product);
   });
 
   // Click fora del modal el tanca (= cancel·lar)
@@ -858,76 +854,6 @@ function showManualAddToBuyMeModal(product) {
     document.body.removeChild(overlay);
   });
 
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) document.body.removeChild(overlay);
-  });
-}
-
-
-function showSupermarketPicker(product) {
-  // Crea modal dinàmic
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-    <div class="modal-content">
-      <p class="modal-title">${t('chooseSupermarket')}</p>
-      <p class="modal-sub">${escapeHtml(product.emoji + ' ' + product.name)}</p>
-      <div class="modal-options" id="modal-supermarket-options"></div>
-      <button class="modal-cancel" id="modal-cancel-btn">${t('cancel')}</button>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-
-  const optionsContainer = overlay.querySelector('#modal-supermarket-options');
-  const gradients = [
-    ['#42A5F5', '#1565C0'], ['#26A69A', '#00695C'], ['#FFA726', '#E65100'],
-    ['#AB47BC', '#7B1FA2'], ['#EF5350', '#C62828'], ['#66BB6A', '#388E3C'],
-    ['#5C6BC0', '#3949AB']
-  ];
-
-  // Preferides primer, després la resta
-  const preferred = getEnabledSupermarkets();
-  const preferredIds = new Set(preferred.map(s => s.id));
-  const others = supermarkets.filter(s => !preferredIds.has(s.id));
-
-  let counter = 0;
-  const appendBtn = (sm) => {
-    const [c1, c2] = gradients[counter % gradients.length];
-    counter++;
-    const btn = document.createElement('button');
-    btn.className = 'modal-supermarket-btn';
-    btn.style.background = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
-    btn.innerHTML = `<span class="modal-sm-emoji">${sm.emoji}</span><span class="modal-sm-name">${escapeHtml(sm.name)}</span>`;
-    btn.addEventListener('click', () => {
-      addToShoppingList(sm.id, product);
-      showToast('🛒 ' + t('addedToShopping', sm.name));
-      document.body.removeChild(overlay);
-    });
-    optionsContainer.appendChild(btn);
-  };
-
-  const appendHeader = (label) => {
-    const h = document.createElement('p');
-    h.className = 'modal-sub';
-    h.style.cssText = 'margin:10px 0 6px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7';
-    h.textContent = label;
-    optionsContainer.appendChild(h);
-  };
-
-  if (preferred.length > 0) {
-    appendHeader(t('preferredShops'));
-    preferred.forEach(appendBtn);
-  }
-  if (others.length > 0) {
-    appendHeader(t('otherShops'));
-    others.forEach(appendBtn);
-  }
-
-  overlay.querySelector('#modal-cancel-btn').addEventListener('click', () => {
-    document.body.removeChild(overlay);
-  });
-
-  // Click fora del modal el tanca
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) document.body.removeChild(overlay);
   });
