@@ -1392,14 +1392,18 @@
 
     <p class="section-hint" id="supermarket-summary">-</p>
 
+    <!-- Barra d'acció sticky a dalt: el botó "Afegir" sempre queda
+         accessible per molt llarga que sigui la llista. -->
+    <div class="shop-actions-bar">
+      <button class="add-supermarket-btn" id="btn-add-shopping-item">
+        <span style="font-size:22px;margin-right:8px">➕</span>
+        <span data-i18n="addShoppingItem"></span>
+      </button>
+    </div>
+
     <div class="shopping-items-list" id="shopping-items-list">
       <!-- Es genera dinàmicament -->
     </div>
-
-    <button class="add-supermarket-btn" id="btn-add-shopping-item">
-      <span style="font-size:22px;margin-right:8px">➕</span>
-      <span data-i18n="addShoppingItem"></span>
-    </button>
   </div>
 
   <!-- PANTALLA AFEGIR/EDITAR SUPERMERCAT -->

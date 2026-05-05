@@ -3771,6 +3771,23 @@ h1 {
   margin-top: 8px;
 }
 
+/* Barra d'acció sticky a sobre de la llista d'items d'una botiga.
+   Manté els botons d'acció (Afegir, etc.) sempre accessibles a dalt
+   per molt llarga que sigui la llista. */
+.shop-actions-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding: 8px 0 12px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+}
+.shop-actions-bar > * { flex: 1; }
+.shop-actions-bar .add-supermarket-btn { margin-top: 0; }
+
 .add-supermarket-btn > span,
 .special-lists-btn > span {
   display: inline-flex;
