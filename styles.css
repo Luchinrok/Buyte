@@ -290,24 +290,24 @@ h1 {
     0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Gradients per nivell — usem la parella var(--*-bg) (clar) i
-   var(--*-border) (fosc) com a stops per mantenir la paleta sota
-   control de tema. El degradat 135deg dóna sensació 3D. */
+/* Gradients vibrants per nivell — paleta Material coherent amb les
+   tiles del launcher i els botons de Configuració, amb prou saturació
+   per fer-les ressaltar dins del fridge frame. */
 .shelf-green {
-  background: linear-gradient(135deg, var(--green-bg), var(--green-border));
-  border-color: var(--green-border);
+  background: linear-gradient(135deg, #66BB6A, #2E7D32);
+  border-color: #2E7D32;
 }
 .shelf-yellow {
-  background: linear-gradient(135deg, var(--yellow-bg), var(--yellow-border));
-  border-color: var(--yellow-border);
+  background: linear-gradient(135deg, #FFCA28, #FFA000);
+  border-color: #FFA000;
 }
 .shelf-orange {
-  background: linear-gradient(135deg, var(--orange-bg), var(--orange-border));
-  border-color: var(--orange-border);
+  background: linear-gradient(135deg, #FF7043, #E64A19);
+  border-color: #E64A19;
 }
 .shelf-red {
-  background: linear-gradient(135deg, var(--red-bg), var(--red-border));
-  border-color: var(--red-border);
+  background: linear-gradient(135deg, #EF5350, #C62828);
+  border-color: #C62828;
 }
 
 /* Estat buit (count = 0): card desaturada per fer-la "apagada"
@@ -334,14 +334,18 @@ h1 {
   font-weight: 500;
 }
 
-.shelf-green .shelf-title { color: var(--green-text); }
-.shelf-green .shelf-sub { color: var(--green-text-soft); }
-.shelf-yellow .shelf-title { color: var(--yellow-text); }
-.shelf-yellow .shelf-sub { color: var(--yellow-text-soft); }
-.shelf-orange .shelf-title { color: var(--orange-text); }
-.shelf-orange .shelf-sub { color: var(--orange-text-soft); }
-.shelf-red .shelf-title { color: var(--red-text); }
-.shelf-red .shelf-sub { color: var(--red-text-soft); }
+/* Text de contrast sobre els nous gradients vibrants. Groc/ambre
+   manté text fosc (millor contraste amb fons clar); la resta usen
+   blanc per llegibilitat sobre vermells/taronges/verds saturats. */
+.shelf-green .shelf-title,
+.shelf-orange .shelf-title,
+.shelf-red .shelf-title { color: #FFFFFF; }
+.shelf-green .shelf-sub,
+.shelf-orange .shelf-sub,
+.shelf-red .shelf-sub { color: rgba(255, 255, 255, 0.92); }
+
+.shelf-yellow .shelf-title { color: #4E2A00; }
+.shelf-yellow .shelf-sub { color: rgba(78, 42, 0, 0.85); }
 
 .shelf-count {
   display: flex;
@@ -353,10 +357,10 @@ h1 {
   line-height: 1;
 }
 
-.shelf-green .shelf-count { color: var(--green-text); }
-.shelf-yellow .shelf-count { color: var(--yellow-text); }
-.shelf-orange .shelf-count { color: var(--orange-text); }
-.shelf-red .shelf-count { color: var(--red-text); }
+.shelf-green .shelf-count,
+.shelf-orange .shelf-count,
+.shelf-red .shelf-count { color: #FFFFFF; }
+.shelf-yellow .shelf-count { color: #4E2A00; }
 
 .shelf-arrow {
   font-size: 22px;
