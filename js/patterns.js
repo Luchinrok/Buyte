@@ -227,23 +227,30 @@ function getPatternReadiness() {
   const entries = Array.isArray(history) ? history.length : 0;
   let days = 0;
 
-  // Font primària: el timestamp més antic de l'historial real. Així
-  // l'acumulació és resilient a reinstal·lacions o canvis de dispositiu.
+  // Font primària: timestamp més antic de l'historial real. Acceptem tant
+  // `e.date` (ISO string, format actual) com `e.timestamp` (número), per
+  // resiliència davant entrades de format antic o externes.
+  let oldestFromHistory = null;
   if (entries > 0) {
     let oldest = Infinity;
     for (let i = 0; i < history.length; i++) {
       const e = history[i];
-      if (!e || !e.date) continue;
-      const t = new Date(e.date).getTime();
+      if (!e) continue;
+      let t = NaN;
+      if (typeof e.timestamp === 'number' && isFinite(e.timestamp)) {
+        t = e.timestamp;
+      } else if (e.date) {
+        t = new Date(e.date).getTime();
+      }
       if (isFinite(t) && t < oldest) oldest = t;
     }
-    if (isFinite(oldest)) {
-      days = Math.max(0, Math.floor((Date.now() - oldest) / 86400000));
-    }
+    if (isFinite(oldest)) oldestFromHistory = oldest;
   }
 
-  // Fallback: si encara no hi ha historial vàlid, mirem la data d'instal·lació.
-  if (days === 0) {
+  if (oldestFromHistory !== null) {
+    days = Math.max(0, Math.floor((Date.now() - oldestFromHistory) / 86400000));
+  } else {
+    // Fallback NOMÉS si l'historial no aporta cap timestamp utilitzable.
     const install = _loadInstallDate();
     if (install) {
       days = Math.max(0, Math.floor((Date.now() - install.getTime()) / 86400000));
