@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof loadRecipeUsage === 'function') loadRecipeUsage();
   if (typeof loadCustomRecipes === 'function') loadCustomRecipes();
   if (typeof loadRecipeOverrides === 'function') loadRecipeOverrides();
+  if (typeof recordAppActivity === 'function') recordAppActivity();
   if (typeof loadGamificationState === 'function') {
     loadGamificationState();
     // Primer boot després d'instal·lar la gamificació: desbloca retroactivament
@@ -600,6 +601,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) renderHome();
-  else stopScanner();
+  if (!document.hidden) {
+    if (typeof recordAppActivity === 'function') recordAppActivity();
+    renderHome();
+  } else {
+    stopScanner();
+  }
 });

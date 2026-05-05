@@ -114,6 +114,76 @@ function resetPatternData() {
   } catch (e) {}
 }
 
+// ---------- Activity tracking ----------
+// Registre minimalista d'obertures de l'app per detectar l'hora i el dia
+// preferits de l'usuari. Cada entrada: { timestamp, dayOfWeek, hour }.
+// Política: ignorem entrades a menys de 5 minuts de l'última (per no inflar
+// el comptador quan l'usuari canvia de pestanya). Auto-purge a 90 dies.
+const APP_ACTIVITY_MIN_GAP_MS = 5 * 60 * 1000;
+const APP_ACTIVITY_MAX_AGE_DAYS = 90;
+
+function _loadAppActivity() {
+  const list = _readJSON('eatmefirst_app_activity', []);
+  return Array.isArray(list) ? list : [];
+}
+
+function _saveAppActivity(list) {
+  _writeJSON('eatmefirst_app_activity', list);
+}
+
+function purgeOldActivity() {
+  const list = _loadAppActivity();
+  const cutoff = Date.now() - APP_ACTIVITY_MAX_AGE_DAYS * 86400000;
+  const filtered = list.filter(a => a && typeof a.timestamp === 'number' && a.timestamp >= cutoff);
+  if (filtered.length !== list.length) _saveAppActivity(filtered);
+  return filtered;
+}
+
+function recordAppActivity() {
+  try {
+    const list = purgeOldActivity();
+    const now = Date.now();
+    const last = list.length ? list[list.length - 1] : null;
+    if (last && typeof last.timestamp === 'number' && (now - last.timestamp) < APP_ACTIVITY_MIN_GAP_MS) return;
+    const d = new Date(now);
+    list.push({ timestamp: now, dayOfWeek: d.getDay(), hour: d.getHours() });
+    _saveAppActivity(list);
+  } catch (e) {}
+}
+
+function getActiveHours() {
+  const list = purgeOldActivity();
+  const out = new Array(24).fill(0);
+  list.forEach(a => {
+    if (!a) return;
+    const h = (typeof a.hour === 'number') ? a.hour : new Date(a.timestamp || 0).getHours();
+    if (isFinite(h) && h >= 0 && h <= 23) out[h]++;
+  });
+  return out;
+}
+
+function getActiveDays() {
+  const list = purgeOldActivity();
+  const out = new Array(7).fill(0);
+  list.forEach(a => {
+    if (!a) return;
+    const d = (typeof a.dayOfWeek === 'number') ? a.dayOfWeek : new Date(a.timestamp || 0).getDay();
+    if (isFinite(d) && d >= 0 && d <= 6) out[d]++;
+  });
+  return out;
+}
+
+function getMostActiveHour() {
+  const counts = getActiveHours();
+  const total = counts.reduce((a, b) => a + b, 0);
+  if (total < 5) return null;
+  let best = 0, bestCount = -1;
+  for (let i = 0; i < 24; i++) {
+    if (counts[i] > bestCount) { bestCount = counts[i]; best = i; }
+  }
+  return best;
+}
+
 // ---------- Readiness ----------
 
 function _loadConsumptionHistorySafe() {
