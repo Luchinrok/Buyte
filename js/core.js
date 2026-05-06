@@ -634,3 +634,76 @@ function showToast(msg) {
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => tt.classList.remove('show'), 2000);
 }
+
+// ============================================
+// CUBE SLIDER EFFECT (shared helper)
+// ============================================
+//
+// Aplica un efecte de cub 3D a un slider scroll-snap horitzontal: la
+// pàgina que correspon a l'scrollLeft actual queda al davant (rotateY=0)
+// i les adjacents queden a 90° als laterals d'un cub virtual. La rotació
+// pivota al voltant del centre del cub (a halfW de profunditat darrere
+// la cara frontal), no al voltant del centre de cada pàgina, per fer
+// que les cares formin un cub real i no un ventall.
+//
+// Usat per:
+//   • .zones-slider  — BiteMe (Nevera / Congelador / Rebost / Fruiter)
+//   • .shops-slider  — BuyMe (Mercadona / Lidl / Carrefour / ...)
+//
+// Requereix al CSS del slider:
+//   perspective: 1000px;
+//   transform-style: preserve-3d;
+// I a cada pàgina:
+//   transform-origin: 50% 50%;
+//   backface-visibility: hidden;
+//   will-change: transform;
+//
+// Es crida des dels scroll listeners dels mòduls (biteme.js i buyme.js).
+// Internament agrupa les invocacions amb un sol requestAnimationFrame
+// per slider, per evitar diversos repaints en una mateixa frame.
+const _cubeSliderRafPending = new WeakSet();
+function applyCubeSliderEffect(slider) {
+  if (!slider) return;
+  if (_cubeSliderRafPending.has(slider)) return;
+  _cubeSliderRafPending.add(slider);
+  requestAnimationFrame(() => {
+    _cubeSliderRafPending.delete(slider);
+    const w = slider.clientWidth;
+    if (!w) return;
+    const sl = slider.scrollLeft;
+    const halfW = w / 2;
+    const pages = slider.children;
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const distance = i * w - sl;
+      const ratio = distance / w;
+      // Cadena de transforms (s'apliquen d'esquerra a dreta sobre el
+      // sistema de coordenades local de la pàgina):
+      //   1. translateX(-distance): cancel·la la posició natural del
+      //      flex; totes les pàgines passen a tenir el seu centre al
+      //      mateix punt (centre del slider).
+      //   2. translateZ(-halfW): empeny la pàgina enrere fins al pla
+      //      del centre del cub (perquè rotateY pivoti aquí).
+      //   3. rotateY(ratio*90deg): cara frontal (ratio=0) sense rotar;
+      //      cara dreta del cub (ratio=1) a +90°; cara esquerra (ratio
+      //      =-1) a -90°.
+      //   4. translateZ(halfW): mou la pàgina, ja rotada, una distància
+      //      halfW al llarg del seu nou eix Z (que apunta cap enfora del
+      //      cub), col·locant-la a la superfície del cub.
+      // Resultat net: cara frontal queda al pla del visor (z=0,
+      //   mida natural), cares laterals es projecten als costats.
+      page.style.transform =
+        'translateX(' + (-distance) + 'px) ' +
+        'translateZ(' + (-halfW) + 'px) ' +
+        'rotateY(' + (ratio * 90) + 'deg) ' +
+        'translateZ(' + halfW + 'px)';
+      // Pàgines més enllà de la cara adjacent (|ratio| > 1.5) ja no
+      // formen part del recorregut visible del cub: amaga-les per
+      // estalviar repaints i evitar clics fantasma. Reset de l'opacity
+      // al pas, per netejar inline styles d'iteracions anteriors
+      // (l'efecte Stories previ deixava .style.opacity escrit).
+      page.style.visibility = (ratio > -1.5 && ratio < 1.5) ? 'visible' : 'hidden';
+      if (page.style.opacity) page.style.opacity = '';
+    }
+  });
+}

@@ -396,6 +396,8 @@ function _setupShopsSliderScrollListener(slider) {
   _shopsSliderScrollListenerWired = true;
   let scrollTimer = null;
   slider.addEventListener('scroll', () => {
+    // Efecte cub 3D: helper compartit (js/core.js), batched amb rAF.
+    applyCubeSliderEffect(slider);
     if (scrollTimer) clearTimeout(scrollTimer);
     scrollTimer = setTimeout(() => {
       const w = slider.clientWidth;
@@ -416,6 +418,8 @@ function _setupShopsSliderScrollListener(slider) {
       }
     }, 80);
   }, { passive: true });
+  // Estat inicial del cub: pàgina 0 al davant, la resta als laterals.
+  applyCubeSliderEffect(slider);
 }
 
 // Afegir/editar supermercat

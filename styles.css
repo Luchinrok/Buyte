@@ -216,13 +216,15 @@ h1 {
   min-height: 0;
   margin-left: -20px;
   margin-right: -20px;
-  /* Efecte 3D estil Instagram Stories: perspective al contenidor +
-     rotateY a cada .zone-page segons la posició de scroll (calculat
-     per JS a _applyStoriesEffect en js/biteme.js). El perspective
-     viu al contenidor perquè totes les pàgines comparteixin el
-     mateix punt de fuga. */
-  perspective: 1200px;
+  /* Efecte cub 3D: les .zone-page es projecten com a cares d'un cub
+     (helper applyCubeSliderEffect a js/core.js, cridat per
+     js/biteme.js a cada scroll). perspective al contenidor perquè
+     totes les cares comparteixin el mateix punt de fuga;
+     transform-style: preserve-3d perquè els fills es renderitzin en
+     l'espai 3D del slider en lloc d'aplanar-se al pla del slider. */
+  perspective: 1000px;
   perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
 }
 
 .zones-slider::-webkit-scrollbar { display: none; }
@@ -236,13 +238,15 @@ h1 {
   min-height: 0;
   box-sizing: border-box;
   padding: 0 20px;
-  /* Base per l'efecte Stories. La transformació real l'aplica JS
-     (style.transform / style.opacity) a cada scroll; aquí només
-     posem l'origin, will-change i backface-visibility per garantir
-     que la GPU mantingui les pàgines compostes. */
+  /* Base per l'efecte cub 3D (vegeu applyCubeSliderEffect a
+     js/core.js). transform-origin centrat perquè rotateY pivoti
+     a partir del centre de la pàgina; backface-visibility hidden
+     amaga automàticament les cares que han girat més de 90°;
+     will-change: transform avisa el compositor perquè mantingui
+     la pàgina en una capa GPU pròpia. */
   transform-origin: 50% 50%;
   backface-visibility: hidden;
-  will-change: transform, opacity;
+  will-change: transform;
 }
 
 .zone-page > .fridge { margin-bottom: 0; }
@@ -265,6 +269,12 @@ h1 {
   min-height: 0;
   margin-left: -20px;
   margin-right: -20px;
+  /* Efecte cub 3D, idèntic al de .zones-slider (helper compartit
+     applyCubeSliderEffect a js/core.js, cridat per js/buyme.js a
+     cada scroll del slider de supermercats). */
+  perspective: 1000px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
 }
 
 .shops-slider::-webkit-scrollbar { display: none; }
@@ -279,6 +289,11 @@ h1 {
   box-sizing: border-box;
   padding: 0 20px;
   overflow-y: auto;
+  /* Base per l'efecte cub 3D (vegeu .zone-page i
+     applyCubeSliderEffect a js/core.js). */
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .shop-page::-webkit-scrollbar { display: none; }
