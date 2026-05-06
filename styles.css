@@ -230,29 +230,22 @@ h1 {
    laterals durant el lliscament. ===== */
 .shops-slider {
   flex: 1;
-  display: flex;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  /* Vegeu el comentari a .zones-slider: width: 100% + margin
-     negatiu en un flex item no estén la caixa per la dreta. */
+  /* Vegeu el comentari a .zones-slider: cal width: calc(100% + 40px)
+     amb margin: 0 -20px per estendre el slider sota el padding del
+     .screen i arribar a les vores del viewport. */
   width: calc(100% + 40px);
   min-height: 0;
   margin-left: -20px;
   margin-right: -20px;
+  /* Swiper amb effect: creative posiciona els slides amb transforms
+     absoluts; cal overflow:hidden per clipping de les rotacions. */
+  overflow: hidden;
 }
 
-.shops-slider::-webkit-scrollbar { display: none; }
-
 .shop-page {
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
+  /* La mida la fixa Swiper (.swiper-slide). Aquí només el contingut. */
   display: flex;
   flex-direction: column;
-  min-height: 0;
   box-sizing: border-box;
   padding: 0 20px;
   overflow-y: auto;
@@ -2288,6 +2281,17 @@ h1 {
   flex-wrap: nowrap;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Override de Swiper.js: vegeu el paral·lel a .section-dots. Quan
+   Swiper aplica .swiper-pagination al nostre #supermarket-dots, hem
+   d'anul·lar el seu position:absolute / bottom perquè volem el
+   contenidor en el flow normal de la .screen, sobre el slider. */
+.sm-dots-container.swiper-pagination {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  width: 100%;
 }
 
 /* Barres horizontals amples i prominents, com Instagram Stories.

@@ -201,35 +201,84 @@ function openSupermarket(id, options) {
   requestAnimationFrame(() => _scrollToSupermarket(currentSupermarketId, false));
 }
 
-function _scrollToSupermarket(id, smooth) {
+// Swiper.js per al slider de supermercats (vegeu el paral·lel a
+// js/biteme.js per a zones). Es crea peresosament a _ensureShopsSwiper
+// la primera vegada que el slider té dimensions (screen-supermarket
+// .active). A diferència del slider de zones, el conjunt de slides
+// pot canviar entre sessions perquè l'usuari pot activar/desactivar
+// supermercats — quan això passa, renderShoppingItems destrueix la
+// instància actual abans de reconstruir el DOM, i el següent
+// _scrollToSupermarket crea una de nova.
+let _shopsSwiper = null;
+
+function _ensureShopsSwiper() {
+  if (_shopsSwiper) return _shopsSwiper;
   const slider = document.getElementById('shops-slider');
-  if (!slider) return;
+  if (!slider || !slider.clientWidth) return null;
+  _shopsSwiper = new Swiper('#shops-slider', {
+    effect: 'creative',
+    creativeEffect: {
+      prev: { translate: ['-100%', 0, -200], rotate: [0, 30, 0], opacity: 0.5 },
+      next: { translate: ['100%', 0, -200], rotate: [0, -30, 0], opacity: 0.5 }
+    },
+    speed: 400,
+    grabCursor: true,
+    pagination: {
+      el: '#supermarket-dots',
+      clickable: true,
+      bulletClass: 'sm-dot',
+      bulletActiveClass: 'active',
+      renderBullet: function(index, className) {
+        const supers = getBuyMeVisibleSupermarkets();
+        const sm = supers[index];
+        const id = sm ? sm.id : '';
+        const label = sm ? sm.name : '';
+        return '<button class="' + className + '" type="button" data-sm-id="' + id + '" aria-label="' + label + '"></button>';
+      }
+    },
+    on: {
+      slideChange: function() {
+        const supers = getBuyMeVisibleSupermarkets();
+        const sm = supers[this.activeIndex];
+        if (sm && sm.id !== currentSupermarketId) {
+          currentSupermarketId = sm.id;
+          // En canviar de super, sortim del mode d'edició (cada super
+          // hauria de començar en mode visualització).
+          supermarketItemsMode = 'view';
+          updateSupermarketEditBtn();
+          // Re-renderitzem per assegurar que la pàgina anterior queda
+          // en mode view (per si tenia edició) i actualitzar
+          // títol/comptador. sameSet=true a renderShoppingItems → no
+          // rebuild del DOM, només re-render dels items dins de cada
+          // slide, així que la instància de Swiper no es destrueix.
+          renderShoppingItems();
+        }
+      }
+    }
+  });
+  return _shopsSwiper;
+}
+
+function _scrollToSupermarket(id, smooth) {
   const supers = getBuyMeVisibleSupermarkets();
   const idx = supers.findIndex(s => s.id === id);
   if (idx < 0) return;
-  const apply = () => {
-    const w = slider.clientWidth;
-    if (!w) { requestAnimationFrame(apply); return; }
-    const x = Math.round(idx * w);
-    if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
-    else slider.scrollLeft = x;
-  };
-  apply();
+  const swiper = _ensureShopsSwiper();
+  if (!swiper) {
+    // Pantalla encara no .active (clientWidth=0). Reintenta al
+    // següent frame; quan showScreen('supermarket') s'hagi aplicat,
+    // _ensureShopsSwiper podrà crear la instància.
+    requestAnimationFrame(() => _scrollToSupermarket(id, smooth));
+    return;
+  }
+  swiper.slideTo(idx, smooth ? 400 : 0);
 }
 
 (function _wireShopsResnap() {
   if (typeof window === 'undefined') return;
   if (window.__shopsSliderResizeWired) return;
   window.__shopsSliderResizeWired = true;
-  let resizeTimer = null;
-  window.addEventListener('resize', () => {
-    if (resizeTimer) clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      const screen = document.getElementById('screen-supermarket');
-      if (!screen || !screen.classList.contains('active')) return;
-      _scrollToSupermarket(currentSupermarketId, false);
-    }, 120);
-  });
+  // Swiper té el seu propi ResizeObserver intern; res a fer aquí.
 })();
 
 function _updateSupermarketHeader() {
@@ -260,26 +309,10 @@ function updateSupermarketEditBtn() {
   btn.textContent = supermarketItemsMode === 'edit' ? '✓' : '✏️';
 }
 
-function renderSupermarketDots() {
-  const dotsContainer = document.getElementById('supermarket-dots');
-  if (!dotsContainer) return;
-  dotsContainer.innerHTML = '';
-  const visible = getBuyMeVisibleSupermarkets();
-  visible.forEach(sm => {
-    const dot = document.createElement('button');
-    dot.type = 'button';
-    dot.className = 'sm-dot' + (sm.id === currentSupermarketId ? ' active' : '');
-    dot.setAttribute('aria-label', sm.name);
-    if (sm.id === currentSupermarketId) dot.setAttribute('aria-current', 'true');
-    dot.addEventListener('click', () => {
-      if (sm.id === currentSupermarketId) return;
-      // El scroll listener actualitzarà currentSupermarketId i la
-      // resta d'UI quan acabi el snap.
-      _scrollToSupermarket(sm.id, true);
-    });
-    dotsContainer.appendChild(dot);
-  });
-}
+// No-op stub. La paginació la renderitza Swiper via pagination.el =
+// '#supermarket-dots' a _ensureShopsSwiper. Mantenim aquesta funció
+// definida per backward compat amb callers heretats.
+function renderSupermarketDots() {}
 
 // El swipe entre supermercats ara el gestiona scroll-snap natiu del
 // .shops-slider (vegeu styles.css). Conservem la funció com a hook
@@ -293,31 +326,52 @@ function setupSupermarketSwipe() {}
 function renderShoppingItems() {
   const slider = document.getElementById('shops-slider');
   if (!slider) return;
+  const wrapper = slider.querySelector('.swiper-wrapper');
+  if (!wrapper) return;
 
   const supers = getBuyMeVisibleSupermarkets();
 
-  // Construïm les pàgines un sol cop (o si canvia el conjunt de supers).
-  const existingIds = Array.from(slider.children).map(c => c.dataset.smId);
+  // Construïm les pàgines (.swiper-slide) un sol cop o quan canvia el
+  // conjunt de supermercats actius (l'usuari pot activar/desactivar
+  // supers a settings). Si la llista canvia, primer destruïm la
+  // instància de Swiper existent — Swiper té el seu propi inventari
+  // de slides i si modifiquem el DOM directament queda desincronitzat.
+  const existingIds = Array.from(wrapper.children).map(c => c.dataset.smId);
   const wantedIds = supers.map(s => s.id);
   const sameSet = existingIds.length === wantedIds.length
     && existingIds.every((id, i) => id === wantedIds[i]);
   if (!sameSet) {
-    slider.innerHTML = '';
+    if (_shopsSwiper) {
+      _shopsSwiper.destroy(true, true);
+      _shopsSwiper = null;
+    }
+    wrapper.innerHTML = '';
     supers.forEach(sm => {
       const page = document.createElement('div');
-      page.className = 'shop-page';
+      page.className = 'shop-page swiper-slide';
       page.dataset.smId = sm.id;
       const list = document.createElement('div');
       list.className = 'shopping-items-list';
       page.appendChild(list);
-      slider.appendChild(page);
+      wrapper.appendChild(page);
     });
-    _setupShopsSliderScrollListener(slider);
+    // Si l'usuari té un super activament obert i ha estat eliminat,
+    // ens caiem cap al primer disponible (evita slideTo amb idx=-1).
+    if (currentSupermarketId && supers.findIndex(s => s.id === currentSupermarketId) < 0 && supers.length > 0) {
+      currentSupermarketId = supers[0].id;
+    }
+    // Si la pantalla és visible ara mateix, lazy-recreem la
+    // instància de Swiper a la pàgina del super actual. Si no, ja ho
+    // farà openSupermarket via rAF al proper canvi de pantalla.
+    const screen = document.getElementById('screen-supermarket');
+    if (screen && screen.classList.contains('active') && currentSupermarketId) {
+      requestAnimationFrame(() => _scrollToSupermarket(currentSupermarketId, false));
+    }
   }
 
   // Renderitzem els items de cada pàgina.
   supers.forEach(sm => {
-    const page = slider.querySelector('.shop-page[data-sm-id="' + sm.id + '"]');
+    const page = wrapper.querySelector('.shop-page[data-sm-id="' + sm.id + '"]');
     if (!page) return;
     const list = page.querySelector('.shopping-items-list');
     if (!list) return;
@@ -390,33 +444,11 @@ function _renderShopPageItems(smId, listEl, mode) {
   });
 }
 
-let _shopsSliderScrollListenerWired = false;
-function _setupShopsSliderScrollListener(slider) {
-  if (_shopsSliderScrollListenerWired) return;
-  _shopsSliderScrollListenerWired = true;
-  let scrollTimer = null;
-  slider.addEventListener('scroll', () => {
-    if (scrollTimer) clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => {
-      const w = slider.clientWidth;
-      if (!w) return;
-      const idx = Math.round(slider.scrollLeft / w);
-      const supers = getBuyMeVisibleSupermarkets();
-      const sm = supers[idx];
-      if (sm && sm.id !== currentSupermarketId) {
-        currentSupermarketId = sm.id;
-        // En canviar de super, sortim del mode d'edició: cada super
-        // hauria de començar net en mode visualització.
-        supermarketItemsMode = 'view';
-        updateSupermarketEditBtn();
-        // Re-renderitzem per assegurar que la pàgina anterior queda en
-        // mode view (per si tenia edició) i actualitzem títol/comptador.
-        renderShoppingItems();
-        renderSupermarketDots();
-      }
-    }, 80);
-  }, { passive: true });
-}
+// No-op stub: la sincronització "swipe → currentSupermarketId" la fa
+// el callback slideChange dins de _ensureShopsSwiper. Conservem la
+// funció perquè renderShoppingItems la cridava abans i podria
+// quedar-ne alguna referència.
+function _setupShopsSliderScrollListener() {}
 
 // Afegir/editar supermercat
 function openSupermarketEdit(sm) {

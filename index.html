@@ -1382,11 +1382,14 @@
       </button>
     </div>
 
-    <!-- Slider continu: una pàgina per supermercat visible. La
-         navegació es fa amb scroll-snap natiu (touch / wheel /
-         teclat). El títol i els dots de dalt s'actualitzen segons
-         quina pàgina està centrada. -->
-    <div class="shops-slider" id="shops-slider"></div>
+    <!-- Slider 3D estil Stories (Swiper.js, effect: creative). El
+         contingut de cada supermercat es construeix a
+         renderShoppingItems() i va dins de .swiper-wrapper. Els dots
+         es renderitzen a #supermarket-dots (vegeu pagination.el a
+         _ensureShopsSwiper a js/buyme.js). -->
+    <div class="shops-slider swiper" id="shops-slider">
+      <div class="swiper-wrapper"></div>
+    </div>
   </div>
 
   <!-- PANTALLA AFEGIR/EDITAR SUPERMERCAT -->
@@ -1815,7 +1818,7 @@
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260506-8"></script>
   <script src="js/shops.js?v=20260503-3"></script>
-  <script src="js/buyme.js?v=20260506-5"></script>
+  <script src="js/buyme.js?v=20260506-6"></script>
   <script src="js/populars.js?v=20260503-3"></script>
   <script src="js/special-lists.js?v=20260503-3"></script>
   <script src="js/settings.js?v=20260503-3"></script>
