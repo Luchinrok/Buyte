@@ -847,10 +847,30 @@ function openShelf(level) {
   _buildLevelSlides();
   const slider = document.getElementById('levels-slider');
   if (!slider) return;
+  // CRÍTIC: destruïm la instància de Swiper existent abans de tornar
+  // a renderitzar contingut. Sense això, després de diverses
+  // navegacions (entrar a un nivell → enrere → entrar a un altre → ...)
+  // la cube geometry de Swiper pot acumular drift: dimensions
+  // cachejades de slides amb contingut diferent, classes
+  // .swiper-slide-active orfes, duplicats sincronitzats amb una
+  // currentSection antiga. El símptoma final és que els clicks deixen
+  // d'arribar al shelf (Swiper només posa pointer-events:auto sobre
+  // active+prev+next, i si l'estat queda corromput cap slide té la
+  // classe .swiper-slide-active). Recrear la instància cada cop és
+  // barat (4 slides) i garanteix un estat net. També neteja els
+  // duplicats abans de la nostra render — quan _ensureLevelsSwiper
+  // crei la nova instància ja farà nous duplicats clonant les slides
+  // amb el contingut just renderitzat.
+  if (_levelsSwiper) {
+    _levelsSwiper.destroy(true, true);
+    _levelsSwiper = null;
+  }
   // Re-renderitzem el contingut de TOTS 4 slides perquè currentSection
-  // pot haver canviat des de l'última obertura. querySelectorAll perquè
-  // amb loop:true Swiper té duplicats que també necessiten el contingut
-  // actualitzat (a la costura del loop l'usuari pot aterrar al clone).
+  // pot haver canviat des de l'última obertura. (Després del destroy
+  // de dalt, no hi ha duplicats — només els 4 originals — així que
+  // un querySelector per slide n'hi ha prou; mantinc querySelectorAll
+  // per simetria amb el patró d'altres llocs i defensiu en cas que
+  // alguna altra via de codi posi duplicats.)
   LEVEL_ORDER.forEach(lvl => {
     const slides = slider.querySelectorAll('.level-page[data-level="' + lvl + '"]');
     slides.forEach(slide => _renderShelfProducts(slide, lvl, cat));
@@ -858,7 +878,7 @@ function openShelf(level) {
   // Title/nevi a l'instant per evitar flash al header durant l'animació.
   _updateLevelHeaderAndNevi(level);
   showScreen('list');
-  // Inicialitzem o seekem el Swiper en el següent frame, quan
+  // Inicialitzem el Swiper de nou en el següent frame, quan
   // .screen.active ja li dóna dimensions al slider.
   const apply = () => {
     const swiper = _ensureLevelsSwiper();
