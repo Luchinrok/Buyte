@@ -204,10 +204,16 @@ h1 {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  width: 100%;
+  /* Cal una amplada explícita perquè el bord dret arribi a la
+     vora del viewport. .screen aplica padding lateral de 20px a
+     cada costat; volem que el slider ocupi els 40px addicionals
+     extending sota aquest padding. width: 100% + margin-left:-20
+     amb margin-right:-20 NO funciona en un flex item: la margin
+     dreta negativa només mou el flux dels germans, no estén la
+     caixa del slider, i el slider quedava 40px curt per la dreta
+     (la "vora dreta amb més espai" que es veia). */
+  width: calc(100% + 40px);
   min-height: 0;
-  /* Compensem el padding lateral del .screen (20px a cada costat) per
-     fer que cada pàgina ocupi visualment l'amplada del contenidor net. */
   margin-left: -20px;
   margin-right: -20px;
 }
@@ -239,7 +245,9 @@ h1 {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  width: 100%;
+  /* Vegeu el comentari a .zones-slider: width: 100% + margin
+     negatiu en un flex item no estén la caixa per la dreta. */
+  width: calc(100% + 40px);
   min-height: 0;
   margin-left: -20px;
   margin-right: -20px;
