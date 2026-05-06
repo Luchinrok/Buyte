@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#639922">
   <title>BuyTe</title>
+  <!-- Swiper.js (per al slider 3D estil Stories de zones BiteMe i
+       botigues BuyMe). El CSS va abans del nostre styles.css perquè
+       puguem sobreescriure-li el look dels dots de paginació. El JS
+       el carreguem al final del body, sincrònicament i ABANS dels
+       scripts de l'app, perquè els mòduls (biteme.js, buyme.js)
+       puguin fer `new Swiper(...)` quan s'invoqui openSection /
+       openSupermarket. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -1788,6 +1796,11 @@
   <div id="toast" class="toast"></div>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- Swiper.js: ha de carregar-se ABANS de biteme.js i buyme.js
+       perquè aquests fan `new Swiper(...)` durant openSection /
+       openSupermarket. Càrrega sincrònica (sense defer) per
+       garantir-ho. -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260503-3"></script>
   <script src="notifications.js?v=20260503-3"></script>
   <script src="i18n.js?v=20260503-3"></script>
