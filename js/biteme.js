@@ -166,6 +166,36 @@ function getProductLevel(product) {
   return getLevel(daysUntil(product.date), cat);
 }
 
+// Formata la informació de congelació per mostrar-la al detall i al
+// llistat. Retorna null si el producte no té frozenDate (no s'ha
+// d'imprimir res). El format és:
+//   "❄️ Congelat el d/m/yyyy (fa N dies)"
+//   "❄️ Congelat el d/m/yyyy (fa N mesos)"
+// Només té sentit cridar-ho quan el producte ÉS al congelador
+// actualment; el caller ja ha de comprovar la zona.
+function formatFrozenInfo(product) {
+  if (!product || !product.frozenDate) return null;
+  const frozen = new Date(product.frozenDate + 'T00:00:00');
+  if (isNaN(frozen.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  frozen.setHours(0, 0, 0, 0);
+  const ms = today - frozen;
+  const days = Math.max(0, Math.floor(ms / 86400000));
+  let dateStr;
+  try { dateStr = frozen.toLocaleDateString('ca-ES'); }
+  catch (e) { dateStr = product.frozenDate; }
+  let ago;
+  if (days === 0) ago = 'avui';
+  else if (days === 1) ago = 'fa 1 dia';
+  else if (days < 60) ago = 'fa ' + days + ' dies';
+  else {
+    const months = Math.floor(days / 30);
+    ago = 'fa ' + months + (months === 1 ? ' mes' : ' mesos');
+  }
+  return '❄️ Congelat el ' + dateStr + ' (' + ago + ')';
+}
+
 // NEVI
 const neviMoods = {
   green: { body: '#C0DD97', border: '#639922', eyes: '#173404', mouth: 'M 25 54 Q 35 70 45 54' },
@@ -688,9 +718,18 @@ function _renderShelfProducts(slide, level, cat) {
       const item = document.createElement('div');
       item.className = 'product-item';
       const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' · ' : '';
-      item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div></div><span class="product-item-arrow">›</span>';
+      // Subtítol addicional amb la data de congelació quan el producte
+      // és al congelador (NOMÉS al congelador — a la resta no aporta
+      // res, el frozenDate pot existir d'una sessió anterior).
+      const isFreezer = p.loc && p.loc.category === 'freezer';
+      const frozenLine = isFreezer ? formatFrozenInfo(p) : null;
+      item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div>' + (frozenLine ? '<div class="product-item-frozen"></div>' : '') + '</div><span class="product-item-arrow">›</span>';
       item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, p.qty);
       item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
+      if (frozenLine) {
+        const frozenEl = item.querySelector('.product-item-frozen');
+        if (frozenEl) frozenEl.textContent = frozenLine;
+      }
       item.addEventListener('click', () => { productDetailBack = 'list'; openProduct(p.id); });
       listEl.appendChild(item);
     });
@@ -847,6 +886,22 @@ function openProduct(id) {
   document.getElementById('product-name').innerHTML = formatProductLine(p.name, p.qty);
   const locStr = loc ? loc.emoji + ' ' + getLocationName(loc) + ' · ' : '';
   document.getElementById('product-days').textContent = locStr + daysText(days);
+
+  // Línia frozenDate: només si el producte té data de congelació guardada
+  // I actualment és al congelador. Si l'han mogut a una altra zona,
+  // ocultem la informació però NO esborrem el camp (pot tornar al
+  // congelador més tard i la mateixa data segueix sent vàlida).
+  const frozenEl = document.getElementById('product-frozen');
+  if (frozenEl) {
+    const isFreezer = loc && loc.category === 'freezer';
+    const frozenText = isFreezer ? formatFrozenInfo(p) : null;
+    if (frozenText) {
+      frozenEl.textContent = frozenText;
+      frozenEl.style.display = '';
+    } else {
+      frozenEl.style.display = 'none';
+    }
+  }
 
   // Bloc "Has consumit X% · Queda Y%": només té sentit per qty no numèrica
   // (les numèriques ja es veuen reduïdes directament a la qty visible).
@@ -1085,6 +1140,25 @@ function openAddForm(prefill) {
   // Qualsevol altra entrada (afegir nou, prefill de popular, escaneig...)
   // surt del mode edició automàticament.
   editingProductId = (prefill && prefill._editingId) ? prefill._editingId : null;
+
+  // Info de congelació al formulari d'edició: visible només si estem
+  // editant un producte que té frozenDate guardat. Si l'usuari ha
+  // canviat la zona FORA del congelador, la info es manté visible
+  // (és informatiu — recorda quan el producte va estar al congelador).
+  const frozenInfoEl = document.getElementById('form-frozen-info');
+  if (frozenInfoEl) {
+    let frozenText = null;
+    if (editingProductId) {
+      const editingProduct = products.find(pp => pp.id === editingProductId);
+      if (editingProduct) frozenText = formatFrozenInfo(editingProduct);
+    }
+    if (frozenText) {
+      frozenInfoEl.textContent = frozenText;
+      frozenInfoEl.style.display = '';
+    } else {
+      frozenInfoEl.style.display = 'none';
+    }
+  }
 
   // Configurem títol, botó tornar i botó "popular" segons mode (afegir/editar)
   const titleEl = document.getElementById('screen-add-title');
@@ -1455,6 +1529,15 @@ function saveNewProduct() {
       p.qty = qty;
       if (price !== null) p.price = price; else delete p.price;
       if (weight) p.weight = weight; else delete p.weight;
+      // frozenDate: si el producte ENTRA al congelador per primera
+      // vegada (no en tenia abans), registrem la data d'avui. Si ja
+      // en tenia (l'havia tret i ara hi torna, o ja era al congelador
+      // i només edita altres camps), mantenim la data antiga: és la
+      // data DE CONGELACIÓ, no de l'última edició.
+      const newCatLoc = getLocationById(p.location);
+      if (newCatLoc && newCatLoc.category === 'freezer' && !p.frozenDate) {
+        p.frozenDate = formatDateLocal(new Date());
+      }
       currentProduct = p;
       saveData();
 
@@ -1505,6 +1588,14 @@ function saveNewProduct() {
   };
   if (price !== null) newProduct.price = price;
   if (weight) newProduct.weight = weight;
+  // frozenDate: si el producte es crea directament al congelador,
+  // registrem la data d'avui com a "data de congelació". Productes a
+  // altres zones no en tenen — només es crea si la primera ubicació
+  // (o una edició posterior) és el congelador.
+  const newProductLoc = getLocationById(selectedLocation);
+  if (newProductLoc && newProductLoc.category === 'freezer') {
+    newProduct.frozenDate = formatDateLocal(new Date());
+  }
   products.push(newProduct);
 
   saveData();

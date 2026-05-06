@@ -884,6 +884,27 @@ h1 {
   color: var(--text-soft);
 }
 
+/* Línia "❄️ Congelat el d/m/yyyy (fa N dies)" — apareix sota
+   product-days al detall i sota product-item-days al llistat de
+   nivell. Color blau gelat per recordar visualment la zona. */
+.product-frozen,
+.product-item-frozen {
+  font-size: 12px;
+  color: #1976D2;
+  margin-top: 4px;
+}
+
+/* Mateix estil al formulari d'edició (caixa subtil amb fons clar
+   per indicar que és info read-only). */
+.form-frozen-info {
+  font-size: 13px;
+  color: #1976D2;
+  background: rgba(25, 118, 210, 0.08);
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin: -8px 0 14px;
+}
+
 .section-label {
   font-size: 13px;
   font-weight: 600;

@@ -644,6 +644,10 @@
       <p id="product-emoji" class="product-emoji">🥛</p>
       <p id="product-name" class="product-name">-</p>
       <p id="product-days" class="product-days">-</p>
+      <!-- Línia "❄️ Congelat el X (fa N dies)" — només per a productes
+           del congelador amb frozenDate (vegeu formatFrozenInfo a
+           js/biteme.js i la lògica a openProduct). -->
+      <p id="product-frozen" class="product-frozen" style="display:none">-</p>
       <div id="product-consumed-block" class="product-consumed-block" style="display:none">
         <div class="product-consumed-text">
           <span data-i18n="consumedSoFar"></span>:
@@ -878,6 +882,12 @@
         <span class="no-expiry-text" data-i18n="noExpiry"></span>
       </label>
     </div>
+
+    <!-- Info de congelació, només mode edició + producte al congelador
+         (vegeu openAddForm a js/biteme.js). Read-only: la data de
+         congelació no es pot editar — és la data en què el producte
+         va entrar al congelador, no la d'edició. -->
+    <p id="form-frozen-info" class="form-frozen-info" style="display:none"></p>
 
     <button id="save-btn" class="primary-btn" data-i18n="save"></button>
   </div>
@@ -1829,7 +1839,7 @@
   <script src="i18n.js?v=20260506-10"></script>
   <script src="js/core.js?v=20260506-6"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
-  <script src="js/biteme.js?v=20260506-17"></script>
+  <script src="js/biteme.js?v=20260506-18"></script>
   <script src="js/shops.js?v=20260503-3"></script>
   <script src="js/buyme.js?v=20260506-17"></script>
   <script src="js/populars.js?v=20260506-10"></script>
