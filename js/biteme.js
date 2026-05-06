@@ -196,12 +196,22 @@ function formatFrozenInfo(product) {
   return '❄️ Congelat el ' + dateStr + ' (' + ago + ')';
 }
 
-// NEVI
+// NEVI — colors del cos i la vora del mascot per nivell. Han de
+// coincidir amb els gradients de les urgency cards (.shelf-N) perquè
+// l'usuari vegi el mateix codi de color a tota l'experiència del
+// nivell. Paleta:
+//   green  → verds  (Material Green / personal palette)
+//   yellow → BLAUS  (no grocs!) — alineat amb .shelf-yellow
+//                                 (#42A5F5 → #1565C0)
+//   orange → TARONJA pur — alineat amb .shelf-orange
+//                          (#FFA000 → #F57C00) — sense tirar a vermell
+//   red    → vermells — alineat amb .shelf-red
+//                       (#EF5350 → #C62828)
 const neviMoods = {
   green: { body: '#C0DD97', border: '#639922', eyes: '#173404', mouth: 'M 25 54 Q 35 70 45 54' },
-  yellow:{ body: '#FAC775', border: '#BA7517', eyes: '#412402', mouth: 'M 25 58 Q 35 64 45 58' },
-  orange:{ body: '#F0997B', border: '#D85A30', eyes: '#4A1B0C', mouth: 'M 26 61 L 44 61' },
-  red:   { body: '#F09595', border: '#E24B4A', eyes: '#501313', mouth: 'M 25 64 Q 35 56 45 64' }
+  yellow:{ body: '#90CAF9', border: '#1565C0', eyes: '#0D47A1', mouth: 'M 25 58 Q 35 64 45 58' },
+  orange:{ body: '#FFCC80', border: '#F57C00', eyes: '#BF360C', mouth: 'M 26 61 L 44 61' },
+  red:   { body: '#F09595', border: '#C62828', eyes: '#501313', mouth: 'M 25 64 Q 35 56 45 64' }
 };
 
 // Missatges del mascot Nevi.
@@ -441,21 +451,20 @@ function _ensureZonesSwiper() {
           currentSection = cat;
           _updateSectionTitle();
         }
-      },
-      // Xarxa de seguretat per al cas en què el cub queda a mitges
-      // tot i els paràmetres permissius de dalt: 50ms després del
-      // touchEnd, forcem un slideTo a l'activeIndex actual. Si Swiper
-      // ja havia decidit advanced/back, slideTo és no-op (ja som
-      // allà). Si havia quedat ambigu, força el snap a la cara
-      // activa més propera. Speed 300ms per fer el rescat ràpid però
-      // visible.
-      touchEnd: function() {
-        const swiper = this;
-        setTimeout(() => {
-          if (swiper.destroyed) return;
-          swiper.slideTo(swiper.activeIndex, 300);
-        }, 50);
       }
+      // touchEnd safety net ELIMINAT. La idea era forçar un slideTo
+      // 50ms després de cada touch per a casos de cub mig girat. Però
+      // aquest slideTo, en cridar-se DESPRÉS de cada toc (incloent
+      // taps purs sobre un shelf), feia entrar Swiper en mode
+      // "transitioning"; combinat amb el default preventClicks:true,
+      // això suprimia el click event posterior de manera intermitent
+      // (típicament en zones a les quals s'havia arribat amb swipe
+      // previ — Nevera funcionava perquè era el slide inicial sense
+      // tocar, Congelador fallava perquè calia un swipe per arribar-hi
+      // i la xarxa de seguretat deixava state residual). Amb
+      // longSwipesRatio: 0.2 ja prou permissiu, els cubs mig girats
+      // són rars; preferim arriscar un mig-gir ocasional abans que
+      // perdre clicks de navegació.
     }
   });
   return _zonesSwiper;
@@ -827,14 +836,10 @@ function _ensureLevelsSwiper() {
           currentLevel = level;
           _updateLevelHeaderAndNevi(level);
         }
-      },
-      touchEnd: function() {
-        const swiper = this;
-        setTimeout(() => {
-          if (swiper.destroyed) return;
-          swiper.slideTo(swiper.activeIndex, 300);
-        }, 50);
       }
+      // touchEnd ELIMINAT — vegeu el comentari paral·lel a
+      // _ensureZonesSwiper. Era un disparador de Swiper's preventClicks
+      // que suprimia taps legítims sobre product-items.
     }
   });
   return _levelsSwiper;

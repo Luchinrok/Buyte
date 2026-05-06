@@ -310,17 +310,11 @@ function _ensureShopsSwiper() {
             if (list) _renderShopPageItems(oldId, list, 'view');
           });
         }
-      },
-      // Xarxa de seguretat: vegeu el comentari paral·lel a
-      // _ensureZonesSwiper a js/biteme.js. Força un re-snap 50ms
-      // després del touchEnd al cas que el cub hagi quedat ambigu.
-      touchEnd: function() {
-        const swiper = this;
-        setTimeout(() => {
-          if (swiper.destroyed) return;
-          swiper.slideTo(swiper.activeIndex, 300);
-        }, 50);
       }
+      // touchEnd ELIMINAT — vegeu el comentari paral·lel a
+      // _ensureZonesSwiper a js/biteme.js. La xarxa de seguretat
+      // del slideTo post-touch interferia amb preventClicks de
+      // Swiper i suprimia taps legítims sobre items dins dels slides.
     }
   });
   return _shopsSwiper;
