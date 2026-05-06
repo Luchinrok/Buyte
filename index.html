@@ -431,13 +431,19 @@
       </button>
     </div>
 
+    <!-- Barra d'acció sticky a sobre de la llista de receptes:
+         "+ Afegir recepta" sempre accessible sense haver de fer
+         scroll fins al final, com el patró equivalent al BuyMe
+         (.shop-actions-bar). -->
+    <div class="cookme-actions-bar">
+      <button type="button" id="btn-add-recipe" class="cookme-add-recipe-btn">
+        <span style="font-size:20px;margin-right:8px">➕</span>
+        <span data-i18n="addNewRecipe"></span>
+      </button>
+    </div>
+
     <div id="cookme-list" class="cookme-list"></div>
     <p id="cookme-empty" class="cookme-empty" style="display:none"></p>
-
-    <button type="button" id="btn-add-recipe" class="cookme-add-recipe-btn">
-      <span style="font-size:20px;margin-right:8px">➕</span>
-      <span data-i18n="addNewRecipe"></span>
-    </button>
   </div>
 
   <!-- PANTALLA DETALL DE LA RECEPTA -->

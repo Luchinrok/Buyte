@@ -6387,12 +6387,24 @@ h1 {
 }
 .recipe-custom-delete:hover { background: rgba(244, 67, 54, 0.08); }
 
+/* Barra sticky a sobre de #cookme-list amb el botó "+ Afegir recepta".
+   Mateix patró que .shop-actions-bar (BuyMe) per tenir el botó
+   sempre accessible sense haver de fer scroll al final de la llista. */
+.cookme-actions-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding: 8px 0 12px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
 .cookme-add-recipe-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin-top: 14px;
   padding: 12px 16px;
   background: var(--bg-secondary);
   border: 1px dashed var(--border);
