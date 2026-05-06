@@ -440,16 +440,53 @@ function _updateSectionTitle() {
   titleEl.textContent = titles[currentSection] || '';
 }
 
+// Efecte Stories: rotateY + scale + translateX + opacitat aplicats a
+// cada .zone-page segons la seva distància (en amplades de pàgina) del
+// centre del slider. Ratio = 0 → pàgina centrada (identitat); ratio
+// ±1 → pàgina vista a 28° amb el seu cantó interior tirant cap avall.
+// Es crida a cada esdeveniment scroll, batched a un sol rAF perquè
+// el cost sigui ≤ 1 frame.
+let _storiesRafScheduled = false;
+function _applyStoriesEffect(slider) {
+  if (_storiesRafScheduled) return;
+  _storiesRafScheduled = true;
+  requestAnimationFrame(() => {
+    _storiesRafScheduled = false;
+    const w = slider.clientWidth;
+    if (!w) return;
+    const sl = slider.scrollLeft;
+    const sliderCenter = sl + w / 2;
+    const pages = slider.querySelectorAll('.zone-page');
+    pages.forEach((page, i) => {
+      const pageCenter = i * w + w / 2;
+      let r = (pageCenter - sliderCenter) / w;
+      if (r < -1) r = -1; else if (r > 1) r = 1;
+      const ar = r < 0 ? -r : r;
+      // Negatiu perquè rotateY positiu inclina la dreta cap al
+      // visor; per una pàgina a la DRETA del centre (r > 0) volem
+      // que el seu cantó ESQUERRE estigui més a prop del visor →
+      // rotateY negatiu. I al revés per a r < 0.
+      const rotateY = r * -28;
+      const scale = 1 - ar * 0.08;
+      const translateX = r * -18;
+      const opacity = 1 - ar * 0.30;
+      page.style.transform =
+        'translateX(' + translateX.toFixed(2) + 'px) ' +
+        'rotateY(' + rotateY.toFixed(2) + 'deg) ' +
+        'scale(' + scale.toFixed(3) + ')';
+      page.style.opacity = opacity.toFixed(3);
+    });
+  });
+}
+
 let _sliderScrollListenerWired = false;
 function _setupSliderScrollListener(slider) {
   if (_sliderScrollListenerWired) return;
   _sliderScrollListenerWired = true;
   let scrollTimer = null;
   slider.addEventListener('scroll', () => {
-    // Efecte cub 3D: actualització immediata cada frame (helper compartit
-    // a js/core.js, batched amb rAF). Substitueix l'efecte Stories
-    // anterior que només feia un tilt subtil.
-    applyCubeSliderEffect(slider);
+    // Efecte Stories: actualització immediata cada frame.
+    _applyStoriesEffect(slider);
     if (scrollTimer) clearTimeout(scrollTimer);
     // Petit debounce: només actualitzem currentSection un cop el scroll
     // s'ha aturat (snap completat). Així evitem renders intermedis.
@@ -466,9 +503,8 @@ function _setupSliderScrollListener(slider) {
       }
     }, 80);
   }, { passive: true });
-  // Aplica l'estat inicial (pàgina 0 al davant, la resta a 90° als
-  // laterals del cub).
-  applyCubeSliderEffect(slider);
+  // Aplica l'estat inicial (pàgina 0 centrada, la resta inclinades).
+  _applyStoriesEffect(slider);
 }
 
 function renderSectionDots() {
