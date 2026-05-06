@@ -243,18 +243,30 @@ h1 {
 }
 
 .shop-page {
-  /* La mida la fixa Swiper (.swiper-slide). Aquí només el contingut. */
+  /* La mida la fixa Swiper (.swiper-slide). Aquí només el contingut.
+     IMPORTANT: NO posem overflow-y aquí. Swiper's effect: 'cube' aplica
+     transforms 3D al .swiper-wrapper i als seus .swiper-slide; un
+     overflow != visible al slide crea un stacking context que aplana
+     el rendering 3D al Chromium/Safari, fent que el cub aparegui pla
+     (això era exactament el bug "BuyMe no fa rotació 3D com EatMe").
+     L'overflow vertical el porta el contenidor intern .shopping-items-
+     list, que SÍ pot tenir el seu scroll local sense afectar el cub. */
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   padding: 0 20px;
-  overflow-y: auto;
 }
 
-.shop-page::-webkit-scrollbar { display: none; }
-.shop-page { scrollbar-width: none; }
+.shop-page > .shopping-items-list {
+  flex: 1;
+  /* Scroll vertical de la llista d'items dins de la cara del cub.
+     Ara el slide és overflow:visible (per al cub 3D) i la llista té
+     el seu propi scroll. */
+  overflow-y: auto;
+  scrollbar-width: none;
+}
 
-.shop-page > .shopping-items-list { flex: 1; }
+.shop-page > .shopping-items-list::-webkit-scrollbar { display: none; }
 
 .shelf {
   flex: 1;

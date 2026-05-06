@@ -293,6 +293,15 @@ function _scrollToSupermarket(id, smooth) {
   // slideToLoop (no slideTo) perquè loop:true està activat — slideTo
   // operaria sobre l'array intern amb duplicats.
   swiper.slideToLoop(idx, smooth ? 600 : 0);
+  // Segon update() amb un petit delay per cobrir el cas on els items
+  // dins de .shopping-items-list es renderitzen / canvien d'altura
+  // després que la pantalla s'hagi mostrat. Sense això, en alguns
+  // casos d'entrada inicial Swiper calculava la cube geometry abans
+  // que els items haguessin acabat de pintar i la rotació quedava
+  // visualment imprecisa.
+  setTimeout(() => {
+    if (_shopsSwiper === swiper) swiper.update();
+  }, 120);
 }
 
 (function _wireShopsResnap() {
