@@ -245,18 +245,22 @@ function _ensureShopsSwiper() {
     shortSwipes: true,
     followFinger: true,
     resistanceRatio: 0.85,
-    // loop: false aquí (a diferència de zones i nivells, que sí que
-    // són loop:true). El motiu: amb loop activat Swiper duplica
-    // primera/última i, a la costura, la cara visible (clone) i la
-    // següent (original) podien quedar-se "fantasma" superposades
-    // sobre la frontal, particularment quan els slides tenen
-    // contingut molt diferent en altura (BuyMe és l'únic dels tres
-    // cubs amb contingut variable per slide). Sense loop, l'usuari
-    // arribar a l'última botiga lliscant cap a la dreta s'atura
-    // allà, igual que a la primera lliscant cap a l'esquerra. És
-    // un compromís raonable per a una llista de supers que sol
-    // ser curta.
-    loop: false,
+    // loop: true reactivat. La causa del bug d'overlap anterior
+    // (contingut d'una botiga apareixia fantasma sota una altra a la
+    // costura del loop) era que slideChange cridava
+    // renderShoppingItems, que rebuilda tota l'estructura DOM dels
+    // slides — incompatible amb el inventori intern de Swiper amb
+    // duplicats. Ara slideChange NOMÉS re-renderitza la llista
+    // d'items del slide ANTERIOR via querySelectorAll, i això inclou
+    // tant l'original com el seu clone (si en té). Cap mutació
+    // d'estructura, cap desincronització.
+    //
+    // loopAdditionalSlides: 0 important per al cube — Swiper només
+    // necessita 1 clone a cada extrem (no 2+) per fer la transició
+    // cíclica seamless en cube. Més clones afegirien duplicats
+    // innecessaris al wrapper.
+    loop: true,
+    loopAdditionalSlides: 0,
     pagination: {
       el: '#supermarket-dots',
       clickable: true,
