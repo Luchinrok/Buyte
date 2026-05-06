@@ -589,7 +589,8 @@
     </div>
   </div>
 
-  <!-- PANTALLA LLISTA DE PRODUCTES -->
+  <!-- PANTALLA LLISTA DE PRODUCTES (un cub Swiper per cada nivell:
+       Tranquil / Atenció / Urgent / Alerta — del mateix zone). -->
   <div id="screen-list" class="screen">
     <header class="top-bar">
       <button class="back-btn" data-back="section" aria-label="Back">‹</button>
@@ -597,6 +598,14 @@
       <div style="width:40px"></div>
     </header>
 
+    <!-- Pestanyes de paginació amb el nom del nivell. Renderitzades per
+         Swiper.js (vegeu pagination.el a _ensureLevelsSwiper a
+         js/biteme.js). Clicables per saltar de nivell. -->
+    <div class="levels-pagination" id="levels-dots"></div>
+
+    <!-- Nevi (mascota emocional). Una sola instància, ABOVE the slider;
+         setNevi() s'invoca al slideChange per canviar l'humor segons
+         el nivell actiu. -->
     <div class="nevi-container">
       <svg class="nevi" viewBox="0 0 70 80" xmlns="http://www.w3.org/2000/svg">
         <rect id="nevi-body" x="10" y="5" width="50" height="70" rx="8" fill="#C0DD97" stroke="#639922" stroke-width="2.5"/>
@@ -608,14 +617,12 @@
       <p id="nevi-message"></p>
     </div>
 
-    <div id="product-list" class="product-list"></div>
-    <!-- Empty state ric: openShelf() actualitza icona/title/message
-         segons el nivell (i, en el futur, segons la zona). Si no es
-         personalitza, es mostren els fallback per defecte. -->
-    <div id="empty-list" class="empty-state" style="display:none">
-      <div class="empty-state-icon" id="empty-list-icon">📦</div>
-      <h3 class="empty-state-title" id="empty-list-title" data-i18n="emptySection"></h3>
-      <p class="empty-state-message" id="empty-list-message"></p>
+    <!-- Slider 3D estil cub entre els 4 nivells d'urgència. La
+         configuració de Swiper viu a _ensureLevelsSwiper a
+         js/biteme.js. Cada slide és un .level-page amb els
+         productes del nivell corresponent (de la zona actual). -->
+    <div class="levels-slider swiper" id="levels-slider">
+      <div class="swiper-wrapper"></div>
     </div>
   </div>
 
@@ -1816,7 +1823,7 @@
   <script src="i18n.js?v=20260506-10"></script>
   <script src="js/core.js?v=20260506-6"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
-  <script src="js/biteme.js?v=20260506-16"></script>
+  <script src="js/biteme.js?v=20260506-17"></script>
   <script src="js/shops.js?v=20260503-3"></script>
   <script src="js/buyme.js?v=20260506-16"></script>
   <script src="js/populars.js?v=20260506-10"></script>

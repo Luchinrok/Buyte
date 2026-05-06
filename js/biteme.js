@@ -649,12 +649,19 @@ const SHELF_EMPTY_STATES = {
   red:    { icon: '🎉', title: 'Excel·lent!',                 message: 'No tens cap producte caducat ni que caduqui avui' }
 };
 
-function openShelf(level) {
-  currentLevel = level;
-  const cat = currentSection;
-  const titles = { green: t('shelfGreen'), yellow: t('shelfYellow'), orange: t('shelfOrange'), red: t('shelfRed') };
-  const catEmoji = { fridge: '🧊', freezer: '❄️', pantry: '🥫' }[cat] || '';
-  document.getElementById('list-title').textContent = catEmoji + ' ' + titles[level];
+// Ordre dels nivells al cub: el mateix que l'ordre dels prestatges
+// dintre d'una zona (de menys urgent a més urgent). LEVEL_ORDER[i]
+// correspon a la cara `i` del cub i a l'i-èssim bullet de paginació.
+const LEVEL_ORDER = ['green', 'yellow', 'orange', 'red'];
+
+// Pinta tot el contingut d'un slide (llista de productes o empty-state)
+// per al `level` i `cat` (zona) donats. Reutilitzable: cada vegada que
+// canvia la zona o que canvien els productes, recridem-ho per a tots
+// 4 nivells.
+function _renderShelfProducts(slide, level, cat) {
+  const listEl = slide.querySelector('.product-list');
+  const emptyEl = slide.querySelector('.empty-state');
+  if (!listEl || !emptyEl) return;
 
   const shelfProducts = products
     .map(p => {
@@ -665,20 +672,14 @@ function openShelf(level) {
     .filter(p => p.pcat === cat && getLevel(p.days, cat) === level)
     .sort((a, b) => a.days - b.days);
 
-  const listEl = document.getElementById('product-list');
-  const emptyEl = document.getElementById('empty-list');
   listEl.innerHTML = '';
-
   if (shelfProducts.length === 0) {
     const state = SHELF_EMPTY_STATES[level] || SHELF_EMPTY_STATES.green;
-    const iconEl = document.getElementById('empty-list-icon');
-    const titleEl = document.getElementById('empty-list-title');
-    const msgEl = document.getElementById('empty-list-message');
+    const iconEl = emptyEl.querySelector('.empty-state-icon');
+    const titleEl = emptyEl.querySelector('.empty-state-title');
+    const msgEl = emptyEl.querySelector('.empty-state-message');
     if (iconEl) iconEl.textContent = state.icon;
-    if (titleEl) {
-      titleEl.removeAttribute('data-i18n');
-      titleEl.textContent = state.title;
-    }
+    if (titleEl) titleEl.textContent = state.title;
     if (msgEl) msgEl.textContent = state.message;
     emptyEl.style.display = 'flex';
   } else {
@@ -694,9 +695,143 @@ function openShelf(level) {
       listEl.appendChild(item);
     });
   }
+}
 
-  setNevi(level, cat);
+// Construeix els 4 slides .level-page dins de #levels-slider (un sol
+// cop per session). Crida idempotent — si els 4 originals ja existeixen,
+// torna sense fer res. (Filtra .swiper-slide-duplicate per no comptar
+// els clones que Swiper afegeix amb loop:true.)
+function _buildLevelSlides() {
+  const slider = document.getElementById('levels-slider');
+  if (!slider) return;
+  const wrapper = slider.querySelector('.swiper-wrapper');
+  if (!wrapper) return;
+  const originals = wrapper.querySelectorAll(':scope > .swiper-slide:not(.swiper-slide-duplicate)');
+  if (originals.length === LEVEL_ORDER.length) return;
+  wrapper.innerHTML = '';
+  LEVEL_ORDER.forEach(level => {
+    const slide = document.createElement('div');
+    slide.className = 'level-page swiper-slide';
+    slide.dataset.level = level;
+    slide.innerHTML =
+      '<div class="product-list"></div>' +
+      '<div class="empty-state" style="display:none">' +
+        '<div class="empty-state-icon">📦</div>' +
+        '<h3 class="empty-state-title"></h3>' +
+        '<p class="empty-state-message"></p>' +
+      '</div>';
+    wrapper.appendChild(slide);
+  });
+}
+
+// Actualitza el títol del header (zona + nivell) i la mascota nevi
+// segons el nivell i la zona actuals.
+function _updateLevelHeaderAndNevi(level) {
+  const cat = currentSection;
+  const titles = { green: t('shelfGreen'), yellow: t('shelfYellow'), orange: t('shelfOrange'), red: t('shelfRed') };
+  const catEmoji = { fridge: '🧊', freezer: '❄️', pantry: '🥫' }[cat] || '';
+  const titleEl = document.getElementById('list-title');
+  if (titleEl) titleEl.textContent = catEmoji + ' ' + (titles[level] || '');
+  if (typeof setNevi === 'function') setNevi(level, cat);
+}
+
+// Instància única del Swiper de nivells. Es crea peresosament la primera
+// vegada que el slider té dimensions (#screen-list .active). El conjunt
+// de slides és sempre el mateix (4 nivells), per tant la instància
+// sobreviu entre obertures de pantalla; només actualitzem el contingut
+// dels slides quan canvia currentSection.
+let _levelsSwiper = null;
+
+function _ensureLevelsSwiper() {
+  if (_levelsSwiper) return _levelsSwiper;
+  const slider = document.getElementById('levels-slider');
+  if (!slider || !slider.clientWidth) return null;
+  _levelsSwiper = new Swiper('#levels-slider', {
+    // Mateixa configuració base que els altres dos cubs (zones i shops)
+    // per coherència visual i de comportament. Vegeu els comentaris
+    // extensos a _ensureZonesSwiper d'aquest mateix fitxer per al
+    // raonament darrere de cada paràmetre.
+    effect: 'cube',
+    cubeEffect: {
+      shadow: false,
+      slideShadows: true,
+      shadowOffset: 20,
+      shadowScale: 0.94
+    },
+    speed: 600,
+    grabCursor: true,
+    threshold: 5,
+    touchRatio: 1,
+    longSwipes: true,
+    longSwipesRatio: 0.2,
+    longSwipesMs: 200,
+    shortSwipes: true,
+    followFinger: true,
+    resistanceRatio: 0.85,
+    loop: true,
+    pagination: {
+      el: '#levels-dots',
+      clickable: true,
+      bulletClass: 'levels-dot',
+      bulletActiveClass: 'active',
+      renderBullet: function(index, className) {
+        const level = LEVEL_ORDER[index] || '';
+        const titleKey = 'shelf' + level.charAt(0).toUpperCase() + level.slice(1);
+        const label = (typeof t === 'function' && level) ? t(titleKey) : level;
+        return '<button class="' + className + '" type="button" data-level="' + level + '" aria-label="' + label + '">' + label + '</button>';
+      }
+    },
+    on: {
+      slideChange: function() {
+        const level = LEVEL_ORDER[this.realIndex];
+        if (level && level !== currentLevel) {
+          currentLevel = level;
+          _updateLevelHeaderAndNevi(level);
+        }
+      },
+      touchEnd: function() {
+        const swiper = this;
+        setTimeout(() => {
+          if (swiper.destroyed) return;
+          swiper.slideTo(swiper.activeIndex, 300);
+        }, 50);
+      }
+    }
+  });
+  return _levelsSwiper;
+}
+
+function openShelf(level) {
+  currentLevel = level;
+  const cat = currentSection;
+  // Construïm els 4 slides un sol cop.
+  _buildLevelSlides();
+  const slider = document.getElementById('levels-slider');
+  if (!slider) return;
+  // Re-renderitzem el contingut de TOTS 4 slides perquè currentSection
+  // pot haver canviat des de l'última obertura. querySelectorAll perquè
+  // amb loop:true Swiper té duplicats que també necessiten el contingut
+  // actualitzat (a la costura del loop l'usuari pot aterrar al clone).
+  LEVEL_ORDER.forEach(lvl => {
+    const slides = slider.querySelectorAll('.level-page[data-level="' + lvl + '"]');
+    slides.forEach(slide => _renderShelfProducts(slide, lvl, cat));
+  });
+  // Title/nevi a l'instant per evitar flash al header durant l'animació.
+  _updateLevelHeaderAndNevi(level);
   showScreen('list');
+  // Inicialitzem o seekem el Swiper en el següent frame, quan
+  // .screen.active ja li dóna dimensions al slider.
+  const apply = () => {
+    const swiper = _ensureLevelsSwiper();
+    if (!swiper) { requestAnimationFrame(apply); return; }
+    swiper.update();
+    const idx = LEVEL_ORDER.indexOf(level);
+    if (idx >= 0) swiper.slideToLoop(idx, 0);
+    setTimeout(() => {
+      if (_levelsSwiper === swiper) swiper.update();
+    }, 120);
+  };
+  requestAnimationFrame(apply);
 }
 
 // DETALL

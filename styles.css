@@ -607,6 +607,117 @@ h1 {
   min-height: 20px;
 }
 
+/* ===== SLIDER 3D DE NIVELLS (#levels-slider dins #screen-list) =====
+   Implementat amb Swiper.js (effect: 'cube'), mateix patró que
+   .zones-slider i .shops-slider — vegeu el comentari extens a
+   .zones-slider sobre per què cal height fixa per a l'efecte cub. */
+.levels-slider {
+  width: calc(100% + 40px);
+  height: 60vh;
+  flex: 0 1 auto;
+  margin-left: -20px;
+  margin-right: -20px;
+  overflow: hidden;
+}
+
+.level-page {
+  /* IMPORTANT: NO posem overflow-y aquí (vegeu el comentari paral·lel
+     a .shop-page). Swiper effect:'cube' aplica transforms 3D al
+     wrapper i als seus slides; un overflow != visible al slide crea
+     un stacking context que aplana el rendering 3D al
+     Chromium/Safari. L'overflow vertical el porta el .product-list
+     intern, que SÍ pot tenir scroll local sense afectar el cub. */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 0 20px;
+  min-height: 0;
+}
+
+/* Scroll vertical local DINS de la cara del cub: el slide és
+   overflow:visible (per al cub 3D) i la llista té el seu propi
+   scroll quan hi ha molts productes. -webkit-overflow-scrolling:
+   touch dóna momentum a iOS. */
+.level-page > .product-list,
+.level-page > .empty-state {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.level-page > .product-list::-webkit-scrollbar,
+.level-page > .empty-state::-webkit-scrollbar { display: none; }
+
+/* Pestanyes de paginació amb el nom del nivell (Swiper renderBullet
+   les omple amb un <button>.levels-dot — vegeu _ensureLevelsSwiper
+   a js/biteme.js). Cada bullet té data-level="green|yellow|orange|red"
+   per poder-li donar el color de la zona corresponent. */
+.levels-pagination {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 16px 12px;
+  flex-wrap: wrap;
+}
+
+/* Override de Swiper: vegeu el paral·lel a .section-dots i
+   .sm-dots-container — anul·la el position:absolute / bottom que
+   Swiper aplica per defecte a la classe .swiper-pagination, perquè
+   el nostre contenidor viu en el flow normal de la .screen. */
+.levels-pagination.swiper-pagination {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  width: 100%;
+}
+
+.levels-dot {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  border-radius: 18px;
+  border: 2px solid var(--text-soft);
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.levels-dot:focus { outline: none; }
+.levels-dot:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Color per nivell: cada bullet hereta la paleta del seu .shelf-N
+   (verd/blau/taronja/vermell). En estat actiu, el bullet s'omple amb
+   el gradient de la zona. */
+.levels-dot[data-level="green"]  { border-color: #2E7D32; color: #2E7D32; }
+.levels-dot[data-level="yellow"] { border-color: #1565C0; color: #1565C0; }
+.levels-dot[data-level="orange"] { border-color: #E65100; color: #E65100; }
+.levels-dot[data-level="red"]    { border-color: #C62828; color: #C62828; }
+
+.levels-dot.active {
+  color: #FFFFFF;
+}
+.levels-dot.active[data-level="green"] {
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  border-color: #2E7D32;
+}
+.levels-dot.active[data-level="yellow"] {
+  background: linear-gradient(135deg, #42A5F5 0%, #1565C0 100%);
+  border-color: #1565C0;
+}
+.levels-dot.active[data-level="orange"] {
+  background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
+  border-color: #E65100;
+}
+.levels-dot.active[data-level="red"] {
+  background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
+  border-color: #C62828;
+}
+
 /* Nevi */
 .nevi-container {
   display: flex;
