@@ -1148,7 +1148,7 @@ function renderSettingsContent() {
     // funcionant. Editar un popular obre screen-popular-edit — registrem-lo
     // com a fill perquè el back torni al sub-pàgina.
     // popularOrigin='settings' és CRÍTIC: sense això, clicar una fila
-    // dispara openAddForm (BiteMe) en comptes d'editar el popular.
+    // dispara openAddForm (EatMe) en comptes d'editar el popular.
     _embedStandaloneBody(area, 'screen-popular', 'screen-settings-content', ['screen-popular-edit']);
     if (typeof popularOrigin !== 'undefined') popularOrigin = 'settings';
     if (typeof popularMode !== 'undefined') popularMode = 'view';
@@ -1386,7 +1386,7 @@ function renderSettingsData() {
     // títol diu el què, el subtítol diu què s'esborra.
     area.innerHTML =
       '<div class="settings-cards reset-data-cards">' +
-        _resetCardHtml('biteme',        '🥗', 'resetBitemeTitle',        t('resetBitemeSub'),        false) +
+        _resetCardHtml('eatme',         '🥗', 'resetBitemeTitle',        t('resetBitemeSub'),        false) +
         _resetCardHtml('shopping',      '🛒', 'resetShoppingTitle',      t('resetShoppingSub'),      false) +
         _resetCardHtml('impact',        '📊', 'resetImpactTitle',        t('resetImpactSub'),        false) +
         _resetCardHtml('recipe-usage',  '🍳', 'resetRecipeUsageTitle',   t('resetRecipeUsageSub'),   false) +
@@ -1431,7 +1431,7 @@ function attachSettingsDataListeners() {
       const resetBtn = e.target.closest && e.target.closest('[data-reset-action]');
       if (resetBtn) {
         switch (resetBtn.dataset.resetAction) {
-          case 'biteme':       if (typeof resetBitemeProducts === 'function') resetBitemeProducts(); break;
+          case 'eatme':        if (typeof resetBitemeProducts === 'function') resetBitemeProducts(); break;
           case 'shopping':     if (typeof resetShoppingList === 'function') resetShoppingList(); break;
           case 'impact':       if (typeof resetImpactHistory === 'function') resetImpactHistory(); break;
           case 'recipe-usage': if (typeof confirmResetRecipeUsage === 'function') confirmResetRecipeUsage(); break;
@@ -2024,7 +2024,7 @@ function showConfirmDangerModal(emoji, title, message, onConfirm) {
 // Subtítols dinàmics de la pantalla "Esborrar dades": mostren quantes
 // dades hi ha de cada categoria abans d'esborrar-la.
 function updateResetDataSubs() {
-  const bitemeSub = document.getElementById('reset-biteme-sub');
+  const bitemeSub = document.getElementById('reset-eatme-sub');
   if (bitemeSub) {
     const n = Array.isArray(products) ? products.length : 0;
     bitemeSub.textContent = n + ' ' + t('productsCount');
@@ -2154,7 +2154,7 @@ function resetAll() {
   });
 }
 
-// Esborra només els productes del tracker BiteMe + estadístiques.
+// Esborra només els productes del tracker EatMe + estadístiques.
 function resetBitemeProducts() {
   showConfirmDangerModal('🥗', t('resetBitemeTitle'), t('resetBitemeConfirm'), () => {
     products = [];

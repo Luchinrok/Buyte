@@ -10,12 +10,12 @@
      eatmefirst_install_date          — primera execució (ISO)
      eatmefirst_screens_visited       — array de noms de pantalla
      eatmefirst_touched_hours         — array d'hores (0-23) on s'ha fet servir l'app
-     eatmefirst_products_added_count  — comptador històric de productes afegits al BiteMe
+     eatmefirst_products_added_count  — comptador històric de productes afegits a l'EatMe
      eatmefirst_buyme_added_count     — comptador històric d'items afegits al BuyMe
      eatmefirst_shops_completed_count — vegades que s'ha buidat una llista de la compra
      eatmefirst_special_lists_used    — vegades que s'ha "Comprat" una llista especial
 
-   Els comptadors són monòtons creixents — ni reset de BiteMe ni del
+   Els comptadors són monòtons creixents — ni reset d'EatMe ni del
    BuyMe els toca; només el botó "Esborrar progrés de gamificació".
    ============================================ */
 
@@ -125,7 +125,7 @@ function saveGamificationState() {
   } catch (e) {}
 }
 
-// Comptadors monòtons (no es perden amb resets de BiteMe / BuyMe).
+// Comptadors monòtons (no es perden amb resets d'EatMe / BuyMe).
 function _readCounter(key) {
   const v = parseInt(localStorage.getItem(key), 10);
   return isFinite(v) && v >= 0 ? v : 0;

@@ -511,7 +511,7 @@ function _evalExpiry() {
     body = '⏰ ' + today.length + ' caduquen avui, ' + tomorrow.length + ' demà';
   }
   // Metadata per a la navegació del botó "Veure": un sol producte → detall;
-  // múltiples → llista d'alertes (BiteMe).
+  // múltiples → llista d'alertes (EatMe).
   const all = today.concat(tomorrow);
   const meta = (all.length === 1)
     ? { productId: all[0].id }
@@ -709,7 +709,7 @@ function _smartBannerAction(banner) {
     }
     case 'mealReminder':
       return () => {
-        // BiteMe → "Veure-ho tot" ordenat per caducitat (els més imminents a dalt).
+        // EatMe → "Veure-ho tot" ordenat per caducitat (els més imminents a dalt).
         if (typeof viewAllSortMode !== 'undefined') viewAllSortMode = 'expiry';
         if (typeof openViewAll === 'function') openViewAll();
         else { if (typeof renderViewAll === 'function') renderViewAll(); showScreen('view-all'); }

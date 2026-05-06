@@ -291,7 +291,7 @@ function openPopular(origin) {
   if (searchInput) searchInput.value = '';
   // Reset back-button: 'settings' o sub-pantalla 'settings-*' des de
   // Configuració, 'shopping-item-edit' des del BuyMe, 'add' (formulari del
-  // BiteMe) per defecte.
+  // EatMe) per defecte.
   const backBtn = document.querySelector('#screen-popular .back-btn');
   if (backBtn) {
     if (popularOrigin === 'settings' || (typeof popularOrigin === 'string' && popularOrigin.indexOf('settings-') === 0)) {
@@ -360,7 +360,7 @@ function renderPopularList() {
 
     // Des de Configuració, clicar una fila obre l'edició del popular (gestió
     // del catàleg). Des del BuyMe, prefilla el formulari de la llista de la
-    // compra. Des de la resta (add/home), prefilla el formulari del BiteMe.
+    // compra. Des de la resta (add/home), prefilla el formulari de l'EatMe.
     const onRowClick = () => {
       if (popularOrigin === 'settings') {
         editPopularItem(realIdx);

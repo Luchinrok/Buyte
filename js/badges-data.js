@@ -23,7 +23,7 @@ const BADGE_CATEGORIES = [
 const BADGES = [
   // ============= INICI (6) =============
   { id: 'first-product', emoji: '🎯', name: 'Primer pas',
-    description: 'Has afegit el teu primer producte al BiteMe',
+    description: "Has afegit el teu primer producte a l'EatMe",
     category: 'inici', xpReward: 50, type: 'products_added_total', value: 1 },
   { id: 'first-buyme', emoji: '🛒', name: 'Compra inicial',
     description: 'Has afegit el primer producte al BuyMe',

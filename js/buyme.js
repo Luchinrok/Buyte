@@ -570,7 +570,7 @@ function renderShoppingEmojiPicker() {
   renderShoppingEmojiPickerBtn();
 }
 
-// Cerca productes al BiteMe amb nom similar (substring en qualsevol direcció).
+// Cerca productes a l'EatMe amb nom similar (substring en qualsevol direcció).
 // S'utilitza per avisar abans d'afegir duplicats a la llista de la compra.
 function findExistingAtHome(name) {
   if (!name) return [];
@@ -627,7 +627,7 @@ function saveShoppingItem() {
     return;
   }
 
-  // Nou item: comprovem si ja en té a casa (BiteMe), tret que ja s'hagi
+  // Nou item: comprovem si ja en té a casa (EatMe), tret que ja s'hagi
   // confirmat en un pas previ (popular pre-check, barcode pre-check).
   const existingAtHome = skipExistingCheckOnNextSave ? [] : findExistingAtHome(name);
   skipExistingCheckOnNextSave = false;

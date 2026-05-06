@@ -1,7 +1,7 @@
 /* ============================================
    Buyte — js/cookme.js
    CookMe: receptes basades en els ingredients que
-   l'usuari té al BiteMe (products[]).
+   l'usuari té a l'EatMe (products[]).
    Sense IA, totalment local. El catàleg de receptes
    viu a js/recipes-data.js (constant RECIPES).
    ============================================ */
@@ -163,7 +163,7 @@ function cookmeNormalize(s) {
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
-// Comprova si l'usuari té un ingredient als seus productes del BiteMe.
+// Comprova si l'usuari té un ingredient als seus productes de l'EatMe.
 //   - Primer per emoji exacte (match fort)
 //   - Si no, per nom: el nom del producte conté el de l'ingredient
 //     (case-insensitive, sense accents)

@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // del delegate de #settings-content.)
 
   // Botons del submenú "Esborrar dades"
-  const btnResetBiteme = document.getElementById('reset-biteme');
+  const btnResetBiteme = document.getElementById('reset-eatme');
   if (btnResetBiteme) btnResetBiteme.addEventListener('click', resetBitemeProducts);
 
   const btnResetShopping = document.getElementById('reset-shopping');
@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (choiceShopManual) choiceShopManual.addEventListener('click', () => openShoppingItemEdit(null));
 
   // Botó "⭐ Productes populars" dins del formulari del BuyMe — reutilitza la
-  // mateixa pantalla de populars que el BiteMe, però amb origin='shopping'
+  // mateixa pantalla de populars que l'EatMe, però amb origin='shopping'
   // perquè el back i la selecció apuntin de tornada al BuyMe.
   const shoppingPopularBtn = document.getElementById('shopping-popular-btn');
   if (shoppingPopularBtn) shoppingPopularBtn.addEventListener('click', () => {

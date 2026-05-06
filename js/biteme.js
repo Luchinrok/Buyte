@@ -749,12 +749,12 @@ function finalizeConsumption(product, action, percent, displayPercent) {
   }
   const shown = (typeof displayPercent === 'number') ? displayPercent : percent;
 
-  // Regla per quan el producte es queda al BiteMe:
+  // Regla per quan el producte es queda a l'EatMe:
   //   Numèric (qty=4): es redueix per unitats per a CONSUMED i TRASHED.
   //                    Si nova_qty > 0 → es queda; si <= 0 → desapareix.
   //   No numèric (1L): consumed acumula consumedPercent; trashed sempre desapareix
   //                    (si has llençat part d'una unitat única, ja no la tens).
-  let stayInBiteMe = false;
+  let stayInEatMe = false;
   if (percent < 100) {
     const idx = products.findIndex(p => p.id === product.id);
     if (idx >= 0) {
@@ -765,20 +765,20 @@ function finalizeConsumption(product, action, percent, displayPercent) {
         const newQty = Math.round(qtyNum * (100 - percent) / 100);
         if (newQty > 0) {
           p.qty = String(newQty);
-          stayInBiteMe = true;
+          stayInEatMe = true;
         }
       } else if (action === 'consumed') {
         // Quantitat amb unitat o buida: només acumulem per a consumed
         const accumulated = (p.consumedPercent || 0) + percent;
         if (accumulated < 100) {
           p.consumedPercent = accumulated;
-          stayInBiteMe = true;
+          stayInEatMe = true;
         }
       }
     }
   }
 
-  if (!stayInBiteMe) {
+  if (!stayInEatMe) {
     products = products.filter(p => p.id !== product.id);
   }
 
@@ -787,7 +787,7 @@ function finalizeConsumption(product, action, percent, displayPercent) {
 
   const actionLabel = action === 'consumed' ? t('consumedToast') : t('wastedToast');
   let toastMsg;
-  if (stayInBiteMe) {
+  if (stayInEatMe) {
     toastMsg = '✓ ' + actionLabel + ' ' + shown + '%, ' + t('stillAtBiteme');
   } else {
     toastMsg = '✓ ' + actionLabel + ' ' + shown + '%';
@@ -800,8 +800,8 @@ function finalizeConsumption(product, action, percent, displayPercent) {
   navigateAfterAction();
   currentProduct = null;
 
-  // Si el producte encara és al BiteMe, no oferim afegir-lo a la llista
-  if (!stayInBiteMe) {
+  // Si el producte encara és a l'EatMe, no oferim afegir-lo a la llista
+  if (!stayInEatMe) {
     setTimeout(() => askAddToShoppingList(product), 600);
   }
 }
@@ -893,7 +893,7 @@ function openAddForm(prefill) {
     }
     // Si venim del flux "Comprat" del BuyMe (un item del supermercat
     // que estem comprant), back ha de tornar a la pantalla del super,
-    // no a la tria genèrica "Afegir producte" del BiteMe.
+    // no a la tria genèrica "Afegir producte" de l'EatMe.
     if (backBtn) {
       backBtn.dataset.back = pendingShoppingItemId ? 'supermarket' : 'add-choice';
     }
@@ -1044,7 +1044,7 @@ function findKnownProductByName(name) {
   return null;
 }
 
-// Aplica al formulari del BiteMe (screen-add) tot el que sapiguem d'un
+// Aplica al formulari de l'EatMe (screen-add) tot el que sapiguem d'un
 // producte conegut: emoji, zona, dies (data), preu, pes, "no caduca".
 // No esborra res que l'usuari ja hagi escrit a preu/pes si la match no en porta.
 function applyKnownProductToForm(m) {
@@ -1293,9 +1293,9 @@ function saveNewProduct() {
 
   saveData();
 
-  // Gamificació: comptador històric + 2 XP per producte afegit al BiteMe.
+  // Gamificació: comptador històric + 2 XP per producte afegit a l'EatMe.
   if (typeof bumpProductsAddedCounter === 'function') bumpProductsAddedCounter();
-  if (typeof addXp === 'function') addXp(2, 'biteme-add');
+  if (typeof addXp === 'function') addXp(2, 'eatme-add');
 
   // Si veníem de la llista de la compra, traiem l'item d'allà i tornem a comprar
   if (pendingShoppingItemId) {
@@ -1886,7 +1886,7 @@ async function onBarcodeDetected(code) {
       if (status) status.textContent = t('productFound');
       setTimeout(() => {
         if (isShoppingScan) {
-          // Comprovem abans d'obrir el formulari si ja en tenim al BiteMe
+          // Comprovem abans d'obrir el formulari si ja en tenim a l'EatMe
           const existing = (typeof findExistingAtHome === 'function') ? findExistingAtHome(data.name) : [];
           const proceedToForm = () => {
             if (existing.length > 0) skipExistingCheckOnNextSave = true;
