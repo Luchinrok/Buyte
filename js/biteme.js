@@ -321,55 +321,93 @@ function openSection(category) {
   requestAnimationFrame(() => _scrollToSection(currentSection, false));
 }
 
-// Mou el slider a la pàgina de la zona indicada. `smooth` controla si
-// és una animació suau (interaccions in-screen) o un salt (entrada).
-// Si clientWidth encara és 0 (layout no calculat just després d'un
-// canvi de pantalla), reintenta al següent frame.
-function _scrollToSection(cat, smooth) {
+// Instància única de Swiper per a #zones-slider. Es crea peresosament
+// (a _ensureZonesSwiper) la primera vegada que el slider té dimensions
+// (ergo el screen-section és .active) — Swiper necessita conèixer
+// l'amplada/altura del contenidor per col·locar i transformar les
+// cares. Mai destruïda: la mateixa instància gestiona tot el cicle de
+// vida de la pantalla.
+let _zonesSwiper = null;
+
+function _ensureZonesSwiper() {
+  if (_zonesSwiper) return _zonesSwiper;
   const slider = document.getElementById('zones-slider');
-  if (!slider) return;
-  const idx = SECTION_ORDER.indexOf(cat);
-  if (idx < 0) return;
-  const apply = () => {
-    const w = slider.clientWidth;
-    if (!w) { requestAnimationFrame(apply); return; }
-    // Math.round per protegir-nos de pixel-rounding en monitors amb DPR no enter.
-    const x = Math.round(idx * w);
-    if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
-    else slider.scrollLeft = x;
-  };
-  apply();
+  if (!slider || !slider.clientWidth) return null;
+  // Configuració "creative effect" tipus Stories d'Instagram: la cara
+  // sortint/entrant es desplaça 100% i recula -200px en Z amb una
+  // rotació suau de 30° al voltant de Y. opacity 0.5 per fondre les
+  // cares no centrals (efecte "card stack" més suau que un cub real).
+  _zonesSwiper = new Swiper('#zones-slider', {
+    effect: 'creative',
+    creativeEffect: {
+      prev: { translate: ['-100%', 0, -200], rotate: [0, 30, 0], opacity: 0.5 },
+      next: { translate: ['100%', 0, -200], rotate: [0, -30, 0], opacity: 0.5 }
+    },
+    speed: 400,
+    grabCursor: true,
+    pagination: {
+      el: '#section-dots',
+      clickable: true,
+      bulletClass: 'section-dot',
+      bulletActiveClass: 'active',
+      renderBullet: function(index, className) {
+        const cat = SECTION_ORDER[index] || '';
+        return '<button class="' + className + '" type="button" data-zone="' + cat + '" aria-label="' + cat + '"></button>';
+      }
+    },
+    on: {
+      slideChange: function() {
+        const cat = SECTION_ORDER[this.activeIndex];
+        if (cat && cat !== currentSection) {
+          currentSection = cat;
+          _updateSectionTitle();
+        }
+      }
+    }
+  });
+  return _zonesSwiper;
 }
 
-// Quan canvia la mida de la finestra (o l'orientació mòbil), la
-// posició del scroll-snap pot quedar desalineada respecte de
-// currentSection. Re-snapem instantàniament a la pàgina actual.
+// Salta a la pàgina de la zona indicada. `smooth=false` ⇒ salt instantani
+// (durada 0); `smooth=true` ⇒ animació de 400ms (paral·lela al
+// `speed` configurat al Swiper). Si Swiper encara no s'ha pogut
+// instanciar (slider sense dimensions perquè la pantalla no és .active),
+// reintenta al següent frame fins que el layout estigui calculat.
+function _scrollToSection(cat, smooth) {
+  const idx = SECTION_ORDER.indexOf(cat);
+  if (idx < 0) return;
+  const swiper = _ensureZonesSwiper();
+  if (!swiper) {
+    requestAnimationFrame(() => _scrollToSection(cat, smooth));
+    return;
+  }
+  swiper.slideTo(idx, smooth ? 400 : 0);
+}
+
+// Resize: Swiper té el seu propi ResizeObserver intern, així que no
+// cal fer res. Mantenim la funció buida per si algun caller hereta del
+// codi anterior.
 (function _wireSectionResnap() {
   if (typeof window === 'undefined') return;
   if (window.__zonesSliderResizeWired) return;
   window.__zonesSliderResizeWired = true;
-  let resizeTimer = null;
-  window.addEventListener('resize', () => {
-    if (resizeTimer) clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      const screen = document.getElementById('screen-section');
-      if (!screen || !screen.classList.contains('active')) return;
-      _scrollToSection(currentSection, false);
-    }, 120);
-  });
+  // Swiper s'auto-ajusta amb el seu ResizeObserver intern.
 })();
 
 function renderSection() {
   const slider = document.getElementById('zones-slider');
   if (!slider) return;
+  const wrapper = slider.querySelector('.swiper-wrapper');
+  if (!wrapper) return;
 
-  // Construïm les pàgines un sol cop (o si canvia el nombre de zones).
-  // La majoria de re-renders només actualitzen comptadors i subtítols.
-  if (slider.children.length !== SECTION_ORDER.length) {
-    slider.innerHTML = '';
+  // Construïm les pàgines (.swiper-slide) un sol cop. La majoria de
+  // re-renders només actualitzen comptadors i subtítols dins de cada
+  // slide ja existent — Swiper conserva la seva instància intacta.
+  if (wrapper.children.length !== SECTION_ORDER.length) {
+    wrapper.innerHTML = '';
     SECTION_ORDER.forEach(cat => {
       const page = document.createElement('div');
-      page.className = 'zone-page';
+      page.className = 'zone-page swiper-slide';
       page.dataset.zone = cat;
       const fridge = document.createElement('div');
       fridge.className = 'fridge';
@@ -391,14 +429,13 @@ function renderSection() {
         fridge.appendChild(shelf);
       });
       page.appendChild(fridge);
-      slider.appendChild(page);
+      wrapper.appendChild(page);
     });
-    _setupSliderScrollListener(slider);
   }
 
   // Actualitzem comptadors i subtítols per a totes les zones.
   SECTION_ORDER.forEach(cat => {
-    const page = slider.querySelector('.zone-page[data-zone="' + cat + '"]');
+    const page = wrapper.querySelector('.zone-page[data-zone="' + cat + '"]');
     if (!page) return;
     const scale = ALERT_SCALES[cat];
 
@@ -426,7 +463,6 @@ function renderSection() {
   });
 
   _updateSectionTitle();
-  renderSectionDots();
 }
 
 function _updateSectionTitle() {
@@ -440,50 +476,19 @@ function _updateSectionTitle() {
   titleEl.textContent = titles[currentSection] || '';
 }
 
-let _sliderScrollListenerWired = false;
-function _setupSliderScrollListener(slider) {
-  if (_sliderScrollListenerWired) return;
-  _sliderScrollListenerWired = true;
-  let scrollTimer = null;
-  slider.addEventListener('scroll', () => {
-    if (scrollTimer) clearTimeout(scrollTimer);
-    // Petit debounce: només actualitzem currentSection un cop el scroll
-    // s'ha aturat (snap completat). Així evitem renders intermedis.
-    scrollTimer = setTimeout(() => {
-      const w = slider.clientWidth;
-      if (!w) return;
-      const idx = Math.round(slider.scrollLeft / w);
-      const cat = SECTION_ORDER[idx];
-      if (cat && cat !== currentSection) {
-        currentSection = cat;
-        _updateSectionTitle();
-        // Re-renderitzem només els dots (no cal rebuild de pàgines).
-        renderSectionDots();
-      }
-    }, 80);
-  }, { passive: true });
-}
-
-function renderSectionDots() {
-  const dots = document.getElementById('section-dots');
-  if (!dots) return;
-  dots.innerHTML = '';
-  SECTION_ORDER.forEach(cat => {
-    const dot = document.createElement('button');
-    dot.type = 'button';
-    dot.className = 'section-dot' + (cat === currentSection ? ' active' : '');
-    dot.setAttribute('aria-label', cat);
-    if (cat === currentSection) dot.setAttribute('aria-current', 'true');
-    dot.addEventListener('click', () => goToSection(cat));
-    dots.appendChild(dot);
-  });
-}
+// Hooks deixats buits per backward compat: la lògica de tots dos
+// (escolta de scroll-snap i rebuild manual de dots) viu ara dins de
+// la instància Swiper a _ensureZonesSwiper. Si algun caller heretat
+// invoca aquestes funcions, no fa res.
+function _setupSliderScrollListener() {}
+function renderSectionDots() {}
 
 function goToSection(cat) {
   if (cat === currentSection) return;
   if (SECTION_ORDER.indexOf(cat) < 0) return;
   _scrollToSection(cat, true);
-  // currentSection s'actualitzarà via el scroll listener quan acabi el snap.
+  // currentSection s'actualitzarà via slideChange del Swiper quan
+  // acabi l'animació.
 }
 
 function navigateSection(direction) {

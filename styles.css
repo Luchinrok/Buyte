@@ -192,41 +192,32 @@ h1 {
   min-height: 0;
 }
 
-/* ===== SLIDER CONTINU DE ZONES (#zones-slider dins #screen-section) =====
-   Carousel scroll-snap natiu: cada .zone-page ocupa exactament l'amplada
-   visible del contenidor i es desa a la pàgina més propera quan l'usuari
-   deixa de fer scroll. No hi ha animacions JS — tot és scroll natiu. */
+/* ===== SLIDER 3D DE ZONES (#zones-slider dins #screen-section) =====
+   Implementat amb Swiper.js (effect: 'creative') — vegeu
+   _ensureZonesSwiper a js/biteme.js. Swiper gestiona els touch
+   events, l'animació i el snap; aquí només definim mida i marges
+   perquè el slider ocupi tota l'amplada del .screen (a partir del
+   padding de .screen). */
 .zones-slider {
   flex: 1;
-  display: flex;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  /* Cal una amplada explícita perquè el bord dret arribi a la
-     vora del viewport. .screen aplica padding lateral de 20px a
-     cada costat; volem que el slider ocupi els 40px addicionals
-     extending sota aquest padding. width: 100% + margin-left:-20
-     amb margin-right:-20 NO funciona en un flex item: la margin
-     dreta negativa només mou el flux dels germans, no estén la
-     caixa del slider, i el slider quedava 40px curt per la dreta
-     (la "vora dreta amb més espai" que es veia). */
+  /* Cal una amplada explícita perquè el bord dret arribi a la vora
+     del viewport. .screen aplica padding lateral de 20px a cada
+     costat; volem que el slider extengui per sota d'aquest padding. */
   width: calc(100% + 40px);
   min-height: 0;
   margin-left: -20px;
   margin-right: -20px;
+  /* Swiper amb effect: creative posiciona els slides amb transforms
+     absoluts; cal overflow:hidden perquè les rotacions/translacions
+     no s'escapin del contenidor. */
+  overflow: hidden;
 }
 
-.zones-slider::-webkit-scrollbar { display: none; }
-
 .zone-page {
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
+  /* La mida la fixa Swiper (.swiper-slide del bundle). Aquí només
+     posem la disposició interna del contingut. */
   display: flex;
   flex-direction: column;
-  min-height: 0;
   box-sizing: border-box;
   padding: 0 20px;
 }
@@ -4821,6 +4812,19 @@ h1 {
   justify-content: center;
   gap: 8px;
   padding: 8px 0 12px;
+}
+
+/* Override de Swiper.js: per defecte aplica .swiper-pagination amb
+   position:absolute al peu del slider i amb width:100%. El nostre
+   contenidor #section-dots és part del flow normal de la .screen
+   (sobre el slider, no a dins seu). Forcem el reset perquè els
+   estils anteriors de .section-dots s'imposin. */
+.section-dots.swiper-pagination {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  width: 100%;
+  /* Mantén els estils de .section-dots originals (display:flex, etc.). */
 }
 
 .section-dot {
