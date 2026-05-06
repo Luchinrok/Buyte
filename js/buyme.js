@@ -230,6 +230,16 @@ function _ensureShopsSwiper() {
     },
     speed: 600,
     grabCursor: true,
+    // Vegeu el bloc paral·lel a _ensureZonesSwiper de js/biteme.js:
+    // longSwipesRatio: 0.3 evita que el cub es quedi a mitges quan
+    // el swipe no creua el 50% del recorregut.
+    threshold: 5,
+    touchRatio: 1,
+    longSwipes: true,
+    longSwipesRatio: 0.3,
+    longSwipesMs: 300,
+    shortSwipes: true,
+    followFinger: true,
     // loop: true ⇒ comportament cíclic. Vegeu el comentari paral·lel
     // a _ensureZonesSwiper a js/biteme.js: usar realIndex / slideToLoop
     // en lloc de activeIndex / slideTo.

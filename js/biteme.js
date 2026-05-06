@@ -352,6 +352,22 @@ function _ensureZonesSwiper() {
     },
     speed: 600,
     grabCursor: true,
+    // Sensibilitat del swipe: amb els defaults de Swiper (longSwipes
+    // Ratio 0.5) cal arrossegar més de la meitat del cub abans que
+    // es comprometi a avançar; si l'usuari fa un swipe parcial el cub
+    // tornava enrere a mig camí (efecte "es queda a mitges, cal
+    // lliscar dues vegades"). longSwipesRatio: 0.3 baixa aquest llindar
+    // a un 30% del recorregut — un swipe normal ja és suficient per
+    // fer transició completa. threshold: 5px evita registrar
+    // moviments minúsculs no intencionats. shortSwipes + longSwipes
+    // + followFinger són els defaults explícits per a documentació.
+    threshold: 5,
+    touchRatio: 1,
+    longSwipes: true,
+    longSwipesRatio: 0.3,
+    longSwipesMs: 300,
+    shortSwipes: true,
+    followFinger: true,
     // loop: true → Swiper duplica les primeres/últimes diapositives
     // perquè la transició final → primera (i viceversa) sigui contínua
     // i no salti. Conseqüència: this.activeIndex inclou els duplicats;
