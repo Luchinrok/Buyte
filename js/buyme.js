@@ -413,6 +413,11 @@ function renderShoppingItems() {
   const wrapper = slider.querySelector('.swiper-wrapper');
   if (!wrapper) return;
 
+  // Garantim que el delegate de clicks dels botons d'acció estigui
+  // enganxat al pare #shops-slider. Idempotent (guarda interna via
+  // dataset). Vegeu el comentari extens a _initShopsActionsDelegate.
+  _initShopsActionsDelegate();
+
   const supers = getBuyMeVisibleSupermarkets();
 
   // Construïm les pàgines (.swiper-slide) un sol cop o quan canvia el
@@ -495,6 +500,13 @@ function _renderShopPageItems(smId, listEl, mode) {
     return;
   }
 
+  // IMPORTANT: cap addEventListener directe als botons aquí. Els
+  // listeners directes es perden quan Swiper clona el slide per al
+  // loop:true (cloneNode no transfereix listeners), i això era la
+  // causa del bug "BuyMe falla al mòbil al voltant de la costura del
+  // loop". Tot el dispatch d'accions va via _initShopsActionsDelegate
+  // — un sol listener al pare #shops-slider que SÍ sobreviu el
+  // clonatge perquè viu en un node que Swiper no clona.
   items.forEach((item, idx) => {
     const isFirst = idx === 0;
     const isLast = idx === items.length - 1;
@@ -512,16 +524,11 @@ function _renderShopPageItems(smId, listEl, mode) {
           ${meta}
         </div>
         <div class="shopping-item-arrows">
-          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
-          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
+          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" data-item-id="${item.id}" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
+          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" data-item-id="${item.id}" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
         </div>
-        <button class="shopping-item-edit" data-action="edit" data-id="${item.id}" aria-label="Edit">✏️</button>
+        <button class="shopping-item-edit" data-action="edit" data-id="${item.id}" data-item-id="${item.id}" aria-label="Edit">✏️</button>
       `;
-      div.querySelector('[data-action="edit"]').addEventListener('click', () => openShoppingItemEdit(item));
-      const upBtn = div.querySelector('[data-action="up"]');
-      const downBtn = div.querySelector('[data-action="down"]');
-      if (upBtn && !isFirst) upBtn.addEventListener('click', () => moveShoppingItem(idx, -1));
-      if (downBtn && !isLast) downBtn.addEventListener('click', () => moveShoppingItem(idx, 1));
     } else {
       div.innerHTML = `
         <div class="shopping-item-emoji">${item.emoji}</div>
@@ -529,15 +536,53 @@ function _renderShopPageItems(smId, listEl, mode) {
           <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
           ${meta}
         </div>
-        <button class="shopping-item-bought" data-action="bought" data-id="${item.id}" aria-label="Bought">
+        <button class="shopping-item-bought" data-action="bought" data-id="${item.id}" data-item-id="${item.id}" aria-label="Bought">
           <span style="font-size:18px">✅</span>
           <span data-i18n="bought">${t('bought')}</span>
         </button>
       `;
-      div.querySelector('[data-action="bought"]').addEventListener('click', () => buyShoppingItem(item));
     }
 
     listEl.appendChild(div);
+  });
+}
+
+// Event delegation per als botons d'acció dins dels .shop-page del
+// shopsSwiper. Es registra UN sol cop al contenidor #shops-slider
+// (guardat amb dataset.actionsDelegated). Sobreviu el clonatge de
+// slides que fa Swiper amb loop:true — al contrari dels listeners
+// directes als botons, que es perdien al clone i feien que la
+// primera/última botiga no respongués al voltant de la costura del
+// loop. Aquesta és l'opció A del diagnòstic del BuyMe-mobile bug.
+function _initShopsActionsDelegate() {
+  const slider = document.getElementById('shops-slider');
+  if (!slider || slider.dataset.actionsDelegated === '1') return;
+  slider.dataset.actionsDelegated = '1';
+  slider.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest && e.target.closest('[data-action][data-item-id]');
+    if (!btn || !slider.contains(btn)) return;
+    if (btn.disabled) return;
+    const action = btn.dataset.action;
+    const itemId = btn.dataset.itemId;
+    if (!action || !itemId) return;
+    // Trobem l'item a la llista global. shoppingItems és l'array
+    // global; els items tenen un id únic. (És el mateix patró que
+    // moveShoppingItem usa internament a js/shops.js.)
+    const item = (Array.isArray(shoppingItems) ? shoppingItems : []).find(it => it.id === itemId);
+    if (!item) return;
+    if (action === 'bought') {
+      buyShoppingItem(item);
+    } else if (action === 'edit') {
+      openShoppingItemEdit(item);
+    } else if (action === 'up' || action === 'down') {
+      // moveShoppingItem(idx, ±1) treballa amb l'índex DINS de la
+      // llista d'items del super actual. Calculem-lo a partir de
+      // l'item.id.
+      const supItems = getShoppingItemsBySupermarket(currentSupermarketId);
+      const idx = supItems.findIndex(it => it.id === itemId);
+      if (idx < 0) return;
+      moveShoppingItem(idx, action === 'up' ? -1 : 1);
+    }
   });
 }
 
