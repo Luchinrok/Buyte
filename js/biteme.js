@@ -436,7 +436,18 @@ function renderSection() {
   // Construïm les pàgines (.swiper-slide) un sol cop. La majoria de
   // re-renders només actualitzen comptadors i subtítols dins de cada
   // slide ja existent — Swiper conserva la seva instància intacta.
-  if (wrapper.children.length !== SECTION_ORDER.length) {
+  //
+  // CRÍTIC: amb loop:true, Swiper afegeix slides duplicats al wrapper
+  // (clones de primera/última per a la transició cíclica). Comptem
+  // només els slides ORIGINALS per detectar canvis de mida real;
+  // sense aquest filtre, qualsevol re-render post-init veuria 5
+  // children (3 originals + 2 duplicats) ≠ 3 SECTION_ORDER, dispararia
+  // un rebuild + destrucció de la instància de Swiper viva, amb
+  // Swiper encara intentant accedir als slides ja esborrats. (No era
+  // un loop a BiteMe perquè slideChange no crida renderSection, però
+  // sí podia causar errors al afegir productes.)
+  const originalSlides = wrapper.querySelectorAll(':scope > .swiper-slide:not(.swiper-slide-duplicate)');
+  if (originalSlides.length !== SECTION_ORDER.length) {
     wrapper.innerHTML = '';
     SECTION_ORDER.forEach(cat => {
       const page = document.createElement('div');
@@ -467,9 +478,13 @@ function renderSection() {
   }
 
   // Actualitzem comptadors i subtítols per a totes les zones.
+  // querySelectorAll perquè amb loop:true Swiper té duplicats de
+  // primera/última al wrapper, i tots dos (original + clone) han de
+  // mostrar comptadors actualitzats — sense això, el clone visible
+  // a la costura del loop quedaria amb números obsolets.
   SECTION_ORDER.forEach(cat => {
-    const page = wrapper.querySelector('.zone-page[data-zone="' + cat + '"]');
-    if (!page) return;
+    const pages = wrapper.querySelectorAll('.zone-page[data-zone="' + cat + '"]');
+    if (!pages.length) return;
     const scale = ALERT_SCALES[cat];
 
     const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
@@ -480,7 +495,7 @@ function renderSection() {
       counts[getLevel(daysUntil(p.date), cat)]++;
     });
 
-    page.querySelectorAll('.shelf').forEach(shelf => {
+    pages.forEach(page => page.querySelectorAll('.shelf').forEach(shelf => {
       const level = shelf.dataset.level;
       const subEl = shelf.querySelector('[data-shelf-sub]');
       const countEl = shelf.querySelector('[data-shelf-count]');
@@ -492,7 +507,7 @@ function renderSection() {
       else if (level === 'red') {
         subEl.textContent = scale.orange === 1 ? t('todayOrExpired') : t('lessThan', scale.orange) + ' ' + t('days');
       }
-    });
+    }));
   });
 
   _updateSectionTitle();

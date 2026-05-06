@@ -253,18 +253,35 @@ function _ensureShopsSwiper() {
       slideChange: function() {
         const supers = getBuyMeVisibleSupermarkets();
         const sm = supers[this.realIndex];
-        if (sm && sm.id !== currentSupermarketId) {
-          currentSupermarketId = sm.id;
-          // En canviar de super, sortim del mode d'edició (cada super
-          // hauria de començar en mode visualització).
-          supermarketItemsMode = 'view';
-          updateSupermarketEditBtn();
-          // Re-renderitzem per assegurar que la pàgina anterior queda
-          // en mode view (per si tenia edició) i actualitzar
-          // títol/comptador. sameSet=true a renderShoppingItems → no
-          // rebuild del DOM, només re-render dels items dins de cada
-          // slide, així que la instància de Swiper no es destrueix.
-          renderShoppingItems();
+        if (!sm || sm.id === currentSupermarketId) return;
+        const oldId = currentSupermarketId;
+        currentSupermarketId = sm.id;
+        // En canviar de super, sortim del mode d'edició (cada super
+        // hauria de començar en mode visualització).
+        supermarketItemsMode = 'view';
+        updateSupermarketEditBtn();
+        _updateSupermarketHeader();
+        // CRÍTIC: NO crideu renderShoppingItems aquí. Era el causant
+        // d'un loop infinit slideChange → renderShoppingItems →
+        // destroy(swiper) → rebuild slides → init nou swiper →
+        // slideToLoop → slideChange → ... La causa: amb loop:true
+        // Swiper afegeix slides duplicades al wrapper (clones de la
+        // primera/última per fer la transició cíclica seamless).
+        // existingIds llavors incloïa aquests duplicats, no coincidia
+        // amb wantedIds (només originals), sameSet=false, i destruïm
+        // tot.
+        //
+        // Aquí només cal: re-renderitzar el slide ANTERIOR en mode
+        // 'view' (per si l'usuari l'havia deixat en mode 'edit'). El
+        // nou slide ja estava en 'view' (no era currentSupermarketId
+        // abans). querySelectorAll perquè amb loop:true pot existir
+        // un duplicat del slide antic també.
+        if (oldId && this.el) {
+          const oldPages = this.el.querySelectorAll('.shop-page[data-sm-id="' + oldId + '"]');
+          oldPages.forEach(page => {
+            const list = page.querySelector('.shopping-items-list');
+            if (list) _renderShopPageItems(oldId, list, 'view');
+          });
         }
       }
     }
@@ -366,7 +383,16 @@ function renderShoppingItems() {
   // supers a settings). Si la llista canvia, primer destruïm la
   // instància de Swiper existent — Swiper té el seu propi inventari
   // de slides i si modifiquem el DOM directament queda desincronitzat.
-  const existingIds = Array.from(wrapper.children).map(c => c.dataset.smId);
+  //
+  // CRÍTIC: amb loop:true, Swiper afegeix slides duplicats al wrapper
+  // (clones de primera/última per a la transició cíclica). Cal
+  // FILTRAR aquests duplicats abans de comparar — sense això
+  // existingIds.length sempre seria > wantedIds.length post-init,
+  // sameSet sempre seria false, sempre destruiríem i rebuildaríem,
+  // i tot dins d'un loop infinit.
+  const existingIds = Array.from(wrapper.children)
+    .filter(c => !c.classList.contains('swiper-slide-duplicate'))
+    .map(c => c.dataset.smId);
   const wantedIds = supers.map(s => s.id);
   const sameSet = existingIds.length === wantedIds.length
     && existingIds.every((id, i) => id === wantedIds[i]);
@@ -399,14 +425,18 @@ function renderShoppingItems() {
     }
   }
 
-  // Renderitzem els items de cada pàgina.
+  // Renderitzem els items de cada pàgina. querySelectorAll (no
+  // querySelector) perquè amb loop:true Swiper té duplicats de
+  // primera/última al wrapper, i tots dos (original + clone)
+  // necessiten contingut consistent — sense això, en arribar a la
+  // costura del loop l'usuari veuria un slide buit.
   supers.forEach(sm => {
-    const page = wrapper.querySelector('.shop-page[data-sm-id="' + sm.id + '"]');
-    if (!page) return;
-    const list = page.querySelector('.shopping-items-list');
-    if (!list) return;
+    const pages = wrapper.querySelectorAll('.shop-page[data-sm-id="' + sm.id + '"]');
     const mode = (sm.id === currentSupermarketId) ? supermarketItemsMode : 'view';
-    _renderShopPageItems(sm.id, list, mode);
+    pages.forEach(page => {
+      const list = page.querySelector('.shopping-items-list');
+      if (list) _renderShopPageItems(sm.id, list, mode);
+    });
   });
 
   _updateSupermarketHeader();
