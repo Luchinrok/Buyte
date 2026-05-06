@@ -345,7 +345,14 @@ function _ensureZonesSwiper() {
     // rotació de 90° tingui temps de "respirar".
     effect: 'cube',
     cubeEffect: {
-      shadow: true,
+      // shadow:false → desactivem la "ground shadow" projectada sota
+      // el cub. Era la principal causa visual de la "ombra lletja a
+      // baix": una el·lipse fosca que apareixia centrada al peu del
+      // slider, no integrada amb el disseny de la pantalla. Mantenim
+      // slideShadows: true perquè és el que dóna profunditat ENTRE
+      // cares (gradient subtil sobre les cares laterals) — això sí
+      // que ajuda a la sensació 3D.
+      shadow: false,
       slideShadows: true,
       shadowOffset: 20,
       shadowScale: 0.94

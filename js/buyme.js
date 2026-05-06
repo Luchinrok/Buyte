@@ -223,7 +223,10 @@ function _ensureShopsSwiper() {
     // completament (l'usuari havia de lliscar dues vegades).
     effect: 'cube',
     cubeEffect: {
-      shadow: true,
+      // Vegeu el comentari paral·lel a _ensureZonesSwiper de
+      // js/biteme.js: shadow:false treu l'ombra projectada sota el
+      // cub que quedava mal integrada amb el fons de la pantalla.
+      shadow: false,
       slideShadows: true,
       shadowOffset: 20,
       shadowScale: 0.94
