@@ -323,15 +323,41 @@ function openSection(category) {
 
 // Mou el slider a la pàgina de la zona indicada. `smooth` controla si
 // és una animació suau (interaccions in-screen) o un salt (entrada).
+// Si clientWidth encara és 0 (layout no calculat just després d'un
+// canvi de pantalla), reintenta al següent frame.
 function _scrollToSection(cat, smooth) {
   const slider = document.getElementById('zones-slider');
   if (!slider) return;
   const idx = SECTION_ORDER.indexOf(cat);
   if (idx < 0) return;
-  const x = idx * slider.clientWidth;
-  if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
-  else slider.scrollLeft = x;
+  const apply = () => {
+    const w = slider.clientWidth;
+    if (!w) { requestAnimationFrame(apply); return; }
+    // Math.round per protegir-nos de pixel-rounding en monitors amb DPR no enter.
+    const x = Math.round(idx * w);
+    if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
+    else slider.scrollLeft = x;
+  };
+  apply();
 }
+
+// Quan canvia la mida de la finestra (o l'orientació mòbil), la
+// posició del scroll-snap pot quedar desalineada respecte de
+// currentSection. Re-snapem instantàniament a la pàgina actual.
+(function _wireSectionResnap() {
+  if (typeof window === 'undefined') return;
+  if (window.__zonesSliderResizeWired) return;
+  window.__zonesSliderResizeWired = true;
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const screen = document.getElementById('screen-section');
+      if (!screen || !screen.classList.contains('active')) return;
+      _scrollToSection(currentSection, false);
+    }, 120);
+  });
+})();
 
 function renderSection() {
   const slider = document.getElementById('zones-slider');

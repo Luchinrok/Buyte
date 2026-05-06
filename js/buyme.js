@@ -207,10 +207,30 @@ function _scrollToSupermarket(id, smooth) {
   const supers = getBuyMeVisibleSupermarkets();
   const idx = supers.findIndex(s => s.id === id);
   if (idx < 0) return;
-  const x = idx * slider.clientWidth;
-  if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
-  else slider.scrollLeft = x;
+  const apply = () => {
+    const w = slider.clientWidth;
+    if (!w) { requestAnimationFrame(apply); return; }
+    const x = Math.round(idx * w);
+    if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
+    else slider.scrollLeft = x;
+  };
+  apply();
 }
+
+(function _wireShopsResnap() {
+  if (typeof window === 'undefined') return;
+  if (window.__shopsSliderResizeWired) return;
+  window.__shopsSliderResizeWired = true;
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const screen = document.getElementById('screen-supermarket');
+      if (!screen || !screen.classList.contains('active')) return;
+      _scrollToSupermarket(currentSupermarketId, false);
+    }, 120);
+  });
+})();
 
 function _updateSupermarketHeader() {
   const sm = getSupermarketById(currentSupermarketId);
