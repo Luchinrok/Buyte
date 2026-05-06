@@ -67,11 +67,11 @@ const RECIPES = [
     ingredients: [
       { emoji: '🥖', name: 'pa de motlle', qty: '2 llesques', required: true },
       { emoji: '🧀', name: 'formatge', qty: '1 llesca', required: true },
-      { emoji: '🥓', name: 'cuixot', qty: '1 llesca', required: true },
+      { emoji: '🥓', name: 'pernil dolç', qty: '1 llesca', required: true },
       { emoji: '🧈', name: 'mantega', qty: 'al gust', required: false }
     ],
     steps: [
-      'Posa cuixot i formatge entre les dues llesques de pa.',
+      'Posa pernil dolç i formatge entre les dues llesques de pa.',
       'Unta lleugerament la part exterior amb mantega.',
       'Cuina-ho a la planxa fins que el formatge es fongui.'
     ]
@@ -228,16 +228,16 @@ const RECIPES = [
   },
   {
     id: 'cuixot-formatge',
-    name: 'Cuixot amb formatge',
+    name: 'Pernil dolç amb formatge',
     emoji: '🥩',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥩', name: 'cuixot', qty: '4 llesques', required: true },
+      { emoji: '🥩', name: 'pernil dolç', qty: '4 llesques', required: true },
       { emoji: '🧀', name: 'formatge', qty: '4 llesques', required: true },
       { emoji: '🥖', name: 'pa', qty: 'al gust', required: false }
     ],
     steps: [
-      'Disposa el cuixot al plat.',
+      'Disposa el pernil dolç al plat.',
       'Acompanya\'l amb el formatge tallat.',
       'Serveix amb pa si vols fer-ne un entrepà.'
     ]
