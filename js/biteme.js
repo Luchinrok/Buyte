@@ -352,19 +352,28 @@ function _ensureZonesSwiper() {
     },
     speed: 600,
     grabCursor: true,
+    // loop: true → Swiper duplica les primeres/últimes diapositives
+    // perquè la transició final → primera (i viceversa) sigui contínua
+    // i no salti. Conseqüència: this.activeIndex inclou els duplicats;
+    // per accedir a SECTION_ORDER cal usar this.realIndex (sense
+    // duplicats), i per navegar programàticament cal slideToLoop()
+    // en comptes de slideTo() (vegeu _scrollToSection).
+    loop: true,
     pagination: {
       el: '#section-dots',
       clickable: true,
       bulletClass: 'section-dot',
       bulletActiveClass: 'active',
       renderBullet: function(index, className) {
+        // Swiper passa l'índex REAL aquí (no els duplicats), així que
+        // mapeja directament a SECTION_ORDER.
         const cat = SECTION_ORDER[index] || '';
         return '<button class="' + className + '" type="button" data-zone="' + cat + '" aria-label="' + cat + '"></button>';
       }
     },
     on: {
       slideChange: function() {
-        const cat = SECTION_ORDER[this.activeIndex];
+        const cat = SECTION_ORDER[this.realIndex];
         if (cat && cat !== currentSection) {
           currentSection = cat;
           _updateSectionTitle();
@@ -395,7 +404,10 @@ function _scrollToSection(cat, smooth) {
   // swipe no avançava completament — l'usuari havia de lliscar dues
   // vegades.
   swiper.update();
-  swiper.slideTo(idx, smooth ? 600 : 0);
+  // slideToLoop (no slideTo) perquè loop:true està activat: slideTo
+  // opera sobre l'array intern amb duplicats, slideToLoop sobre els
+  // índexs originals (que és el que volem aquí).
+  swiper.slideToLoop(idx, smooth ? 600 : 0);
 }
 
 // Resize: Swiper té el seu propi ResizeObserver intern, així que no

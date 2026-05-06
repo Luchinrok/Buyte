@@ -230,12 +230,18 @@ function _ensureShopsSwiper() {
     },
     speed: 600,
     grabCursor: true,
+    // loop: true ⇒ comportament cíclic. Vegeu el comentari paral·lel
+    // a _ensureZonesSwiper a js/biteme.js: usar realIndex / slideToLoop
+    // en lloc de activeIndex / slideTo.
+    loop: true,
     pagination: {
       el: '#supermarket-dots',
       clickable: true,
       bulletClass: 'sm-dot',
       bulletActiveClass: 'active',
       renderBullet: function(index, className) {
+        // index és l'índex REAL (sense duplicats); mapeja directament
+        // a la llista de supers visibles.
         const supers = getBuyMeVisibleSupermarkets();
         const sm = supers[index];
         const id = sm ? sm.id : '';
@@ -246,7 +252,7 @@ function _ensureShopsSwiper() {
     on: {
       slideChange: function() {
         const supers = getBuyMeVisibleSupermarkets();
-        const sm = supers[this.activeIndex];
+        const sm = supers[this.realIndex];
         if (sm && sm.id !== currentSupermarketId) {
           currentSupermarketId = sm.id;
           // En canviar de super, sortim del mode d'edició (cada super
@@ -284,7 +290,9 @@ function _scrollToSupermarket(id, smooth) {
   // les dimensions del seu rectangle interior poden no estar
   // estabilitzades. update() força un recàlcul de la cube geometry.
   swiper.update();
-  swiper.slideTo(idx, smooth ? 600 : 0);
+  // slideToLoop (no slideTo) perquè loop:true està activat — slideTo
+  // operaria sobre l'array intern amb duplicats.
+  swiper.slideToLoop(idx, smooth ? 600 : 0);
 }
 
 (function _wireShopsResnap() {
