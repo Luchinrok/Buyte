@@ -101,13 +101,28 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!shelf || !sectionScreen.contains(shelf)) return;
       const level = shelf.dataset.level;
       const zone = shelf.dataset.zone;
-      // Si s'ha clicat un shelf d'una zona que NO és l'actual (perquè el
-      // slider ensenya parcialment una pàgina veïna), saltem-hi primer.
-      if (zone && zone !== currentSection && typeof goToSection === 'function') {
-        goToSection(zone);
-        return;
+      // Sincronitzem currentSection al data-zone DEL SHELF clicat
+      // (no de currentSection cached) i obrim el nivell d'una.
+      //
+      // Per què: amb el cube + loop:true, currentSection es manté
+      // actualitzat pel slideChange callback. Però hi ha edge cases
+      // (swipe parcial sota longSwipesRatio que es revertia, primer
+      // render després d'openSection on slideChange no es dispara
+      // perquè ja som al slide objectiu, etc.) on currentSection
+      // podia quedar desincronitzat amb el que l'usuari té al davant.
+      // El handler antic intentava arreglar-ho redirigint a goToSection
+      // i sortint, demanant un segon clic — però si l'usuari ja era
+      // a la zona correcta visualment, slideToLoop era no-op,
+      // slideChange no es disparava, currentSection seguia
+      // desincronitzat, i l'usuari quedava atrapat sense poder obrir
+      // cap nivell. Era el bug "no es pot accedir a cap nivell del
+      // Congelador". Ara: el clic obre directament el nivell de la
+      // zona del shelf, sincronitzant currentSection si cal.
+      if (zone && zone !== currentSection) {
+        currentSection = zone;
+        if (typeof _updateSectionTitle === 'function') _updateSectionTitle();
       }
-      openShelf(level);
+      if (level) openShelf(level);
     });
   }
 
