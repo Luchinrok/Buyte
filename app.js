@@ -91,34 +91,45 @@ document.addEventListener('DOMContentLoaded', () => {
     b.addEventListener('click', () => openSection(b.dataset.cat));
   });
 
-  // Clic als prestatges DINS de la secció. Delegate AL DOCUMENT (no al
-  // contenidor #screen-section) perquè a sobre del Swiper hi ha
-  // mecanismes que poden interceptar/cancel·lar clicks abans que
-  // bombollegin a un node intermedi. Al document és el màxim nivell
-  // de delegate possible — el click sempre arriba aquí. Combinat amb
-  // touchStartPreventDefault:false al Swiper de zones, soluciona el
-  // bug del "primer clic no respon, segon clic sí" típic de Swiper +
-  // loop a Android (ex: Congelador, Rebost).
+  // Clic als prestatges DINS de la secció. Delegate AL DOCUMENT
+  // (vegeu el commit eb73f02 per al raonament). Guard via
+  // window.__shelfClickDelegated per no duplicar.
   //
-  // Guarda window.__shelfClickDelegated perquè en hot-reload o
-  // re-execució del bootstrap no es dupliqui el listener.
+  // Important: el handler té un FALLBACK quan el click cau a un gap.
+  // El contenidor .fridge té padding: 14px i gap: 10px entre shelves;
+  // un tap que cau sobre aquesta àrea no impacta cap .shelf i el
+  // closest('.shelf') retorna null. El símptoma és el bug "primer clic
+  // no respon, segon sí": el primer tap cau a un gap, el segon impacta
+  // un shelf. Per resoldre-ho sense reformatejar visualment, si el
+  // click cau dins de .fridge sense impactar cap shelf, escollim el
+  // shelf més proper verticalment al punt del click i el tractem com
+  // si l'haguessin clicat directament.
   if (!window.__shelfClickDelegated) {
     window.__shelfClickDelegated = true;
     document.addEventListener('click', (e) => {
-      const shelf = e.target && e.target.closest && e.target.closest('.shelf');
+      if (!e.target || typeof e.target.closest !== 'function') return;
+      let shelf = e.target.closest('.shelf');
+      if (!shelf) {
+        // Fallback per a gaps/padding dins de .fridge: troba el shelf
+        // més proper verticalment al punt clicat.
+        const fridge = e.target.closest('.fridge');
+        if (fridge) {
+          let minDist = Infinity;
+          fridge.querySelectorAll('.shelf').forEach(s => {
+            const r = s.getBoundingClientRect();
+            const cy = r.top + r.height / 2;
+            const d = Math.abs(e.clientY - cy);
+            if (d < minDist) { minDist = d; shelf = s; }
+          });
+        }
+      }
       if (!shelf) return;
-      // .shelf només existeix dins de #screen-section (el cub de zones
-      // de l'EatMe), però per defensar-nos d'algun futur ús de la
-      // mateixa classe en una altra pantalla, descartem clicks fora
-      // d'allà.
+      // .shelf només existeix dins de #screen-section. Defensa contra
+      // un possible ús futur de la mateixa classe en una altra pantalla.
       const sectionScreen = document.getElementById('screen-section');
       if (!sectionScreen || !sectionScreen.contains(shelf)) return;
       const level = shelf.dataset.level;
       const zone = shelf.dataset.zone;
-      // Sincronitzem currentSection al data-zone del shelf clicat i
-      // obrim el nivell d'una. Patró single-click: a diferència del
-      // handler antic que feia redirect-and-return en zona ≠
-      // currentSection, aquest sempre obre.
       if (zone && zone !== currentSection) {
         currentSection = zone;
         if (typeof _updateSectionTitle === 'function') _updateSectionTitle();
