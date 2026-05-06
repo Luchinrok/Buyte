@@ -213,6 +213,12 @@ function _scrollToSupermarket(id, smooth) {
     const x = Math.round(idx * w);
     if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
     else slider.scrollLeft = x;
+    // Forcem aplicació del cub: si scrollLeft ja era a x (cas típic
+    // d'entrar a BuyMe amb el primer super, idx=0 i el slider acabat
+    // de crear amb scrollLeft=0), no hi ha cap esdeveniment scroll i
+    // les pàgines es quedarien sense transform — el primer .shop-page
+    // amb la posició flex natural i el segon mig-visible per la dreta.
+    applyCubeSliderEffect(slider);
   };
   apply();
 }
@@ -399,10 +405,21 @@ function _setupShopsSliderScrollListener(slider) {
     // Efecte cub 3D: helper compartit (js/core.js), batched amb rAF.
     applyCubeSliderEffect(slider);
     if (scrollTimer) clearTimeout(scrollTimer);
+    // Vegeu el comentari equivalent a _setupSliderScrollListener de
+    // js/biteme.js: 120ms sense scroll = snap acabat. Aleshores
+    // sincronitzem scrollLeft a un múltiple exacte de pageWidth
+    // (corregeix el subpíxel del snap natiu que feia que el cub es
+    // quedés a 5-10° en lloc de 0°) i re-apliquem el cub per fixar
+    // la posició final.
     scrollTimer = setTimeout(() => {
       const w = slider.clientWidth;
       if (!w) return;
       const idx = Math.round(slider.scrollLeft / w);
+      const target = idx * w;
+      if (Math.abs(slider.scrollLeft - target) > 0.5) {
+        slider.scrollLeft = target;
+      }
+      applyCubeSliderEffect(slider);
       const supers = getBuyMeVisibleSupermarkets();
       const sm = supers[idx];
       if (sm && sm.id !== currentSupermarketId) {
@@ -416,9 +433,12 @@ function _setupShopsSliderScrollListener(slider) {
         renderShoppingItems();
         renderSupermarketDots();
       }
-    }, 80);
+    }, 120);
   }, { passive: true });
   // Estat inicial del cub: pàgina 0 al davant, la resta als laterals.
+  // Si la pantalla encara no està activa, applyCubeSliderEffect torna
+  // sense fer res perquè clientWidth=0; la crida explícita al final
+  // de _scrollToSupermarket cobreix aquest cas.
   applyCubeSliderEffect(slider);
 }
 
