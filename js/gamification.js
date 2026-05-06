@@ -534,49 +534,88 @@ function _processNextReward() {
   }
 }
 
-function _showBadgeUnlockToast(badge, onDone) {
+// Construeix l'esquelet d'un toast clicable: gestiona la transició
+// d'entrada/sortida, l'auto-dismiss, i el click-to-navigate. Retorna
+// l'overlay perquè els callers el puguin omplir / decorar.
+//
+// Comportament: clic = cancel·la l'auto-dismiss, fa fade-out
+// immediat, i quan acaba la transició crida onDone() (perquè la cua
+// de _processNextReward continuï) i desprès navigateOnClick() (que
+// porta a la pantalla d'èxits amb foco a la insignia o nivell).
+function _buildRewardToast(opts) {
   const overlay = document.createElement('div');
-  overlay.className = 'reward-toast reward-toast-badge';
-  overlay.innerHTML =
-    '<span class="reward-toast-emoji">' + (badge.emoji || '🏅') + '</span>' +
-    '<div class="reward-toast-body">' +
-      '<p class="reward-toast-title">' + escapeHtml(t('badgeUnlocked')) + '</p>' +
-      '<p class="reward-toast-name">' + escapeHtml(badge.name || '') + '</p>' +
-      '<p class="reward-toast-desc">' + escapeHtml(badge.description || '') + '</p>' +
-    '</div>';
+  overlay.className = 'reward-toast ' + (opts.cls || '') + ' reward-toast-clickable';
+  overlay.innerHTML = opts.body +
+    '<span class="reward-toast-arrow" aria-hidden="true">›</span>';
   document.body.appendChild(overlay);
-  // Doble requestAnimationFrame: força el browser a aplicar l'estat inicial
-  // abans d'afegir la classe que fa la transició.
+  // Doble requestAnimationFrame: força el browser a aplicar l'estat
+  // inicial abans d'afegir la classe que dispara la transició.
   requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
-  setTimeout(() => {
+
+  let dismissed = false;
+  let autoTimer = null;
+  let removeTimer = null;
+  const dismiss = (afterRemove) => {
+    if (dismissed) return;
+    dismissed = true;
+    if (autoTimer) clearTimeout(autoTimer);
     overlay.classList.remove('show');
-    setTimeout(() => {
+    removeTimer = setTimeout(() => {
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-      if (typeof onDone === 'function') onDone();
+      if (typeof opts.onDone === 'function') opts.onDone();
+      if (typeof afterRemove === 'function') afterRemove();
     }, 280);
-  }, 4000);
+  };
+
+  overlay.addEventListener('click', () => {
+    dismiss(opts.navigateOnClick);
+  });
+  autoTimer = setTimeout(() => dismiss(), opts.autoDismissMs || 4000);
+  return overlay;
+}
+
+function _showBadgeUnlockToast(badge, onDone) {
+  _buildRewardToast({
+    cls: 'reward-toast-badge',
+    body:
+      '<span class="reward-toast-emoji">' + (badge.emoji || '🏅') + '</span>' +
+      '<div class="reward-toast-body">' +
+        '<p class="reward-toast-title">' + escapeHtml(t('badgeUnlocked')) + '</p>' +
+        '<p class="reward-toast-name">' + escapeHtml(badge.name || '') + '</p>' +
+        '<p class="reward-toast-desc">' + escapeHtml(badge.description || '') + '</p>' +
+      '</div>',
+    autoDismissMs: 4000,
+    onDone: onDone,
+    navigateOnClick: () => {
+      if (typeof openAchievements === 'function') {
+        openAchievements({ focusBadge: badge.id });
+      }
+    }
+  });
 }
 
 function _showLevelUpToast(level, onDone) {
   const [c1, c2] = getLevelTierGradient(level);
-  const overlay = document.createElement('div');
-  overlay.className = 'reward-toast reward-toast-level';
+  const overlay = _buildRewardToast({
+    cls: 'reward-toast-level',
+    body:
+      '<span class="reward-toast-emoji">' + getLevelTierEmoji(level) + '</span>' +
+      '<div class="reward-toast-body">' +
+        '<p class="reward-toast-title">' + escapeHtml(t('levelUp')) + '</p>' +
+        '<p class="reward-toast-name">' + escapeHtml(t('level')) + ' ' + level + ' — ' + escapeHtml(getLevelName(level)) + '</p>' +
+      '</div>',
+    autoDismissMs: 5000,
+    onDone: onDone,
+    navigateOnClick: () => {
+      if (typeof openAchievements === 'function') {
+        openAchievements({ focusLevel: true });
+      }
+    }
+  });
+  // Manteniment: el toast de nivell pinta el seu propi gradient via
+  // style inline (depèn del tier de l'usuari), substituint la classe
+  // base. Cal aplicar-ho després del _buildRewardToast.
   overlay.style.background = 'linear-gradient(135deg, ' + c1 + ' 0%, ' + c2 + ' 100%)';
-  overlay.innerHTML =
-    '<span class="reward-toast-emoji">' + getLevelTierEmoji(level) + '</span>' +
-    '<div class="reward-toast-body">' +
-      '<p class="reward-toast-title">' + escapeHtml(t('levelUp')) + '</p>' +
-      '<p class="reward-toast-name">' + escapeHtml(t('level')) + ' ' + level + ' — ' + escapeHtml(getLevelName(level)) + '</p>' +
-    '</div>';
-  document.body.appendChild(overlay);
-  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('show')));
-  setTimeout(() => {
-    overlay.classList.remove('show');
-    setTimeout(() => {
-      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-      if (typeof onDone === 'function') onDone();
-    }, 280);
-  }, 5000);
 }
 
 
@@ -588,10 +627,35 @@ function _showLevelUpToast(level, onDone) {
 // i els primers passos són els més rellevants quan obres la pantalla.
 let achievementsFilter = 'inici';
 
-function openAchievements() {
+// opts.focusBadge: id d'una insignia → canvia el filtre a la seva
+//   categoria (perquè la insignia sigui visible després del render),
+//   fa scroll fins a la card i afegeix .highlighted (animació de
+//   polsació groga 2 cops, vegeu @keyframes badgeCardHighlight a
+//   styles.css). Usat des del click d'un toast de "insignia
+//   desbloquejada".
+// opts.focusLevel: true → obre la pantalla; el banner de nivell ja és
+//   al capdamunt. Usat des del click d'un toast de "level up".
+function openAchievements(opts) {
+  const focusBadge = opts && opts.focusBadge;
   achievementsFilter = 'inici';
+  if (focusBadge && typeof BADGES !== 'undefined') {
+    const target = BADGES.find(b => b.id === focusBadge);
+    if (target && target.category) achievementsFilter = target.category;
+  }
   renderAchievements();
   showScreen('achievements');
+  if (focusBadge) {
+    // Esperem un frame perquè el render acabi i les cards estiguin al
+    // DOM abans de fer scroll/highlight.
+    requestAnimationFrame(() => {
+      const card = document.querySelector('.badge-card[data-badge-id="' + focusBadge + '"]');
+      if (!card) return;
+      try { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      catch (e) { /* navegadors antics: scroll instantani per defecte */ }
+      card.classList.add('highlighted');
+      setTimeout(() => card.classList.remove('highlighted'), 3200);
+    });
+  }
 }
 
 // Pinta el banner de nivell que apareix a la pantalla "El meu impacte".
@@ -713,6 +777,7 @@ function renderAchievementsList() {
     const unlocked = isBadgeUnlocked(badge.id);
     const card = document.createElement('div');
     card.className = 'badge-card' + (unlocked ? ' unlocked' : ' locked');
+    card.dataset.badgeId = badge.id;
 
     let statusHtml;
     if (unlocked) {

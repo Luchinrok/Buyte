@@ -7020,6 +7020,34 @@ h1 {
   opacity: 0.95;
 }
 
+/* Toasts clicables (insignia desbloquejada / level up): afegim un
+   indicador visual de "clic per veure" a la dreta i el cursor
+   pointer. El handler de click és a _buildRewardToast a
+   js/gamification.js. */
+.reward-toast-clickable { cursor: pointer; }
+.reward-toast-arrow {
+  margin-left: auto;
+  font-size: 28px;
+  font-weight: 200;
+  line-height: 1;
+  opacity: 0.85;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Highlight de la insignia destinació quan s'arriba des del click
+   d'un toast (vegeu openAchievements({ focusBadge }) a
+   js/gamification.js). 2 polsacions d'1.5s, total ~3s, prou per
+   atreure l'atenció sense ser molest. */
+@keyframes badgeCardHighlight {
+  0%   { box-shadow: 0 0 0 0   rgba(255, 193, 7, 0.7); }
+  50%  { box-shadow: 0 0 0 12px rgba(255, 193, 7, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(255, 193, 7, 0); }
+}
+.badge-card.highlighted {
+  animation: badgeCardHighlight 1.5s ease-out 2;
+}
+
 /* ===== SMART NOTIFICATIONS — Pantalla de configuració ===== */
 .perm-banner {
   display: flex;
