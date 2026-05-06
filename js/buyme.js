@@ -245,10 +245,18 @@ function _ensureShopsSwiper() {
     shortSwipes: true,
     followFinger: true,
     resistanceRatio: 0.85,
-    // loop: true ⇒ comportament cíclic. Vegeu el comentari paral·lel
-    // a _ensureZonesSwiper a js/biteme.js: usar realIndex / slideToLoop
-    // en lloc de activeIndex / slideTo.
-    loop: true,
+    // loop: false aquí (a diferència de zones i nivells, que sí que
+    // són loop:true). El motiu: amb loop activat Swiper duplica
+    // primera/última i, a la costura, la cara visible (clone) i la
+    // següent (original) podien quedar-se "fantasma" superposades
+    // sobre la frontal, particularment quan els slides tenen
+    // contingut molt diferent en altura (BuyMe és l'únic dels tres
+    // cubs amb contingut variable per slide). Sense loop, l'usuari
+    // arribar a l'última botiga lliscant cap a la dreta s'atura
+    // allà, igual que a la primera lliscant cap a l'esquerra. És
+    // un compromís raonable per a una llista de supers que sol
+    // ser curta.
+    loop: false,
     pagination: {
       el: '#supermarket-dots',
       clickable: true,
