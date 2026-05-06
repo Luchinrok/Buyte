@@ -216,13 +216,6 @@ h1 {
   min-height: 0;
   margin-left: -20px;
   margin-right: -20px;
-  /* Efecte 3D estil Instagram Stories: perspective al contenidor +
-     rotateY a cada .zone-page segons la posició de scroll (calculat
-     per JS a _applyStoriesEffect en js/biteme.js). El perspective
-     viu al contenidor perquè totes les pàgines comparteixin el
-     mateix punt de fuga. */
-  perspective: 1200px;
-  perspective-origin: 50% 50%;
 }
 
 .zones-slider::-webkit-scrollbar { display: none; }
@@ -236,13 +229,6 @@ h1 {
   min-height: 0;
   box-sizing: border-box;
   padding: 0 20px;
-  /* Base per l'efecte Stories. La transformació real l'aplica JS
-     (style.transform / style.opacity) a cada scroll; aquí només
-     posem l'origin, will-change i backface-visibility per garantir
-     que la GPU mantingui les pàgines compostes. */
-  transform-origin: 50% 50%;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
 }
 
 .zone-page > .fridge { margin-bottom: 0; }
