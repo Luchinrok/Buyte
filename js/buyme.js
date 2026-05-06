@@ -216,12 +216,19 @@ function _ensureShopsSwiper() {
   const slider = document.getElementById('shops-slider');
   if (!slider || !slider.clientWidth) return null;
   _shopsSwiper = new Swiper('#shops-slider', {
-    effect: 'creative',
-    creativeEffect: {
-      prev: { translate: ['-100%', 0, -200], rotate: [0, 30, 0], opacity: 0.5 },
-      next: { translate: ['100%', 0, -200], rotate: [0, -30, 0], opacity: 0.5 }
+    // Vegeu la configuració idèntica a _ensureZonesSwiper a
+    // js/biteme.js. effect: 'cube' substitueix l'antic 'creative' que
+    // amb rotació de 30° era massa subtil per donar la sensació de
+    // cub real, i tenia un bug on el primer swipe a BuyMe no avançava
+    // completament (l'usuari havia de lliscar dues vegades).
+    effect: 'cube',
+    cubeEffect: {
+      shadow: true,
+      slideShadows: true,
+      shadowOffset: 20,
+      shadowScale: 0.94
     },
-    speed: 400,
+    speed: 600,
     grabCursor: true,
     pagination: {
       el: '#supermarket-dots',
@@ -271,7 +278,13 @@ function _scrollToSupermarket(id, smooth) {
     requestAnimationFrame(() => _scrollToSupermarket(id, smooth));
     return;
   }
-  swiper.slideTo(idx, smooth ? 400 : 0);
+  // update() obligat abans del slideTo: aquesta era la causa real del
+  // bug "BuyMe es queda a mitges al primer swipe". Quan el slider
+  // s'instancia mentre la pantalla és .active però acaba de ser-ho,
+  // les dimensions del seu rectangle interior poden no estar
+  // estabilitzades. update() força un recàlcul de la cube geometry.
+  swiper.update();
+  swiper.slideTo(idx, smooth ? 600 : 0);
 }
 
 (function _wireShopsResnap() {

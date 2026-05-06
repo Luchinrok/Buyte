@@ -338,12 +338,19 @@ function _ensureZonesSwiper() {
   // rotació suau de 30° al voltant de Y. opacity 0.5 per fondre les
   // cares no centrals (efecte "card stack" més suau que un cub real).
   _zonesSwiper = new Swiper('#zones-slider', {
-    effect: 'creative',
-    creativeEffect: {
-      prev: { translate: ['-100%', 0, -200], rotate: [0, 30, 0], opacity: 0.5 },
-      next: { translate: ['100%', 0, -200], rotate: [0, -30, 0], opacity: 0.5 }
+    // Cub real estil galeria 3D (Swiper EffectCube). Cada cara és una
+    // zona; el cub rota 90° entre cares. shadowOffset i shadowScale
+    // ajustats per a un efecte més suau que el cub-pur de demo (no
+    // ombres exagerades sota la cara activa). speed: 600ms perquè la
+    // rotació de 90° tingui temps de "respirar".
+    effect: 'cube',
+    cubeEffect: {
+      shadow: true,
+      slideShadows: true,
+      shadowOffset: 20,
+      shadowScale: 0.94
     },
-    speed: 400,
+    speed: 600,
     grabCursor: true,
     pagination: {
       el: '#section-dots',
@@ -381,7 +388,14 @@ function _scrollToSection(cat, smooth) {
     requestAnimationFrame(() => _scrollToSection(cat, smooth));
     return;
   }
-  swiper.slideTo(idx, smooth ? 400 : 0);
+  // update() abans del slideTo: si el slider acaba d'esdevenir
+  // visible (showScreen al frame anterior), Swiper pot tenir
+  // dimensions cachejades obsoletes. Sense això, l'efecte cube
+  // calculava les rotacions sobre una mida incorrecta i el primer
+  // swipe no avançava completament — l'usuari havia de lliscar dues
+  // vegades.
+  swiper.update();
+  swiper.slideTo(idx, smooth ? 600 : 0);
 }
 
 // Resize: Swiper té el seu propi ResizeObserver intern, així que no
