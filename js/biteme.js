@@ -469,6 +469,17 @@ function _ensureZonesSwiper() {
           currentSection = cat;
           _updateSectionTitle();
         }
+      },
+      // Fallback per al bug "primer clic no respon a Congelador":
+      // tot i preventClicks:false i touchStartPreventDefault:false,
+      // el primer tap després d'un swipe a un slide no inicial no
+      // disparava openShelf. Forcem explícitament pointer-events:auto
+      // al slide just acabat de transitionar, perquè el sistema de
+      // hit-testing no tingui dubte que aquest és l'element clicable.
+      slideChangeTransitionEnd: function() {
+        const swiper = this;
+        const active = swiper.slides && swiper.slides[swiper.activeIndex];
+        if (active) active.style.pointerEvents = 'auto';
       }
       // touchEnd safety net ELIMINAT. La idea era forçar un slideTo
       // 50ms després de cada touch per a casos de cub mig girat. Però
@@ -864,10 +875,15 @@ function _ensureLevelsSwiper() {
           currentLevel = level;
           _updateLevelHeaderAndNevi(level);
         }
+      },
+      // Mateix fallback que a _ensureZonesSwiper: pointer-events:auto
+      // explícit al slide actiu post-transició perquè els taps a
+      // product-items registrin al primer toc.
+      slideChangeTransitionEnd: function() {
+        const swiper = this;
+        const active = swiper.slides && swiper.slides[swiper.activeIndex];
+        if (active) active.style.pointerEvents = 'auto';
       }
-      // touchEnd ELIMINAT — vegeu el comentari paral·lel a
-      // _ensureZonesSwiper. Era un disparador de Swiper's preventClicks
-      // que suprimia taps legítims sobre product-items.
     }
   });
   return _levelsSwiper;

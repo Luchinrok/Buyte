@@ -322,11 +322,16 @@ function _ensureShopsSwiper() {
             if (list) _renderShopPageItems(oldId, list, 'view');
           });
         }
+      },
+      // Mateix fallback que a _ensureZonesSwiper a js/biteme.js:
+      // pointer-events:auto explícit al slide actiu post-transició
+      // perquè els taps al primer toc registrin sense necessitat
+      // de doble click.
+      slideChangeTransitionEnd: function() {
+        const swiper = this;
+        const active = swiper.slides && swiper.slides[swiper.activeIndex];
+        if (active) active.style.pointerEvents = 'auto';
       }
-      // touchEnd ELIMINAT — vegeu el comentari paral·lel a
-      // _ensureZonesSwiper a js/biteme.js. La xarxa de seguretat
-      // del slideTo post-touch interferia amb preventClicks de
-      // Swiper i suprimia taps legítims sobre items dins dels slides.
     }
   });
   return _shopsSwiper;
