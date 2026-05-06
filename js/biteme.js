@@ -435,6 +435,14 @@ function _ensureZonesSwiper() {
     // propagació així el browser sempre dispara el click esperat.
     preventClicks: false,
     preventClicksPropagation: false,
+    // touchStartPreventDefault: false — el default de Swiper a Android
+    // és true, que crida preventDefault al touchstart i suprimeix la
+    // generació natural del click event que el browser fa després del
+    // touchend. Símptoma: "primer clic no respon, segon clic sí" — el
+    // primer touch només "activa" el slide, el segon ja sí dispara
+    // click. Posant-ho a false el browser dispara el click event
+    // normalment a tots dos casos.
+    touchStartPreventDefault: false,
     // loop: true → Swiper duplica les primeres/últimes diapositives
     // perquè la transició final → primera (i viceversa) sigui contínua
     // i no salti. Conseqüència: this.activeIndex inclou els duplicats;
@@ -832,6 +840,10 @@ function _ensureLevelsSwiper() {
     // tenen click handlers; els necessitem fiables.
     preventClicks: false,
     preventClicksPropagation: false,
+    // touchStartPreventDefault: false — vegeu el comentari a
+    // _ensureZonesSwiper. Cal per evitar el bug del "primer clic no
+    // respon" en mòbils Android al cube + loop.
+    touchStartPreventDefault: false,
     loop: true,
     pagination: {
       el: '#levels-dots',

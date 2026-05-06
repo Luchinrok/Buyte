@@ -251,6 +251,12 @@ function _ensureShopsSwiper() {
     // han de funcionar.
     preventClicks: false,
     preventClicksPropagation: false,
+    // touchStartPreventDefault: false — vegeu el comentari paral·lel
+    // a _ensureZonesSwiper a js/biteme.js. Cal a Android perquè el
+    // browser dispari el click event natural després del touchend
+    // (sense això, calia "doble clic" per activar accions als slides
+    // que no fossin l'inicial).
+    touchStartPreventDefault: false,
     // loop: true reactivat. La causa del bug d'overlap anterior
     // (contingut d'una botiga apareixia fantasma sota una altra a la
     // costura del loop) era que slideChange cridava

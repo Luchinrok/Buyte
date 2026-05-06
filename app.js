@@ -91,38 +91,39 @@ document.addEventListener('DOMContentLoaded', () => {
     b.addEventListener('click', () => openSection(b.dataset.cat));
   });
 
-  // Clic als prestatges DINS de la secció. Els shelves es construeixen
-  // dinàmicament dins #zones-slider per renderSection() — usem event
-  // delegation per cobrir-los tots, no un querySelectorAll a l'init.
-  const sectionScreen = document.getElementById('screen-section');
-  if (sectionScreen) {
-    sectionScreen.addEventListener('click', (e) => {
-      const shelf = e.target.closest('.shelf');
-      if (!shelf || !sectionScreen.contains(shelf)) return;
+  // Clic als prestatges DINS de la secció. Delegate AL DOCUMENT (no al
+  // contenidor #screen-section) perquè a sobre del Swiper hi ha
+  // mecanismes que poden interceptar/cancel·lar clicks abans que
+  // bombollegin a un node intermedi. Al document és el màxim nivell
+  // de delegate possible — el click sempre arriba aquí. Combinat amb
+  // touchStartPreventDefault:false al Swiper de zones, soluciona el
+  // bug del "primer clic no respon, segon clic sí" típic de Swiper +
+  // loop a Android (ex: Congelador, Rebost).
+  //
+  // Guarda window.__shelfClickDelegated perquè en hot-reload o
+  // re-execució del bootstrap no es dupliqui el listener.
+  if (!window.__shelfClickDelegated) {
+    window.__shelfClickDelegated = true;
+    document.addEventListener('click', (e) => {
+      const shelf = e.target && e.target.closest && e.target.closest('.shelf');
+      if (!shelf) return;
+      // .shelf només existeix dins de #screen-section (el cub de zones
+      // de l'EatMe), però per defensar-nos d'algun futur ús de la
+      // mateixa classe en una altra pantalla, descartem clicks fora
+      // d'allà.
+      const sectionScreen = document.getElementById('screen-section');
+      if (!sectionScreen || !sectionScreen.contains(shelf)) return;
       const level = shelf.dataset.level;
       const zone = shelf.dataset.zone;
-      // Sincronitzem currentSection al data-zone DEL SHELF clicat
-      // (no de currentSection cached) i obrim el nivell d'una.
-      //
-      // Per què: amb el cube + loop:true, currentSection es manté
-      // actualitzat pel slideChange callback. Però hi ha edge cases
-      // (swipe parcial sota longSwipesRatio que es revertia, primer
-      // render després d'openSection on slideChange no es dispara
-      // perquè ja som al slide objectiu, etc.) on currentSection
-      // podia quedar desincronitzat amb el que l'usuari té al davant.
-      // El handler antic intentava arreglar-ho redirigint a goToSection
-      // i sortint, demanant un segon clic — però si l'usuari ja era
-      // a la zona correcta visualment, slideToLoop era no-op,
-      // slideChange no es disparava, currentSection seguia
-      // desincronitzat, i l'usuari quedava atrapat sense poder obrir
-      // cap nivell. Era el bug "no es pot accedir a cap nivell del
-      // Congelador". Ara: el clic obre directament el nivell de la
-      // zona del shelf, sincronitzant currentSection si cal.
+      // Sincronitzem currentSection al data-zone del shelf clicat i
+      // obrim el nivell d'una. Patró single-click: a diferència del
+      // handler antic que feia redirect-and-return en zona ≠
+      // currentSection, aquest sempre obre.
       if (zone && zone !== currentSection) {
         currentSection = zone;
         if (typeof _updateSectionTitle === 'function') _updateSectionTitle();
       }
-      if (level) openShelf(level);
+      if (level && typeof openShelf === 'function') openShelf(level);
     });
   }
 
