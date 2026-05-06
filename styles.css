@@ -607,6 +607,32 @@ h1 {
   min-height: 20px;
 }
 
+/* ===== TAPATGE DEL FONS DELS SWIPERS =====
+   Per defecte, el bundle de Swiper aplica fons grisos lleus a
+   .swiper / .swiper-wrapper / .swiper-cube-shadow (i a l'efecte
+   cube també hi ha una capa shadow projectada). Quan els slides
+   són overflow:visible (com els nostres, per al rendering 3D) o
+   tenen fons transparent, aquests greys es veien al darrere del
+   contingut — particularment notable als slides amb poc contingut
+   (p.ex. la card "Enhorabona, ja has acabat!" del BuyMe).
+   Aquí els forcem transparents i donem als slides el color de fons
+   de l'app perquè cada cara del cub sigui opaca. */
+.zones-slider, .zones-slider .swiper-wrapper,
+.shops-slider, .shops-slider .swiper-wrapper,
+.levels-slider, .levels-slider .swiper-wrapper {
+  background: transparent !important;
+}
+.zones-slider .swiper-cube-shadow,
+.shops-slider .swiper-cube-shadow,
+.levels-slider .swiper-cube-shadow {
+  display: none !important;
+}
+.zones-slider .swiper-slide,
+.shops-slider .swiper-slide,
+.levels-slider .swiper-slide {
+  background: var(--bg);
+}
+
 /* ===== SLIDER 3D DE NIVELLS (#levels-slider dins #screen-list) =====
    Implementat amb Swiper.js (effect: 'cube'), mateix patró que
    .zones-slider i .shops-slider — vegeu el comentari extens a
