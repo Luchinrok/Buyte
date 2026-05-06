@@ -193,77 +193,95 @@ h1 {
 }
 
 /* ===== SLIDER 3D DE ZONES (#zones-slider dins #screen-section) =====
-   Implementat amb Swiper.js (effect: 'creative') — vegeu
+   Implementat amb Swiper.js (effect: 'cube') — vegeu
    _ensureZonesSwiper a js/biteme.js. Swiper gestiona els touch
-   events, l'animació i el snap; aquí només definim mida i marges
-   perquè el slider ocupi tota l'amplada del .screen (a partir del
-   padding de .screen). */
+   events, l'animació i el snap.
+
+   IMPORTANT — altura FIXA del slider:
+   El cub de Swiper requereix que totes les cares tinguin
+   exactament les mateixes dimensions. Si el slider té altura
+   variable (per exemple, "flex: 1" dins d'un flex column on
+   els germans tenen contingut canviant), Swiper calcula la
+   geometria del cub a partir d'una altura que pot ser diferent
+   en el moment de la inicialització i en l'instant de cada
+   slideTo, fent que les rotacions no quadrin i el cub es quedi
+   "pillat" enmig d'una transició. height: 70vh dóna a Swiper
+   un valor estable i el mateix per a totes les cares.
+   .shop-page (o .zone-page) hereta aquesta altura via la classe
+   .swiper-slide del bundle (height: 100%), i el contingut intern
+   que sobrepassi (ex: una llista llarga d'items a una botiga
+   concreta del BuyMe) fa scroll vertical al seu .shopping-items-list. */
 .zones-slider {
-  flex: 1;
   /* Cal una amplada explícita perquè el bord dret arribi a la vora
      del viewport. .screen aplica padding lateral de 20px a cada
      costat; volem que el slider extengui per sota d'aquest padding. */
   width: calc(100% + 40px);
-  min-height: 0;
+  height: 70vh;
+  flex: 0 1 auto;
   margin-left: -20px;
   margin-right: -20px;
-  /* Swiper amb effect: creative posiciona els slides amb transforms
+  /* Swiper amb effect: cube posiciona els slides amb transforms
      absoluts; cal overflow:hidden perquè les rotacions/translacions
      no s'escapin del contenidor. */
   overflow: hidden;
 }
 
 .zone-page {
-  /* La mida la fixa Swiper (.swiper-slide del bundle). Aquí només
-     posem la disposició interna del contingut. */
+  /* La mida la fixa Swiper (.swiper-slide del bundle aplica
+     height: 100% al cube effect). Aquí només la disposició interna. */
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   padding: 0 20px;
+  min-height: 0;
 }
 
 .zone-page > .fridge { margin-bottom: 0; }
 
-/* ===== SLIDER CONTINU DE SUPERMERCATS (#shops-slider dins
-   #screen-supermarket). Mateix patró que .zones-slider: scroll-snap
-   natiu, una .shop-page per supermercat, sense espais blancs als
-   laterals durant el lliscament. ===== */
+/* ===== SLIDER 3D DE SUPERMERCATS (#shops-slider dins
+   #screen-supermarket).
+
+   Mateix patró que .zones-slider, vegeu el comentari extens d'allà
+   sobre per què cal height: 70vh fixa per al cube effect: cada
+   botiga té un nombre diferent d'items, i sense altura fixa cada
+   cara del cub tenia una mida diferent — Swiper no podia calcular
+   la rotació coherent i el slider es quedava "pillat" enmig d'una
+   transició al primer swipe. */
 .shops-slider {
-  flex: 1;
-  /* Vegeu el comentari a .zones-slider: cal width: calc(100% + 40px)
-     amb margin: 0 -20px per estendre el slider sota el padding del
-     .screen i arribar a les vores del viewport. */
   width: calc(100% + 40px);
-  min-height: 0;
+  height: 70vh;
+  flex: 0 1 auto;
   margin-left: -20px;
   margin-right: -20px;
-  /* Swiper amb effect: creative posiciona els slides amb transforms
-     absoluts; cal overflow:hidden per clipping de les rotacions. */
   overflow: hidden;
 }
 
 .shop-page {
-  /* La mida la fixa Swiper (.swiper-slide). Aquí només el contingut.
-     IMPORTANT: NO posem overflow-y aquí. Swiper's effect: 'cube' aplica
+  /* La mida la fixa Swiper (.swiper-slide del bundle aplica
+     height: 100% al cube effect). Aquí només la disposició interna.
+     IMPORTANT: NO posem overflow-y aquí. Swiper effect:'cube' aplica
      transforms 3D al .swiper-wrapper i als seus .swiper-slide; un
      overflow != visible al slide crea un stacking context que aplana
-     el rendering 3D al Chromium/Safari, fent que el cub aparegui pla
-     (això era exactament el bug "BuyMe no fa rotació 3D com EatMe").
-     L'overflow vertical el porta el contenidor intern .shopping-items-
-     list, que SÍ pot tenir el seu scroll local sense afectar el cub. */
+     el rendering 3D al Chromium/Safari, fent que el cub aparegui pla.
+     L'overflow vertical va a .shopping-items-list. */
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   padding: 0 20px;
+  min-height: 0;
 }
 
 .shop-page > .shopping-items-list {
   flex: 1;
-  /* Scroll vertical de la llista d'items dins de la cara del cub.
-     Ara el slide és overflow:visible (per al cub 3D) i la llista té
-     el seu propi scroll. */
+  /* Scroll vertical local: la cara del cub és overflow:visible (per
+     al rendering 3D) i la llista té el seu propi scroll. Aquí és on
+     "absorbim" la diferència d'altura entre botigues amb pocs i
+     molts items: el cub es manté de mida fixa, l'usuari fa scroll
+     dins. */
   overflow-y: auto;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
 }
 
 .shop-page > .shopping-items-list::-webkit-scrollbar { display: none; }

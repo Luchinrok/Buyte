@@ -408,6 +408,13 @@ function _scrollToSection(cat, smooth) {
   // opera sobre l'array intern amb duplicats, slideToLoop sobre els
   // índexs originals (que és el que volem aquí).
   swiper.slideToLoop(idx, smooth ? 600 : 0);
+  // Segon update() amb un petit delay: cobreix el cas en què la
+  // primera entrada a la pantalla aplica height: 70vh però el layout
+  // del .screen encara està estabilitzant-se (canvi de viewport
+  // virtual a iOS, rotació, etc.).
+  setTimeout(() => {
+    if (_zonesSwiper === swiper) swiper.update();
+  }, 120);
 }
 
 // Resize: Swiper té el seu propi ResizeObserver intern, així que no
