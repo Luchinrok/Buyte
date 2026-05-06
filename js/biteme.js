@@ -425,6 +425,16 @@ function _ensureZonesSwiper() {
     shortSwipes: true,
     followFinger: true,
     resistanceRatio: 0.85,
+    // preventClicks defaults to true en Swiper; bloqueja el click
+    // event posterior si durant el touch hi ha hagut qualsevol
+    // moviment. En desktop el ratolí no jitter, però en mòbil el dit
+    // SÍ — qualsevol micromoviment durant un tap es classifica com
+    // a swipe i el click sobre un .shelf es perd. Per això el
+    // Congelador "deixa de funcionar" en format mòbil tot i que
+    // funciona en desktop. Desactivem preventClicks i la seva
+    // propagació així el browser sempre dispara el click esperat.
+    preventClicks: false,
+    preventClicksPropagation: false,
     // loop: true → Swiper duplica les primeres/últimes diapositives
     // perquè la transició final → primera (i viceversa) sigui contínua
     // i no salti. Conseqüència: this.activeIndex inclou els duplicats;
@@ -816,6 +826,12 @@ function _ensureLevelsSwiper() {
     shortSwipes: true,
     followFinger: true,
     resistanceRatio: 0.85,
+    // Vegeu el comentari paral·lel a _ensureZonesSwiper: el dit
+    // jitter en mòbil + preventClicks:true (default) suprimeix
+    // taps legítims. Als slides dels nivells els product-items
+    // tenen click handlers; els necessitem fiables.
+    preventClicks: false,
+    preventClicksPropagation: false,
     loop: true,
     pagination: {
       el: '#levels-dots',

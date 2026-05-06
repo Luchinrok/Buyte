@@ -245,6 +245,12 @@ function _ensureShopsSwiper() {
     shortSwipes: true,
     followFinger: true,
     resistanceRatio: 0.85,
+    // Vegeu el comentari paral·lel a _ensureZonesSwiper a
+    // js/biteme.js: en mòbil, el jitter del dit + preventClicks:true
+    // bloqueja taps. Els taps a items de la llista de la compra
+    // han de funcionar.
+    preventClicks: false,
+    preventClicksPropagation: false,
     // loop: true reactivat. La causa del bug d'overlap anterior
     // (contingut d'una botiga apareixia fantasma sota una altra a la
     // costura del loop) era que slideChange cridava
