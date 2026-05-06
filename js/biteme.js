@@ -337,12 +337,6 @@ function _scrollToSection(cat, smooth) {
     const x = Math.round(idx * w);
     if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
     else slider.scrollLeft = x;
-    // Sempre re-aplica el cub: si scrollLeft ja era a x (entrada
-    // inicial a la pantalla amb idx=0, o resnap després d'un resize)
-    // l'assignació no genera cap esdeveniment scroll, així que el cub
-    // no s'actualitzaria sol i les pàgines es quedarien en la seva
-    // posició flex natural sense rotacions.
-    applyCubeSliderEffect(slider);
   };
   apply();
 }
@@ -453,27 +447,16 @@ function _setupSliderScrollListener(slider) {
   let scrollTimer = null;
   slider.addEventListener('scroll', () => {
     // Efecte cub 3D: actualització immediata cada frame (helper compartit
-    // a js/core.js, batched amb rAF).
+    // a js/core.js, batched amb rAF). Substitueix l'efecte Stories
+    // anterior que només feia un tilt subtil.
     applyCubeSliderEffect(slider);
     if (scrollTimer) clearTimeout(scrollTimer);
-    // Detecció de "scroll end": 120ms sense cap esdeveniment scroll
-    // = el snap natiu ha acabat. Fem dues coses:
-    //   1. Forcem que scrollLeft sigui exactament idx*pageWidth (el
-    //      snap natiu pot deixar offsets de subpíxel que provoquen
-    //      una rotació residual del cub: el dot click feia que el cub
-    //      es quedés a 5-10° en lloc de 0°).
-    //   2. Re-apliquem el cub per garantir l'estat final exacte —
-    //      sense això, el darrer esdeveniment de scroll del smooth
-    //      scroll pot no haver arribat al target final.
+    // Petit debounce: només actualitzem currentSection un cop el scroll
+    // s'ha aturat (snap completat). Així evitem renders intermedis.
     scrollTimer = setTimeout(() => {
       const w = slider.clientWidth;
       if (!w) return;
       const idx = Math.round(slider.scrollLeft / w);
-      const target = idx * w;
-      if (Math.abs(slider.scrollLeft - target) > 0.5) {
-        slider.scrollLeft = target;
-      }
-      applyCubeSliderEffect(slider);
       const cat = SECTION_ORDER[idx];
       if (cat && cat !== currentSection) {
         currentSection = cat;
@@ -481,13 +464,10 @@ function _setupSliderScrollListener(slider) {
         // Re-renderitzem només els dots (no cal rebuild de pàgines).
         renderSectionDots();
       }
-    }, 120);
+    }, 80);
   }, { passive: true });
   // Aplica l'estat inicial (pàgina 0 al davant, la resta a 90° als
-  // laterals del cub). Si clientWidth encara és 0 perquè la pantalla
-  // no està activa, applyCubeSliderEffect torna sense fer res; la
-  // crida explícita al final de _scrollToSection que es fa des de
-  // openSection cobreix aquest cas.
+  // laterals del cub).
   applyCubeSliderEffect(slider);
 }
 
