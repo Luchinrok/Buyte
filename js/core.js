@@ -636,34 +636,19 @@ function showToast(msg) {
 }
 
 // ============================================
-// CUBE SLIDER (classe compartida BiteMe / BuyMe)
+// CUBE SLIDER EFFECT (shared helper)
 // ============================================
 //
-// Encapsula tota la lògica del cub 3D en un sol objecte per slider:
-// el seu scroll listener, el rAF de render, el timer de snap-end, i
-// un callback onSnap que avisa a qui l'ha creat quan canvia la pàgina
-// activa. Substitueix la implementació anterior basada en funcions
-// soltes (applyCubeSliderEffect global + scroll listeners als mòduls)
-// que tenia diversos problemes:
+// Aplica un efecte de cub 3D a un slider scroll-snap horitzontal: la
+// pàgina que correspon a l'scrollLeft actual queda al davant (rotateY=0)
+// i les adjacents queden a 90° als laterals d'un cub virtual. La rotació
+// pivota al voltant del centre del cub (a halfW de profunditat darrere
+// la cara frontal), no al voltant del centre de cada pàgina, per fer
+// que les cares formin un cub real i no un ventall.
 //
-//   • Doble font de listeners: scroll triggerava transformació via
-//     applyCubeSliderEffect i, en paral·lel, els mòduls també
-//     escoltaven scroll per actualitzar índex/dots. La sincronització
-//     entre les dues vies feia que algunes seqüències (dot-click ràpid,
-//     swipe interromput) deixessin l'estat inconsistent.
-//   • slider.scrollLeft = target dins del timer de snap-back podia
-//     emetre un nou esdeveniment scroll que reiniciava el timer; en
-//     determinats DPR no enters això podia generar un mini-loop.
-//   • L'estat global (_cubeSliderRafPending, flags _wired) no es
-//     podia "reiniciar" — qualsevol bug d'un cicle es propagava.
-//
-// Ús:
-//   const cube = new CubeSlider(slider, {
-//     onSnap: (idx) => { ... actualitza UI ... }
-//   });
-//   cube.scrollToIndex(2, true);   // scroll suau a la pàgina 2
-//   cube.refresh();                 // re-renderitza (post-resize, etc.)
-//   cube.destroy();                 // neteja listener + transforms
+// Usat per:
+//   • .zones-slider  — BiteMe (Nevera / Congelador / Rebost / Fruiter)
+//   • .shops-slider  — BuyMe (Mercadona / Lidl / Carrefour / ...)
 //
 // Requereix al CSS del slider:
 //   perspective: 1000px;
@@ -672,146 +657,53 @@ function showToast(msg) {
 //   transform-origin: 50% 50%;
 //   backface-visibility: hidden;
 //   will-change: transform;
-class CubeSlider {
-  constructor(slider, opts) {
-    this.slider = slider;
-    this.onSnap = (opts && opts.onSnap) || null;
-    this.maxRotationDeg = (opts && opts.maxRotationDeg) || 75;
-    this.rafScheduled = false;
-    this.scrollEndTimer = null;
-    // Bind perquè removeEventListener funcioni a destroy().
-    this._handleScroll = this._handleScroll.bind(this);
-    this.slider.addEventListener('scroll', this._handleScroll, { passive: true });
-    // Registre per a applyCubeSliderEffect(slider) (backward compat).
-    _cubeSliderInstances.set(slider, this);
-    // Render inicial (no fa res si clientWidth=0; refresh() es pot
-    // tornar a cridar quan la pantalla sigui visible).
-    this.refresh();
-  }
-
-  _handleScroll() {
-    this._renderRaf();
-    if (this.scrollEndTimer) clearTimeout(this.scrollEndTimer);
-    // 200ms sense cap esdeveniment scroll = el snap natiu ha acabat
-    // (scroll-snap pot trigar 100-150ms en algunes versions de Safari).
-    // Tolerància >2px per al re-snap: subpíxels normals del snap natiu
-    // no triggeren cap escriptura nova (que generaria un altre scroll
-    // event i podria entrar en ping-pong en DPR fraccionaris).
-    this.scrollEndTimer = setTimeout(() => this._snapAndNotify(), 200);
-  }
-
-  _snapAndNotify() {
-    const w = this.slider.clientWidth;
+//
+// Es crida des dels scroll listeners dels mòduls (biteme.js i buyme.js).
+// Internament agrupa les invocacions amb un sol requestAnimationFrame
+// per slider, per evitar diversos repaints en una mateixa frame.
+const _cubeSliderRafPending = new WeakSet();
+function applyCubeSliderEffect(slider) {
+  if (!slider) return;
+  if (_cubeSliderRafPending.has(slider)) return;
+  _cubeSliderRafPending.add(slider);
+  requestAnimationFrame(() => {
+    _cubeSliderRafPending.delete(slider);
+    const w = slider.clientWidth;
     if (!w) return;
-    const idx = Math.round(this.slider.scrollLeft / w);
-    const target = idx * w;
-    if (Math.abs(this.slider.scrollLeft - target) > 2) {
-      this.slider.scrollLeft = target;
-    }
-    // Render sincrònic (no rAF batch) per garantir que la cara
-    // frontal queda exactament a rotation=0 abans del proper frame.
-    this._renderNow();
-    if (this.onSnap) {
-      try { this.onSnap(idx); } catch (e) { /* no callback bug → no break */ }
-    }
-  }
-
-  scrollToIndex(idx, smooth) {
-    const w = this.slider.clientWidth;
-    if (!w) {
-      // Pantalla encara no visible. Reintenta al següent frame; quan la
-      // pantalla s'activi, clientWidth serà > 0.
-      requestAnimationFrame(() => this.scrollToIndex(idx, smooth));
-      return;
-    }
-    const target = Math.round(idx * w);
-    if (smooth) {
-      this.slider.scrollTo({ left: target, behavior: 'smooth' });
-    } else {
-      this.slider.scrollLeft = target;
-    }
-    // Re-render explícit: si scrollLeft ja era a target, l'assignació
-    // no genera cap esdeveniment scroll i sense aquesta crida les
-    // pàgines es quedarien sense transform (cas típic d'entrada inicial
-    // a la pantalla amb idx=0).
-    this._renderNow();
-  }
-
-  refresh() { this._renderNow(); }
-
-  // Render encolat via rAF (per coalescer múltiples esdeveniments
-  // scroll en un sol repaint). Si ja n'hi ha un de pendent, no fem res.
-  _renderRaf() {
-    if (this.rafScheduled) return;
-    this.rafScheduled = true;
-    requestAnimationFrame(() => {
-      this.rafScheduled = false;
-      this._renderNow();
-    });
-  }
-
-  _renderNow() {
-    const w = this.slider.clientWidth;
-    if (!w) return;
-    const sl = this.slider.scrollLeft;
+    const sl = slider.scrollLeft;
     const halfW = w / 2;
-    const pages = this.slider.children;
-    const maxRot = this.maxRotationDeg;
+    const pages = slider.children;
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
       const distance = i * w - sl;
       const ratio = distance / w;
-      // Clamp del ratio per a la rotació: pàgines passades de la
-      // adjacent (|ratio|>1) es queden al màxim — combinades amb la
-      // visibility:hidden de baix, no es renderitzen igualment.
-      const clampedRatio = ratio < -1 ? -1 : (ratio > 1 ? 1 : ratio);
-      const rotation = clampedRatio * maxRot;
       // Cadena de transforms (s'apliquen d'esquerra a dreta sobre el
       // sistema de coordenades local de la pàgina):
       //   1. translateX(-distance): cancel·la la posició natural del
-      //      flex (totes les pàgines apilades al centre del slider).
+      //      flex; totes les pàgines passen a tenir el seu centre al
+      //      mateix punt (centre del slider).
       //   2. translateZ(-halfW): empeny la pàgina enrere fins al pla
-      //      del centre del cub (perquè rotateY pivoti aquí, no al
-      //      centre de la pàgina).
-      //   3. rotateY(rotation): cara frontal (ratio=0) sense rotar;
-      //      cara adjacent (ratio=±1) a ±maxRot graus.
-      //   4. translateZ(halfW): mou la pàgina, ja rotada, halfW al
-      //      llarg del seu nou eix Z (que apunta cap enfora del cub),
-      //      col·locant-la a la superfície del cub.
+      //      del centre del cub (perquè rotateY pivoti aquí).
+      //   3. rotateY(ratio*90deg): cara frontal (ratio=0) sense rotar;
+      //      cara dreta del cub (ratio=1) a +90°; cara esquerra (ratio
+      //      =-1) a -90°.
+      //   4. translateZ(halfW): mou la pàgina, ja rotada, una distància
+      //      halfW al llarg del seu nou eix Z (que apunta cap enfora del
+      //      cub), col·locant-la a la superfície del cub.
+      // Resultat net: cara frontal queda al pla del visor (z=0,
+      //   mida natural), cares laterals es projecten als costats.
       page.style.transform =
         'translateX(' + (-distance) + 'px) ' +
         'translateZ(' + (-halfW) + 'px) ' +
-        'rotateY(' + rotation + 'deg) ' +
+        'rotateY(' + (ratio * 90) + 'deg) ' +
         'translateZ(' + halfW + 'px)';
-      // Amaga pàgines clarament fora del recorregut visible (estalvia
-      // repaints i evita clics fantasma sobre cares no visibles).
-      // Reset d'opacity per netejar inline styles d'efectes anteriors
-      // (l'antic Stories effect deixava .style.opacity escrit).
-      page.style.visibility = (ratio > -1.3 && ratio < 1.3) ? 'visible' : 'hidden';
+      // Pàgines més enllà de la cara adjacent (|ratio| > 1.5) ja no
+      // formen part del recorregut visible del cub: amaga-les per
+      // estalviar repaints i evitar clics fantasma. Reset de l'opacity
+      // al pas, per netejar inline styles d'iteracions anteriors
+      // (l'efecte Stories previ deixava .style.opacity escrit).
+      page.style.visibility = (ratio > -1.5 && ratio < 1.5) ? 'visible' : 'hidden';
       if (page.style.opacity) page.style.opacity = '';
     }
-  }
-
-  destroy() {
-    this.slider.removeEventListener('scroll', this._handleScroll);
-    if (this.scrollEndTimer) clearTimeout(this.scrollEndTimer);
-    // Neteja transforms perquè una possible re-instanciació posterior
-    // arrenqui d'un estat "net".
-    const pages = this.slider.children;
-    for (let i = 0; i < pages.length; i++) {
-      pages[i].style.transform = '';
-      pages[i].style.visibility = '';
-      pages[i].style.opacity = '';
-    }
-  }
-}
-
-// Backward-compat: alguns mòduls poden cridar applyCubeSliderEffect
-// (la funció antiga). Si la pàgina és part d'una instància CubeSlider
-// vinculada al seu slider, demanem un re-render. Si no, no fem res.
-const _cubeSliderInstances = new WeakMap();
-function applyCubeSliderEffect(slider) {
-  if (!slider) return;
-  const inst = _cubeSliderInstances.get(slider);
-  if (inst) inst.refresh();
+  });
 }

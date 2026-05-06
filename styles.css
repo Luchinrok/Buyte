@@ -289,18 +289,8 @@ h1 {
   box-sizing: border-box;
   padding: 0 20px;
   overflow-y: auto;
-  /* IMPORTANT: amb overflow-y: auto, el navegador (en particular
-     iOS Safari) tendeix a capturar tots els pans que comencen aquí
-     dins, incloent els horitzontals. Això feia que el swipe entre
-     supermercats no respongués des de dins de la pàgina d'un super
-     (BUG: "no es pot lliscar cap a l'esquerra"). touch-action: pan-y
-     diu explícitament al navegador que aquesta pàgina només absorbeix
-     pans verticals; els horitzontals bombollegen al .shops-slider
-     (que té overflow-x: auto i scroll-snap-type: x). .zone-page no
-     necessita aquest fix perquè no és una scroll container vertical. */
-  touch-action: pan-y;
-  /* Base per l'efecte cub 3D (vegeu .zone-page i CubeSlider a
-     js/core.js). */
+  /* Base per l'efecte cub 3D (vegeu .zone-page i
+     applyCubeSliderEffect a js/core.js). */
   transform-origin: 50% 50%;
   backface-visibility: hidden;
   will-change: transform;

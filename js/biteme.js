@@ -326,16 +326,25 @@ function openSection(category) {
 // Si clientWidth encara és 0 (layout no calculat just després d'un
 // canvi de pantalla), reintenta al següent frame.
 function _scrollToSection(cat, smooth) {
+  const slider = document.getElementById('zones-slider');
+  if (!slider) return;
   const idx = SECTION_ORDER.indexOf(cat);
   if (idx < 0) return;
-  if (!_zonesCube) {
-    // Pàgines encara no construïdes (cas rar: resize abans del primer
-    // openSection). Reintenta al següent frame, quan renderSection ja
-    // hagi creat el CubeSlider.
-    requestAnimationFrame(() => _scrollToSection(cat, smooth));
-    return;
-  }
-  _zonesCube.scrollToIndex(idx, smooth);
+  const apply = () => {
+    const w = slider.clientWidth;
+    if (!w) { requestAnimationFrame(apply); return; }
+    // Math.round per protegir-nos de pixel-rounding en monitors amb DPR no enter.
+    const x = Math.round(idx * w);
+    if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
+    else slider.scrollLeft = x;
+    // Sempre re-aplica el cub: si scrollLeft ja era a x (entrada
+    // inicial a la pantalla amb idx=0, o resnap després d'un resize)
+    // l'assignació no genera cap esdeveniment scroll, així que el cub
+    // no s'actualitzaria sol i les pàgines es quedarien en la seva
+    // posició flex natural sense rotacions.
+    applyCubeSliderEffect(slider);
+  };
+  apply();
 }
 
 // Quan canvia la mida de la finestra (o l'orientació mòbil), la
@@ -437,62 +446,62 @@ function _updateSectionTitle() {
   titleEl.textContent = titles[currentSection] || '';
 }
 
-// Instància única del CubeSlider per a #zones-slider. Construïda la
-// primera vegada que renderSection crea les .zone-page i registrada
-// per renderitzar-se en cada scroll i avisar a aquest mòdul (via
-// onSnap) quan canvia la zona activa.
-let _zonesCube = null;
-function _ensureZonesCube(slider) {
-  if (_zonesCube) return _zonesCube;
-  _zonesCube = new CubeSlider(slider, {
-    onSnap: (idx) => {
+let _sliderScrollListenerWired = false;
+function _setupSliderScrollListener(slider) {
+  if (_sliderScrollListenerWired) return;
+  _sliderScrollListenerWired = true;
+  let scrollTimer = null;
+  slider.addEventListener('scroll', () => {
+    // Efecte cub 3D: actualització immediata cada frame (helper compartit
+    // a js/core.js, batched amb rAF).
+    applyCubeSliderEffect(slider);
+    if (scrollTimer) clearTimeout(scrollTimer);
+    // Detecció de "scroll end": 120ms sense cap esdeveniment scroll
+    // = el snap natiu ha acabat. Fem dues coses:
+    //   1. Forcem que scrollLeft sigui exactament idx*pageWidth (el
+    //      snap natiu pot deixar offsets de subpíxel que provoquen
+    //      una rotació residual del cub: el dot click feia que el cub
+    //      es quedés a 5-10° en lloc de 0°).
+    //   2. Re-apliquem el cub per garantir l'estat final exacte —
+    //      sense això, el darrer esdeveniment de scroll del smooth
+    //      scroll pot no haver arribat al target final.
+    scrollTimer = setTimeout(() => {
+      const w = slider.clientWidth;
+      if (!w) return;
+      const idx = Math.round(slider.scrollLeft / w);
+      const target = idx * w;
+      if (Math.abs(slider.scrollLeft - target) > 0.5) {
+        slider.scrollLeft = target;
+      }
+      applyCubeSliderEffect(slider);
       const cat = SECTION_ORDER[idx];
       if (cat && cat !== currentSection) {
         currentSection = cat;
         _updateSectionTitle();
+        // Re-renderitzem només els dots (no cal rebuild de pàgines).
         renderSectionDots();
       }
-    }
-  });
-  return _zonesCube;
+    }, 120);
+  }, { passive: true });
+  // Aplica l'estat inicial (pàgina 0 al davant, la resta a 90° als
+  // laterals del cub). Si clientWidth encara és 0 perquè la pantalla
+  // no està activa, applyCubeSliderEffect torna sense fer res; la
+  // crida explícita al final de _scrollToSection que es fa des de
+  // openSection cobreix aquest cas.
+  applyCubeSliderEffect(slider);
 }
 
-// Backward-compat: renderSection cridava _setupSliderScrollListener
-// quan rebuild de pàgines. Ara el cub és persistent (les seves
-// referències a slider.children són live HTMLCollection, així que
-// segueix funcionant amb pàgines noves), però conservem el nom
-// perquè el call-site de renderSection no canviï.
-function _setupSliderScrollListener(slider) { _ensureZonesCube(slider); }
-
-// Dots: un sol click listener al CONTENIDOR (event delegation) en
-// comptes de listeners individuals que es perdien cada vegada que
-// renderSectionDots reconstruïa els <button>. Era el bug "després
-// de clicar el dot del mig, els altres no responen": entre el moment
-// del rebuild i el següent click del usuari, una racing condition
-// podia deixar els nous dots sense listener actiu. Amb delegació,
-// el listener viu al contenidor i sobreviu qualsevol rebuild dels
-// fills.
-let _sectionDotsDelegationWired = false;
 function renderSectionDots() {
   const dots = document.getElementById('section-dots');
   if (!dots) return;
-  if (!_sectionDotsDelegationWired) {
-    _sectionDotsDelegationWired = true;
-    dots.addEventListener('click', (e) => {
-      const dot = e.target && e.target.closest && e.target.closest('.section-dot');
-      if (!dot || !dots.contains(dot)) return;
-      const cat = dot.dataset.zone;
-      if (cat) goToSection(cat);
-    });
-  }
   dots.innerHTML = '';
   SECTION_ORDER.forEach(cat => {
     const dot = document.createElement('button');
     dot.type = 'button';
     dot.className = 'section-dot' + (cat === currentSection ? ' active' : '');
-    dot.dataset.zone = cat;
     dot.setAttribute('aria-label', cat);
     if (cat === currentSection) dot.setAttribute('aria-current', 'true');
+    dot.addEventListener('click', () => goToSection(cat));
     dots.appendChild(dot);
   });
 }

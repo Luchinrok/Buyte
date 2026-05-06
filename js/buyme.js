@@ -202,14 +202,25 @@ function openSupermarket(id, options) {
 }
 
 function _scrollToSupermarket(id, smooth) {
+  const slider = document.getElementById('shops-slider');
+  if (!slider) return;
   const supers = getBuyMeVisibleSupermarkets();
   const idx = supers.findIndex(s => s.id === id);
   if (idx < 0) return;
-  if (!_shopsCube) {
-    requestAnimationFrame(() => _scrollToSupermarket(id, smooth));
-    return;
-  }
-  _shopsCube.scrollToIndex(idx, smooth);
+  const apply = () => {
+    const w = slider.clientWidth;
+    if (!w) { requestAnimationFrame(apply); return; }
+    const x = Math.round(idx * w);
+    if (smooth) slider.scrollTo({ left: x, behavior: 'smooth' });
+    else slider.scrollLeft = x;
+    // Forcem aplicació del cub: si scrollLeft ja era a x (cas típic
+    // d'entrar a BuyMe amb el primer super, idx=0 i el slider acabat
+    // de crear amb scrollLeft=0), no hi ha cap esdeveniment scroll i
+    // les pàgines es quedarien sense transform — el primer .shop-page
+    // amb la posició flex natural i el segon mig-visible per la dreta.
+    applyCubeSliderEffect(slider);
+  };
+  apply();
 }
 
 (function _wireShopsResnap() {
@@ -255,38 +266,23 @@ function updateSupermarketEditBtn() {
   btn.textContent = supermarketItemsMode === 'edit' ? '✓' : '✏️';
 }
 
-// Vegeu el comentari paral·lel a renderSectionDots de js/biteme.js:
-// el listener viu al CONTENIDOR (event delegation) per sobreviure
-// els rebuilds de fills que fa renderSupermarketDots a cada canvi
-// de super. Sense delegació, els <button>.sm-dot recreats en
-// l'ordre incorrecte podien quedar-se sense listener actiu en
-// determinades races (clicar dot mentre el snap acabava i triggerava
-// onSnap → renderSupermarketDots). Era el bug "els dots no responen".
-let _supermarketDotsDelegationWired = false;
 function renderSupermarketDots() {
   const dotsContainer = document.getElementById('supermarket-dots');
   if (!dotsContainer) return;
-  if (!_supermarketDotsDelegationWired) {
-    _supermarketDotsDelegationWired = true;
-    dotsContainer.addEventListener('click', (e) => {
-      const dot = e.target && e.target.closest && e.target.closest('.sm-dot');
-      if (!dot || !dotsContainer.contains(dot)) return;
-      const id = dot.dataset.smId;
-      if (!id || id === currentSupermarketId) return;
-      // El onSnap del CubeSlider actualitzarà currentSupermarketId i
-      // la resta d'UI quan acabi el snap.
-      _scrollToSupermarket(id, true);
-    });
-  }
   dotsContainer.innerHTML = '';
   const visible = getBuyMeVisibleSupermarkets();
   visible.forEach(sm => {
     const dot = document.createElement('button');
     dot.type = 'button';
     dot.className = 'sm-dot' + (sm.id === currentSupermarketId ? ' active' : '');
-    dot.dataset.smId = sm.id;
     dot.setAttribute('aria-label', sm.name);
     if (sm.id === currentSupermarketId) dot.setAttribute('aria-current', 'true');
+    dot.addEventListener('click', () => {
+      if (sm.id === currentSupermarketId) return;
+      // El scroll listener actualitzarà currentSupermarketId i la
+      // resta d'UI quan acabi el snap.
+      _scrollToSupermarket(sm.id, true);
+    });
     dotsContainer.appendChild(dot);
   });
 }
@@ -400,15 +396,30 @@ function _renderShopPageItems(smId, listEl, mode) {
   });
 }
 
-// Instància única del CubeSlider per a #shops-slider. Vegeu el
-// paral·lel _zonesCube a js/biteme.js: la classe CubeSlider
-// (js/core.js) gestiona scroll listener, render rAF, snap-end i
-// avisa via onSnap quan canvia el super actiu.
-let _shopsCube = null;
+let _shopsSliderScrollListenerWired = false;
 function _setupShopsSliderScrollListener(slider) {
-  if (_shopsCube) return;
-  _shopsCube = new CubeSlider(slider, {
-    onSnap: (idx) => {
+  if (_shopsSliderScrollListenerWired) return;
+  _shopsSliderScrollListenerWired = true;
+  let scrollTimer = null;
+  slider.addEventListener('scroll', () => {
+    // Efecte cub 3D: helper compartit (js/core.js), batched amb rAF.
+    applyCubeSliderEffect(slider);
+    if (scrollTimer) clearTimeout(scrollTimer);
+    // Vegeu el comentari equivalent a _setupSliderScrollListener de
+    // js/biteme.js: 120ms sense scroll = snap acabat. Aleshores
+    // sincronitzem scrollLeft a un múltiple exacte de pageWidth
+    // (corregeix el subpíxel del snap natiu que feia que el cub es
+    // quedés a 5-10° en lloc de 0°) i re-apliquem el cub per fixar
+    // la posició final.
+    scrollTimer = setTimeout(() => {
+      const w = slider.clientWidth;
+      if (!w) return;
+      const idx = Math.round(slider.scrollLeft / w);
+      const target = idx * w;
+      if (Math.abs(slider.scrollLeft - target) > 0.5) {
+        slider.scrollLeft = target;
+      }
+      applyCubeSliderEffect(slider);
       const supers = getBuyMeVisibleSupermarkets();
       const sm = supers[idx];
       if (sm && sm.id !== currentSupermarketId) {
@@ -422,8 +433,13 @@ function _setupShopsSliderScrollListener(slider) {
         renderShoppingItems();
         renderSupermarketDots();
       }
-    }
-  });
+    }, 120);
+  }, { passive: true });
+  // Estat inicial del cub: pàgina 0 al davant, la resta als laterals.
+  // Si la pantalla encara no està activa, applyCubeSliderEffect torna
+  // sense fer res perquè clientWidth=0; la crida explícita al final
+  // de _scrollToSupermarket cobreix aquest cas.
+  applyCubeSliderEffect(slider);
 }
 
 // Afegir/editar supermercat
