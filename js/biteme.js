@@ -359,22 +359,32 @@ function _ensureZonesSwiper() {
     },
     speed: 600,
     grabCursor: true,
-    // Sensibilitat del swipe: amb els defaults de Swiper (longSwipes
-    // Ratio 0.5) cal arrossegar més de la meitat del cub abans que
-    // es comprometi a avançar; si l'usuari fa un swipe parcial el cub
-    // tornava enrere a mig camí (efecte "es queda a mitges, cal
-    // lliscar dues vegades"). longSwipesRatio: 0.3 baixa aquest llindar
-    // a un 30% del recorregut — un swipe normal ja és suficient per
-    // fer transició completa. threshold: 5px evita registrar
-    // moviments minúsculs no intencionats. shortSwipes + longSwipes
-    // + followFinger són els defaults explícits per a documentació.
+    // Sensibilitat del swipe — molt permissiva. Amb els defaults de
+    // Swiper (longSwipesRatio 0.5) cal arrossegar més de la meitat
+    // del cub abans que es comprometi a avançar; per sota d'aquest
+    // llindar el cub torna enrere. Combinat amb effect: 'cube' i
+    // loop:true, en algunes configuracions el snap es queda atrapat
+    // a mig camí (rotació al 50°, ni avança ni torna). Aquests valors
+    // baixen els llindars al màxim raonable:
+    //   threshold: 5          — descarta moviments < 5px (jitter)
+    //   longSwipesRatio: 0.2  — 20% d'arrossegament ja compromet
+    //                            l'avanç (default Swiper: 0.5)
+    //   longSwipesMs: 200     — temps mínim que defineix "swipe llarg"
+    //                            (default 300; més baix = resposta
+    //                            més ràpida)
+    //   resistanceRatio: 0.85 — quant rebot hi ha en arribar a un
+    //                            extrem; amb loop:true gairebé no
+    //                            aplica però el deixem explícit.
+    //   shortSwipes / longSwipes / followFinger — defaults explícits
+    //                            per a documentació.
     threshold: 5,
     touchRatio: 1,
     longSwipes: true,
-    longSwipesRatio: 0.3,
-    longSwipesMs: 300,
+    longSwipesRatio: 0.2,
+    longSwipesMs: 200,
     shortSwipes: true,
     followFinger: true,
+    resistanceRatio: 0.85,
     // loop: true → Swiper duplica les primeres/últimes diapositives
     // perquè la transició final → primera (i viceversa) sigui contínua
     // i no salti. Conseqüència: this.activeIndex inclou els duplicats;
@@ -401,6 +411,20 @@ function _ensureZonesSwiper() {
           currentSection = cat;
           _updateSectionTitle();
         }
+      },
+      // Xarxa de seguretat per al cas en què el cub queda a mitges
+      // tot i els paràmetres permissius de dalt: 50ms després del
+      // touchEnd, forcem un slideTo a l'activeIndex actual. Si Swiper
+      // ja havia decidit advanced/back, slideTo és no-op (ja som
+      // allà). Si havia quedat ambigu, força el snap a la cara
+      // activa més propera. Speed 300ms per fer el rescat ràpid però
+      // visible.
+      touchEnd: function() {
+        const swiper = this;
+        setTimeout(() => {
+          if (swiper.destroyed) return;
+          swiper.slideTo(swiper.activeIndex, 300);
+        }, 50);
       }
     }
   });

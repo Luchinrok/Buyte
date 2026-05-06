@@ -233,16 +233,18 @@ function _ensureShopsSwiper() {
     },
     speed: 600,
     grabCursor: true,
-    // Vegeu el bloc paral·lel a _ensureZonesSwiper de js/biteme.js:
-    // longSwipesRatio: 0.3 evita que el cub es quedi a mitges quan
-    // el swipe no creua el 50% del recorregut.
+    // Vegeu el bloc paral·lel (extens) a _ensureZonesSwiper de
+    // js/biteme.js. longSwipesRatio: 0.2 + longSwipesMs: 200 +
+    // resistanceRatio: 0.85 — els llindars més permissibles
+    // raonablement possibles per evitar que el cub quedi a mitges.
     threshold: 5,
     touchRatio: 1,
     longSwipes: true,
-    longSwipesRatio: 0.3,
-    longSwipesMs: 300,
+    longSwipesRatio: 0.2,
+    longSwipesMs: 200,
     shortSwipes: true,
     followFinger: true,
+    resistanceRatio: 0.85,
     // loop: true ⇒ comportament cíclic. Vegeu el comentari paral·lel
     // a _ensureZonesSwiper a js/biteme.js: usar realIndex / slideToLoop
     // en lloc de activeIndex / slideTo.
@@ -296,6 +298,16 @@ function _ensureShopsSwiper() {
             if (list) _renderShopPageItems(oldId, list, 'view');
           });
         }
+      },
+      // Xarxa de seguretat: vegeu el comentari paral·lel a
+      // _ensureZonesSwiper a js/biteme.js. Força un re-snap 50ms
+      // després del touchEnd al cas que el cub hagi quedat ambigu.
+      touchEnd: function() {
+        const swiper = this;
+        setTimeout(() => {
+          if (swiper.destroyed) return;
+          swiper.slideTo(swiper.activeIndex, 300);
+        }, 50);
       }
     }
   });
