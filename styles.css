@@ -373,8 +373,14 @@ h1 {
   border-color: #1565C0;
 }
 .shelf-orange {
-  background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
-  border-color: #E65100;
+  /* Gradient amber-taronja, deliberadament tirat cap al groc i lluny
+     del vermell de .shelf-red. La paleta antiga (#FF9800 → #E65100)
+     acabava massa fosca/rogenca al gradient — Urgent es confonia
+     visualment amb Alerta. La nova (#FFA000 → #F57C00) manté tots
+     dos punts dins de Material Orange/Amber, clarament distints
+     del vermell. */
+  background: linear-gradient(135deg, #FFA000 0%, #F57C00 100%);
+  border-color: #F57C00;
 }
 .shelf-red {
   background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
@@ -721,7 +727,7 @@ h1 {
    el gradient de la zona. */
 .levels-dot[data-level="green"]  { border-color: #2E7D32; color: #2E7D32; }
 .levels-dot[data-level="yellow"] { border-color: #1565C0; color: #1565C0; }
-.levels-dot[data-level="orange"] { border-color: #E65100; color: #E65100; }
+.levels-dot[data-level="orange"] { border-color: #F57C00; color: #F57C00; }
 .levels-dot[data-level="red"]    { border-color: #C62828; color: #C62828; }
 
 .levels-dot.active {
@@ -736,8 +742,8 @@ h1 {
   border-color: #1565C0;
 }
 .levels-dot.active[data-level="orange"] {
-  background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
-  border-color: #E65100;
+  background: linear-gradient(135deg, #FFA000 0%, #F57C00 100%);
+  border-color: #F57C00;
 }
 .levels-dot.active[data-level="red"] {
   background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
