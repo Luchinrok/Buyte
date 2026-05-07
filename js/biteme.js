@@ -792,22 +792,18 @@ function _renderShelfProducts(slide, level, cat) {
   }
 }
 
-// Delegation a nivell de #levels-slider per als clicks dels productes
-// dins dels slides de nivells. Cal perquè amb Swiper loop:true els
-// slides originals es clonen i els addEventListener individuals afegits
-// als items dels originals NO viuen als clones. Mateix patró que
-// _initCookMeActionsDelegate (js/cookme.js) i la delegation del
-// shopsSwiper (BuyMe).
+// Delegation per als clicks dels productes dins de #levels-slider.
+// Cal perquè amb Swiper loop:true els slides originals es clonen i
+// cloneNode() NO copia listeners addEventListener afegits per-item.
 //
-// La funció _onLevelsSliderClick té UNA referència estable a nivell de
-// mòdul. addEventListener amb la mateixa funció més d'una vegada és
-// idempotent (l'estàndard DOM garanteix que no s'afegeix duplicat). Per
-// això podem cridar _initLevelsActionsDelegate cada vegada que
-// _ensureLevelsSwiper es crida, sense risc de listeners duplicats i
-// sense dependre d'un guard mutable (els data-* attributes que Swiper
-// pot tocar al destroy poden donar-nos sorpreses; una referència
-// estable a una funció no).
+// El listener viu a DOCUMENT (no al slider) i s'enganxa una sola
+// vegada al carregar l'script. Document no es destrueix mai, així
+// que el listener sobreviu a qualsevol cicle destroy/recreate de
+// Swiper i a qualsevol manipulació DOM (incloent embed dins Settings).
+// Filtrem amb closest('#levels-slider') perquè només actuï per clicks
+// dins el cub de nivells.
 function _onLevelsSliderClick(e) {
+  if (!e.target.closest('#levels-slider')) return;
   const item = e.target.closest('.product-item');
   if (!item) return;
   const id = item.dataset.productId;
@@ -815,9 +811,11 @@ function _onLevelsSliderClick(e) {
   productDetailBack = 'list';
   openProduct(id);
 }
-function _initLevelsActionsDelegate(slider) {
-  if (!slider) return;
-  slider.addEventListener('click', _onLevelsSliderClick);
+// Mantenim _initLevelsActionsDelegate com a no-op per compatibilitat
+// amb la crida des de _ensureLevelsSwiper.
+function _initLevelsActionsDelegate(_slider) { /* listener viu a document */ }
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', _onLevelsSliderClick);
 }
 
 // Construeix els 4 slides .level-page dins de #levels-slider (un sol

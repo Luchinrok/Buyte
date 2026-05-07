@@ -1555,19 +1555,27 @@ function _ensureCookMeSwiper() {
   return window.cookmeSwiper;
 }
 
-// Event delegation a nivell del .cookme-slider. Cal perquè amb loop:true
-// Swiper afegeix slides DUPLICADES al wrapper per fer la transició cíclica
-// seamless; els addEventListener individuals afegits a una targeta
-// original NO viuen al clone, així que un click sobre un slide-clone es
-// perd. Captem-ho aquí amb closest() i derivem la recepta del data-recipe-id
-// de la card; així funciona en originals i en clones per igual.
+// Event delegation per als clicks de cards i botons de mode edició dins
+// el cub del CookMe. Cal perquè:
+//   1) Swiper amb loop:true clona slides; cloneNode() NO copia listeners
+//      addEventListener — un listener per-card es perdria al clone.
+//   2) Després de diverses obertures de CookMe (especialment via
+//      openCookMeForProduct → openCookMe('product')) Swiper destroy()
+//      podia desincronitzar el guard dataset i deixàvem el slider sense
+//      listener actiu; conseqüència visible: els clicks NO disparaven en
+//      visites posteriors o a la pestanya inicial 'Disponibles' del
+//      flux Receptes-per-producte.
 //
-// _onCookMeSliderClick és una referència estable a nivell de mòdul: el
-// DOM garanteix que addEventListener amb la mateixa funció no s'afegeix
-// duplicat. Per això podem cridar _initCookMeActionsDelegate cada cop
-// que _ensureCookMeSwiper es crida (no cal guard mutable que Swiper
-// pugui esborrar al destroy).
+// Solució definitiva: enganxar UN listener a document, una sola vegada,
+// al carregar l'script. Filtrem amb closest('.cookme-slider') perquè
+// només actuï per clicks dins del slider del CookMe. Document és un
+// node que ni Swiper ni la lògica d'embed (Settings > Receptes)
+// destrueixen mai — no hi ha cap cicle d'init/destroy que pugui
+// desconnectar-lo.
 function _onCookMeSliderClick(e) {
+  // Restringeix l'abast: només interessen clicks dins del slider CookMe.
+  if (!e.target.closest('.cookme-slider')) return;
+
   // Botó d'acció dins una card (mode edició): edit / delete / restore.
   const actionBtn = e.target.closest('.cookme-card [data-action]');
   if (actionBtn) {
@@ -1590,7 +1598,10 @@ function _onCookMeSliderClick(e) {
     if (recipeId) openRecipeDetail(recipeId);
   }
 }
-function _initCookMeActionsDelegate(slider) {
-  if (!slider) return;
-  slider.addEventListener('click', _onCookMeSliderClick);
+// Mantenim _initCookMeActionsDelegate com a no-op per compatibilitat
+// amb les crides existents des de _ensureCookMeSwiper.
+function _initCookMeActionsDelegate(_slider) { /* listener viu a document */ }
+// Enganxat un sol cop al carregar l'script.
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', _onCookMeSliderClick);
 }
