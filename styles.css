@@ -1189,6 +1189,182 @@ h1 {
   height: 14px;
 }
 
+/* ===== Pestanya Còpies (Configuració > Dades > Còpies) ===== */
+
+/* Caixa de resum: explica el que fa el sistema i mostra els comptadors. */
+.backup-info-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.backup-info-line {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+.backup-info-line strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* Fila de botons d'acció (exportar ara / importar fitxer). Vol mostrar
+   els dos botons en horitzontal a desktop i en vertical al mòbil molt
+   estret. */
+.backup-actions-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.backup-actions-row .settings-sub-btn {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.settings-hint {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin: 4px 0 14px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Recordatori inline quan fa molt que no s'exporta. Banner suau ambré
+   (atenció però no urgent) amb botó × per descartar fins demà. */
+.backup-export-reminder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: rgba(255, 193, 7, 0.14);
+  color: #8C6A00;
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.backup-export-reminder-icon { font-size: 18px; flex: 0 0 auto; }
+.backup-export-reminder-text { flex: 1; min-width: 0; }
+.backup-export-reminder-dismiss {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 193, 7, 0.25);
+  color: #8C6A00;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:root[data-theme="dark"] .backup-export-reminder {
+  background: rgba(255, 193, 7, 0.18);
+  color: #FFE082;
+  border-color: rgba(255, 193, 7, 0.4);
+}
+:root[data-theme="dark"] .backup-export-reminder-dismiss {
+  background: rgba(255, 193, 7, 0.28);
+  color: #FFE082;
+}
+
+/* Llista de còpies: cada fila és una targeta amb data + mida + accions. */
+.backup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.backup-empty {
+  text-align: center;
+  color: var(--text-soft);
+  padding: 20px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.backup-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.backup-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.backup-item-date {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 2px 0;
+}
+
+.backup-item-meta {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.backup-item-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.backup-restore-btn {
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.backup-restore-btn:active { transform: scale(0.95); }
+
+.backup-delete-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  background: rgba(244, 67, 54, 0.1);
+  color: #C62828;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.backup-delete-btn:hover { background: rgba(244, 67, 54, 0.18); }
+.backup-delete-btn:active { transform: scale(0.92); }
+
 /* Chips per a la selecció ràpida de tema (Clar / Fosc) dins la sub-pantalla
    "Aplicació". Comparteixen estil amb els pills de tabs però fonen més
    amb el bloc de contingut. */

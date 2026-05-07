@@ -628,6 +628,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicia notificacions
   initNotifications();
 
+  // Còpia de seguretat automàtica diària: si encara no n'hi ha cap o
+  // l'última és d'ahir o més antiga, en fa una de l'estat actual del
+  // localStorage. Vegeu js/backup.js — la rotació es queda a 7 còpies.
+  if (window.BackupSystem && typeof window.BackupSystem.checkAutoBackup === 'function') {
+    try { window.BackupSystem.checkAutoBackup(); } catch (e) { console.warn('[Backup] init error', e); }
+  }
+
   // Primer render dels banners del launcher. Cal fer-ho amb un petit delay
   // perquè (1) initNotifications() pugui carregar smartNotifSettings i
   // (2) el DOM del launcher quedi muntat. A les navegacions posteriors,

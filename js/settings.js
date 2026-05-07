@@ -1495,7 +1495,134 @@ function renderSettingsData() {
         '<p class="data-action-desc">' + escapeHtml(t('importDataSub')) + '</p>' +
         '<button type="button" class="primary-btn settings-sub-btn" data-data-action="import">' + escapeHtml(t('importDataBtn')) + '</button>' +
       '</div>';
+  } else if (activeDataTab === 'copies') {
+    // Pestanya de gestió de còpies de seguretat locals. Vegeu js/backup.js.
+    renderBackupsTab(area);
   }
+}
+
+// Renderitza el contingut de la pestanya "Còpies": resum + botons
+// d'acció (exportar/importar) + llista de còpies amb restaurar i
+// esborrar a cada fila. Es regenera a cada renderSettingsData('copies'),
+// així cada visita reflecteix l'estat actual del localStorage.
+function renderBackupsTab(area) {
+  if (!area) return;
+  const BS = window.BackupSystem;
+  if (!BS) {
+    area.innerHTML = '<p class="section-hint">' + escapeHtml(t('backupsUnavailable')) + '</p>';
+    return;
+  }
+
+  const backups = BS.listBackups().slice().sort((a, b) => b.timestamp - a.timestamp);
+  const daysSince = BS.daysSinceLastExport();
+  const lastExportLabel = (daysSince === null)
+    ? t('backupsLastExportNever')
+    : t('backupsLastExportDays', daysSince);
+  const showReminder = BS.shouldRemindExport();
+
+  const rows = backups.map(b => {
+    const date = new Date(b.timestamp);
+    const dateLabel = _formatBackupDate(date);
+    const sizeLabel = _formatBackupSize(b);
+    return '<div class="backup-item" data-backup-ts="' + b.timestamp + '">' +
+      '<div class="backup-item-info">' +
+        '<p class="backup-item-date">📅 ' + escapeHtml(dateLabel) + '</p>' +
+        '<p class="backup-item-meta">' + escapeHtml(sizeLabel) + '</p>' +
+      '</div>' +
+      '<div class="backup-item-actions">' +
+        '<button type="button" class="backup-restore-btn" data-backup-action="restore" aria-label="' + escapeHtml(t('backupsRestoreBtn')) + '">' + escapeHtml(t('backupsRestoreBtn')) + '</button>' +
+        '<button type="button" class="backup-delete-btn" data-backup-action="delete" aria-label="' + escapeHtml(t('backupsDeleteBtn')) + '">×</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  const reminderBlock = showReminder
+    ? '<div class="backup-export-reminder">' +
+        '<span class="backup-export-reminder-icon">💾</span>' +
+        '<span class="backup-export-reminder-text">' + escapeHtml(t('backupsExportReminder', daysSince)) + '</span>' +
+        '<button type="button" class="backup-export-reminder-dismiss" data-backup-action="dismiss-reminder" aria-label="×">×</button>' +
+      '</div>'
+    : '';
+
+  const listBlock = backups.length === 0
+    ? '<p class="backup-empty">' + escapeHtml(t('backupsEmpty')) + '</p>'
+    : '<div class="backup-list">' + rows + '</div>';
+
+  area.innerHTML =
+    reminderBlock +
+    '<div class="backup-info-box">' +
+      '<p class="backup-info-line">📅 ' + escapeHtml(t('backupsAutoHint')) + '</p>' +
+      '<p class="backup-info-line">' + escapeHtml(t('backupsCount', backups.length)) + ' (' + t('backupsMax', BS.MAX_COUNT) + ')</p>' +
+      '<p class="backup-info-line">' + escapeHtml(t('backupsLastExportLabel')) + ' <strong>' + escapeHtml(lastExportLabel) + '</strong></p>' +
+    '</div>' +
+    '<div class="backup-actions-row">' +
+      '<button type="button" class="primary-btn settings-sub-btn" data-backup-action="export-now">📤 ' + escapeHtml(t('backupsExportNow')) + '</button>' +
+      '<button type="button" class="primary-btn settings-sub-btn" data-backup-action="import-file">📥 ' + escapeHtml(t('backupsImportFile')) + '</button>' +
+    '</div>' +
+    '<p class="settings-hint">' + escapeHtml(t('backupsManualHint')) + '</p>' +
+    listBlock;
+}
+
+function _formatBackupDate(date) {
+  // Català: dilluns 7 de maig, 14:23
+  const day = date.getDate();
+  const month = date.toLocaleDateString('ca', { month: 'long' });
+  const time = date.toLocaleTimeString('ca', { hour: '2-digit', minute: '2-digit' });
+  return day + ' ' + t('ofMonth') + ' ' + month + ', ' + time;
+}
+
+function _formatBackupSize(backup) {
+  try {
+    const bytes = JSON.stringify(backup).length;
+    if (bytes < 1024) return bytes + ' B';
+    const kb = bytes / 1024;
+    if (kb < 1024) return kb.toFixed(1) + ' KB';
+    return (kb / 1024).toFixed(2) + ' MB';
+  } catch (e) {
+    return '';
+  }
+}
+
+function _confirmRestoreBackup(timestamp) {
+  const BS = window.BackupSystem;
+  if (!BS) return;
+  const backup = BS.listBackups().find(b => b.timestamp === timestamp);
+  if (!backup) return;
+  const dateLabel = _formatBackupDate(new Date(timestamp));
+  showConfirmDangerModal(
+    '🔄',
+    t('backupsRestoreTitle'),
+    t('backupsRestoreConfirm', dateLabel),
+    () => {
+      const ok = BS.restoreBackup(timestamp);
+      if (!ok) {
+        showToast(t('backupsRestoreError'));
+        return;
+      }
+      showToast('✅ ' + t('backupsRestoreDone'));
+      // Recarrega la pàgina perquè totes les vistes (productes, llistes,
+      // receptes, etc.) llegeixin l'estat acabat de restaurar des del
+      // localStorage. Més senzill i segur que intentar refrescar a mà
+      // cada mòdul.
+      setTimeout(() => window.location.reload(), 600);
+    }
+  );
+}
+
+function _confirmDeleteBackup(timestamp) {
+  const BS = window.BackupSystem;
+  if (!BS) return;
+  const dateLabel = _formatBackupDate(new Date(timestamp));
+  showConfirmDangerModal(
+    '🗑️',
+    t('backupsDeleteTitle'),
+    t('backupsDeleteConfirm', dateLabel),
+    () => {
+      BS.deleteBackup(timestamp);
+      showToast(t('deleted'));
+      renderSettingsData();
+    }
+  );
 }
 
 function attachSettingsDataListeners() {
@@ -1525,10 +1652,37 @@ function attachSettingsDataListeners() {
         return;
       }
       const dataBtn = e.target.closest && e.target.closest('[data-data-action]');
-      if (!dataBtn) return;
-      switch (dataBtn.dataset.dataAction) {
-        case 'export': if (typeof exportData === 'function') exportData(); break;
-        case 'import': if (typeof importData === 'function') importData(); break;
+      if (dataBtn) {
+        switch (dataBtn.dataset.dataAction) {
+          case 'export': if (typeof exportData === 'function') exportData(); break;
+          case 'import': if (typeof importData === 'function') importData(); break;
+        }
+        return;
+      }
+      // Accions de la pestanya Còpies (vegeu renderBackupsTab i js/backup.js).
+      const backupBtn = e.target.closest && e.target.closest('[data-backup-action]');
+      if (!backupBtn) return;
+      const action = backupBtn.dataset.backupAction;
+      if (action === 'export-now') {
+        if (window.BackupSystem) window.BackupSystem.exportToFile();
+        renderSettingsData();
+        return;
+      }
+      if (action === 'import-file') {
+        if (window.BackupSystem) window.BackupSystem.importFromFile();
+        return;
+      }
+      if (action === 'dismiss-reminder') {
+        if (window.BackupSystem) window.BackupSystem.dismissExportReminderForToday();
+        renderSettingsData();
+        return;
+      }
+      if (action === 'restore' || action === 'delete') {
+        const item = backupBtn.closest('.backup-item');
+        const ts = item ? parseInt(item.dataset.backupTs, 10) : NaN;
+        if (!ts) return;
+        if (action === 'restore') _confirmRestoreBackup(ts);
+        else _confirmDeleteBackup(ts);
       }
     });
   }
@@ -2174,6 +2328,11 @@ function exportData() {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  // Marca el moment d'aquesta exportació perquè el recordatori
+  // (Configuració > Dades > Còpies) sàpiga que l'usuari ha fet una
+  // còpia recent. La clau també la consulta BackupSystem.shouldRemindExport().
+  try { localStorage.setItem('eatmefirst_last_export', String(Date.now())); } catch (e) {}
 
   showToast(t('exportDone'));
 }
