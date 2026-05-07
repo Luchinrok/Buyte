@@ -625,17 +625,20 @@ h1 {
    de l'app perquè cada cara del cub sigui opaca. */
 .zones-slider, .zones-slider .swiper-wrapper,
 .shops-slider, .shops-slider .swiper-wrapper,
-.levels-slider, .levels-slider .swiper-wrapper {
+.levels-slider, .levels-slider .swiper-wrapper,
+.cookme-slider, .cookme-slider .swiper-wrapper {
   background: transparent !important;
 }
 .zones-slider .swiper-cube-shadow,
 .shops-slider .swiper-cube-shadow,
-.levels-slider .swiper-cube-shadow {
+.levels-slider .swiper-cube-shadow,
+.cookme-slider .swiper-cube-shadow {
   display: none !important;
 }
 .zones-slider .swiper-slide,
 .shops-slider .swiper-slide,
-.levels-slider .swiper-slide {
+.levels-slider .swiper-slide,
+.cookme-slider .swiper-slide {
   background: var(--bg);
 }
 
@@ -5729,13 +5732,13 @@ h1 {
 .cookme-tab {
   flex: 0 0 auto;
   padding: 8px 14px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  background: #FFFFFF;
+  border: 2px solid #66BB6A;
   border-radius: 999px;
   font-family: inherit;
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-soft);
+  font-weight: 700;
+  color: #2E7D32;
   cursor: pointer;
   transition: background 0.18s, color 0.18s, box-shadow 0.18s, border-color 0.18s, transform 0.15s;
   white-space: nowrap;
@@ -5757,12 +5760,23 @@ h1 {
 .cookme-tab:active { transform: scale(0.97); }
 
 .cookme-tab.cookme-tab-active {
-  background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
-  border-color: #E65100;
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  border-color: transparent;
   color: #FFFFFF;
   font-weight: 800;
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
   transform: scale(1.03);
+}
+
+:root[data-theme="dark"] .cookme-tab {
+  background: var(--bg-secondary);
+  border-color: #66BB6A;
+  color: #A5D6A7;
+}
+:root[data-theme="dark"] .cookme-tab.cookme-tab-active {
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  border-color: transparent;
+  color: #FFFFFF;
 }
 
 @media (max-width: 480px) {
@@ -5772,32 +5786,52 @@ h1 {
   }
 }
 
-/* Slider 3D del CookMe (cub Swiper). Cada slide és un filtre amb la
-   seva pròpia .cookme-list. Mateix patró que .shops-slider (BuyMe) i
-   .zones-slider (EatMe). */
+/* ===== SLIDER 3D DE FILTRES (#cookme-slider dins #screen-cookme).
+
+   Mateix patró que .shops-slider (BuyMe) i .zones-slider (EatMe) —
+   vegeu el comentari extens a .zones-slider sobre per què cal height
+   FIXA per a l'efecte cub. Si l'altura fos variable (per exemple,
+   "min-height: 60vh" amb contingut canviant) Swiper calcularia la
+   geometria de cada cara del cub amb dimensions diferents en moments
+   diferents i la rotació apareixeria deformada (efecte piràmide /
+   triangle en lloc de cub net). */
 .cookme-slider {
-  width: 100%;
-  /* Calcula l'alçada per omplir el viewport disponible després de
-     header + controls + actions-bar + pestanyes. Valor conservador
-     que deixa marge per a barres de navegació mòbils. */
-  min-height: 60vh;
-  overflow: visible;
+  width: calc(100% + 40px);
+  height: 70vh;
+  flex: 0 1 auto;
+  margin-left: -20px;
+  margin-right: -20px;
+  overflow: hidden;
 }
 
-.cookme-slider .swiper-slide {
-  background: transparent;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+.cookme-page {
+  /* La mida la fixa Swiper (.swiper-slide del bundle aplica
+     height: 100% al cube effect). Aquí només la disposició interna.
+     IMPORTANT: NO posem overflow-y aquí — vegeu el comentari paral·lel
+     a .shop-page. Swiper effect:'cube' aplica transforms 3D al
+     wrapper i als seus slides; un overflow != visible al slide crea
+     un stacking context que aplana el rendering 3D al Chromium/Safari,
+     fent que el cub aparegui pla. L'overflow vertical va a
+     .cookme-page-scroll. */
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
-  padding: 4px 2px 12px;
+  padding: 0 20px;
+  min-height: 0;
 }
 
-/* Desactivem l'ombra de "terra" sota el cub — el fons del CookMe ja és
-   plà i l'ombra elíptica queda mal integrada. Mantenim slideShadows a
-   les cares laterals per donar profunditat. */
-.cookme-slider .swiper-cube-shadow {
-  display: none !important;
+.cookme-page > .cookme-page-scroll {
+  /* Scroll vertical local DINS la cara del cub: el slide és
+     overflow:visible (per al cub 3D) i aquest contenidor té el seu
+     propi scroll quan hi ha moltes receptes. Mateix patró que
+     .shop-page > .shopping-items-list al BuyMe. */
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
 }
+.cookme-page > .cookme-page-scroll::-webkit-scrollbar { display: none; }
 
 .cookme-list {
   display: flex;
