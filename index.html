@@ -375,11 +375,14 @@
       <div style="width:40px"></div>
     </header>
 
-    <!-- Indicador de pàgines (un per zona). Swiper.js l'omple via
-         pagination.el = '#section-dots'. Els bullets reben la classe
-         .section-dot (vegeu pagination.bulletClass a js/biteme.js) i
-         hereten l'estil pill existent. -->
-    <div class="section-dots" id="section-dots"></div>
+    <!-- Pestanyes amb el nom de cada zona (Nevera / Congelador /
+         Rebost). Swiper.js les renderitza via pagination.el =
+         '#section-dots' i bulletClass = 'zones-tab' (vegeu
+         _ensureZonesSwiper a js/biteme.js). Mateix patró que les
+         pestanyes de nivells (.levels-pagination) a la pantalla
+         d'urgents. L'id es manté per compatibilitat amb el selector
+         de Swiper, però la classe és .zones-pagination. -->
+    <div class="zones-pagination" id="section-dots"></div>
 
     <!-- Slider 3D estil Stories (Swiper.js, effect: creative). El
          contingut de cada zona es construeix a renderSection() i va

@@ -694,7 +694,7 @@ h1 {
   flex-wrap: wrap;
 }
 
-/* Override de Swiper: vegeu el paral·lel a .section-dots i
+/* Override de Swiper: vegeu el paral·lel a .zones-pagination i
    .sm-dots-container — anul·la el position:absolute / bottom que
    Swiper aplica per defecte a la classe .swiper-pagination, perquè
    el nostre contenidor viu en el flow normal de la .screen. */
@@ -2505,7 +2505,7 @@ h1 {
   box-sizing: border-box;
 }
 
-/* Override de Swiper.js: vegeu el paral·lel a .section-dots. Quan
+/* Override de Swiper.js: vegeu el paral·lel a .zones-pagination. Quan
    Swiper aplica .swiper-pagination al nostre #supermarket-dots, hem
    d'anul·lar el seu position:absolute / bottom perquè volem el
    contenidor en el flow normal de la .screen, sobre el slider. */
@@ -5029,13 +5029,18 @@ h1 {
   color: white;
 }
 
-/* Indicadors de pàgina (un per zona). Estil tipus Instagram Stories:
-   barres horitzontals, l'activa una mica més ampla. Renderitzats com a
-   <button> (renderSectionDots a js/biteme.js) — clicables per saltar
-   directament a la zona corresponent. Scoped a .section-dot. */
-.section-dots {
+/* Pestanyes amb el nom de cada zona (Nevera / Congelador / Rebost).
+   Renderitzades per Swiper.js a #section-dots via bulletClass: 'zones-tab'
+   (vegeu _ensureZonesSwiper a js/biteme.js). Substitueixen els antics
+   .section-dot (barres anònimes) — ara l'usuari veu el nom directament
+   i pot saltar a una zona específica clicant-la. Mateix patró que les
+   pestanyes de nivells (.levels-pagination → .levels-dot) a la pantalla
+   d'urgents. */
+.zones-pagination {
   display: flex;
   justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 8px 0 12px;
 }
@@ -5043,42 +5048,69 @@ h1 {
 /* Override de Swiper.js: per defecte aplica .swiper-pagination amb
    position:absolute al peu del slider i amb width:100%. El nostre
    contenidor #section-dots és part del flow normal de la .screen
-   (sobre el slider, no a dins seu). Forcem el reset perquè els
-   estils anteriors de .section-dots s'imposin. */
-.section-dots.swiper-pagination {
+   (sobre el slider, no a dins seu). */
+.zones-pagination.swiper-pagination {
   position: relative;
   bottom: auto;
   left: auto;
   width: 100%;
-  /* Mantén els estils de .section-dots originals (display:flex, etc.). */
 }
 
-.section-dot {
-  width: 24px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--text-soft);
-  opacity: 0.3;
-  transition: opacity 0.2s, width 0.2s, background 0.2s;
-  /* Reset estils natius del <button> */
-  border: 0;
-  padding: 0;
-  margin: 0;
+.zones-tab {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
   font: inherit;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+  /* Sobreescrivim els defaults que Swiper aplica a les bullets
+     (width/height fixos, opacity 0.2, border-radius 50%). */
+  width: auto;
+  height: auto;
+  opacity: 1;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-.section-dot.active {
-  opacity: 1;
-  width: 32px;
-  background: var(--primary);
+.zones-tab:active { transform: scale(0.97); }
+
+.zones-tab.zones-tab-active {
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  border-color: transparent;
+  color: #FFFFFF;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.35);
+  transform: scale(1.04);
 }
 
-.section-dot:focus { outline: none; }
-.section-dot:focus-visible {
+.zones-tab:focus { outline: none; }
+.zones-tab:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .zones-tab:hover {
+    background: rgba(76, 175, 80, 0.08);
+  }
+  .zones-tab.zones-tab-active:hover {
+    filter: brightness(1.05);
+  }
+}
+
+@media (max-width: 480px) {
+  .zones-tab {
+    padding: 7px 13px;
+    font-size: 12px;
+  }
 }
 
 /* Animacions de slide */

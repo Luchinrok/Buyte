@@ -453,13 +453,21 @@ function _ensureZonesSwiper() {
     pagination: {
       el: '#section-dots',
       clickable: true,
-      bulletClass: 'section-dot',
-      bulletActiveClass: 'active',
+      // Pestanyes amb el nom de cada zona (Nevera / Congelador / Rebost),
+      // mateix patró que els nivells (.levels-pagination → .levels-dot
+      // a la pantalla d'urgència). El nom és més clar que un dot anònim
+      // i deixa veure d'un cop d'ull les zones disponibles.
+      bulletClass: 'zones-tab',
+      bulletActiveClass: 'zones-tab-active',
       renderBullet: function(index, className) {
         // Swiper passa l'índex REAL aquí (no els duplicats), així que
         // mapeja directament a SECTION_ORDER.
         const cat = SECTION_ORDER[index] || '';
-        return '<button class="' + className + '" type="button" data-zone="' + cat + '" aria-label="' + cat + '"></button>';
+        const labelKey = cat === 'fridge' ? 'locFridge'
+          : cat === 'freezer' ? 'locFreezer'
+          : cat === 'pantry' ? 'locPantry' : '';
+        const label = labelKey ? t(labelKey) : cat;
+        return '<button class="' + className + '" type="button" data-zone="' + cat + '" aria-label="' + escapeHtml(label) + '">' + escapeHtml(label) + '</button>';
       }
     },
     on: {
