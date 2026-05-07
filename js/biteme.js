@@ -763,6 +763,13 @@ function _renderShelfProducts(slide, level, cat) {
     shelfProducts.forEach(p => {
       const item = document.createElement('div');
       item.className = 'product-item';
+      // data-product-id habilita la delegation a nivell de #levels-slider
+      // (vegeu _initLevelsActionsDelegate). Cal perquè amb Swiper loop:true
+      // els slides es clonen amb tot el seu DOM intern, però cloneNode()
+      // NO copia listeners afegits via addEventListener — un click sobre
+      // un producte d'un slide-clone es perdria. La delegation captura el
+      // click al pare i deriva el producte del data-attribute.
+      item.dataset.productId = p.id;
       const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' · ' : '';
       // Subtítol addicional amb la data de congelació quan el producte
       // és al congelador (NOMÉS al congelador — a la resta no aporta
@@ -776,10 +783,33 @@ function _renderShelfProducts(slide, level, cat) {
         const frozenEl = item.querySelector('.product-item-frozen');
         if (frozenEl) frozenEl.textContent = frozenLine;
       }
-      item.addEventListener('click', () => { productDetailBack = 'list'; openProduct(p.id); });
+      // Cap addEventListener per-item: el click es processa per delegation
+      // al contenidor #levels-slider (vegeu _initLevelsActionsDelegate),
+      // que funciona tant per als items dels slides originals com per als
+      // dels seus clones de loop.
       listEl.appendChild(item);
     });
   }
+}
+
+// Delegation a nivell de #levels-slider per als clicks dels productes
+// dins dels slides de nivells. Cal perquè amb Swiper loop:true els
+// slides originals es clonen i els addEventListener individuals afegits
+// als items dels originals NO viuen als clones — l'usuari, en aterrar
+// en un clone (cosa habitual amb slideToLoop + loop:true), tocava items
+// que no responien. Mateix patró que _initCookMeActionsDelegate
+// (js/cookme.js) i la delegation del shopsSwiper (BuyMe).
+function _initLevelsActionsDelegate(slider) {
+  if (!slider || slider.dataset.actionsDelegated === '1') return;
+  slider.addEventListener('click', (e) => {
+    const item = e.target.closest('.product-item');
+    if (!item) return;
+    const id = item.dataset.productId;
+    if (!id) return;
+    productDetailBack = 'list';
+    openProduct(id);
+  });
+  slider.dataset.actionsDelegated = '1';
 }
 
 // Construeix els 4 slides .level-page dins de #levels-slider (un sol
@@ -894,6 +924,10 @@ function _ensureLevelsSwiper() {
       }
     }
   });
+  // Click delegation a nivell del slider — sobreviu a destroy/recreate
+  // (el listener s'enganxa al node DOM, que és el mateix; el guard de
+  // dataset.actionsDelegated evita re-enganxar-lo a futures crides).
+  _initLevelsActionsDelegate(slider);
   return _levelsSwiper;
 }
 
