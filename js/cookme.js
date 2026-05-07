@@ -378,9 +378,16 @@ function renderCookMe() {
   const q = cookmeNormalize(cookmeSearch);
 
   COOKME_FILTERS.forEach(filter => {
-    const list = slider.querySelector('.cookme-list[data-filter-content="' + filter + '"]');
-    const empty = slider.querySelector('.cookme-empty[data-filter-empty="' + filter + '"]');
-    if (!list || !empty) return;
+    // Amb Swiper loop:true, el wrapper té slides DUPLICADES per fer la
+    // transició cíclica seamless. Cada filtre pot tenir, a més de
+    // l'original, un clone amb el mateix data-filter-content. Hem
+    // d'escriure el contingut a TOTES les coincidències — si només
+    // tractem el primer match (querySelector), el clone queda buit i
+    // l'usuari aterra a una cara del cub sense cards. Mateix patró
+    // que openShelf a js/biteme.js (querySelectorAll als level-page).
+    const lists = slider.querySelectorAll('.cookme-list[data-filter-content="' + filter + '"]');
+    const empties = slider.querySelectorAll('.cookme-empty[data-filter-empty="' + filter + '"]');
+    if (!lists.length) return;
 
     let filtered = _filterRecipesForTab(results, filter);
     if (q) {
@@ -408,18 +415,21 @@ function renderCookMe() {
       });
     }
 
-    list.innerHTML = '';
-
     if (filtered.length === 0) {
-      empty.textContent = _cookmeEmptyMessage(filter, q);
-      empty.style.display = 'block';
-      list.style.display = 'none';
+      const msg = _cookmeEmptyMessage(filter, q);
+      lists.forEach(l => { l.innerHTML = ''; l.style.display = 'none'; });
+      empties.forEach(e => { e.textContent = msg; e.style.display = 'block'; });
       return;
     }
 
-    empty.style.display = 'none';
-    list.style.display = 'flex';
-    filtered.forEach(r => list.appendChild(buildCookMeCard(r)));
+    empties.forEach(e => { e.style.display = 'none'; });
+    lists.forEach(list => {
+      list.innerHTML = '';
+      list.style.display = 'flex';
+      // buildCookMeCard crea un nou DOM node a cada crida — segur
+      // d'invocar-lo per cada llista, no es comparteixen referències.
+      filtered.forEach(r => list.appendChild(buildCookMeCard(r)));
+    });
   });
 
   _updateCookMeProductFilterChip();
