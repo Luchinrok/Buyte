@@ -1169,6 +1169,10 @@ function renderSettingsContent() {
     if (typeof recipeEditMode !== 'undefined') recipeEditMode = false;
     if (typeof updateRecipeEditModeBtn === 'function') updateRecipeEditModeBtn();
     if (typeof renderCookMe === 'function') renderCookMe();
+    // El cos del screen-cookme s'ha mogut a una zona nova del DOM, així
+    // que cal recrear el Swiper cube per recalcular la geometria sobre
+    // les dimensions actuals (vegeu _ensureCookMeSwiper).
+    if (typeof _initCookMeSwiperWhenReady === 'function') _initCookMeSwiperWhenReady();
     _updateSettingsContentActionBtn();
     return;
   }

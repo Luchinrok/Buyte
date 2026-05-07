@@ -12,6 +12,17 @@
 // l'usuari aterra a "Disponibles" perquè vegi directament què pot cuinar; a
 // partir d'aquí, l'app recorda l'última tria fins que es recarrega la pàgina.
 let currentRecipeFilter = 'available';
+// Ordre de les cares del cub: cada índex es mapeja a un filtre. Vegeu
+// _ensureCookMeSwiper. Disponibles és la cara inicial perquè és el filtre
+// per defecte que veu l'usuari el primer cop que obre CookMe.
+const COOKME_FILTERS = ['all', 'available', 'used', 'mine', 'edited'];
+const COOKME_FILTER_LABELS = {
+  all: 'recipesAll',
+  available: 'recipesAvailable',
+  used: 'mostUsed',
+  mine: 'recipeMine',
+  edited: 'recipeEdited'
+};
 // D'on s'ha obert CookMe: 'home' (per defecte) o 'settings'. Determina la
 // pantalla a la qual torna el botó back.
 let cookmeOrigin = 'home';
@@ -245,10 +256,6 @@ function openCookMe(origin) {
   recipeEditMode = false;
   updateRecipeEditModeBtn();
   applyCookMeBackTarget();
-  // Sincronitza l'estat visual dels filtres amb el valor actiu
-  document.querySelectorAll('#cookme-filters .cookme-filter').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === currentRecipeFilter);
-  });
   // Reseteja l'input de cerca i el placeholder en l'idioma actual
   const searchInput = document.getElementById('cookme-search');
   if (searchInput) {
@@ -258,6 +265,10 @@ function openCookMe(origin) {
   updateCookMeSortBtn();
   renderCookMe();
   showScreen('cookme');
+  // Després de mostrar la pantalla, inicialitzem el Swiper cube. Cal
+  // requestAnimationFrame perquè el clientWidth de .cookme-slider sigui
+  // > 0 (la pantalla acaba de rebre la classe .active).
+  _initCookMeSwiperWhenReady();
 }
 
 // Configura el destí del botó back de la pantalla CookMe segons cookmeOrigin.
@@ -284,12 +295,16 @@ function updateRecipeEditModeBtn() {
   btn.setAttribute('aria-label', recipeEditMode ? 'Done' : 'Edit');
 }
 
-// Canvia el filtre actiu (all / available / used / mine / edited).
+// Canvia el filtre actiu (all / available / used / mine / edited). Si el
+// Swiper cube ja està instanciat, també rota el cub per ensenyar la cara
+// del filtre triat. Útil per a smart-notifications quan demanen
+// 'available' per defecte abans d'obrir CookMe.
 function setRecipeFilter(filter) {
   currentRecipeFilter = filter;
-  document.querySelectorAll('#cookme-filters .cookme-filter').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === filter);
-  });
+  const idx = COOKME_FILTERS.indexOf(filter);
+  if (window.cookmeSwiper && idx >= 0 && idx !== window.cookmeSwiper.realIndex) {
+    try { window.cookmeSwiper.slideToLoop(idx, 0); } catch (e) {}
+  }
   renderCookMe();
 }
 
@@ -320,11 +335,14 @@ function updateCookMeSortBtn() {
   }
 }
 
-// Renderitza la llista de receptes segons la pestanya activa.
+// Renderitza les llistes de receptes en totes les cares del cub. Cada
+// filtre té el seu propi contenidor (.cookme-list[data-filter-content="…"])
+// i el seu propi missatge buit (.cookme-empty[data-filter-empty="…"]).
+// El Swiper cube no es re-renderitza aquí — només el contingut intern
+// dels slides — així evitem destruir/recrear la instància cada vegada.
 function renderCookMe() {
-  const list = document.getElementById('cookme-list');
-  const empty = document.getElementById('cookme-empty');
-  if (!list || !empty) return;
+  const slider = document.querySelector('.cookme-slider');
+  if (!slider) return;
 
   // Defensiu: si veníem de Configuració, mantenim el destí del back
   applyCookMeBackTarget();
@@ -332,19 +350,66 @@ function renderCookMe() {
   const recipes = getAllRecipes();
   const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
 
-  // Calcula match per cada recepta
+  // Calcula match per cada recepta una sola vegada — totes les pestanyes
+  // comparteixen la mateixa base de dades.
   const results = recipes.map(r => {
     const m = calculateRecipeMatch(r, userProducts);
     return { recipe: r, matched: m.matched, missing: m.missing, percent: m.percent, canMake: m.canMake };
   });
 
-  // Filtra segons el filtre actiu
-  let filtered;
-  if (currentRecipeFilter === 'available') {
-    filtered = results.filter(r => r.canMake);
-  } else if (currentRecipeFilter === 'used') {
-    // Només receptes amb tracking i ordenades per importància d'ús (top 10)
-    filtered = results
+  const q = cookmeNormalize(cookmeSearch);
+
+  COOKME_FILTERS.forEach(filter => {
+    const list = slider.querySelector('.cookme-list[data-filter-content="' + filter + '"]');
+    const empty = slider.querySelector('.cookme-empty[data-filter-empty="' + filter + '"]');
+    if (!list || !empty) return;
+
+    let filtered = _filterRecipesForTab(results, filter);
+    if (q) {
+      filtered = filtered.filter(r => {
+        if (cookmeNormalize(r.recipe.name).includes(q)) return true;
+        const ings = r.recipe.ingredients || [];
+        for (let i = 0; i < ings.length; i++) {
+          if (cookmeNormalize(ings[i].name).includes(q)) return true;
+        }
+        return false;
+      });
+    }
+
+    // 'used' té un ordre intrínsec (per popularitat); només el sobreescrivim
+    // si l'usuari demana alfabètic.
+    if (cookmeSort === 'alpha') {
+      filtered.sort((a, b) => (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca'));
+    } else if (filter !== 'used') {
+      filtered.sort((a, b) => {
+        if (b.percent !== a.percent) return b.percent - a.percent;
+        return (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca');
+      });
+    }
+
+    list.innerHTML = '';
+
+    if (filtered.length === 0) {
+      empty.textContent = _cookmeEmptyMessage(filter, q);
+      empty.style.display = 'block';
+      list.style.display = 'none';
+      return;
+    }
+
+    empty.style.display = 'none';
+    list.style.display = 'flex';
+    filtered.forEach(r => list.appendChild(buildCookMeCard(r)));
+  });
+}
+
+// Aplica el filtre del filtre indicat a la llista pre-calculada de
+// resultats. El filtre 'used' inclou un re-ordre per popularitat (top 10).
+function _filterRecipesForTab(results, filter) {
+  if (filter === 'available') {
+    return results.filter(r => r.canMake);
+  }
+  if (filter === 'used') {
+    return results
       .filter(r => recipeUsage[r.recipe.id])
       .map(r => Object.assign({}, r, { _u: recipeUsage[r.recipe.id] }))
       .sort((a, b) => {
@@ -353,70 +418,31 @@ function renderCookMe() {
         return (b._u.lastUsed || 0) - (a._u.lastUsed || 0);
       })
       .slice(0, 10);
-  } else if (currentRecipeFilter === 'mine') {
-    filtered = results.filter(r => r.recipe.isCustom);
-  } else if (currentRecipeFilter === 'edited') {
-    filtered = results.filter(r => !r.recipe.isCustom && hasRecipeOverride(r.recipe.id));
-  } else {
-    // 'all'
-    filtered = results.slice();
   }
-
-  // Cerca lliure: nom de recepta o nom d'ingredient
-  const q = cookmeNormalize(cookmeSearch);
-  if (q) {
-    filtered = filtered.filter(r => {
-      if (cookmeNormalize(r.recipe.name).includes(q)) return true;
-      const ings = r.recipe.ingredients || [];
-      for (let i = 0; i < ings.length; i++) {
-        if (cookmeNormalize(ings[i].name).includes(q)) return true;
-      }
-      return false;
-    });
+  if (filter === 'mine') {
+    return results.filter(r => r.recipe.isCustom);
   }
-
-  // Ordena segons el mode triat. El filtre 'used' té el seu propi ordre
-  // (per popularitat d'ús), només la respectem si l'usuari no ha triat alfabètic.
-  if (cookmeSort === 'alpha') {
-    filtered.sort((a, b) => (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca'));
-  } else if (currentRecipeFilter !== 'used') {
-    filtered.sort((a, b) => {
-      if (b.percent !== a.percent) return b.percent - a.percent;
-      return (a.recipe.name || '').localeCompare(b.recipe.name || '', 'ca');
-    });
+  if (filter === 'edited') {
+    return results.filter(r => !r.recipe.isCustom && hasRecipeOverride(r.recipe.id));
   }
-
-  list.innerHTML = '';
-
-  if (filtered.length === 0) {
-    // Cap recepta dins el filtre. Decideix el missatge:
-    if (q) {
-      empty.textContent = t('noResults');
-    } else if (currentRecipeFilter === 'used') {
-      empty.textContent = t('noUsedRecipes');
-    } else if (currentRecipeFilter === 'available') {
-      empty.textContent = t('noRecipesAvailable');
-    } else if (currentRecipeFilter === 'mine') {
-      empty.textContent = t('noMineRecipes');
-    } else if (currentRecipeFilter === 'edited') {
-      empty.textContent = t('noEditedRecipes');
-    } else {
-      empty.textContent = t('noRecipesAtAll');
-    }
-    empty.style.display = 'block';
-    list.style.display = 'none';
-    return;
-  }
-
-  empty.style.display = 'none';
-  list.style.display = 'flex';
-
-  filtered.forEach(r => {
-    list.appendChild(buildCookMeCard(r));
-  });
+  return results.slice();
 }
 
-// Construeix una targeta de recepta.
+// Missatge a mostrar quan una pestanya queda buida després de filtrar.
+function _cookmeEmptyMessage(filter, query) {
+  if (query) return t('noResults');
+  if (filter === 'used') return t('noUsedRecipes');
+  if (filter === 'available') return t('noRecipesAvailable');
+  if (filter === 'mine') return t('noMineRecipes');
+  if (filter === 'edited') return t('noEditedRecipes');
+  return t('noRecipesAtAll');
+}
+
+// Construeix una targeta de recepta. Els clicks es processen via
+// delegation al contenidor .cookme-slider (vegeu _initCookMeActionsDelegate)
+// — no enllacem listeners directament a la card perquè amb Swiper loop:true
+// les slides es dupliquen i els listeners individuals no es propaguen als
+// clones. La delegation captura tant els originals com els clones.
 function buildCookMeCard(r) {
   const card = document.createElement('button');
   card.type = 'button';
@@ -472,29 +498,10 @@ function buildCookMeCard(r) {
     '</div>' +
     (recipeEditMode ? actionsHtml : '<div class="cookme-card-percent">' + r.percent + '%</div>');
 
-  if (recipeEditMode) {
-    // En mode edició, els botons d'acció són els únics clicables
-    const editBtn = card.querySelector('[data-action="edit"]');
-    if (editBtn) editBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openEditRecipeForm(r.recipe.id);
-    });
-    const delBtn = card.querySelector('[data-action="delete"]');
-    if (delBtn) delBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteCustomRecipe(r.recipe.id);
-    });
-    const restoreBtn = card.querySelector('[data-action="restore"]');
-    if (restoreBtn) restoreBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      restoreCatalogRecipe(r.recipe.id);
-    });
-  } else {
-    card.addEventListener('click', () => {
-      openRecipeDetail(r.recipe.id);
-    });
-  }
-
+  // Cap addEventListener: els clicks es processen via delegation al
+  // contenidor .cookme-slider (vegeu _initCookMeActionsDelegate). Els
+  // botons interns (edit / delete / restore) duen data-action, així la
+  // delegation prioritza l'acció específica abans de l'obertura del detall.
   return card;
 }
 
@@ -1314,4 +1321,158 @@ function cancelRecipeEdit() {
     renderCookMe();
     showScreen('cookme');
   }
+}
+
+// ============================================
+//   SWIPER CUBE — pestanyes 3D dels filtres
+// ============================================
+//
+// Patró paral·lel a _ensureZonesSwiper (js/biteme.js) i _ensureShopsSwiper
+// (js/buyme.js). Cada cara del cub és un filtre (Totes / Disponibles /
+// Més usades / Les meves / Editades). Les bullets de la pagination es
+// renderitzen com a "tabs" clicables per saltar de cara.
+//
+// El Swiper s'instancia peresosament la primera vegada que el contenidor
+// té dimensions (clientWidth > 0 — la pantalla ha de ser .active). Si la
+// pantalla CookMe ha estat embolcallada per Configuració > Contingut >
+// Receptes (vegeu _embedStandaloneBody a js/settings.js), el contenidor
+// s'haurà mogut a un altre node DOM; en aquest cas destruïm i recreem.
+
+function _initCookMeSwiperWhenReady() {
+  const slider = document.querySelector('.cookme-slider');
+  if (!slider) return;
+  if (!slider.clientWidth) {
+    requestAnimationFrame(_initCookMeSwiperWhenReady);
+    return;
+  }
+  _ensureCookMeSwiper();
+  // Si l'estat actual del filtre no coincideix amb la cara mostrada
+  // (per exemple si setRecipeFilter() s'ha cridat ABANS de l'init),
+  // sincronitzem-ho ara sense animació.
+  const idx = COOKME_FILTERS.indexOf(currentRecipeFilter);
+  if (window.cookmeSwiper && idx >= 0 && idx !== window.cookmeSwiper.realIndex) {
+    try { window.cookmeSwiper.slideToLoop(idx, 0); } catch (e) {}
+  }
+}
+
+function _ensureCookMeSwiper() {
+  const slider = document.querySelector('.cookme-slider');
+  if (!slider || !slider.clientWidth) return null;
+
+  // Sempre destruïm i recreem en aquests punts d'init (openCookMe i
+  // l'embed de Settings > Contingut > Receptes). El motiu: l'embed mou
+  // el slider a un altre node DOM, i la geometria del cub Swiper depèn
+  // del rectangle del pare. Recrear és barat (5 slides estàtiques) i
+  // ens estalvia bugs subtils on el cub queda visualment desalineat.
+  if (window.cookmeSwiper) {
+    try { window.cookmeSwiper.destroy(true, true); } catch (e) {}
+    window.cookmeSwiper = null;
+  }
+
+  const initialIdx = Math.max(0, COOKME_FILTERS.indexOf(currentRecipeFilter));
+
+  window.cookmeSwiper = new Swiper(slider, {
+    // Vegeu el comentari paral·lel a _ensureShopsSwiper (js/buyme.js):
+    // mateixa configuració que els altres cubs de l'app per coherència
+    // de feel (sensibilitat, ombres, click-through).
+    effect: 'cube',
+    cubeEffect: {
+      shadow: false,
+      slideShadows: true,
+      shadowOffset: 20,
+      shadowScale: 0.94
+    },
+    speed: 600,
+    grabCursor: true,
+    threshold: 5,
+    touchRatio: 1,
+    longSwipes: true,
+    longSwipesRatio: 0.2,
+    longSwipesMs: 200,
+    shortSwipes: true,
+    followFinger: true,
+    resistanceRatio: 0.85,
+    // preventClicks:false + preventClicksPropagation:false +
+    // touchStartPreventDefault:false → els taps a les cards de recepta
+    // han de registrar-se al PRIMER toc, sense necessitat de doble click
+    // (vegeu el bug equivalent als altres swipers de l'app).
+    preventClicks: false,
+    preventClicksPropagation: false,
+    touchStartPreventDefault: false,
+    // loop:true + loopAdditionalSlides:0 — Swiper duplica les slides als
+    // extrems perquè la transició Editades→Totes (i viceversa) sigui
+    // contínua. loopAdditionalSlides:0 manté només 1 clone per extrem
+    // (el necessari per al cube).
+    loop: true,
+    loopAdditionalSlides: 0,
+    initialSlide: initialIdx,
+    pagination: {
+      el: '#cookme-pagination',
+      clickable: true,
+      type: 'bullets',
+      bulletClass: 'cookme-tab',
+      bulletActiveClass: 'cookme-tab-active',
+      renderBullet: function (index, className) {
+        const filter = COOKME_FILTERS[index] || '';
+        const labelKey = COOKME_FILTER_LABELS[filter];
+        const label = labelKey ? t(labelKey) : filter;
+        return '<button class="' + className + '" type="button" data-filter="' + filter + '">' + escapeHtml(label) + '</button>';
+      }
+    },
+    on: {
+      slideChange: function () {
+        const filter = COOKME_FILTERS[this.realIndex];
+        if (filter && filter !== currentRecipeFilter) {
+          currentRecipeFilter = filter;
+        }
+      },
+      // Mateix fallback que als altres cubs: pointer-events:auto explícit
+      // al slide actiu post-transició perquè el primer tap registri sense
+      // doble click (Android amb touchstart preventDefault).
+      slideChangeTransitionEnd: function () {
+        const swiper = this;
+        const active = swiper.slides && swiper.slides[swiper.activeIndex];
+        if (active) active.style.pointerEvents = 'auto';
+      }
+    }
+  });
+
+  _initCookMeActionsDelegate(slider);
+  return window.cookmeSwiper;
+}
+
+// Event delegation a nivell del .cookme-slider. Cal perquè amb loop:true
+// Swiper afegeix slides DUPLICADES al wrapper per fer la transició cíclica
+// seamless; els addEventListener individuals afegits a una targeta
+// original NO viuen al clone, així que un click sobre un slide-clone es
+// perd. Captem-ho aquí amb closest() i derivem la recepta del data-recipe-id
+// de la card; així funciona en originals i en clones per igual.
+function _initCookMeActionsDelegate(slider) {
+  if (!slider || slider.dataset.actionsDelegated === '1') return;
+
+  slider.addEventListener('click', (e) => {
+    // Botó d'acció dins una card (mode edició): edit / delete / restore.
+    const actionBtn = e.target.closest('.cookme-card [data-action]');
+    if (actionBtn) {
+      e.stopPropagation();
+      const card = actionBtn.closest('.cookme-card');
+      const recipeId = card ? card.dataset.recipeId : '';
+      if (!recipeId) return;
+      const action = actionBtn.dataset.action;
+      if (action === 'edit') openEditRecipeForm(recipeId);
+      else if (action === 'delete') deleteCustomRecipe(recipeId);
+      else if (action === 'restore') restoreCatalogRecipe(recipeId);
+      return;
+    }
+
+    // Click a la card sencera → obrir detall (només si NO estem en mode
+    // edició: en mode edició les úniques accions vàlides són els botons).
+    const card = e.target.closest('.cookme-card');
+    if (card && !recipeEditMode) {
+      const recipeId = card.dataset.recipeId;
+      if (recipeId) openRecipeDetail(recipeId);
+    }
+  });
+
+  slider.dataset.actionsDelegated = '1';
 }

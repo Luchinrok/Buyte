@@ -415,14 +415,6 @@
       <button id="btn-toggle-recipe-edit" class="header-icon-btn" aria-label="Edit">✏️</button>
     </header>
 
-    <div class="cookme-filters" id="cookme-filters">
-      <button class="cookme-filter active" data-filter="available" data-i18n="recipesAvailable"></button>
-      <button class="cookme-filter" data-filter="all" data-i18n="recipesAll"></button>
-      <button class="cookme-filter" data-filter="used" data-i18n="mostUsed"></button>
-      <button class="cookme-filter" data-filter="mine" data-i18n="recipeMine"></button>
-      <button class="cookme-filter" data-filter="edited" data-i18n="recipeEdited"></button>
-    </div>
-
     <div class="cookme-controls">
       <input type="search" id="cookme-search" class="cookme-search-input" autocomplete="off">
       <button type="button" id="cookme-sort" class="cookme-sort-btn" aria-label="Sort">
@@ -442,8 +434,41 @@
       </button>
     </div>
 
-    <div id="cookme-list" class="cookme-list"></div>
-    <p id="cookme-empty" class="cookme-empty" style="display:none"></p>
+    <!-- Pestanyes de filtre (Swiper bullets renderitzats com a "tabs").
+         Vegeu _ensureCookMeSwiper a js/cookme.js: cada bullet és un
+         botó amb el nom del filtre traduït; clicar salta a la cara
+         del cub corresponent. -->
+    <div class="swiper-pagination cookme-pagination" id="cookme-pagination"></div>
+
+    <!-- Slider 3D estil cub (Swiper.js, effect: cube). Cada cara és
+         un filtre (Totes / Disponibles / Més usades / Les meves /
+         Editades). El contingut de cada filtre es renderitza dins el
+         seu propi .cookme-list a renderCookMe(). Mateix patró que
+         #shops-slider (BuyMe) i #zones-slider (EatMe). -->
+    <div class="cookme-slider swiper" id="cookme-slider">
+      <div class="swiper-wrapper">
+        <div class="swiper-slide cookme-page" data-filter="all">
+          <div class="cookme-list" data-filter-content="all"></div>
+          <p class="cookme-empty" data-filter-empty="all" style="display:none"></p>
+        </div>
+        <div class="swiper-slide cookme-page" data-filter="available">
+          <div class="cookme-list" data-filter-content="available"></div>
+          <p class="cookme-empty" data-filter-empty="available" style="display:none"></p>
+        </div>
+        <div class="swiper-slide cookme-page" data-filter="used">
+          <div class="cookme-list" data-filter-content="used"></div>
+          <p class="cookme-empty" data-filter-empty="used" style="display:none"></p>
+        </div>
+        <div class="swiper-slide cookme-page" data-filter="mine">
+          <div class="cookme-list" data-filter-content="mine"></div>
+          <p class="cookme-empty" data-filter-empty="mine" style="display:none"></p>
+        </div>
+        <div class="swiper-slide cookme-page" data-filter="edited">
+          <div class="cookme-list" data-filter-content="edited"></div>
+          <p class="cookme-empty" data-filter-empty="edited" style="display:none"></p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- PANTALLA DETALL DE LA RECEPTA -->

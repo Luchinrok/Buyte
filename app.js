@@ -514,11 +514,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof openCookMe === 'function') openCookMe();
   });
 
-  document.querySelectorAll('#cookme-filters .cookme-filter').forEach(chip => {
-    chip.addEventListener('click', () => {
-      if (typeof setRecipeFilter === 'function') setRecipeFilter(chip.dataset.filter);
-    });
-  });
+  // (Els chips antics #cookme-filters .cookme-filter ja no existeixen —
+  // s'han substituït per les bullets-tab del Swiper cube. La pagination
+  // de Swiper ja és clickable per saltar a una cara, i slideChange
+  // sincronitza currentRecipeFilter — vegeu _ensureCookMeSwiper.)
 
   // Toggle mode d'edició de la llista de receptes
   const btnToggleRecipeEdit = document.getElementById('btn-toggle-recipe-edit');
