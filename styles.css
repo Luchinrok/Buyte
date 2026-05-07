@@ -2446,6 +2446,35 @@ h1 {
   transform: scale(0.98);
 }
 
+/* Botó "🍳 Receptes" del detall del producte: navega al CookMe filtrat
+   per aquest producte (vegeu openCookMeForProduct a js/cookme.js).
+   Color taronja per coherència amb el CookMe (mateix gradient que
+   .launcher-card-cookme i les pestanyes del CookMe). Manté la mateixa
+   forma i alçada que .add-to-buyme-btn per donar continuïtat visual a
+   les dues opcions de navegació al peu del detall. */
+.recipes-from-product-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  box-shadow: 0 3px 10px rgba(255, 152, 0, 0.35);
+  transition: transform 0.1s;
+}
+
+.recipes-from-product-btn:active {
+  transform: scale(0.98);
+}
+
 /* ===== FLETXES D'ORDRE (amunt/avall) ===== */
 .manage-sm-arrows,
 .shopping-item-arrows {
@@ -6566,6 +6595,72 @@ h1 {
   border-color: rgba(244, 67, 54, 0.3);
 }
 .recipe-custom-delete:hover { background: rgba(244, 67, 54, 0.08); }
+
+/* Indicador de filtre per producte. Es mostra a sobre del slider del
+   CookMe quan s'hi entra des del detall d'un producte EatMe (vegeu
+   openCookMeForProduct a js/cookme.js). Estil suau amb la paleta
+   taronja del CookMe per no competir amb la pestanya activa. */
+.cookme-product-filter-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  margin: 4px 0 10px;
+  background: rgba(255, 152, 0, 0.12);
+  color: #BF360C;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cookme-product-filter-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cookme-product-filter-clear {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 152, 0, 0.22);
+  color: #BF360C;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.cookme-product-filter-clear:hover {
+  background: rgba(255, 152, 0, 0.32);
+}
+
+.cookme-product-filter-clear:active {
+  transform: scale(0.92);
+}
+
+:root[data-theme="dark"] .cookme-product-filter-chip {
+  background: rgba(255, 152, 0, 0.18);
+  color: #FFCC80;
+  border-color: rgba(255, 152, 0, 0.4);
+}
+
+:root[data-theme="dark"] .cookme-product-filter-clear {
+  background: rgba(255, 152, 0, 0.28);
+  color: #FFCC80;
+}
 
 /* Barra sticky a sobre de #cookme-list amb el botó "+ Afegir recepta".
    Mateix patró que .shop-actions-bar (BuyMe) per tenir el botó

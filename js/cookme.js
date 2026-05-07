@@ -168,6 +168,13 @@ function confirmResetRecipeUsage() {
 let cookmeSearch = '';
 // Mode d'ordenació: 'percent' (per coincidència) | 'alpha' (A-Z)
 let cookmeSort = 'percent';
+// Filtre actiu per un producte concret (entrada des del detall d'un
+// producte de l'EatMe via openCookMeForProduct). Quan està actiu, es
+// limita el conjunt de receptes a aquelles que contenen aquell
+// producte (per emoji o per nom). Es manté en paral·lel als filtres
+// per pestanya i a la cerca lliure: tots tres s'apliquen junts.
+//   { emoji: '🥩', name: 'Carn picada', productId: '...' } | null
+let cookmeProductFilter = null;
 
 // Normalitza un text: minúscules + sense accents + sense espais finals.
 function cookmeNormalize(s) {
@@ -249,6 +256,11 @@ function calculateRecipeMatch(recipe, userProducts) {
 // botó "back" — així es pot reutilitzar la mateixa pantalla des de Configuració.
 function openCookMe(origin) {
   cookmeOrigin = origin || 'home';
+  // El filtre per producte només té sentit quan s'entra des del detall
+  // d'un producte (origin='product'); en qualsevol altre cas el netegem
+  // perquè una entrada per la via normal (launcher / Settings / smart
+  // notifs) no arrossegui un filtre d'una sessió anterior.
+  if (cookmeOrigin !== 'product') cookmeProductFilter = null;
   // Filtre: NO el resetegem perquè es recordi entre obertures dins la sessió.
   // El valor inicial al primer boot és 'available' (vegeu currentRecipeFilter).
   cookmeSearch = '';
@@ -275,6 +287,12 @@ function openCookMe(origin) {
 function applyCookMeBackTarget() {
   const backBtn = document.querySelector('#screen-cookme .back-btn');
   if (!backBtn) return;
+  if (cookmeOrigin === 'product') {
+    // El handler genèric de back-btn a app.js reconeix 'product' i crida
+    // openProduct(currentProduct.id) per refrescar el detall original.
+    backBtn.dataset.back = 'product';
+    return;
+  }
   const isSettings = cookmeOrigin === 'settings' || (typeof cookmeOrigin === 'string' && cookmeOrigin.indexOf('settings-') === 0);
   backBtn.dataset.back = isSettings ? cookmeOrigin : 'launcher';
 }
@@ -375,6 +393,9 @@ function renderCookMe() {
         return false;
       });
     }
+    if (cookmeProductFilter) {
+      filtered = filtered.filter(r => _ingredientsMatchProductFilter(r.recipe.ingredients, cookmeProductFilter));
+    }
 
     // 'used' té un ordre intrínsec (per popularitat); només el sobreescrivim
     // si l'usuari demana alfabètic.
@@ -400,6 +421,8 @@ function renderCookMe() {
     list.style.display = 'flex';
     filtered.forEach(r => list.appendChild(buildCookMeCard(r)));
   });
+
+  _updateCookMeProductFilterChip();
 }
 
 // Aplica el filtre del filtre indicat a la llista pre-calculada de
@@ -430,12 +453,93 @@ function _filterRecipesForTab(results, filter) {
 
 // Missatge a mostrar quan una pestanya queda buida després de filtrar.
 function _cookmeEmptyMessage(filter, query) {
+  // El filtre per producte té prioritat: si està actiu i no hi ha cap
+  // recepta a la pestanya, l'usuari ha d'entendre que el motiu és el
+  // producte (no que la pestanya sigui buida del tot).
+  if (cookmeProductFilter) {
+    const name = cookmeProductFilter.name || '';
+    return t('noRecipesForProduct', name);
+  }
   if (query) return t('noResults');
   if (filter === 'used') return t('noUsedRecipes');
   if (filter === 'available') return t('noRecipesAvailable');
   if (filter === 'mine') return t('noMineRecipes');
   if (filter === 'edited') return t('noEditedRecipes');
   return t('noRecipesAtAll');
+}
+
+// Comprova si alguna ingredient de la recepta coincideix amb el filtre
+// per producte. Mateix algorisme que matchIngredient (emoji exacte
+// primer, després nom amb cookmeNormalize), però invertit: aquí el
+// "candidat" és l'ingredient i el "subjecte" és el producte de l'EatMe.
+// Si el nom del producte conté el de l'ingredient O l'ingredient conté
+// el del producte, es considera coincidència — així "Carn picada" del
+// producte casa amb una recepta que demani "carn".
+function _ingredientsMatchProductFilter(ingredients, productFilter) {
+  if (!ingredients || !productFilter) return false;
+  const targetEmoji = productFilter.emoji || '';
+  const targetName = cookmeNormalize(productFilter.name);
+  for (let i = 0; i < ingredients.length; i++) {
+    const ing = ingredients[i];
+    if (targetEmoji && ing.emoji && ing.emoji === targetEmoji) return true;
+    if (targetName) {
+      const ingName = cookmeNormalize(ing.name);
+      if (ingName && (ingName.includes(targetName) || targetName.includes(ingName))) return true;
+    }
+  }
+  return false;
+}
+
+// Renderitza/oculta el xip indicador del filtre actiu per producte.
+// Es crida des de renderCookMe — el xip viu sempre al DOM (vegeu
+// index.html: #cookme-product-filter-chip) però només té contingut
+// quan cookmeProductFilter no és null.
+function _updateCookMeProductFilterChip() {
+  const chip = document.getElementById('cookme-product-filter-chip');
+  if (!chip) return;
+  if (!cookmeProductFilter) {
+    chip.style.display = 'none';
+    chip.innerHTML = '';
+    return;
+  }
+  const emoji = cookmeProductFilter.emoji || '';
+  const name = cookmeProductFilter.name || '';
+  const clearLabel = t('clearFilterBtn');
+  chip.style.display = 'flex';
+  chip.innerHTML =
+    '<span class="cookme-product-filter-label">' +
+      escapeHtml(t('filteringByProduct')) + ' ' +
+      (emoji ? emoji + ' ' : '') +
+      escapeHtml(name) +
+    '</span>' +
+    '<button type="button" class="cookme-product-filter-clear" id="cookme-product-filter-clear" aria-label="' + escapeHtml(clearLabel) + '" title="' + escapeHtml(clearLabel) + '">×</button>';
+  const clearBtn = chip.querySelector('#cookme-product-filter-clear');
+  if (clearBtn) clearBtn.addEventListener('click', clearCookMeProductFilter);
+}
+
+// Treu el filtre per producte i re-renderitza. NO toca cookmeOrigin —
+// així el botó back continua tornant al producte d'origen, que és el
+// comportament esperat: l'usuari ha clicat × per veure totes les
+// receptes, no per "abandonar" el flux que ve del producte.
+function clearCookMeProductFilter() {
+  cookmeProductFilter = null;
+  renderCookMe();
+}
+
+// Punt d'entrada des del botó "🍳 Receptes" del detall del producte
+// (vegeu app.js, listener de #btn-recipes-from-product). Defineix el
+// filtre i obre CookMe amb origin='product' perquè el back hi torni.
+// Aterra a la pestanya "Disponibles" perquè és la més útil quan
+// l'usuari té el producte a la nevera i busca què cuinar.
+function openCookMeForProduct(product) {
+  if (!product) return;
+  cookmeProductFilter = {
+    emoji: product.emoji || '',
+    name: product.name || '',
+    productId: product.id || ''
+  };
+  currentRecipeFilter = 'available';
+  openCookMe('product');
 }
 
 // Construeix una targeta de recepta. Els clicks es processen via

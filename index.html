@@ -443,6 +443,13 @@
          del cub corresponent. -->
     <div class="swiper-pagination cookme-pagination" id="cookme-pagination"></div>
 
+    <!-- Indicador del filtre per producte: només visible quan s'ha
+         entrat al CookMe des del detall d'un producte (vegeu
+         openCookMeForProduct a js/cookme.js). El botó × neteja el
+         filtre i mostra totes les receptes; manté l'origen 'product'
+         perquè el back continuï tornant al producte. -->
+    <div id="cookme-product-filter-chip" class="cookme-product-filter-chip" style="display:none"></div>
+
     <!-- Slider 3D estil cub (Swiper.js, effect: cube). Cada cara és
          un filtre (Totes / Disponibles / Més usades / Les meves /
          Editades). El contingut de cada filtre es renderitza dins el
@@ -724,6 +731,14 @@
     <button class="add-to-buyme-btn" id="btn-add-to-buyme">
       <span style="font-size:20px;margin-right:8px">🛒</span>
       <span data-i18n="addToBuyMe"></span>
+    </button>
+
+    <!-- Navegació al CookMe filtrat per aquest producte. La lògica
+         (definir cookmeProductFilter, navegar i restablir el back)
+         viu a openCookMeForProduct (js/cookme.js). -->
+    <button class="recipes-from-product-btn" id="btn-recipes-from-product">
+      <span style="font-size:20px;margin-right:8px">🍳</span>
+      <span data-i18n="cookmeRecipesBtn"></span>
     </button>
   </div>
 

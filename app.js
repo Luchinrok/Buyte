@@ -47,6 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
     manualAddToBuyMe(currentProduct);
   });
 
+  // Botó "🍳 Receptes" des del detall del producte: obre CookMe filtrat
+  // pel producte actual (vegeu openCookMeForProduct a js/cookme.js).
+  const btnRecipesFromProduct = document.getElementById('btn-recipes-from-product');
+  if (btnRecipesFromProduct) btnRecipesFromProduct.addEventListener('click', () => {
+    if (!currentProduct) return;
+    if (typeof openCookMeForProduct === 'function') openCookMeForProduct(currentProduct);
+  });
+
   // Botó únic "Editar producte" — reutilitza screen-add en mode edició
   const btnEditProduct = document.getElementById('btn-edit-product');
   if (btnEditProduct) btnEditProduct.addEventListener('click', () => {
@@ -187,6 +195,13 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (target === 'list' && typeof openShelf === 'function' && currentLevel) {
         openShelf(currentLevel);
         return; // openShelf ja fa showScreen
+      }
+      else if (target === 'product' && typeof openProduct === 'function' && currentProduct) {
+        // Tornem al detall del producte des de CookMe (entrada via
+        // btn-recipes-from-product). openProduct refresca el contingut
+        // amb l'estat actual i ja crida showScreen('product').
+        openProduct(currentProduct.id);
+        return;
       }
       showScreen(target);
     });
