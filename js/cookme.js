@@ -1561,32 +1561,36 @@ function _ensureCookMeSwiper() {
 // original NO viuen al clone, així que un click sobre un slide-clone es
 // perd. Captem-ho aquí amb closest() i derivem la recepta del data-recipe-id
 // de la card; així funciona en originals i en clones per igual.
+//
+// _onCookMeSliderClick és una referència estable a nivell de mòdul: el
+// DOM garanteix que addEventListener amb la mateixa funció no s'afegeix
+// duplicat. Per això podem cridar _initCookMeActionsDelegate cada cop
+// que _ensureCookMeSwiper es crida (no cal guard mutable que Swiper
+// pugui esborrar al destroy).
+function _onCookMeSliderClick(e) {
+  // Botó d'acció dins una card (mode edició): edit / delete / restore.
+  const actionBtn = e.target.closest('.cookme-card [data-action]');
+  if (actionBtn) {
+    e.stopPropagation();
+    const card = actionBtn.closest('.cookme-card');
+    const recipeId = card ? card.dataset.recipeId : '';
+    if (!recipeId) return;
+    const action = actionBtn.dataset.action;
+    if (action === 'edit') openEditRecipeForm(recipeId);
+    else if (action === 'delete') deleteCustomRecipe(recipeId);
+    else if (action === 'restore') restoreCatalogRecipe(recipeId);
+    return;
+  }
+
+  // Click a la card sencera → obrir detall (només si NO estem en mode
+  // edició: en mode edició les úniques accions vàlides són els botons).
+  const card = e.target.closest('.cookme-card');
+  if (card && !recipeEditMode) {
+    const recipeId = card.dataset.recipeId;
+    if (recipeId) openRecipeDetail(recipeId);
+  }
+}
 function _initCookMeActionsDelegate(slider) {
-  if (!slider || slider.dataset.actionsDelegated === '1') return;
-
-  slider.addEventListener('click', (e) => {
-    // Botó d'acció dins una card (mode edició): edit / delete / restore.
-    const actionBtn = e.target.closest('.cookme-card [data-action]');
-    if (actionBtn) {
-      e.stopPropagation();
-      const card = actionBtn.closest('.cookme-card');
-      const recipeId = card ? card.dataset.recipeId : '';
-      if (!recipeId) return;
-      const action = actionBtn.dataset.action;
-      if (action === 'edit') openEditRecipeForm(recipeId);
-      else if (action === 'delete') deleteCustomRecipe(recipeId);
-      else if (action === 'restore') restoreCatalogRecipe(recipeId);
-      return;
-    }
-
-    // Click a la card sencera → obrir detall (només si NO estem en mode
-    // edició: en mode edició les úniques accions vàlides són els botons).
-    const card = e.target.closest('.cookme-card');
-    if (card && !recipeEditMode) {
-      const recipeId = card.dataset.recipeId;
-      if (recipeId) openRecipeDetail(recipeId);
-    }
-  });
-
-  slider.dataset.actionsDelegated = '1';
+  if (!slider) return;
+  slider.addEventListener('click', _onCookMeSliderClick);
 }

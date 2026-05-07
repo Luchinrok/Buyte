@@ -795,21 +795,29 @@ function _renderShelfProducts(slide, level, cat) {
 // Delegation a nivell de #levels-slider per als clicks dels productes
 // dins dels slides de nivells. Cal perquè amb Swiper loop:true els
 // slides originals es clonen i els addEventListener individuals afegits
-// als items dels originals NO viuen als clones — l'usuari, en aterrar
-// en un clone (cosa habitual amb slideToLoop + loop:true), tocava items
-// que no responien. Mateix patró que _initCookMeActionsDelegate
-// (js/cookme.js) i la delegation del shopsSwiper (BuyMe).
+// als items dels originals NO viuen als clones. Mateix patró que
+// _initCookMeActionsDelegate (js/cookme.js) i la delegation del
+// shopsSwiper (BuyMe).
+//
+// La funció _onLevelsSliderClick té UNA referència estable a nivell de
+// mòdul. addEventListener amb la mateixa funció més d'una vegada és
+// idempotent (l'estàndard DOM garanteix que no s'afegeix duplicat). Per
+// això podem cridar _initLevelsActionsDelegate cada vegada que
+// _ensureLevelsSwiper es crida, sense risc de listeners duplicats i
+// sense dependre d'un guard mutable (els data-* attributes que Swiper
+// pot tocar al destroy poden donar-nos sorpreses; una referència
+// estable a una funció no).
+function _onLevelsSliderClick(e) {
+  const item = e.target.closest('.product-item');
+  if (!item) return;
+  const id = item.dataset.productId;
+  if (!id) return;
+  productDetailBack = 'list';
+  openProduct(id);
+}
 function _initLevelsActionsDelegate(slider) {
-  if (!slider || slider.dataset.actionsDelegated === '1') return;
-  slider.addEventListener('click', (e) => {
-    const item = e.target.closest('.product-item');
-    if (!item) return;
-    const id = item.dataset.productId;
-    if (!id) return;
-    productDetailBack = 'list';
-    openProduct(id);
-  });
-  slider.dataset.actionsDelegated = '1';
+  if (!slider) return;
+  slider.addEventListener('click', _onLevelsSliderClick);
 }
 
 // Construeix els 4 slides .level-page dins de #levels-slider (un sol
