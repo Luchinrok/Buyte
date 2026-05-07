@@ -1931,6 +1931,31 @@ h1 {
   box-shadow: 0 2px 8px rgba(229, 57, 53, 0.4) !important;
 }
 
+/* Modal: variant neutra (blau) per a accions intermèdies, p.ex. "Fer
+   còpia primer" al modal de confirmació de connexió. Diferenciada
+   visualment del primary (verd) i del danger (vermell). */
+.modal-confirm-neutral {
+  background: linear-gradient(135deg, #42A5F5 0%, #1565C0 100%) !important;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.35) !important;
+  color: #FFFFFF !important;
+}
+
+/* Layout vertical per a modals amb 3+ accions, on ficar-les en fila
+   queda atapeït al mòbil. L'ordre vertical posa la confirmació
+   destructiva a dalt (focus visual immediat) i el cancel·lar a baix. */
+.modal-buttons-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.modal-buttons-stacked .modal-confirm,
+.modal-buttons-stacked .modal-cancel {
+  flex: none;
+  width: 100%;
+}
+
 
 
 /* ===== EDITAR QUANTITAT ===== */

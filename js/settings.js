@@ -172,10 +172,22 @@ async function joinExistingList() {
     return;
   }
 
+  // Si l'usuari ja té dades locals, mostrem un modal integrat amb tres
+  // accions: cancel·lar, fer una còpia primer (exporta JSON), o
+  // confirmar la connexió que SUBSTITUIRÀ les dades locals. Vegeu
+  // _showSyncJoinConfirm.
   if (products.length > 0) {
-    if (!confirm(t('syncReplaceWarning'))) return;
+    _showSyncJoinConfirm(code);
+    return;
   }
 
+  await _completeSyncJoin(code);
+}
+
+// Reactiva la connexió amb la llista i refresca la UI. Cridat des de
+// joinExistingList (sense dades locals) o des del modal de confirmació
+// (amb dades locals, després que l'usuari accepti substituir-les).
+async function _completeSyncJoin(code) {
   try {
     await window.FBSync.connectToList(code, onRemoteData);
     localStorage.setItem('eatmefirst_sync_code', code);
@@ -190,14 +202,76 @@ async function joinExistingList() {
   }
 }
 
+// Modal de confirmació per a la connexió a una família existent quan
+// l'usuari té dades locals que es perdran. Tres accions verticals:
+// 1) "Sí, connectar" (destructiva, vermella) — substitueix les dades
+//    locals i continua amb _completeSyncJoin.
+// 2) "Fer còpia primer" (neutral) — exporta el JSON i torna a mostrar
+//    aquest mateix modal perquè l'usuari decideixi amb la còpia ja feta.
+// 3) "Cancel·lar" — tanca el modal sense fer res.
+function _showSyncJoinConfirm(code) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal-content">' +
+      '<div class="modal-emoji-big">👨‍👩‍👧‍👦</div>' +
+      '<p class="modal-title">' + escapeHtml(t('syncJoinConfirmTitle')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('syncJoinConfirmMessage1')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('syncJoinConfirmMessage2')) + '</p>' +
+      '<div class="modal-buttons-stacked">' +
+        '<button class="modal-confirm modal-confirm-danger" id="sync-join-yes">' + escapeHtml(t('syncJoinConfirmYes')) + '</button>' +
+        '<button class="modal-confirm modal-confirm-neutral" id="sync-join-backup">📦 ' + escapeHtml(t('syncJoinBackupFirst')) + '</button>' +
+        '<button class="modal-cancel" id="sync-join-cancel">' + escapeHtml(t('cancel')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#sync-join-cancel').addEventListener('click', close);
+  overlay.querySelector('#sync-join-backup').addEventListener('click', () => {
+    close();
+    if (typeof exportData === 'function') exportData();
+    // Torna a mostrar el modal després d'un petit retard perquè el toast
+    // d'exportació tingui un instant per aparèixer abans.
+    setTimeout(() => _showSyncJoinConfirm(code), 350);
+  });
+  overlay.querySelector('#sync-join-yes').addEventListener('click', () => {
+    close();
+    _completeSyncJoin(code);
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
 function disconnectSync() {
-  if (!confirm(t('syncDisconnectConfirm'))) return;
-  if (window.FBSync) window.FBSync.disconnect();
-  localStorage.removeItem('eatmefirst_sync_code');
-  syncEnabled = false;
-  updateSyncStatus();
-  updateSyncScreen();
-  showToast(t('syncDisconnected'));
+  // Acció no destructiva: les dades locals es mantenen al dispositiu;
+  // només s'atura el listener i s'oblida el codi guardat. Per això el
+  // botó primary és l'estil estàndard (verd) i no la variant danger
+  // (vermella) que reservem per a esborrats irreversibles.
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal-content">' +
+      '<div class="modal-emoji-big">🔌</div>' +
+      '<p class="modal-title">' + escapeHtml(t('syncDisconnectTitle')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('syncDisconnectMessage1')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('syncDisconnectMessage2')) + '</p>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="sync-disc-no">' + escapeHtml(t('cancel')) + '</button>' +
+        '<button class="modal-confirm" id="sync-disc-yes">' + escapeHtml(t('syncDisconnect')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#sync-disc-no').addEventListener('click', close);
+  overlay.querySelector('#sync-disc-yes').addEventListener('click', () => {
+    close();
+    if (window.FBSync) window.FBSync.disconnect();
+    localStorage.removeItem('eatmefirst_sync_code');
+    syncEnabled = false;
+    updateSyncStatus();
+    updateSyncScreen();
+    showToast(t('syncDisconnected'));
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 async function copyCodeToClipboard() {
