@@ -5733,12 +5733,12 @@ h1 {
   flex: 0 0 auto;
   padding: 8px 14px;
   background: #FFFFFF;
-  border: 2px solid #66BB6A;
+  border: 2px solid #E65100;
   border-radius: 999px;
   font-family: inherit;
   font-size: 13px;
   font-weight: 700;
-  color: #2E7D32;
+  color: #E65100;
   cursor: pointer;
   transition: background 0.18s, color 0.18s, box-shadow 0.18s, border-color 0.18s, transform 0.15s;
   white-space: nowrap;
@@ -5759,22 +5759,27 @@ h1 {
 
 .cookme-tab:active { transform: scale(0.97); }
 
+/* Mateix gradient que .launcher-card-cookme (botó CookMe del menú
+   principal): #FF9800 → #E65100. Coherència visual entre l'entrada
+   al CookMe i les seves pestanyes internes. */
 .cookme-tab.cookme-tab-active {
-  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
   border-color: transparent;
   color: #FFFFFF;
   font-weight: 800;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
   transform: scale(1.03);
 }
 
 :root[data-theme="dark"] .cookme-tab {
   background: var(--bg-secondary);
-  border-color: #66BB6A;
-  color: #A5D6A7;
+  border-color: #FB8C00;
+  color: #FFB74D;
 }
+/* Dark mode: mateix gradient que .launcher-card-cookme dark
+   (#FB8C00 → #BF360C). */
 :root[data-theme="dark"] .cookme-tab.cookme-tab-active {
-  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  background: linear-gradient(135deg, #FB8C00 0%, #BF360C 100%);
   border-color: transparent;
   color: #FFFFFF;
 }
