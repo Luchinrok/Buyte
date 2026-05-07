@@ -204,10 +204,15 @@ async function _completeSyncJoin(code) {
 
 // Modal de confirmació per a la connexió a una família existent quan
 // l'usuari té dades locals que es perdran. Tres accions verticals:
-// 1) "Sí, connectar" (destructiva, vermella) — substitueix les dades
-//    locals i continua amb _completeSyncJoin.
-// 2) "Fer còpia primer" (neutral) — exporta el JSON i torna a mostrar
-//    aquest mateix modal perquè l'usuari decideixi amb la còpia ja feta.
+// 1) "Sí, connectar" (primary verd) — connectar és una acció POSITIVA
+//    (et connectes amb la família, sincronitzes dades). Tot i que
+//    sobreescriu les dades locals, no és un "esborrat" — el risc el
+//    comuniquem al missatge i amb el botó "Fer còpia primer". Reservem
+//    el vermell (modal-confirm-danger) per a esborrats nets (eliminar
+//    backup, eliminar producte, etc.).
+// 2) "Fer còpia primer" (neutral blau) — exporta el JSON i torna a
+//    mostrar aquest mateix modal perquè l'usuari decideixi amb la còpia
+//    ja feta.
 // 3) "Cancel·lar" — tanca el modal sense fer res.
 function _showSyncJoinConfirm(code) {
   const overlay = document.createElement('div');
@@ -219,7 +224,7 @@ function _showSyncJoinConfirm(code) {
       '<p class="modal-sub">' + escapeHtml(t('syncJoinConfirmMessage1')) + '</p>' +
       '<p class="modal-sub">' + escapeHtml(t('syncJoinConfirmMessage2')) + '</p>' +
       '<div class="modal-buttons-stacked">' +
-        '<button class="modal-confirm modal-confirm-danger" id="sync-join-yes">' + escapeHtml(t('syncJoinConfirmYes')) + '</button>' +
+        '<button class="modal-confirm" id="sync-join-yes">' + escapeHtml(t('syncJoinConfirmYes')) + '</button>' +
         '<button class="modal-confirm modal-confirm-neutral" id="sync-join-backup">📦 ' + escapeHtml(t('syncJoinBackupFirst')) + '</button>' +
         '<button class="modal-cancel" id="sync-join-cancel">' + escapeHtml(t('cancel')) + '</button>' +
       '</div>' +
