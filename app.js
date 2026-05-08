@@ -652,6 +652,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicia sincronització si ja teníem codi guardat
   initSync();
 
+  // Si acabem de fer un Switch d'Espai (vegeu SpacesSystem.switchToSpace),
+  // donem 1.5 s perquè la snapshot inicial del nou Espai arribi del cloud
+  // i, si segueix sense botigues, hi inicialitzem les del país. Així:
+  //   - Espai NOU acabat de crear (cloud té supermarkets:[]) → defaults
+  //     locals + pushToServer els puja al cloud per a futurs dispositius.
+  //   - Espai EXISTENT (cloud té dades reals) → onRemoteData els ha
+  //     escrit dins els 1.5 s; el check no fa res.
+  //   - Sense connexió → defaults locals; pushToServer s'encarregarà
+  //     més tard.
+  try {
+    if (sessionStorage.getItem('eatmefirst_just_switched_space') === '1' && window.SpacesSystem) {
+      setTimeout(() => {
+        try { window.SpacesSystem.initSpaceDefaultsAfterSwitch(); }
+        catch (e) { console.warn('[Spaces] post-switch defaults check error', e); }
+      }, 1500);
+    }
+  } catch (e) {}
+
   // Inicia notificacions
   initNotifications();
 

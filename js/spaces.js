@@ -222,8 +222,64 @@ function switchToSpace(targetSpaceId) {
     try { localStorage.removeItem('eatmefirst_sync_code'); } catch (e) {}
   }
 
+  // 5) Marcador volàtil per al boot post-reload. Quan apareix aquesta
+  //    clau a sessionStorage, app.js sap que acabem de canviar d'espai
+  //    i ha de comprovar — després d'esperar la snapshot del cloud —
+  //    si cal inicialitzar valors per defecte (botigues del país).
+  //    sessionStorage és perfecte: sobreviu el reload però NO la
+  //    pestanya, així mai s'autoinicialitza fora de context.
+  try { sessionStorage.setItem('eatmefirst_just_switched_space', '1'); } catch (e) {}
+
   console.log('[Spaces] Switch a "' + (target.name || target.id) + '"', backupOk ? '(backup OK)' : '(sense backup)');
   return { ok: true, target, backupOk };
+}
+
+
+// Inicialitza valors per defecte per a un Espai nou si encara queden
+// buits després que la snapshot inicial de Firebase hagi tingut temps
+// de respondre. Per ara: només botigues (initSupermarketsForCountry).
+//
+// L'ha de cridar app.js poc després de initSync() — i NOMÉS si està
+// present el marcador 'eatmefirst_just_switched_space' (vegeu el final
+// de switchToSpace). Així mai s'executa en boots normals.
+//
+// El timeout perquè la snapshot tingui temps d'arribar és
+// responsabilitat del cridador.
+function initSpaceDefaultsAfterSwitch() {
+  try { sessionStorage.removeItem('eatmefirst_just_switched_space'); } catch (e) {}
+  // Releix supermarkets DIRECTAMENT del localStorage — la variable
+  // global `supermarkets` (a js/shops.js) pot no estar sincronitzada
+  // amb el que onRemoteData acaba d'escriure.
+  let smList = [];
+  try {
+    const raw = localStorage.getItem('eatmefirst_supermarkets');
+    smList = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(smList)) smList = [];
+  } catch (e) { smList = []; }
+  if (smList.length > 0) {
+    console.log('[Spaces] Espai amb botigues, no cal inicialitzar (n=' + smList.length + ')');
+    return false;
+  }
+  // Buit: inicialitzem amb les botigues del país. initSupermarketsForCountry
+  // llegeix el país, escriu localStorage + saveShoppingData (que crida
+  // pushToServer per replicar-ho al cloud).
+  if (typeof initSupermarketsForCountry !== 'function') {
+    console.warn('[Spaces] initSupermarketsForCountry no disponible');
+    return false;
+  }
+  const country = (function () {
+    try { return localStorage.getItem('eatmefirst_country') || 'ES'; }
+    catch (e) { return 'ES'; }
+  })();
+  initSupermarketsForCountry(country);
+  console.log('[Spaces] Botigues per defecte inicialitzades per a país', country);
+  // Re-renderitza el BuyMe si està visible perquè l'usuari les vegi
+  // immediatament.
+  try {
+    if (typeof renderSupermarkets === 'function') renderSupermarkets();
+    if (typeof renderHome === 'function') renderHome();
+  } catch (e) {}
+  return true;
 }
 
 
@@ -281,6 +337,7 @@ window.SpacesSystem = {
   setSpaceIcon,
   updateSpaceSyncCode,
   switchToSpace,
+  initSpaceDefaultsAfterSwitch,
   migrateToSpaces,
   ICON_OPTIONS: SPACES_ICON_OPTIONS,
   PER_SPACE_KEYS: SPACES_PER_SPACE_KEYS,
