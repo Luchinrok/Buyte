@@ -523,6 +523,14 @@ function _renderShopPageItems(smId, listEl, mode) {
     const isLast = idx === items.length - 1;
     const div = document.createElement('div');
     div.className = 'shopping-item' + (mode === 'edit' ? ' shopping-item-edit-mode' : '');
+    // data-item-id al .shopping-item (no només als botons d'acció
+    // interns) habilita la delegation de long-press i el toggle de
+    // selecció múltiple — vegeu _onShoppingTouchStart i
+    // _onShoppingItemClickInSelection a aquest mateix fitxer.
+    // Sense aquest atribut, el closest('.shopping-item') trobava el
+    // div però la comprovació `dataset.itemId` fallava silenciosament
+    // i el mode selecció no s'activava mai.
+    div.dataset.itemId = item.id;
     const meta = item.notes
       ? `<p class="shopping-item-meta">${escapeHtml(item.notes)}</p>`
       : '';
