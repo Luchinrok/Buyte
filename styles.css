@@ -1235,37 +1235,108 @@ h1 {
   line-height: 1.4;
 }
 
-/* Avís permanent a la pestanya Còpies que explica quin és l'abast
-   real d'aquestes còpies (locals, no protegeixen contra pèrdua del
-   mòbil) i recomana Firebase sync + export per a una protecció total.
-   To informatiu (blau cyan) per distingir-lo del recordatori urgent
-   (.backup-export-reminder, ambré). */
-.backup-scope-notice {
-  background: rgba(33, 150, 243, 0.1);
-  border: 1px solid rgba(33, 150, 243, 0.3);
+/* Banners explicatius curts a les pestanyes de Configuració > Dades.
+   Tres variants de color (warning vermell suau, info blau suau,
+   success verd suau) que s'utilitzen una per pestanya per donar
+   consistència visual a les explicacions del que fa cadascuna. El
+   botó "Saber-ne més" obre un modal amb la versió detallada (vegeu
+   _showInfoModal a js/settings.js). */
+.info-banner {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
   border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  align-items: flex-start;
 }
-.backup-scope-notice-title {
+
+.info-banner-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  line-height: 1.1;
+}
+
+.info-banner-content {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.info-banner-content strong {
+  display: block;
+  margin-bottom: 4px;
   font-size: 14px;
-  font-weight: 700;
-  color: #1565C0;
-  margin: 0 0 6px 0;
-  line-height: 1.3;
 }
-.backup-scope-notice-text {
-  font-size: 12.5px;
-  color: var(--text-soft);
-  margin: 4px 0;
-  line-height: 1.45;
+
+.info-banner-content p {
+  margin: 0 0 8px 0;
 }
-:root[data-theme="dark"] .backup-scope-notice {
-  background: rgba(33, 150, 243, 0.15);
-  border-color: rgba(33, 150, 243, 0.4);
+
+.info-banner-more {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.85;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
-:root[data-theme="dark"] .backup-scope-notice-title {
-  color: #90CAF9;
+.info-banner-more:hover { opacity: 1; }
+.info-banner-more:active { opacity: 0.7; }
+
+.banner-warning {
+  background: #FEF2F2;
+  color: #991B1B;
+  border: 1px solid #FECACA;
+}
+.banner-info {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
+}
+.banner-success {
+  background: #F0FDF4;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+}
+
+:root[data-theme="dark"] .banner-warning {
+  background: rgba(254, 226, 226, 0.08);
+  color: #FCA5A5;
+  border-color: rgba(252, 165, 165, 0.3);
+}
+:root[data-theme="dark"] .banner-info {
+  background: rgba(191, 219, 254, 0.08);
+  color: #93C5FD;
+  border-color: rgba(147, 197, 253, 0.3);
+}
+:root[data-theme="dark"] .banner-success {
+  background: rgba(187, 247, 208, 0.08);
+  color: #86EFAC;
+  border-color: rgba(134, 239, 172, 0.3);
+}
+
+/* Modal "Saber-ne més" — paràgrafs amb white-space:pre-line per
+   suportar salts de línia dins els bullets dels missatges (cf.
+   exportInfoP2, backupsInfoP2). */
+.info-modal-content {
+  max-width: 420px;
+}
+.info-modal-body {
+  text-align: left;
+  margin: 4px 0 8px;
+}
+.info-modal-paragraph {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.55;
+  margin: 8px 0;
+  white-space: pre-line;
 }
 
 /* Recordatori inline quan fa molt que no s'exporta. Banner suau ambré

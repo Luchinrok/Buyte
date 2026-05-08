@@ -1464,10 +1464,9 @@ function renderSettingsData() {
   if (!area) return;
 
   if (activeDataTab === 'esborrar') {
-    // Subtítols estàtics que descriuen l'acció. Els comptadors s'han mogut
-    // fora per evitar la repetició "Esborrar X" + "X productes" — el
-    // títol diu el què, el subtítol diu què s'esborra.
+    // Banner curt explicatiu (vermell suau) + cards d'esborrats individuals.
     area.innerHTML =
+      _renderInfoBanner('warning', '⚠️', t('eraseBannerTitle'), t('eraseBannerText'), 'erase') +
       '<div class="settings-cards reset-data-cards">' +
         _resetCardHtml('eatme',         '🥗', 'resetBitemeTitle',        t('resetBitemeSub'),        false) +
         _resetCardHtml('shopping',      '🛒', 'resetShoppingTitle',      t('resetShoppingSub'),      false) +
@@ -1479,9 +1478,9 @@ function renderSettingsData() {
       '<div class="reset-data-divider"></div>' +
       _resetCardHtml('all', '🗑️', 'resetAllTitle', t('cantUndo'), true);
   } else if (activeDataTab === 'data') {
-    // Pestanya combinada Exportar + Importar. Dos blocs centrats separats
-    // per un divisor: descàrrega de backup JSON i pujada d'un fitxer.
+    // Banner curt (blau suau) + Exportar + Importar.
     area.innerHTML =
+      _renderInfoBanner('info', '💾', t('exportBannerTitle'), t('exportBannerText'), 'export') +
       '<div class="data-action-block">' +
         '<div class="data-action-emoji">📤</div>' +
         '<p class="data-action-title">' + escapeHtml(t('downloadDataTitle')) + '</p>' +
@@ -1497,8 +1496,25 @@ function renderSettingsData() {
       '</div>';
   } else if (activeDataTab === 'copies') {
     // Pestanya de gestió de còpies de seguretat locals. Vegeu js/backup.js.
+    // El banner verd informatiu el renderitza renderBackupsTab a dalt
+    // (substitueix el banner cian "scope notice" antic).
     renderBackupsTab(area);
   }
+}
+
+// Helper compartit per a banners curts informatius a les pestanyes de
+// Configuració > Dades. Tres variants: 'warning' (vermell suau),
+// 'info' (blau suau), 'success' (verd suau). El botó "Saber-ne més"
+// té data-info=infoKey i el handle el captura el delegate de l'area.
+function _renderInfoBanner(variant, icon, title, text, infoKey) {
+  return '<div class="info-banner banner-' + variant + '">' +
+    '<div class="info-banner-icon">' + icon + '</div>' +
+    '<div class="info-banner-content">' +
+      '<strong>' + escapeHtml(title) + '</strong>' +
+      '<p>' + escapeHtml(text) + '</p>' +
+      '<button type="button" class="info-banner-more" data-info="' + escapeHtml(infoKey) + '">' + escapeHtml(t('infoBannerMore')) + '</button>' +
+    '</div>' +
+  '</div>';
 }
 
 // Renderitza el contingut de la pestanya "Còpies": resum + botons
@@ -1548,18 +1564,17 @@ function renderBackupsTab(area) {
     ? '<p class="backup-empty">' + escapeHtml(t('backupsEmpty')) + '</p>'
     : '<div class="backup-list">' + rows + '</div>';
 
-  // Avís d'abast: l'usuari ha de saber que aquestes còpies viuen al
-  // mòbil i NO el protegeixen si perd el dispositiu. Per a aquell cas
-  // li recomanem Firebase sync + exportar a fitxer. Mateix to que els
-  // banners d'alerta del recordatori d'export (.backup-export-reminder)
-  // però amb classe pròpia per donar-li un estil diferent (informatiu,
-  // no urgent).
-  const scopeNoticeBlock =
-    '<div class="backup-scope-notice">' +
-      '<p class="backup-scope-notice-title">' + escapeHtml(t('backupsScopeNoticeTitle')) + '</p>' +
-      '<p class="backup-scope-notice-text">' + escapeHtml(t('backupsScopeNotice')) + '</p>' +
-      '<p class="backup-scope-notice-text">' + escapeHtml(t('backupsScopeNoticeAction')) + '</p>' +
-    '</div>';
+  // Banner verd suau (info-banner banner-success) amb el resum curt i
+  // el botó "Saber-ne més" que obre el modal explicatiu detallat.
+  // Substitueix l'antic banner cian (.backup-scope-notice) amb un estil
+  // unificat amb les altres dues pestanyes de Dades.
+  const scopeNoticeBlock = _renderInfoBanner(
+    'success',
+    '🛡️',
+    t('backupsBannerTitle'),
+    t('backupsBannerText'),
+    'backups'
+  );
 
   area.innerHTML =
     reminderBlock +
@@ -1635,6 +1650,61 @@ function _confirmRestoreBackup(timestamp) {
       setTimeout(() => window.location.reload(), reloadDelay);
     }
   );
+}
+
+// Modal informatiu d'una sola acció ("Entesos") per als botons
+// "Saber-ne més" dels banners de Configuració > Dades. Accepta un
+// array de paràgrafs (cadascun pot contenir \n per a salts dins el
+// mateix paràgraf — es renderitza amb white-space:pre-line via la
+// classe .info-modal-paragraph).
+function _showInfoModal(emoji, title, paragraphs) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const paraHtml = (paragraphs || []).map(p =>
+    '<p class="info-modal-paragraph">' + escapeHtml(p) + '</p>'
+  ).join('');
+  overlay.innerHTML =
+    '<div class="modal-content info-modal-content">' +
+      '<div class="modal-emoji-big">' + emoji + '</div>' +
+      '<p class="modal-title">' + escapeHtml(title) + '</p>' +
+      '<div class="info-modal-body">' + paraHtml + '</div>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-confirm" id="info-modal-close">' + escapeHtml(t('infoModalClose')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#info-modal-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
+// Mapa dels modals "Saber-ne més". Cada entrada té emoji, títol i
+// paràgrafs. Es referencia per la clau (data-info attribute al
+// botó del banner) — vegeu _renderInfoBanner i el delegate de
+// l'area a attachSettingsDataListeners.
+function _getInfoModalConfig(key) {
+  if (key === 'erase') {
+    return {
+      emoji: '🗑️',
+      title: t('eraseInfoTitle'),
+      paragraphs: [t('eraseInfoP1'), t('eraseInfoP2'), t('eraseInfoP3')]
+    };
+  }
+  if (key === 'export') {
+    return {
+      emoji: '📁',
+      title: t('exportInfoTitle'),
+      paragraphs: [t('exportInfoP1'), t('exportInfoP2'), t('exportInfoP3')]
+    };
+  }
+  if (key === 'backups') {
+    return {
+      emoji: '💾',
+      title: t('backupsInfoTitle'),
+      paragraphs: [t('backupsInfoP1'), t('backupsInfoP2'), t('backupsInfoP3'), t('backupsInfoP4')]
+    };
+  }
+  return null;
 }
 
 // Construeix un toast informatiu amb les xifres del que s'acaba
@@ -1716,6 +1786,14 @@ function attachSettingsDataListeners() {
   if (area && !area.__resetBound) {
     area.__resetBound = true;
     area.addEventListener('click', (e) => {
+      // Botó "Saber-ne més" dels banners informatius — té prioritat per
+      // si està dins una card que també té un altre data-action.
+      const moreBtn = e.target.closest && e.target.closest('.info-banner-more');
+      if (moreBtn) {
+        const cfg = _getInfoModalConfig(moreBtn.dataset.info);
+        if (cfg) _showInfoModal(cfg.emoji, cfg.title, cfg.paragraphs);
+        return;
+      }
       const resetBtn = e.target.closest && e.target.closest('[data-reset-action]');
       if (resetBtn) {
         switch (resetBtn.dataset.resetAction) {
