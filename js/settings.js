@@ -1600,13 +1600,42 @@ function _confirmRestoreBackup(timestamp) {
         return;
       }
       showToast('✅ ' + t('backupsRestoreDone'));
+      // Si Firebase sync està actiu, pujar l'estat restaurat al cloud
+      // ABANS del reload — vegeu el comentari paral·lel a importData.
+      // Sense això, la sync silenciosament desfaria la restauració.
+      const reloadDelay = _syncImportedStateToCloud() ? 1800 : 600;
       // Recarrega la pàgina perquè totes les vistes (productes, llistes,
       // receptes, etc.) llegeixin l'estat acabat de restaurar des del
       // localStorage. Més senzill i segur que intentar refrescar a mà
       // cada mòdul.
-      setTimeout(() => window.location.reload(), 600);
+      setTimeout(() => window.location.reload(), reloadDelay);
     }
   );
+}
+
+// Helper compartit per importData i _confirmRestoreBackup. Si Firebase
+// sync està actiu, llegeix l'estat actual del localStorage (just acabat
+// d'escriure per l'import/restore) i el puja al cloud. Retorna true si
+// s'ha disparat la pujada (i per tant cal allargar el delay del reload
+// perquè el debounce de FBSync.upload — 1000ms — tingui temps de
+// completar-se), false si no calia.
+function _syncImportedStateToCloud() {
+  if (!window.FBSync || typeof window.FBSync.isConnected !== 'function') return false;
+  if (!window.FBSync.isConnected()) return false;
+  try {
+    const payload = {
+      products: JSON.parse(localStorage.getItem('eatmefirst_products') || '[]'),
+      locations: JSON.parse(localStorage.getItem('eatmefirst_locations') || '[]'),
+      stats: JSON.parse(localStorage.getItem('eatmefirst_stats') || '{}'),
+      supermarkets: JSON.parse(localStorage.getItem('eatmefirst_supermarkets') || '[]'),
+      shoppingItems: JSON.parse(localStorage.getItem('eatmefirst_shopping_items') || '[]')
+    };
+    window.FBSync.upload(payload);
+    return true;
+  } catch (e) {
+    console.warn('[Import/Restore] could not push imported state to Firebase:', e);
+    return false;
+  }
 }
 
 function _confirmDeleteBackup(timestamp) {
@@ -2371,8 +2400,16 @@ function importData() {
             const val = json.data[k];
             localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
           });
+          // CRÍTIC quan Firebase sync està actiu: cal pujar l'estat
+          // acabat d'importar al cloud ABANS del reload. Sense això,
+          // initSync() es reconnecta després del reload, onSnapshot
+          // rep l'estat del cloud (que és el d'ABANS de l'import,
+          // perquè el cloud no s'ha actualitzat) i onRemoteData
+          // sobreescriu silenciosament les dades acabades d'importar.
+          // L'usuari ho viu com "l'import no fa res".
+          const reloadDelay = _syncImportedStateToCloud() ? 1800 : 800;
           showToast(t('importDone'));
-          setTimeout(() => location.reload(), 800);
+          setTimeout(() => location.reload(), reloadDelay);
         }
       );
     };
