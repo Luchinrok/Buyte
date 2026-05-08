@@ -1390,6 +1390,11 @@ function openProduct(id) {
 
   const backBtn = document.querySelector('#screen-product .back-btn');
   if (backBtn) backBtn.dataset.back = productDetailBack;
+  // Visibilitat del botó "Moure a un altre Espai" — depèn de si hi
+  // ha algun altre Espai amb syncCode disponible (Fase A de Spaces).
+  if (typeof window.refreshMoveProductBtn === 'function') {
+    try { window.refreshMoveProductBtn(); } catch (e) {}
+  }
   showScreen('product');
 }
 

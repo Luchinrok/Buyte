@@ -142,6 +142,40 @@ function uploadData(data) {
   }, 1000); // espera 1 segon
 }
 
+// Llegeix UN camp d'una llista per codi, SENSE canviar la connexió/listener
+// actual. Útil per llegir dades d'un altre Espai en operacions com
+// "Moure producte a un altre espai" (vegeu Phase A de Spaces).
+async function readListData(code, dataKey) {
+  if (!code || !dataKey) return null;
+  if (!fbReady) {
+    const ok = await initFirebase();
+    if (!ok) throw new Error('Firebase not ready');
+  }
+  const { doc, getDoc } = window.__firestoreModule;
+  const ref = doc(fbDb, 'lists', code);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return (typeof data[dataKey] !== 'undefined') ? data[dataKey] : null;
+}
+
+// Escriu UN camp d'una llista per codi (merge: true), SENSE tocar la
+// resta de camps ni la connexió actual. Setja updatedAt al timestamp.
+async function writeListData(code, dataKey, value) {
+  if (!code || !dataKey) throw new Error('Code and dataKey required');
+  if (!fbReady) {
+    const ok = await initFirebase();
+    if (!ok) throw new Error('Firebase not ready');
+  }
+  const { doc, setDoc } = window.__firestoreModule;
+  const ref = doc(fbDb, 'lists', code);
+  const payload = {};
+  payload[dataKey] = value;
+  payload.updatedAt = Date.now();
+  await setDoc(ref, payload, { merge: true });
+  return true;
+}
+
 // API exposada
 window.FBSync = {
   init: initFirebase,
@@ -151,6 +185,8 @@ window.FBSync = {
   connectToList: connectToList,
   disconnect: disconnect,
   upload: uploadData,
+  readListData: readListData,
+  writeListData: writeListData,
   isReady: () => fbReady,
   getCurrentListId: () => currentListId,
   isConnected: () => !!currentListId

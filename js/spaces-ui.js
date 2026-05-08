@@ -252,6 +252,142 @@ if (typeof document !== 'undefined') {
 }
 
 
+// ----- Moure UN producte EatMe a un altre Espai (FASE A) -----
+//
+// El botó #btn-move-product viu al detall del producte. La seva
+// visibilitat depèn de si hi ha algun altre Espai amb syncCode al
+// SpacesSystem; openProduct (js/biteme.js) crida _refreshMoveProductBtn
+// cada vegada que pinta el detall.
+//
+// L'operació de moure és transaccional en el sentit pràctic: PRIMER
+// escrivim al Firebase del destí, i NOMÉS si això té èxit esborrem el
+// producte de l'origen. Si falla a meitat, l'usuari té el producte
+// als 2 llocs (un duplicat és preferible a perdre dades).
+function _refreshMoveProductBtn() {
+  const btn = document.getElementById('btn-move-product');
+  if (!btn) return;
+  const SS = window.SpacesSystem;
+  const targets = SS && typeof SS.getAvailableSpacesForMove === 'function'
+    ? SS.getAvailableSpacesForMove()
+    : [];
+  // Amaguem el botó si no hi ha cap destí. Així evitem mostrar una
+  // acció que sempre seria un dead-end ("no hi ha cap espai").
+  btn.style.display = targets.length > 0 ? 'flex' : 'none';
+}
+window.refreshMoveProductBtn = _refreshMoveProductBtn;
+
+function _showMoveProductModal(product) {
+  if (!product) return;
+  const SS = window.SpacesSystem;
+  if (!SS || !window.FBSync) {
+    showToast(t('syncErrorOffline'));
+    return;
+  }
+  const targets = SS.getAvailableSpacesForMove();
+  if (targets.length === 0) {
+    showToast(t('moveProductNoSpaces'));
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const optionsHtml = targets.map(s =>
+    '<button type="button" class="space-option" data-space-id="' + escapeHtml(s.id) + '">' +
+      '<span class="space-option-icon">' + escapeHtml(s.icon || '🏠') + '</span>' +
+      '<span class="space-option-name">' + escapeHtml(s.name || '') + '</span>' +
+      '<span class="space-option-arrow">›</span>' +
+    '</button>'
+  ).join('');
+  overlay.innerHTML =
+    '<div class="modal-content space-modal-content">' +
+      '<div class="modal-emoji-big">📦</div>' +
+      '<p class="modal-title">' + escapeHtml(t('moveProductTitle')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('moveProductIntro', (product.emoji || '') + ' ' + (product.name || ''))) + '</p>' +
+      '<div class="space-options">' + optionsHtml + '</div>' +
+      '<div class="info-banner banner-info" style="margin-top: 12px;">' +
+        '<div class="info-banner-icon">ℹ️</div>' +
+        '<div class="info-banner-content"><p>' + escapeHtml(t('moveProductInfo')) + '</p></div>' +
+      '</div>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="move-product-cancel">' + escapeHtml(t('cancel')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#move-product-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelectorAll('.space-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.spaceId;
+      const target = targets.find(s => s.id === id);
+      if (!target) return;
+      close();
+      _executeMoveProduct(product, target);
+    });
+  });
+}
+
+async function _executeMoveProduct(product, targetSpace) {
+  if (!product || !targetSpace || !targetSpace.syncCode) return;
+  // Reutilitzem el mateix overlay que el switch — passem text custom
+  // perquè digui "Movent producte…" en lloc de "Canviant a …".
+  _showSwitchingOverlay({ icon: '📦' }, t('moveProductInProgress'));
+  try {
+    const ok = await window.FBSync.init();
+    if (!ok) throw new Error('Firebase init failed');
+
+    // 1) Llegim els productes actuals del destí
+    const existing = await window.FBSync.readListData(targetSpace.syncCode, 'products');
+    const targetList = Array.isArray(existing) ? existing.slice() : [];
+
+    // 2) Construïm la còpia que afegim al destí. Mantenim TOTS els
+    //    camps del producte (caducitat, zona, qty, emoji, frozenDate,
+    //    consumedPercent, etc.) — només refrescem l'id per evitar
+    //    col·lisions amb un producte ja existent al destí.
+    const moved = Object.assign({}, product, {
+      id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+    });
+    targetList.push(moved);
+
+    // 3) Escrivim al destí. Si això llança, sortim sense tocar res
+    //    més — el producte segueix sencer a l'Espai actual.
+    await window.FBSync.writeListData(targetSpace.syncCode, 'products', targetList);
+
+    // 4) Esborrem de l'Espai actual: actualitzem la variable global
+    //    `products` (a js/biteme.js) i invoquem saveData() — això
+    //    persisteix a localStorage i empeny a Firebase via pushToServer.
+    if (typeof products !== 'undefined' && Array.isArray(products)) {
+      products = products.filter(p => p.id !== product.id);
+      if (typeof saveData === 'function') saveData();
+    } else {
+      // Fallback defensiu si la variable global no és accessible.
+      try {
+        const local = JSON.parse(localStorage.getItem('eatmefirst_products') || '[]');
+        const filtered = local.filter(p => p.id !== product.id);
+        localStorage.setItem('eatmefirst_products', JSON.stringify(filtered));
+      } catch (e) {}
+    }
+
+    // 5) Tanquem currentProduct + tornem on érem (Section / List /
+    //    View All / Alerts) com fan les altres accions del producte
+    //    (consumed/trashed/deleted via navigateAfterAction).
+    if (typeof currentProduct !== 'undefined') currentProduct = null;
+    _hideSwitchingOverlay();
+    showToast(t('moveProductDone', product.name || '', (targetSpace.icon || '') + ' ' + (targetSpace.name || '')));
+    if (typeof navigateAfterAction === 'function') navigateAfterAction();
+    else if (typeof renderHome === 'function') { renderHome(); showScreen('launcher'); }
+  } catch (e) {
+    _hideSwitchingOverlay();
+    console.error('[Move] error:', e);
+    showToast(t('moveProductError'));
+  }
+}
+
+function _hideSwitchingOverlay() {
+  const ov = document.getElementById('space-switching-overlay');
+  if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+}
+
+
 // ----- Switch d'Espai actiu (FASE 4) -----
 //
 // Demana confirmació, fa el switch (que esborra dades per-espai i
@@ -317,15 +453,16 @@ function _doSwitchWithOverlay(spaceId) {
   }, 60);
 }
 
-function _showSwitchingOverlay(target) {
+function _showSwitchingOverlay(target, customText) {
   // Si ja hi ha un overlay, no en posis dos.
   if (document.getElementById('space-switching-overlay')) return;
   const ov = document.createElement('div');
   ov.id = 'space-switching-overlay';
+  const text = customText || t('spacesSwitchingTo', (target && target.name) || '');
   ov.innerHTML =
     '<div class="space-switching-card">' +
       '<div class="space-switching-spinner">' + escapeHtml((target && target.icon) || '⏳') + '</div>' +
-      '<p class="space-switching-text">' + escapeHtml(t('spacesSwitchingTo', (target && target.name) || '')) + '</p>' +
+      '<p class="space-switching-text">' + escapeHtml(text) + '</p>' +
     '</div>';
   document.body.appendChild(ov);
 }
@@ -616,5 +753,7 @@ window.SpacesUI = {
   renderSpaceSelectorBar,
   renderSpacesList,
   openSpacesScreen,
-  attachSpacesScreenListeners
+  attachSpacesScreenListeners,
+  showMoveProductModal: _showMoveProductModal,
+  refreshMoveProductBtn: _refreshMoveProductBtn
 };

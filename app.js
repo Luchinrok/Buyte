@@ -66,6 +66,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof openCookMeForProduct === 'function') openCookMeForProduct(currentProduct);
   });
 
+  // Botó "📦 Moure a un altre espai" del detall del producte (Fase A de
+  // Spaces). El handler obre el modal de selecció i, en confirmar,
+  // executa la lògica de moure (escriu al destí Firebase, esborra de
+  // l'origen). La visibilitat del botó la controla _refreshMoveProductBtn
+  // — vegeu openProduct a js/biteme.js.
+  const btnMoveProduct = document.getElementById('btn-move-product');
+  if (btnMoveProduct) btnMoveProduct.addEventListener('click', () => {
+    if (!currentProduct) return;
+    if (window.SpacesUI && typeof window.SpacesUI.showMoveProductModal === 'function') {
+      window.SpacesUI.showMoveProductModal(currentProduct);
+    }
+  });
+
   // Botó únic "Editar producte" — reutilitza screen-add en mode edició
   const btnEditProduct = document.getElementById('btn-edit-product');
   if (btnEditProduct) btnEditProduct.addEventListener('click', () => {

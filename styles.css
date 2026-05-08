@@ -2786,6 +2786,81 @@ h1 {
   transform: scale(0.98);
 }
 
+/* Botó "📦 Moure a un altre espai" del detall del producte (Fase A
+   de Spaces). Mateixa forma que add-to-buyme i recipes-from-product
+   per donar continuïtat visual a les opcions de la part inferior;
+   color índigo per distingir-lo dels altres dos (compra vs receptes
+   vs gestió d'espais). */
+.move-product-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #5C6BC0 0%, #283593 100%);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  box-shadow: 0 3px 10px rgba(63, 81, 181, 0.35);
+  transition: transform 0.1s;
+}
+.move-product-btn:active {
+  transform: scale(0.98);
+}
+
+/* Llista d'Espais destí dins del modal de "Moure producte". */
+.space-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+.space-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: left;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.space-option:hover {
+  border-color: var(--primary);
+  background: var(--bg-secondary);
+}
+.space-option:active { transform: scale(0.98); }
+.space-option-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.space-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.space-option-arrow {
+  color: var(--text-soft);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
 /* ===== FLETXES D'ORDRE (amunt/avall) ===== */
 .manage-sm-arrows,
 .shopping-item-arrows {

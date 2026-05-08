@@ -93,6 +93,15 @@ function getSpaceById(id) {
   return _spacesRead().find(s => s.id === id) || null;
 }
 
+// Espais possibles destí per a un "Moure a un altre espai":
+// excloem l'Espai actiu (no té sentit moure a tu mateix) i els que no
+// tenen syncCode (sense codi no podem llegir/escriure-hi a Firebase).
+function getAvailableSpacesForMove() {
+  const all = _spacesRead();
+  const activeId = getActiveSpaceId();
+  return all.filter(s => s.id !== activeId && !!s.syncCode);
+}
+
 
 // ----- Mutacions -----
 
@@ -330,6 +339,7 @@ window.SpacesSystem = {
   getActiveSpace,
   getActiveSpaceId,
   getSpaceById,
+  getAvailableSpacesForMove,
   setActiveSpace,
   createSpace,
   deleteSpace,
