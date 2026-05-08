@@ -682,6 +682,13 @@ function openShoppingItemEdit(item) {
   const delBtn = document.getElementById('btn-delete-shopping-item');
   if (delBtn) delBtn.style.display = isNew ? 'none' : 'block';
 
+  // Visibilitat del botó "Moure a un altre Espai" (Fase B). Mostrem
+  // només si estem editant un item ja desat (isNew=false) i hi ha
+  // algun altre Espai destí amb syncCode.
+  if (typeof window.refreshMoveShoppingItemBtn === 'function') {
+    try { window.refreshMoveShoppingItemBtn(!isNew); } catch (e) {}
+  }
+
   // Selector de botiga: només si estem editant
   const shopGroup = document.getElementById('shop-selector-group');
   const shopSelect = document.getElementById('input-shopping-shop');

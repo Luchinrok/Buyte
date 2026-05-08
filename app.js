@@ -662,6 +662,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnDelItem = document.getElementById('btn-delete-shopping-item');
   if (btnDelItem) btnDelItem.addEventListener('click', deleteShoppingItem);
 
+  // Botó "📦 Moure a un altre espai" del detall d'edició de l'item de
+  // compra (Fase B de Spaces). Només visible quan editingShoppingItem
+  // existeix i hi ha algun Espai destí — vegeu _refreshMoveShoppingItemBtn.
+  const btnMoveItem = document.getElementById('btn-move-shopping-item');
+  if (btnMoveItem) btnMoveItem.addEventListener('click', () => {
+    if (typeof editingShoppingItem === 'undefined' || !editingShoppingItem) return;
+    if (window.SpacesUI && typeof window.SpacesUI.showMoveShoppingItemModal === 'function') {
+      window.SpacesUI.showMoveShoppingItemModal(editingShoppingItem);
+    }
+  });
+
   // Inicia sincronització si ja teníem codi guardat
   initSync();
 

@@ -388,6 +388,126 @@ function _hideSwitchingOverlay() {
 }
 
 
+// ----- Moure UN item de la llista de compra (Fase B) -----
+//
+// Mateix patró que la Fase A però per a items de BuyMe. El botó viu a
+// #screen-shopping-item-edit (la pantalla d'edició d'un item ja
+// existent). _refreshMoveShoppingItemBtn ajusta la visibilitat:
+//   - amaga si no hi ha cap Espai destí amb syncCode
+//   - amaga també si estem creant un item nou (el botó només té sentit
+//     per a items ja desats; per a un nou, l'usuari encara no l'ha
+//     guardat).
+function _refreshMoveShoppingItemBtn(isExisting) {
+  const btn = document.getElementById('btn-move-shopping-item');
+  if (!btn) return;
+  const SS = window.SpacesSystem;
+  const targets = SS && typeof SS.getAvailableSpacesForMove === 'function'
+    ? SS.getAvailableSpacesForMove()
+    : [];
+  const show = !!isExisting && targets.length > 0;
+  btn.style.display = show ? 'flex' : 'none';
+}
+window.refreshMoveShoppingItemBtn = _refreshMoveShoppingItemBtn;
+
+function _showMoveShoppingItemModal(item) {
+  if (!item) return;
+  const SS = window.SpacesSystem;
+  if (!SS || !window.FBSync) {
+    showToast(t('syncErrorOffline'));
+    return;
+  }
+  const targets = SS.getAvailableSpacesForMove();
+  if (targets.length === 0) {
+    showToast(t('moveProductNoSpaces'));
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const optionsHtml = targets.map(s =>
+    '<button type="button" class="space-option" data-space-id="' + escapeHtml(s.id) + '">' +
+      '<span class="space-option-icon">' + escapeHtml(s.icon || '🏠') + '</span>' +
+      '<span class="space-option-name">' + escapeHtml(s.name || '') + '</span>' +
+      '<span class="space-option-arrow">›</span>' +
+    '</button>'
+  ).join('');
+  overlay.innerHTML =
+    '<div class="modal-content space-modal-content">' +
+      '<div class="modal-emoji-big">📦</div>' +
+      '<p class="modal-title">' + escapeHtml(t('moveShoppingItemTitle')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('moveShoppingItemIntro', (item.emoji || '') + ' ' + (item.name || ''))) + '</p>' +
+      '<div class="space-options">' + optionsHtml + '</div>' +
+      '<div class="info-banner banner-info" style="margin-top: 12px;">' +
+        '<div class="info-banner-icon">ℹ️</div>' +
+        '<div class="info-banner-content"><p>' + escapeHtml(t('moveShoppingItemInfo')) + '</p></div>' +
+      '</div>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="move-shopping-cancel">' + escapeHtml(t('cancel')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#move-shopping-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelectorAll('.space-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.spaceId;
+      const target = targets.find(s => s.id === id);
+      if (!target) return;
+      close();
+      _executeMoveShoppingItem(item, target);
+    });
+  });
+}
+
+async function _executeMoveShoppingItem(item, targetSpace) {
+  if (!item || !targetSpace || !targetSpace.syncCode) return;
+  _showSwitchingOverlay({ icon: '📦' }, t('moveShoppingItemInProgress'));
+  try {
+    const ok = await window.FBSync.init();
+    if (!ok) throw new Error('Firebase init failed');
+
+    // Importat: a la cloud, el camp s'anomena 'shoppingItems' (camelCase
+    // — vegeu onRemoteData a settings.js i la creació inicial a
+    // _showCreateSpaceModal). NO 'shopping' com deia la spec.
+    const existing = await window.FBSync.readListData(targetSpace.syncCode, 'shoppingItems');
+    const targetList = Array.isArray(existing) ? existing.slice() : [];
+    const moved = Object.assign({}, item, {
+      id: 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+    });
+    targetList.push(moved);
+    await window.FBSync.writeListData(targetSpace.syncCode, 'shoppingItems', targetList);
+
+    // Esborrem de l'origen via la variable global shoppingItems +
+    // saveShoppingData (que escriu localStorage 'eatmefirst_shopping_items'
+    // i empeny a Firebase via pushToServer).
+    if (typeof shoppingItems !== 'undefined' && Array.isArray(shoppingItems)) {
+      shoppingItems = shoppingItems.filter(i => i.id !== item.id);
+      if (typeof saveShoppingData === 'function') saveShoppingData();
+    } else {
+      try {
+        const local = JSON.parse(localStorage.getItem('eatmefirst_shopping_items') || '[]');
+        const filtered = local.filter(i => i.id !== item.id);
+        localStorage.setItem('eatmefirst_shopping_items', JSON.stringify(filtered));
+      } catch (e) {}
+    }
+
+    // Tornem a la llista del super, mateix patró que deleteShoppingItem.
+    if (typeof editingShoppingItem !== 'undefined') editingShoppingItem = null;
+    _hideSwitchingOverlay();
+    showToast(t('moveShoppingItemDone', item.name || '', (targetSpace.icon || '') + ' ' + (targetSpace.name || '')));
+    if (typeof openSupermarket === 'function' && typeof currentSupermarketId !== 'undefined') {
+      openSupermarket(currentSupermarketId, { preserveMode: true });
+    } else if (typeof showScreen === 'function') {
+      showScreen('shopping');
+    }
+  } catch (e) {
+    _hideSwitchingOverlay();
+    console.error('[MoveShopping] error:', e);
+    showToast(t('moveShoppingItemError'));
+  }
+}
+
+
 // ----- Switch d'Espai actiu (FASE 4) -----
 //
 // Demana confirmació, fa el switch (que esborra dades per-espai i
@@ -755,5 +875,7 @@ window.SpacesUI = {
   openSpacesScreen,
   attachSpacesScreenListeners,
   showMoveProductModal: _showMoveProductModal,
-  refreshMoveProductBtn: _refreshMoveProductBtn
+  refreshMoveProductBtn: _refreshMoveProductBtn,
+  showMoveShoppingItemModal: _showMoveShoppingItemModal,
+  refreshMoveShoppingItemBtn: _refreshMoveShoppingItemBtn
 };
