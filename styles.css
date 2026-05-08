@@ -2573,16 +2573,35 @@ h1 {
   transform: scale(0.97);
 }
 
-/* Distingeix subtilment quin botó d'ordenació de Tots els productes
-   està actiu. Tots tres tenen el mateix gradient verd; els inactius
-   queden amb opacitat reduïda perquè destaqui el seleccionat. */
-.view-all-toolbar .popular-tool-btn:not(.is-active) {
-  opacity: 0.55;
+/* Botons d'ordenació de #screen-view-all (Per caducitat / Per zona /
+   Calendari): override de l'estil per defecte de .popular-tool-btn
+   per donar-los l'aspecte unificat de "pill blanc amb borda verda"
+   compartit amb les pestanyes de zones (.zones-tab) i les del mode
+   del calendari (.calendar-mode-btn). Els inactius en blanc amb
+   borda; l'actiu amb gradient verd ple. */
+.view-all-toolbar {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.view-all-toolbar .popular-tool-btn {
+  flex: 0 0 auto;
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 13px;
   box-shadow: none;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.15s;
 }
 .view-all-toolbar .popular-tool-btn.is-active {
-  opacity: 1;
-  transform: scale(1.02);
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.35);
+  transform: scale(1.04);
 }
 
 .popular-row {
@@ -8340,8 +8359,8 @@ h1 {
   flex-wrap: wrap;
 }
 .calendar-mode-btn {
-  flex: 0 1 auto;
-  padding: 8px 14px;
+  flex: 0 0 auto;
+  padding: 8px 16px;
   border-radius: 999px;
   border: 2px solid var(--primary);
   background: transparent;
@@ -8350,7 +8369,7 @@ h1 {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.1s;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.15s;
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
 }
@@ -8359,7 +8378,9 @@ h1 {
   background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
   color: #FFFFFF;
   border-color: transparent;
-  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.35);
+  transform: scale(1.04);
 }
 
 /* Barra de navegació (← label → + atall "Avui") */

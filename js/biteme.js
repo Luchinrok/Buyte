@@ -175,11 +175,14 @@ function _renderViewAllCalendar(container) {
   const wrap = document.createElement('div');
   wrap.className = 'calendar-view';
 
-  // Selector de mode (Setmanal / Mensual / Diari)
+  // Selector de mode: ordre [Diari | Setmanal | Mensual] de menor a
+  // major granularitat. Setmanal és el centre i el mode per defecte
+  // (resetCalendarState el posa cada cop que s'entra al calendari, no
+  // es recorda l'última tria entre visites).
   const modes = [
+    { id: 'day',   label: t('calendarModeDay') },
     { id: 'week',  label: t('calendarModeWeek') },
-    { id: 'month', label: t('calendarModeMonth') },
-    { id: 'day',   label: t('calendarModeDay') }
+    { id: 'month', label: t('calendarModeMonth') }
   ];
   const modeBar = document.createElement('div');
   modeBar.className = 'calendar-mode-selector';
