@@ -63,6 +63,24 @@ function saveLocations() {
 
 let viewAllSortMode = 'expiry';
 
+// Estat compartit per a la vista calendari de Tots els productes.
+// mode: 'week' | 'month' | 'day' — què es mostra dins del contenidor.
+// currentDate: Date — l'ancoratge temporal (inici de setmana, mes,
+// o dia concret segons el mode).
+// Vegeu resetCalendarState i les funcions navigateCalendarPrev/Next.
+let calendarState = { mode: 'week', currentDate: null };
+
+function resetCalendarState() {
+  calendarState.mode = 'week';
+  calendarState.currentDate = _calendarStartOfDay(new Date());
+}
+
+function _calendarStartOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
 function openViewAll() {
   renderViewAll();
   showScreen('view-all');
@@ -72,6 +90,25 @@ function renderViewAll() {
   const container = document.getElementById('view-all-list');
   if (!container) return;
   container.innerHTML = '';
+
+  // Subratlla quin botó d'ordenació està actiu (visualment subtil però
+  // útil ara que en tenim tres). El delegate de clicks viu a app.js.
+  document.querySelectorAll('#screen-view-all .view-all-toolbar .popular-tool-btn').forEach(b => {
+    b.classList.remove('is-active');
+  });
+  const activeBtnId = viewAllSortMode === 'expiry' ? 'btn-sort-by-expiry'
+    : viewAllSortMode === 'zone' ? 'btn-sort-by-zone'
+    : viewAllSortMode === 'calendar' ? 'btn-sort-by-calendar' : '';
+  if (activeBtnId) {
+    const b = document.getElementById(activeBtnId);
+    if (b) b.classList.add('is-active');
+  }
+
+  if (viewAllSortMode === 'calendar') {
+    if (!calendarState.currentDate) resetCalendarState();
+    _renderViewAllCalendar(container);
+    return;
+  }
 
   if (products.length === 0) {
     const empty = document.createElement('p');
@@ -115,6 +152,316 @@ function renderViewAll() {
   } else {
     sorted.forEach(p => container.appendChild(buildViewAllRow(p)));
   }
+}
+
+// =============================================================
+//   VISTA CALENDARI a Tots els productes (3a opció d'ordenació)
+//   Modes: setmanal (per defecte) / mensual / diari
+// =============================================================
+
+// Bounds de navegació: l'usuari pot mirar fins a 30 dies enrere
+// (productes ja caducats) i 1 any endavant (congelador a llarg termini).
+const _CAL_MIN_DAYS = -30;
+const _CAL_MAX_DAYS = 365;
+
+function _calendarBoundsClamp() {
+  const today = _calendarStartOfDay(new Date());
+  const min = new Date(today); min.setDate(min.getDate() + _CAL_MIN_DAYS);
+  const max = new Date(today); max.setDate(max.getDate() + _CAL_MAX_DAYS);
+  return { today, min, max };
+}
+
+function _renderViewAllCalendar(container) {
+  const wrap = document.createElement('div');
+  wrap.className = 'calendar-view';
+
+  // Selector de mode (Setmanal / Mensual / Diari)
+  const modes = [
+    { id: 'week',  label: t('calendarModeWeek') },
+    { id: 'month', label: t('calendarModeMonth') },
+    { id: 'day',   label: t('calendarModeDay') }
+  ];
+  const modeBar = document.createElement('div');
+  modeBar.className = 'calendar-mode-selector';
+  modes.forEach(m => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'calendar-mode-btn' + (calendarState.mode === m.id ? ' is-active' : '');
+    b.textContent = m.label;
+    b.addEventListener('click', () => {
+      calendarState.mode = m.id;
+      // Quan canviem a "day", ancorem a today si no estàvem ja en un dia
+      // específic d'aquest últim mes — així evitem aterrar en un dia
+      // sense productes per defecte.
+      renderViewAll();
+    });
+    modeBar.appendChild(b);
+  });
+  wrap.appendChild(modeBar);
+
+  // Navegació prev / label / next + atall "Avui"
+  const nav = document.createElement('div');
+  nav.className = 'calendar-navigation';
+  const bounds = _calendarBoundsClamp();
+  const prev = document.createElement('button');
+  prev.type = 'button';
+  prev.className = 'calendar-nav-btn';
+  prev.textContent = '‹';
+  prev.disabled = !_canNavigateCalendar(-1, bounds);
+  prev.addEventListener('click', () => { _navigateCalendar(-1); });
+  const next = document.createElement('button');
+  next.type = 'button';
+  next.className = 'calendar-nav-btn';
+  next.textContent = '›';
+  next.disabled = !_canNavigateCalendar(+1, bounds);
+  next.addEventListener('click', () => { _navigateCalendar(+1); });
+  const label = document.createElement('span');
+  label.className = 'calendar-nav-label';
+  label.textContent = _calendarNavLabel();
+  const todayBtn = document.createElement('button');
+  todayBtn.type = 'button';
+  todayBtn.className = 'calendar-today-btn';
+  todayBtn.textContent = t('calendarBackToToday');
+  todayBtn.addEventListener('click', () => {
+    resetCalendarState();
+    // Conserva el mode actual (resetCalendarState el posa a 'week';
+    // restaurem el mode triat per l'usuari).
+    const currentMode = calendarState.mode;
+    calendarState.mode = currentMode;
+    renderViewAll();
+  });
+  nav.appendChild(prev);
+  nav.appendChild(label);
+  nav.appendChild(next);
+  nav.appendChild(todayBtn);
+  wrap.appendChild(nav);
+
+  // Contingut segons el mode
+  const content = document.createElement('div');
+  content.className = 'calendar-content';
+  if (calendarState.mode === 'week') {
+    _renderCalendarWeek(content, bounds);
+  } else if (calendarState.mode === 'month') {
+    _renderCalendarMonth(content, bounds);
+  } else {
+    _renderCalendarDay(content);
+  }
+  wrap.appendChild(content);
+
+  container.appendChild(wrap);
+}
+
+function _canNavigateCalendar(dir, bounds) {
+  const probe = new Date(calendarState.currentDate);
+  if (calendarState.mode === 'week') probe.setDate(probe.getDate() + dir * 7);
+  else if (calendarState.mode === 'month') probe.setMonth(probe.getMonth() + dir);
+  else probe.setDate(probe.getDate() + dir);
+  return probe >= bounds.min && probe <= bounds.max;
+}
+
+function _navigateCalendar(dir) {
+  const bounds = _calendarBoundsClamp();
+  if (!_canNavigateCalendar(dir, bounds)) return;
+  if (calendarState.mode === 'week') {
+    calendarState.currentDate.setDate(calendarState.currentDate.getDate() + dir * 7);
+  } else if (calendarState.mode === 'month') {
+    calendarState.currentDate.setMonth(calendarState.currentDate.getMonth() + dir);
+  } else {
+    calendarState.currentDate.setDate(calendarState.currentDate.getDate() + dir);
+  }
+  renderViewAll();
+}
+
+function _calendarNavLabel() {
+  const d = calendarState.currentDate;
+  if (calendarState.mode === 'week') {
+    const end = new Date(d); end.setDate(end.getDate() + 6);
+    const fmt = (x) => x.toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' });
+    return fmt(d) + ' – ' + fmt(end);
+  }
+  if (calendarState.mode === 'month') {
+    return d.toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
+  }
+  return d.toLocaleDateString('ca-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+// Productes que caduquen exactament un dia donat (Date local).
+function _productsForDate(date) {
+  const target = formatDateLocal(date);
+  return products.filter(p => p.date === target);
+}
+
+// Etiqueta "Avui" / "Demà" / nom del dia segons l'offset respecte avui.
+function _dayLabel(date) {
+  const today = _calendarStartOfDay(new Date());
+  const diffDays = Math.round((_calendarStartOfDay(date) - today) / 86400000);
+  if (diffDays === 0) return t('calendarToday');
+  if (diffDays === 1) return t('calendarTomorrow');
+  if (diffDays === -1) return t('calendarYesterday');
+  return date.toLocaleDateString('ca-ES', { weekday: 'long' });
+}
+
+function _renderCalendarWeek(container, bounds) {
+  const start = calendarState.currentDate;
+  let totalProducts = 0;
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(start); date.setDate(date.getDate() + i);
+    const dayProducts = _productsForDate(date);
+    totalProducts += dayProducts.length;
+    const block = document.createElement('div');
+    block.className = 'calendar-day-block';
+    if (date.getTime() === bounds.today.getTime()) block.classList.add('is-today');
+    if (dayProducts.length === 0) block.classList.add('is-empty');
+    const header = document.createElement('div');
+    header.className = 'calendar-day-block-header';
+    const name = document.createElement('span');
+    name.className = 'calendar-day-name';
+    name.textContent = _dayLabel(date);
+    const dateLbl = document.createElement('span');
+    dateLbl.className = 'calendar-day-date';
+    dateLbl.textContent = date.toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
+    header.appendChild(name);
+    header.appendChild(dateLbl);
+    if (dayProducts.length > 0) {
+      const count = document.createElement('span');
+      count.className = 'calendar-day-count';
+      count.textContent = t('calendarProductsCount', dayProducts.length);
+      header.appendChild(count);
+    }
+    block.appendChild(header);
+    if (dayProducts.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'calendar-empty-day';
+      empty.textContent = t('calendarNoProductsDay');
+      block.appendChild(empty);
+    } else {
+      const list = document.createElement('div');
+      list.className = 'calendar-day-products';
+      dayProducts.forEach(p => list.appendChild(_buildCalendarProductRow(p, 'mini')));
+      block.appendChild(list);
+    }
+    container.appendChild(block);
+  }
+  if (totalProducts === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-state calendar-empty-state';
+    empty.textContent = t('calendarNoProductsWeek');
+    container.appendChild(empty);
+  }
+}
+
+function _renderCalendarMonth(container, bounds) {
+  const monthStart = new Date(calendarState.currentDate.getFullYear(), calendarState.currentDate.getMonth(), 1);
+  const monthEnd = new Date(calendarState.currentDate.getFullYear(), calendarState.currentDate.getMonth() + 1, 0);
+  // dilluns = 1 a Date.getDay (0=diumenge). Volem que la setmana
+  // comenci en dilluns. Calculem el primer dia visible (dilluns
+  // anterior o igual a monthStart).
+  const firstDay = new Date(monthStart);
+  const dow = (monthStart.getDay() + 6) % 7; // dl=0 ... dg=6
+  firstDay.setDate(firstDay.getDate() - dow);
+  // Última cel·la: després de monthEnd, omplim fins a diumenge.
+  const lastDay = new Date(monthEnd);
+  const dowLast = (monthEnd.getDay() + 6) % 7;
+  lastDay.setDate(lastDay.getDate() + (6 - dowLast));
+
+  const grid = document.createElement('div');
+  grid.className = 'calendar-month-grid';
+  // Capçaleres de dia de la setmana (Dl Dt Dc Dj Dv Ds Dg)
+  const weekdayHeaders = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
+  weekdayHeaders.forEach(w => {
+    const h = document.createElement('div');
+    h.className = 'calendar-weekday-header';
+    h.textContent = w;
+    grid.appendChild(h);
+  });
+
+  let totalProductsInMonth = 0;
+  for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+    const cellDate = new Date(d);
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'calendar-day-cell';
+    if (cellDate.getMonth() !== monthStart.getMonth()) cell.classList.add('is-other-month');
+    if (cellDate.getTime() === bounds.today.getTime()) cell.classList.add('is-today');
+    const dayProducts = _productsForDate(cellDate);
+    if (cellDate.getMonth() === monthStart.getMonth()) totalProductsInMonth += dayProducts.length;
+    const num = document.createElement('span');
+    num.className = 'calendar-day-num';
+    num.textContent = String(cellDate.getDate());
+    cell.appendChild(num);
+    if (dayProducts.length > 0) {
+      const dots = document.createElement('span');
+      dots.className = 'calendar-day-dots';
+      const cnt = dayProducts.length;
+      let level, text;
+      if (cnt <= 2)      { level = 'low';  text = '●'; }
+      else if (cnt <= 5) { level = 'mid';  text = '●●'; }
+      else               { level = 'high'; text = '●●●'; }
+      dots.classList.add('level-' + level);
+      dots.textContent = text;
+      cell.appendChild(dots);
+    }
+    cell.addEventListener('click', () => {
+      calendarState.mode = 'day';
+      calendarState.currentDate = _calendarStartOfDay(cellDate);
+      renderViewAll();
+    });
+    grid.appendChild(cell);
+  }
+  container.appendChild(grid);
+
+  if (totalProductsInMonth === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-state calendar-empty-state';
+    empty.textContent = t('calendarNoProductsMonth');
+    container.appendChild(empty);
+  }
+}
+
+function _renderCalendarDay(container) {
+  const dayProducts = _productsForDate(calendarState.currentDate);
+  const head = document.createElement('div');
+  head.className = 'calendar-day-large-header';
+  const dayName = document.createElement('p');
+  dayName.className = 'calendar-day-large-name';
+  dayName.textContent = _dayLabel(calendarState.currentDate);
+  const dayDate = document.createElement('p');
+  dayDate.className = 'calendar-day-large-date';
+  dayDate.textContent = calendarState.currentDate.toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const cnt = document.createElement('p');
+  cnt.className = 'calendar-day-large-count';
+  cnt.textContent = dayProducts.length === 0
+    ? t('calendarNoProductsDay')
+    : t('calendarProductsCount', dayProducts.length);
+  head.appendChild(dayName);
+  head.appendChild(dayDate);
+  head.appendChild(cnt);
+  container.appendChild(head);
+
+  if (dayProducts.length === 0) return;
+
+  const list = document.createElement('div');
+  list.className = 'calendar-day-products-large';
+  dayProducts.forEach(p => list.appendChild(_buildCalendarProductRow(p, 'large')));
+  container.appendChild(list);
+}
+
+function _buildCalendarProductRow(p, size) {
+  const row = document.createElement('button');
+  row.type = 'button';
+  row.className = 'calendar-product-row calendar-product-row-' + (size || 'mini');
+  const loc = getLocationById(p.location || 'fridge');
+  const days = daysUntil(p.date);
+  const locText = loc ? (loc.emoji + ' ' + getLocationName(loc)) : '';
+  row.innerHTML =
+    '<span class="calendar-product-emoji">' + (p.emoji || '🍽️') + '</span>' +
+    '<div class="calendar-product-info">' +
+      '<strong class="calendar-product-name">' + escapeHtml(p.name || '') + (p.qty ? ' <span class="calendar-product-qty">(' + escapeHtml(p.qty) + ')</span>' : '') + '</strong>' +
+      '<small class="calendar-product-meta">' + escapeHtml(locText) + ' · ' + escapeHtml(daysText(days)) + '</small>' +
+    '</div>' +
+    '<span class="calendar-product-arrow">›</span>';
+  row.addEventListener('click', () => openProductDetail(p));
+  return row;
 }
 
 function buildViewAllRow(p) {

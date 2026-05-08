@@ -455,6 +455,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderViewAll();
   });
 
+  const btnSortCalendar = document.getElementById('btn-sort-by-calendar');
+  if (btnSortCalendar) btnSortCalendar.addEventListener('click', () => {
+    viewAllSortMode = 'calendar';
+    if (typeof resetCalendarState === 'function') resetCalendarState();
+    renderViewAll();
+  });
+
   // (Notificacions des de Configuració es despatxa via data-action des del
   // delegate de #settings-content.)
 

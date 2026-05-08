@@ -2573,6 +2573,18 @@ h1 {
   transform: scale(0.97);
 }
 
+/* Distingeix subtilment quin botó d'ordenació de Tots els productes
+   està actiu. Tots tres tenen el mateix gradient verd; els inactius
+   queden amb opacitat reduïda perquè destaqui el seleccionat. */
+.view-all-toolbar .popular-tool-btn:not(.is-active) {
+  opacity: 0.55;
+  box-shadow: none;
+}
+.view-all-toolbar .popular-tool-btn.is-active {
+  opacity: 1;
+  transform: scale(1.02);
+}
+
 .popular-row {
   display: grid;
   grid-template-columns: 1fr auto auto auto;
@@ -8306,4 +8318,320 @@ h1 {
   text-align: center;
   font-size: 13px;
   color: var(--text-soft);
+}
+
+/* =====================================================================
+   VISTA CALENDARI a "Tots els productes" (3a opció d'ordenació)
+   Vegeu _renderViewAllCalendar a js/biteme.js. Tres modes:
+   setmanal (per defecte) / mensual / diari.
+   ===================================================================== */
+
+.calendar-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Pestanyes de mode (Setmanal / Mensual / Diari) — pills verds */
+.calendar-mode-selector {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.calendar-mode-btn {
+  flex: 0 1 auto;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.calendar-mode-btn:active { transform: scale(0.97); }
+.calendar-mode-btn.is-active {
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+}
+
+/* Barra de navegació (← label → + atall "Avui") */
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.calendar-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+.calendar-nav-btn:active { transform: scale(0.95); }
+.calendar-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.calendar-nav-label {
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 160px;
+  text-align: center;
+  text-transform: capitalize;
+}
+.calendar-today-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.calendar-today-btn:active { transform: scale(0.97); }
+
+/* Contingut del calendari */
+.calendar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ----- Mode setmanal: 7 blocs verticals ----- */
+.calendar-day-block {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.calendar-day-block.is-today {
+  border-color: #2E7D32;
+  border-left-width: 4px;
+  background: rgba(102, 187, 106, 0.05);
+}
+.calendar-day-block.is-empty {
+  opacity: 0.6;
+}
+.calendar-day-block-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.calendar-day-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  text-transform: capitalize;
+}
+.calendar-day-date {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.calendar-day-count {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: #E65100;
+}
+.calendar-empty-day {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin: 4px 0 0;
+  text-align: center;
+}
+.calendar-day-products {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+/* Files de producte (mini i large) */
+.calendar-product-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.calendar-product-row:active { transform: scale(0.99); }
+.calendar-product-row-large {
+  padding: 12px 14px;
+}
+.calendar-product-emoji {
+  font-size: 26px;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+.calendar-product-row-large .calendar-product-emoji {
+  font-size: 32px;
+  width: 44px;
+}
+.calendar-product-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.calendar-product-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calendar-product-row-large .calendar-product-name {
+  font-size: 15px;
+}
+.calendar-product-qty {
+  font-weight: 500;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.calendar-product-meta {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.calendar-product-arrow {
+  color: var(--text-soft);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ----- Mode mensual: graella de cel·les ----- */
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendar-weekday-header {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 0;
+}
+.calendar-day-cell {
+  aspect-ratio: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+.calendar-day-cell:active { transform: scale(0.95); }
+.calendar-day-cell.is-other-month {
+  opacity: 0.35;
+}
+.calendar-day-cell.is-today {
+  background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  font-weight: 700;
+}
+.calendar-day-num {
+  font-size: 13px;
+  font-weight: 600;
+}
+.calendar-day-dots {
+  font-size: 8px;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.calendar-day-dots.level-low  { color: #2E7D32; }
+.calendar-day-dots.level-mid  { color: #E65100; }
+.calendar-day-dots.level-high { color: #C62828; }
+.calendar-day-cell.is-today .calendar-day-dots { color: #FFFFFF; }
+
+/* ----- Mode diari: capçalera gran + llista detallada ----- */
+.calendar-day-large-header {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  text-align: center;
+  margin-bottom: 4px;
+}
+.calendar-day-large-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 4px;
+  text-transform: capitalize;
+}
+.calendar-day-large-date {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 0 0 8px;
+  text-transform: capitalize;
+}
+.calendar-day-large-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #E65100;
+  margin: 0;
+}
+.calendar-day-products-large {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.calendar-empty-state {
+  margin-top: 20px;
+}
+
+/* Mode mòbil estret: pestanyes de mode i navegació una mica més compactes */
+@media (max-width: 480px) {
+  .calendar-mode-btn { padding: 7px 12px; font-size: 12px; }
+  .calendar-nav-label { min-width: 140px; font-size: 13px; }
+  .calendar-today-btn { padding: 5px 10px; font-size: 11px; }
 }
