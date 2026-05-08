@@ -165,6 +165,68 @@ function updateSpaceSyncCode(spaceId, syncCode) {
 }
 
 
+// ----- Switch d'Espai actiu (FASE 4) -----
+
+// Canvia l'Espai actiu. Aplica el següent flux:
+//   1) Backup local automàtic via BackupSystem (si existeix). Així si
+//      l'usuari es penedeix té una còpia de l'estat anterior.
+//   2) Sincronitza la clau legacy 'eatmefirst_sync_code' amb el codi
+//      del nou Espai (firebase-sync.js encara llegeix aquesta clau a
+//      initSync — així no cal tocar-lo per a la fase 4).
+//   3) Esborra les claus PER-ESPAI del localStorage. Les GLOBALS
+//      (gamificació, tema, idioma, smart notifs, backups, recordatori
+//      d'export, patterns dismissed, TOTES les receptes) es preserven.
+//   4) Activa el nou Espai (setActiveSpace).
+//
+// Després d'aquesta funció, el cridador ha de fer location.reload()
+// perquè l'estat in-memory (variables globals com `products`,
+// `locations`, etc.) es recarregui de zero. Amb la sync-code clau
+// actualitzada, initSync() del proper boot connecta automàticament al
+// Firebase del nou Espai i onRemoteData hi rega les dades del cloud.
+//
+// Retorna un objecte amb metadades del switch (per al log/debugging),
+// o false si el switch no s'ha pogut fer (Espai no existeix, ja és
+// l'actiu, etc.).
+function switchToSpace(targetSpaceId) {
+  if (!targetSpaceId) return false;
+  const target = getSpaceById(targetSpaceId);
+  if (!target) return false;
+  if (getActiveSpaceId() === targetSpaceId) return false;
+
+  // 1) Backup local
+  let backupOk = false;
+  if (window.BackupSystem && typeof window.BackupSystem.saveAutoBackup === 'function') {
+    try {
+      const b = window.BackupSystem.saveAutoBackup();
+      backupOk = !!b;
+    } catch (e) {
+      console.warn('[Spaces] backup pre-switch ha fallat:', e);
+    }
+  }
+
+  // 2) Esborrar claus per-espai (NO toquem globals)
+  SPACES_PER_SPACE_KEYS.forEach(k => {
+    try { localStorage.removeItem(k); } catch (e) {}
+  });
+
+  // 3) Activar el nou Espai
+  setActiveSpace(targetSpaceId);
+
+  // 4) Sincronitzar la clau legacy de Firebase amb el codi del nou
+  //    Espai. Si el nou Espai no té codi (cas defensiu — els fluxos
+  //    actuals sempre n'assignen un), netegem la clau perquè no es
+  //    quedi una connexió Firebase stale.
+  if (target.syncCode) {
+    try { localStorage.setItem('eatmefirst_sync_code', target.syncCode); } catch (e) {}
+  } else {
+    try { localStorage.removeItem('eatmefirst_sync_code'); } catch (e) {}
+  }
+
+  console.log('[Spaces] Switch a "' + (target.name || target.id) + '"', backupOk ? '(backup OK)' : '(sense backup)');
+  return { ok: true, target, backupOk };
+}
+
+
 // ----- Migració automàtica -----
 
 // Cridada al boot. Si l'usuari encara no té cap Espai, en crea un per
@@ -218,6 +280,7 @@ window.SpacesSystem = {
   renameSpace,
   setSpaceIcon,
   updateSpaceSyncCode,
+  switchToSpace,
   migrateToSpaces,
   ICON_OPTIONS: SPACES_ICON_OPTIONS,
   PER_SPACE_KEYS: SPACES_PER_SPACE_KEYS,

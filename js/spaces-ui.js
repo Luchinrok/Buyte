@@ -239,16 +239,95 @@ function _onSpacesListClick(e) {
     }
     return;
   }
-  // Click a la fila d'un espai NO actiu: en FASE 4 farà switch. Per
-  // ara mostrem un toast informatiu perquè l'usuari sàpiga que el
-  // selector visual funciona, però el canvi de dades encara no.
+  // Click a la fila d'un Espai NO actiu → confirmació + switch.
+  // (FASE 4 — el switch real, amb backup, clear i reload.)
   const row = e.target.closest('.space-row');
   if (row && !row.classList.contains('is-active')) {
-    showToast(t('spacesPhase4Soon'));
+    const id = row.dataset.spaceId;
+    if (id) _confirmSwitchToSpace(id);
   }
 }
 if (typeof document !== 'undefined') {
   document.addEventListener('click', _onSpacesListClick);
+}
+
+
+// ----- Switch d'Espai actiu (FASE 4) -----
+//
+// Demana confirmació, fa el switch (que esborra dades per-espai i
+// sincronitza el codi de Firebase), mostra un overlay durant un
+// instant perquè l'usuari vegi que passa alguna cosa, i recarrega la
+// pàgina. El reload garanteix un estat in-memory net (mateix patró
+// que importData/restoreBackup).
+function _confirmSwitchToSpace(spaceId) {
+  const SS = window.SpacesSystem;
+  if (!SS) return;
+  const target = SS.getSpaceById(spaceId);
+  if (!target) return;
+  if (SS.getActiveSpaceId() === spaceId) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal-content space-modal-content">' +
+      '<div class="modal-emoji-big">' + escapeHtml(target.icon || '🏠') + '</div>' +
+      '<p class="modal-title">' + escapeHtml(t('spacesSwitchTitle', target.name || '')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('spacesSwitchIntro')) + '</p>' +
+      '<ul class="space-switch-steps">' +
+        '<li>' + escapeHtml(t('spacesSwitchStep1')) + '</li>' +
+        '<li>' + escapeHtml(t('spacesSwitchStep2')) + '</li>' +
+        '<li>' + escapeHtml(t('spacesSwitchStep3', target.name || '')) + '</li>' +
+        '<li>' + escapeHtml(t('spacesSwitchStep4')) + '</li>' +
+      '</ul>' +
+      '<p class="modal-sub modal-sub-soft">' + escapeHtml(t('spacesSwitchFooter')) + '</p>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="space-switch-cancel">' + escapeHtml(t('cancel')) + '</button>' +
+        '<button class="modal-confirm" id="space-switch-confirm">' + escapeHtml(t('spacesSwitchConfirm', target.icon || '', target.name || '')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#space-switch-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('#space-switch-confirm').addEventListener('click', () => {
+    close();
+    _doSwitchWithOverlay(spaceId);
+  });
+}
+
+function _doSwitchWithOverlay(spaceId) {
+  const SS = window.SpacesSystem;
+  if (!SS) return;
+  const target = SS.getSpaceById(spaceId);
+  if (!target) return;
+  _showSwitchingOverlay(target);
+  // El switch en si és sincron: només fa I/O contra localStorage. La
+  // reconnexió Firebase la farà initSync() després del reload. Cridem
+  // dins un setTimeout perquè el navegador pinti l'overlay abans de
+  // bloquejar el thread (encara que mínimament).
+  setTimeout(() => {
+    try {
+      SS.switchToSpace(spaceId);
+    } catch (e) {
+      console.error('[Spaces] switchToSpace error:', e);
+    }
+    // Petit delay perquè l'usuari vegi l'overlay abans del reload (el
+    // reload és visualment abrupte; aquest delay suavitza).
+    setTimeout(() => { window.location.reload(); }, 400);
+  }, 60);
+}
+
+function _showSwitchingOverlay(target) {
+  // Si ja hi ha un overlay, no en posis dos.
+  if (document.getElementById('space-switching-overlay')) return;
+  const ov = document.createElement('div');
+  ov.id = 'space-switching-overlay';
+  ov.innerHTML =
+    '<div class="space-switching-card">' +
+      '<div class="space-switching-spinner">' + escapeHtml((target && target.icon) || '⏳') + '</div>' +
+      '<p class="space-switching-text">' + escapeHtml(t('spacesSwitchingTo', (target && target.name) || '')) + '</p>' +
+    '</div>';
+  document.body.appendChild(ov);
 }
 
 
