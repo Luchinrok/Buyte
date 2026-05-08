@@ -79,6 +79,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Toolbar de selecció múltiple a EatMe (Fase C de Spaces). La
+  // visibilitat la controla _enterLevelsSelectionMode/_exitLevelsSelectionMode
+  // a js/biteme.js. Aquí només lliguem els clicks dels botons al seu
+  // comportament: cancel·lar i obrir el modal multi-move.
+  const btnSelCancel = document.getElementById('btn-levels-selection-cancel');
+  if (btnSelCancel) btnSelCancel.addEventListener('click', () => {
+    if (window.LevelsSelection) window.LevelsSelection.exit();
+  });
+  const btnSelMove = document.getElementById('btn-levels-selection-move');
+  if (btnSelMove) btnSelMove.addEventListener('click', () => {
+    if (!window.LevelsSelection || window.LevelsSelection.count() === 0) return;
+    const ids = window.LevelsSelection.getSelectedIds();
+    const list = (typeof products !== 'undefined' && Array.isArray(products))
+      ? products.filter(p => ids.indexOf(p.id) !== -1)
+      : [];
+    if (list.length === 0) return;
+    if (window.SpacesUI && typeof window.SpacesUI.showMoveMultipleProductsModal === 'function') {
+      window.SpacesUI.showMoveMultipleProductsModal(list);
+    }
+  });
+
   // Botó únic "Editar producte" — reutilitza screen-add en mode edició
   const btnEditProduct = document.getElementById('btn-edit-product');
   if (btnEditProduct) btnEditProduct.addEventListener('click', () => {

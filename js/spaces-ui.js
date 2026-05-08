@@ -388,6 +388,115 @@ function _hideSwitchingOverlay() {
 }
 
 
+// ----- Moure MÚLTIPLES productes EatMe a un altre Espai (Fase C) -----
+//
+// Es dispara des de la toolbar de selecció múltiple (#levels-selection-toolbar)
+// quan l'usuari té N productes seleccionats i prem "📦 Moure". El flux
+// és el mateix que el single-move però amb una sola lectura/escriptura
+// al destí (transacció millor que N escriptures separades).
+function _showMoveMultipleProductsModal(items) {
+  if (!items || !items.length) return;
+  const SS = window.SpacesSystem;
+  if (!SS || !window.FBSync) {
+    showToast(t('syncErrorOffline'));
+    return;
+  }
+  const targets = SS.getAvailableSpacesForMove();
+  if (targets.length === 0) {
+    showToast(t('moveProductNoSpaces'));
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  // Preview dels primers 5 items + "+N" si n'hi ha més.
+  const previewItems = items.slice(0, 5).map(p =>
+    (p.emoji || '') + ' ' + escapeHtml(p.name || '')
+  ).join(', ');
+  const more = items.length > 5 ? ' +' + (items.length - 5) : '';
+  const optionsHtml = targets.map(s =>
+    '<button type="button" class="space-option" data-space-id="' + escapeHtml(s.id) + '">' +
+      '<span class="space-option-icon">' + escapeHtml(s.icon || '🏠') + '</span>' +
+      '<span class="space-option-name">' + escapeHtml(s.name || '') + '</span>' +
+      '<span class="space-option-arrow">›</span>' +
+    '</button>'
+  ).join('');
+  overlay.innerHTML =
+    '<div class="modal-content space-modal-content">' +
+      '<div class="modal-emoji-big">📦</div>' +
+      '<p class="modal-title">' + escapeHtml(t('moveMultipleTitle')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('moveMultipleIntro', items.length)) + '</p>' +
+      '<p class="move-multi-preview">' + previewItems + escapeHtml(more) + '</p>' +
+      '<div class="space-options">' + optionsHtml + '</div>' +
+      '<div class="info-banner banner-info" style="margin-top: 12px;">' +
+        '<div class="info-banner-icon">ℹ️</div>' +
+        '<div class="info-banner-content"><p>' + escapeHtml(t('moveMultipleInfo')) + '</p></div>' +
+      '</div>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="move-multi-cancel">' + escapeHtml(t('cancel')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#move-multi-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelectorAll('.space-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.spaceId;
+      const target = targets.find(s => s.id === id);
+      if (!target) return;
+      close();
+      _executeMoveMultipleProducts(items, target);
+    });
+  });
+}
+
+async function _executeMoveMultipleProducts(items, targetSpace) {
+  if (!items || !items.length || !targetSpace || !targetSpace.syncCode) return;
+  _showSwitchingOverlay({ icon: '📦' }, t('moveMultipleInProgress', items.length));
+  try {
+    const ok = await window.FBSync.init();
+    if (!ok) throw new Error('Firebase init failed');
+
+    // Llegim els productes del destí UNA sola vegada, hi afegim TOTS
+    // els seleccionats amb ids nous, i fem UNA sola escriptura. Si
+    // això falla, no toquem l'origen — els items continuen tots a
+    // l'Espai actual.
+    const existing = await window.FBSync.readListData(targetSpace.syncCode, 'products');
+    const targetList = Array.isArray(existing) ? existing.slice() : [];
+    const baseTs = Date.now();
+    items.forEach((p, idx) => {
+      targetList.push(Object.assign({}, p, {
+        id: 'p_' + baseTs + '_' + idx + '_' + Math.random().toString(36).slice(2, 5)
+      }));
+    });
+    await window.FBSync.writeListData(targetSpace.syncCode, 'products', targetList);
+
+    // Eliminem TOTS els seleccionats de l'origen amb una sola passada.
+    if (typeof products !== 'undefined' && Array.isArray(products)) {
+      const ids = new Set(items.map(p => p.id));
+      products = products.filter(p => !ids.has(p.id));
+      if (typeof saveData === 'function') saveData();
+    }
+
+    // Sortim del mode selecció (toolbar fora) i re-renderitzem el
+    // nivell actual perquè els items moguts desapareguin de la vista.
+    if (window.LevelsSelection && typeof window.LevelsSelection.exit === 'function') {
+      window.LevelsSelection.exit();
+    }
+    if (typeof openShelf === 'function' && typeof currentLevel !== 'undefined' && currentLevel) {
+      openShelf(currentLevel);
+    }
+
+    _hideSwitchingOverlay();
+    showToast(t('moveMultipleDone', items.length, (targetSpace.icon || '') + ' ' + (targetSpace.name || '')));
+  } catch (e) {
+    _hideSwitchingOverlay();
+    console.error('[MoveMultiple] error:', e);
+    showToast(t('moveMultipleError'));
+  }
+}
+
+
 // ----- Moure UN item de la llista de compra (Fase B) -----
 //
 // Mateix patró que la Fase A però per a items de BuyMe. El botó viu a
@@ -877,5 +986,6 @@ window.SpacesUI = {
   showMoveProductModal: _showMoveProductModal,
   refreshMoveProductBtn: _refreshMoveProductBtn,
   showMoveShoppingItemModal: _showMoveShoppingItemModal,
-  refreshMoveShoppingItemBtn: _refreshMoveShoppingItemBtn
+  refreshMoveShoppingItemBtn: _refreshMoveShoppingItemBtn,
+  showMoveMultipleProductsModal: _showMoveMultipleProductsModal
 };

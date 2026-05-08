@@ -1158,6 +1158,18 @@ function _onLevelsSliderClick(e) {
   if (!item) return;
   const id = item.dataset.productId;
   if (!id) return;
+  // Suprimeix el click sintètic que el navegador dispara després d'un
+  // long-press exitós (touchstart → 600ms timer → touchend genera
+  // click). Sense aquest guard, el toggle de la selecció es desfaria
+  // immediatament o openProduct es dispararia.
+  if (_levelsLongPressTriggered) {
+    _levelsLongPressTriggered = false;
+    return;
+  }
+  if (_levelsSelectionMode) {
+    _toggleLevelsSelection(id);
+    return;
+  }
   productDetailBack = 'list';
   openProduct(id);
 }
@@ -1167,6 +1179,129 @@ function _initLevelsActionsDelegate(_slider) { /* listener viu a document */ }
 if (typeof document !== 'undefined') {
   document.addEventListener('click', _onLevelsSliderClick);
 }
+
+
+// =========================================================
+//   SELECCIÓ MÚLTIPLE A EATMe (long press) — Fase C de Spaces
+// =========================================================
+// Un long-press sobre un .product-item dins #levels-slider entra en
+// "mode selecció" i el marca. A partir d'aquí, taps simples toggle
+// la selecció d'altres items. La toolbar fixa a dalt mostra el
+// comptador i el botó "📦 Moure" que obre el modal multi-espai (a
+// js/spaces-ui.js).
+//
+// Tot l'estat viu aquí (no a SpacesSystem) perquè és lligat a la UI
+// de #levels-slider, no a les dades dels Espais.
+let _levelsSelectionMode = false;
+let _levelsSelectedIds = new Set();
+let _levelsLongPressTimer = null;
+let _levelsLongPressTriggered = false;
+const _LEVELS_LONG_PRESS_MS = 600;
+
+function _exitLevelsSelectionMode() {
+  if (!_levelsSelectionMode) return;
+  _levelsSelectionMode = false;
+  _levelsSelectedIds.clear();
+  document.body.classList.remove('selection-mode-active');
+  const toolbar = document.getElementById('levels-selection-toolbar');
+  if (toolbar) toolbar.style.display = 'none';
+  document.querySelectorAll('#levels-slider .product-item.is-selected').forEach(el => {
+    el.classList.remove('is-selected');
+  });
+}
+
+function _enterLevelsSelectionMode(initialId) {
+  _levelsSelectionMode = true;
+  _levelsSelectedIds.clear();
+  document.body.classList.add('selection-mode-active');
+  const toolbar = document.getElementById('levels-selection-toolbar');
+  if (toolbar) toolbar.style.display = 'flex';
+  if (initialId) _toggleLevelsSelection(initialId);
+}
+
+function _toggleLevelsSelection(id) {
+  if (!id) return;
+  if (_levelsSelectedIds.has(id)) _levelsSelectedIds.delete(id);
+  else _levelsSelectedIds.add(id);
+  // Marca visualment a TOTS els nodes amb aquest id (originals i
+  // clones de Swiper).
+  document.querySelectorAll('#levels-slider .product-item[data-product-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]').forEach(el => {
+    el.classList.toggle('is-selected', _levelsSelectedIds.has(id));
+  });
+  const counter = document.getElementById('levels-selection-count');
+  if (counter) counter.textContent = (typeof t === 'function')
+    ? t('selectionCount', _levelsSelectedIds.size)
+    : String(_levelsSelectedIds.size);
+  if (_levelsSelectedIds.size === 0) _exitLevelsSelectionMode();
+}
+
+function _onLevelsTouchStart(e) {
+  const item = e.target.closest && e.target.closest('#levels-slider .product-item');
+  if (!item || !item.dataset.productId) return;
+  if (_levelsLongPressTimer) clearTimeout(_levelsLongPressTimer);
+  _levelsLongPressTriggered = false;
+  const targetId = item.dataset.productId;
+  _levelsLongPressTimer = setTimeout(() => {
+    _levelsLongPressTimer = null;
+    _levelsLongPressTriggered = true;
+    if (!_levelsSelectionMode) _enterLevelsSelectionMode(targetId);
+    else _toggleLevelsSelection(targetId);
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(40); } catch (e) {}
+    }
+  }, _LEVELS_LONG_PRESS_MS);
+}
+
+function _cancelLevelsLongPress() {
+  if (_levelsLongPressTimer) {
+    clearTimeout(_levelsLongPressTimer);
+    _levelsLongPressTimer = null;
+  }
+}
+
+if (typeof document !== 'undefined') {
+  // Touch (mòbil): si l'usuari mou el dit, cancel·lem el long-press
+  // — això evita activar el mode quan en realitat estava lliscant pel
+  // cube. La sensibilitat la marca el threshold de Swiper (5px),
+  // però aquí n'hi ha prou amb cancel·lar a qualsevol touchmove.
+  document.addEventListener('touchstart', _onLevelsTouchStart, { passive: true });
+  document.addEventListener('touchend', _cancelLevelsLongPress);
+  document.addEventListener('touchmove', _cancelLevelsLongPress, { passive: true });
+  document.addEventListener('touchcancel', _cancelLevelsLongPress);
+  // Mouse (desktop / dev tools)
+  document.addEventListener('mousedown', _onLevelsTouchStart);
+  document.addEventListener('mouseup', _cancelLevelsLongPress);
+  document.addEventListener('mouseleave', _cancelLevelsLongPress);
+}
+
+// API exposada per a app.js (botons de la toolbar) i js/spaces-ui.js
+// (multi-move modal). Mantenim els vars internament; aquí només
+// donem accessors funcionals.
+window.LevelsSelection = {
+  exit: _exitLevelsSelectionMode,
+  isActive: () => _levelsSelectionMode,
+  count: () => _levelsSelectedIds.size,
+  getSelectedIds: () => Array.from(_levelsSelectedIds)
+};
+
+// Al sortir de la pantalla #screen-list (back, navegació via
+// notificacions, etc.) sortim del mode selecció perquè la toolbar no
+// quedi flotant sobre altres pantalles. Embolcalla showScreen una sola
+// vegada — same pattern que el wrapper de l'embed de Settings.
+(function _wrapShowScreenForLevelsSelection() {
+  if (typeof window === 'undefined' || typeof window.showScreen !== 'function') return;
+  if (window.__levelsSelectionWrapped) return;
+  window.__levelsSelectionWrapped = true;
+  const original = window.showScreen;
+  window.showScreen = function (name) {
+    const listEl = document.getElementById('screen-list');
+    const wasListActive = !!(listEl && listEl.classList.contains('active'));
+    if (wasListActive && name !== 'list' && _levelsSelectionMode) {
+      _exitLevelsSelectionMode();
+    }
+    return original.apply(this, arguments);
+  };
+})();
 
 // Construeix els 4 slides .level-page dins de #levels-slider (un sol
 // cop per session). Crida idempotent — si els 4 originals ja existeixen,
@@ -1288,6 +1423,10 @@ function _ensureLevelsSwiper() {
 }
 
 function openShelf(level) {
+  // Defensiu: si l'usuari arriba amb un mode selecció pendent (poc
+  // probable amb el wrapper de showScreen, però per si de cas), el
+  // tanquem abans de renderitzar.
+  if (typeof _exitLevelsSelectionMode === 'function') _exitLevelsSelectionMode();
   currentLevel = level;
   const cat = currentSection;
   // Construïm els 4 slides un sol cop.

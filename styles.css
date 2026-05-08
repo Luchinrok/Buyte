@@ -2813,6 +2813,100 @@ h1 {
   transform: scale(0.98);
 }
 
+/* ===== SELECCIÓ MÚLTIPLE A EATMe (long press) — Fase C =====
+   Toolbar fixa al top que apareix mentre l'usuari té com a mínim un
+   .product-item seleccionat dins #levels-slider. Vegeu la lògica a
+   js/biteme.js (_enterLevelsSelectionMode / _exitLevelsSelectionMode). */
+.selection-toolbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: linear-gradient(135deg, #5C6BC0 0%, #283593 100%);
+  color: #FFFFFF;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  /* Respecta la safe-area top dels iPhones amb notch */
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+}
+.selection-toolbar-cancel,
+.selection-toolbar-move {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+.selection-toolbar-cancel { padding: 6px 12px; font-size: 18px; }
+.selection-toolbar-cancel:active,
+.selection-toolbar-move:active { transform: scale(0.96); }
+.selection-toolbar-cancel:hover,
+.selection-toolbar-move:hover { background: rgba(255, 255, 255, 0.26); }
+.selection-toolbar-count {
+  font-weight: 800;
+  font-size: 15px;
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Quan està actiu el mode selecció, empenyem el contingut cap avall
+   per no quedar tapat per la toolbar. Mateixa altura aproximada que
+   la toolbar (toolbar ~52px + 4px coixí). */
+body.selection-mode-active {
+  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+}
+body.selection-mode-active .product-item {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Producte seleccionat: tint indigo + check a l'esquerra. Aplica també
+   als clones de Swiper (mateixa classe). */
+#levels-slider .product-item.is-selected {
+  background: rgba(92, 107, 192, 0.15) !important;
+  border-left: 4px solid #5C6BC0;
+  padding-left: 12px;
+}
+#levels-slider .product-item.is-selected::before {
+  content: '✓';
+  background: #5C6BC0;
+  color: #FFFFFF;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+/* Preview dels primers items al modal multi-move. */
+.move-multi-preview {
+  font-size: 12.5px;
+  color: var(--text-soft);
+  margin: 0 0 12px;
+  text-align: center;
+  font-style: italic;
+  line-height: 1.4;
+}
+
 /* Llista d'Espais destí dins del modal de "Moure producte". */
 .space-options {
   display: flex;
