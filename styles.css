@@ -8473,9 +8473,13 @@ h1 {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .space-rename-btn,
-.space-delete-btn {
+.space-delete-btn,
+.space-copy-btn,
+.space-share-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -8488,14 +8492,19 @@ h1 {
   align-items: center;
   justify-content: center;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, transform 0.1s;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 .space-rename-btn:hover,
-.space-delete-btn:hover:not(:disabled) {
+.space-delete-btn:hover:not(:disabled),
+.space-copy-btn:hover,
+.space-share-btn:hover {
   background: var(--bg-secondary);
+  border-color: var(--primary);
 }
 .space-rename-btn:active,
-.space-delete-btn:active:not(:disabled) { transform: scale(0.92); }
+.space-delete-btn:active:not(:disabled),
+.space-copy-btn:active,
+.space-share-btn:active { transform: scale(0.92); }
 .space-delete-btn {
   background: rgba(244, 67, 54, 0.08);
   border-color: rgba(244, 67, 54, 0.25);
@@ -8504,6 +8513,15 @@ h1 {
 .space-delete-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+/* El codi de l'Espai a la fila és seleccionable amb un sol clic perquè
+   l'usuari el pugui copiar manualment si prefereix (mòbil sense
+   navigator.clipboard, etc.). El botó 📋 és la via principal però
+   això afegeix una via alternativa. */
+.space-row-code {
+  user-select: all;
+  -webkit-user-select: all;
 }
 
 .spaces-actions {
@@ -8554,6 +8572,43 @@ h1 {
   font-size: 11.5px;
   color: var(--text-soft);
   line-height: 1.4;
+}
+
+/* Caixa destacada del codi al modal post-creació. Tipografia
+   monospaced, gran i seleccionable amb un sol clic perquè l'usuari
+   el pugui copiar manualment encara que el botó 📋 falli. */
+.space-created-code-box {
+  background: rgba(76, 175, 80, 0.08);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  text-align: center;
+}
+.space-created-code-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-soft);
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.space-created-code-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1B5E20;
+  margin: 0;
+  letter-spacing: 1px;
+  user-select: all;
+  -webkit-user-select: all;
+}
+:root[data-theme="dark"] .space-created-code-box {
+  background: rgba(102, 187, 106, 0.12);
+  border-color: rgba(102, 187, 106, 0.35);
+}
+:root[data-theme="dark"] .space-created-code-value {
+  color: #A5D6A7;
 }
 
 /* Picker d'icones reutilitzable per als modals d'Espais. */

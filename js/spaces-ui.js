@@ -13,6 +13,66 @@
    ============================================ */
 
 
+// ----- Helpers de portaretalls / share (genèrics, exposats globals)
+//
+// copyTextToClipboard(text): true en èxit. Prova navigator.clipboard
+// (només funciona en context segur — https o localhost) i fallback a
+// document.execCommand('copy') sobre un textarea volàtil.
+//
+// shareSyncCode(code, spaceName): obre el share-sheet natiu si està
+// disponible (mòbils i Edge/Chrome desktop modernes). Si l'usuari
+// cancel·la, no fa res. Si no hi ha share API, fa fallback a copiar
+// el codi al portaretalls.
+async function copyTextToClipboard(text) {
+  if (!text) return false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  } catch (e) {
+    console.warn('[copy] error', e);
+    return false;
+  }
+}
+
+async function shareSyncCode(code, spaceName) {
+  if (!code) return false;
+  const message = (typeof t === 'function')
+    ? t('spacesShareMessage', spaceName || '', code)
+    : (spaceName || '') + ': ' + code;
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: (typeof t === 'function') ? t('spacesShareTitle') : 'Buyte',
+        text: message
+      });
+      return true;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return false;
+      // Fallback: si share() falla per un motiu diferent, intentem copiar.
+    }
+  }
+  const ok = await copyTextToClipboard(code);
+  if (ok && typeof showToast === 'function') showToast('📋 ' + t('codeCopied'));
+  return ok;
+}
+
+window.copyTextToClipboard = copyTextToClipboard;
+window.shareSyncCode = shareSyncCode;
+
+
 // Renderitza la pill de l'Espai actiu al header de la home.
 function renderSpaceSelectorBar() {
   const SS = window.SpacesSystem;
@@ -61,6 +121,16 @@ function renderSpacesList() {
     const cantDelete = onlyOne || isActive;
     const deleteTitle = onlyOne ? t('spacesDeleteLastWarn')
       : isActive ? t('spacesDeleteActiveWarn') : t('spacesDeleteTitle');
+    // Botons de codi (copiar + compartir) només si l'Espai en té un.
+    // El share-button només si el navegador té navigator.share (mòbils
+    // i Edge/Chrome desktop modernes).
+    let codeBtnsHtml = '';
+    if (space.syncCode) {
+      codeBtnsHtml += '<button type="button" class="space-copy-btn" data-action="copy" data-code="' + escapeHtml(space.syncCode) + '" aria-label="' + escapeHtml(t('spacesCopyTooltip')) + '" title="' + escapeHtml(t('spacesCopyTooltip')) + '">📋</button>';
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        codeBtnsHtml += '<button type="button" class="space-share-btn" data-action="share" data-code="' + escapeHtml(space.syncCode) + '" data-space-name="' + escapeHtml(space.name || '') + '" aria-label="' + escapeHtml(t('spacesShareTooltip')) + '" title="' + escapeHtml(t('spacesShareTooltip')) + '">🔗</button>';
+      }
+    }
     row.innerHTML =
       '<div class="space-row-icon">' + escapeHtml(space.icon || '🏠') + '</div>' +
       '<div class="space-row-info">' +
@@ -70,6 +140,7 @@ function renderSpacesList() {
         '<p class="space-row-code">' + escapeHtml(codeText) + '</p>' +
       '</div>' +
       '<div class="space-row-actions">' +
+        codeBtnsHtml +
         '<button type="button" class="space-rename-btn" data-action="rename" aria-label="' + escapeHtml(t('spacesRenameTitle')) + '">✏️</button>' +
         '<button type="button" class="space-delete-btn" data-action="delete" aria-label="' + escapeHtml(deleteTitle) + '" title="' + escapeHtml(deleteTitle) + '"' + (cantDelete ? ' disabled' : '') + '>🗑️</button>' +
       '</div>';
@@ -145,9 +216,24 @@ function _onSpacesListClick(e) {
   if (actionBtn) {
     const row = actionBtn.closest('.space-row');
     const id = row && row.dataset.spaceId;
+    const action = actionBtn.dataset.action;
+    if (action === 'copy') {
+      const code = actionBtn.dataset.code;
+      copyTextToClipboard(code).then(ok => {
+        if (ok) showToast('📋 ' + t('codeCopied'));
+        else showToast(t('spacesCodeCopyError'));
+      });
+      return;
+    }
+    if (action === 'share') {
+      const code = actionBtn.dataset.code;
+      const sname = actionBtn.dataset.spaceName || '';
+      shareSyncCode(code, sname);
+      return;
+    }
     if (!id) return;
-    if (actionBtn.dataset.action === 'rename') _showRenameSpaceModal(id);
-    else if (actionBtn.dataset.action === 'delete') {
+    if (action === 'rename') _showRenameSpaceModal(id);
+    else if (action === 'delete') {
       if (actionBtn.disabled) return;
       _confirmDeleteSpace(id);
     }
@@ -286,7 +372,12 @@ function _showCreateSpaceModal() {
 
       close();
       renderSpacesList();
-      showToast('✅ ' + t('spacesCreated', name));
+      // Modal de confirmació amb el codi destacat + botó per copiar-lo.
+      // Important: en una creació nova, l'usuari NO ha de perdre aquest
+      // codi (el necessitarà per connectar altres dispositius). Per
+      // això el toast genèric no n'hi ha prou — mostrem el codi gran
+      // dins un modal i li donem una manera fàcil de copiar-lo.
+      _showSpaceCreatedConfirmModal(name, code);
     } catch (e) {
       console.error('[Spaces] Error creant espai:', e);
       showToast(t('spacesCreateError'));
@@ -294,6 +385,41 @@ function _showCreateSpaceModal() {
       confirmBtn.classList.remove('is-disabled');
     }
   });
+}
+
+
+// Modal post-èxit de "Crear nou espai": mostra el codi acabat de
+// generar destacat + un botó per copiar-lo i un per tancar. L'usuari
+// necessita aquest codi per connectar altres dispositius i no se li
+// hauria d'amagar darrere d'un toast efímer.
+function _showSpaceCreatedConfirmModal(name, code) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal-content space-modal-content">' +
+      '<div class="modal-emoji-big">✅</div>' +
+      '<p class="modal-title">' + escapeHtml(t('spacesCreatedDoneTitle')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('spacesCreatedDoneIntro', name || '')) + '</p>' +
+      '<div class="space-created-code-box">' +
+        '<p class="space-created-code-label">' + escapeHtml(t('spacesCreatedDoneCodeLabel')) + '</p>' +
+        '<p class="space-created-code-value">' + escapeHtml(code) + '</p>' +
+      '</div>' +
+      '<p class="modal-sub">' + escapeHtml(t('spacesCreatedDoneFooter')) + '</p>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="space-created-close">' + escapeHtml(t('close')) + '</button>' +
+        '<button class="modal-confirm" id="space-created-copy">' + escapeHtml(t('spacesCreatedDoneCopyBtn')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#space-created-close').addEventListener('click', close);
+  overlay.querySelector('#space-created-copy').addEventListener('click', async () => {
+    const ok = await copyTextToClipboard(code);
+    if (ok) showToast('📋 ' + t('codeCopied'));
+    else showToast(t('spacesCodeCopyError'));
+    close();
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 
