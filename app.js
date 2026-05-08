@@ -242,6 +242,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Configuració — pantalla principal amb 5 cards de categoria. Cadascuna
   // obre una sub-pantalla amb pestanyes (instalada en commits posteriors).
+  // Spaces UI (FASE 2): listeners del selector de la home + pantalla
+  // "Els meus espais". El render del selector viu a renderSpaceSelectorBar
+  // i el cridem un cop al boot + cada cop que tornem al launcher (vegeu
+  // showScreen wrapper a js/spaces-ui o més avall si cal).
+  if (typeof attachSpacesScreenListeners === 'function') attachSpacesScreenListeners();
+  if (window.SpacesUI && typeof window.SpacesUI.renderSpaceSelectorBar === 'function') {
+    window.SpacesUI.renderSpaceSelectorBar();
+  }
+
   if (typeof attachSettingsCategoryListeners === 'function') attachSettingsCategoryListeners();
   if (typeof attachSettingsRegionalListeners === 'function') attachSettingsRegionalListeners();
   if (typeof attachSettingsContentListeners === 'function') attachSettingsContentListeners();

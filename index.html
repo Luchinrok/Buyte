@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260508-5">
+  <link rel="stylesheet" href="styles.css?v=20260508-6">
 </head>
 <body>
 
@@ -34,6 +34,16 @@
         </svg>
       </button>
     </header>
+
+    <!-- Selector d'Espais (FASE 2). Bar full-width entre el header i
+         els banners. Mostra l'Espai actiu; clic obre #screen-spaces. -->
+    <div class="space-bar">
+      <button class="space-selector-btn" id="btn-space-selector" type="button">
+        <span class="space-icon" id="space-selector-icon">🏠</span>
+        <span class="space-name" id="space-selector-name">Casa</span>
+        <span class="space-arrow">▾</span>
+      </button>
+    </div>
 
     <!-- Banners de notificacions intel·ligents (apareixen si hi ha pendents
          no descartats avui). Es netegen amb la X i no tornen avui. -->
@@ -1872,6 +1882,29 @@
     <div class="achievements-list" id="achievements-list"></div>
   </div>
 
+  <!-- PANTALLA "ELS MEUS ESPAIS" (FASE 2)
+       Vegeu js/spaces-ui.js (UI) i js/spaces.js (data layer).
+       Distinta de #screen-locations (gestió de zones de productes,
+       Nevera/Congelador). Aquí gestionem els Espais sencers (Casa,
+       Platja, Feina...). -->
+  <div id="screen-spaces" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="launcher" aria-label="Back">‹</button>
+      <h1>📍 <span data-i18n="mySpacesTitle"></span></h1>
+      <div style="width:40px"></div>
+    </header>
+    <p class="section-hint" data-i18n="mySpacesHint"></p>
+    <div id="spaces-list" class="spaces-list"></div>
+    <div class="spaces-actions">
+      <button id="btn-create-space" class="primary-btn" type="button">
+        <span data-i18n="spacesCreateNew"></span>
+      </button>
+      <button id="btn-join-space" class="secondary-btn" type="button">
+        <span data-i18n="spacesJoinExisting"></span>
+      </button>
+    </div>
+  </div>
+
   <!-- PANTALLA IDIOMES -->
   <div id="screen-language" class="screen">
     <header class="top-bar">
@@ -1893,7 +1926,7 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260503-3"></script>
   <script src="notifications.js?v=20260503-3"></script>
-  <script src="i18n.js?v=20260508-5"></script>
+  <script src="i18n.js?v=20260508-6"></script>
   <script src="js/core.js?v=20260506-6"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260508-6"></script>
@@ -1904,6 +1937,7 @@
   <script src="js/settings.js?v=20260508-5"></script>
   <script src="js/backup.js?v=20260508-2"></script>
   <script src="js/spaces.js?v=20260508-1"></script>
+  <script src="js/spaces-ui.js?v=20260508-1"></script>
   <script src="js/modals.js?v=20260503-3"></script>
   <script src="js/impact.js?v=20260503-3"></script>
   <script src="js/recipes-data.js?v=20260506-10"></script>
@@ -1912,6 +1946,6 @@
   <script src="js/gamification.js?v=20260506-11"></script>
   <script src="js/patterns.js?v=20260505-5"></script>
   <script src="js/smart-notifications.js?v=20260506-10"></script>
-  <script src="app.js?v=20260508-3"></script>
+  <script src="app.js?v=20260508-4"></script>
 </body>
 </html>
