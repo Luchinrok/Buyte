@@ -79,24 +79,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Toolbar de selecció múltiple a EatMe (Fase C de Spaces). La
-  // visibilitat la controla _enterLevelsSelectionMode/_exitLevelsSelectionMode
-  // a js/biteme.js. Aquí només lliguem els clicks dels botons al seu
-  // comportament: cancel·lar i obrir el modal multi-move.
-  const btnSelCancel = document.getElementById('btn-levels-selection-cancel');
+  // Toolbar GENÈRICA de selecció múltiple. Compartida per Fase C
+  // (productes EatMe a #levels-slider, vegeu js/biteme.js) i Fase C-2
+  // (items BuyMe a #shops-slider, vegeu js/buyme.js). Només una mode
+  // pot estar activa alhora (l'enter d'una surt l'altra defensivament).
+  // El botó X surt la que estigui activa; el botó 📦 Moure despatxa
+  // segons quin mode de selecció és actiu.
+  const btnSelCancel = document.getElementById('btn-selection-cancel');
   if (btnSelCancel) btnSelCancel.addEventListener('click', () => {
-    if (window.LevelsSelection) window.LevelsSelection.exit();
+    if (window.LevelsSelection && window.LevelsSelection.isActive()) window.LevelsSelection.exit();
+    if (window.ShoppingSelection && window.ShoppingSelection.isActive()) window.ShoppingSelection.exit();
   });
-  const btnSelMove = document.getElementById('btn-levels-selection-move');
+  const btnSelMove = document.getElementById('btn-selection-move');
   if (btnSelMove) btnSelMove.addEventListener('click', () => {
-    if (!window.LevelsSelection || window.LevelsSelection.count() === 0) return;
-    const ids = window.LevelsSelection.getSelectedIds();
-    const list = (typeof products !== 'undefined' && Array.isArray(products))
-      ? products.filter(p => ids.indexOf(p.id) !== -1)
-      : [];
-    if (list.length === 0) return;
-    if (window.SpacesUI && typeof window.SpacesUI.showMoveMultipleProductsModal === 'function') {
-      window.SpacesUI.showMoveMultipleProductsModal(list);
+    // Productes EatMe seleccionats? → modal multi-move de productes.
+    if (window.LevelsSelection && window.LevelsSelection.isActive() && window.LevelsSelection.count() > 0) {
+      const ids = window.LevelsSelection.getSelectedIds();
+      const list = (typeof products !== 'undefined' && Array.isArray(products))
+        ? products.filter(p => ids.indexOf(p.id) !== -1)
+        : [];
+      if (list.length === 0) return;
+      if (window.SpacesUI && typeof window.SpacesUI.showMoveMultipleProductsModal === 'function') {
+        window.SpacesUI.showMoveMultipleProductsModal(list);
+      }
+      return;
+    }
+    // Items BuyMe seleccionats? → modal multi-move d'items de compra.
+    if (window.ShoppingSelection && window.ShoppingSelection.isActive() && window.ShoppingSelection.count() > 0) {
+      const ids = window.ShoppingSelection.getSelectedIds();
+      const list = (typeof shoppingItems !== 'undefined' && Array.isArray(shoppingItems))
+        ? shoppingItems.filter(it => ids.indexOf(it.id) !== -1)
+        : [];
+      if (list.length === 0) return;
+      if (window.SpacesUI && typeof window.SpacesUI.showMoveMultipleShoppingItemsModal === 'function') {
+        window.SpacesUI.showMoveMultipleShoppingItemsModal(list);
+      }
     }
   });
 

@@ -2874,14 +2874,16 @@ body.selection-mode-active .product-item {
   -webkit-user-select: none;
 }
 
-/* Producte seleccionat: tint indigo + check a l'esquerra. Aplica també
-   als clones de Swiper (mateixa classe). */
-#levels-slider .product-item.is-selected {
+/* Item seleccionat (productes EatMe + items BuyMe): tint indigo +
+   check a l'esquerra. Aplica també als clones de Swiper. */
+#levels-slider .product-item.is-selected,
+#shops-slider .shopping-item.is-selected {
   background: rgba(92, 107, 192, 0.15) !important;
   border-left: 4px solid #5C6BC0;
   padding-left: 12px;
 }
-#levels-slider .product-item.is-selected::before {
+#levels-slider .product-item.is-selected::before,
+#shops-slider .shopping-item.is-selected::before {
   content: '✓';
   background: #5C6BC0;
   color: #FFFFFF;
@@ -2895,6 +2897,19 @@ body.selection-mode-active .product-item {
   font-size: 12px;
   margin-right: 8px;
   flex-shrink: 0;
+}
+
+/* Durant el mode selecció, els botons d'acció dels items BuyMe
+   (Comprat ✅, Editar ✏️, fletxes ▲▼) queden visualment apagats i
+   no responen — així un tap a un item sempre toggleja la selecció,
+   mai dispara l'acció. Vegeu _onShoppingItemClickInSelection a
+   js/buyme.js que també atura la propagació al delegate de #shops-slider. */
+body.selection-mode-active #shops-slider .shopping-item-bought,
+body.selection-mode-active #shops-slider .shopping-item-edit,
+body.selection-mode-active #shops-slider .shopping-item-arrows,
+body.selection-mode-active #shops-slider .arrow-btn {
+  opacity: 0.35;
+  pointer-events: none;
 }
 
 /* Preview dels primers items al modal multi-move. */

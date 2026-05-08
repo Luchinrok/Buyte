@@ -603,6 +603,147 @@ function _initShopsActionsDelegate() {
 // quedar-ne alguna referència.
 function _setupShopsSliderScrollListener() {}
 
+
+// =========================================================
+//   SELECCIÓ MÚLTIPLE A BUYME (long press) — Fase C-2 de Spaces
+// =========================================================
+// Mateix patró que la selecció de productes EatMe (vegeu biteme.js):
+// long-press sobre un .shopping-item dins #shops-slider entra en
+// mode selecció; taps simples toggle altres items. Comparteix la
+// toolbar genèrica #selection-toolbar amb la versió EatMe — només
+// una mode pot estar activa alhora (l'enter d'una surt l'altra).
+let _shoppingSelectionMode = false;
+let _shoppingSelectedIds = new Set();
+let _shoppingLongPressTimer = null;
+let _shoppingLongPressTriggered = false;
+const _SHOPPING_LONG_PRESS_MS = 600;
+
+function _exitShoppingSelectionMode() {
+  if (!_shoppingSelectionMode) return;
+  _shoppingSelectionMode = false;
+  _shoppingSelectedIds.clear();
+  document.body.classList.remove('selection-mode-active');
+  const toolbar = document.getElementById('selection-toolbar');
+  if (toolbar) toolbar.style.display = 'none';
+  document.querySelectorAll('#shops-slider .shopping-item.is-selected').forEach(el => {
+    el.classList.remove('is-selected');
+  });
+}
+
+function _enterShoppingSelectionMode(initialId) {
+  // Defensiu: surt de qualsevol altra selecció activa abans (EatMe).
+  if (window.LevelsSelection && window.LevelsSelection.isActive && window.LevelsSelection.isActive()) {
+    window.LevelsSelection.exit();
+  }
+  _shoppingSelectionMode = true;
+  _shoppingSelectedIds.clear();
+  document.body.classList.add('selection-mode-active');
+  const toolbar = document.getElementById('selection-toolbar');
+  if (toolbar) toolbar.style.display = 'flex';
+  if (initialId) _toggleShoppingSelection(initialId);
+}
+
+function _toggleShoppingSelection(id) {
+  if (!id) return;
+  if (_shoppingSelectedIds.has(id)) _shoppingSelectedIds.delete(id);
+  else _shoppingSelectedIds.add(id);
+  document.querySelectorAll('#shops-slider .shopping-item[data-item-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]').forEach(el => {
+    el.classList.toggle('is-selected', _shoppingSelectedIds.has(id));
+  });
+  const counter = document.getElementById('selection-count');
+  if (counter) counter.textContent = (typeof t === 'function')
+    ? t('selectionCount', _shoppingSelectedIds.size)
+    : String(_shoppingSelectedIds.size);
+  if (_shoppingSelectedIds.size === 0) _exitShoppingSelectionMode();
+}
+
+function _onShoppingTouchStart(e) {
+  // Marquem long-press sobre els .shopping-item, NO sobre els botons
+  // d'acció dins (bought/edit/up/down). Si el touch ha caigut sobre un
+  // d'aquests, deixem-lo en pau — l'acció normal s'encarrega.
+  const item = e.target.closest && e.target.closest('#shops-slider .shopping-item');
+  if (!item || !item.dataset.itemId) return;
+  if (_shoppingLongPressTimer) clearTimeout(_shoppingLongPressTimer);
+  _shoppingLongPressTriggered = false;
+  const targetId = item.dataset.itemId;
+  _shoppingLongPressTimer = setTimeout(() => {
+    _shoppingLongPressTimer = null;
+    _shoppingLongPressTriggered = true;
+    if (!_shoppingSelectionMode) _enterShoppingSelectionMode(targetId);
+    else _toggleShoppingSelection(targetId);
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(40); } catch (e) {}
+    }
+  }, _SHOPPING_LONG_PRESS_MS);
+}
+
+function _cancelShoppingLongPress() {
+  if (_shoppingLongPressTimer) {
+    clearTimeout(_shoppingLongPressTimer);
+    _shoppingLongPressTimer = null;
+  }
+}
+
+// Click handler en mode selecció: toggleja l'item, suprimint l'acció
+// normal del bought/edit/up/down (els botons d'acció queden deshabilitats
+// visualment via pointer-events:none al CSS). Capture phase perquè
+// fireja ABANS del listener bubble de _initShopsActionsDelegate.
+function _onShoppingItemClickInSelection(e) {
+  if (!_shoppingSelectionMode) return;
+  const item = e.target.closest && e.target.closest('#shops-slider .shopping-item');
+  if (!item || !item.dataset.itemId) return;
+  // Suprimeix el click sintètic post-long-press perquè el toggle no es
+  // desfaci immediatament.
+  if (_shoppingLongPressTriggered) {
+    _shoppingLongPressTriggered = false;
+    e.stopPropagation();
+    return;
+  }
+  e.stopPropagation();
+  e.preventDefault();
+  _toggleShoppingSelection(item.dataset.itemId);
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('touchstart', _onShoppingTouchStart, { passive: true });
+  document.addEventListener('touchend', _cancelShoppingLongPress);
+  document.addEventListener('touchmove', _cancelShoppingLongPress, { passive: true });
+  document.addEventListener('touchcancel', _cancelShoppingLongPress);
+  document.addEventListener('mousedown', _onShoppingTouchStart);
+  document.addEventListener('mouseup', _cancelShoppingLongPress);
+  document.addEventListener('mouseleave', _cancelShoppingLongPress);
+  // capture: true perquè agafem el click ABANS del listener bubble que
+  // viu a #shops-slider (_initShopsActionsDelegate). Així evitem que
+  // un tap a un .shopping-item en mode selecció dispari accions.
+  document.addEventListener('click', _onShoppingItemClickInSelection, true);
+}
+
+window.ShoppingSelection = {
+  exit: _exitShoppingSelectionMode,
+  isActive: () => _shoppingSelectionMode,
+  count: () => _shoppingSelectedIds.size,
+  getSelectedIds: () => Array.from(_shoppingSelectedIds)
+};
+
+// En sortir de #screen-supermarket, surt del mode selecció. Mateixa
+// mecànica que el wrapper de showScreen a biteme.js per a #screen-list
+// (Fase C). Aquí el wrapper de biteme.js també protegeix el seu mode
+// — el d'aquí cobreix el cas dels items de compra.
+(function _wrapShowScreenForShoppingSelection() {
+  if (typeof window === 'undefined' || typeof window.showScreen !== 'function') return;
+  if (window.__shoppingSelectionWrapped) return;
+  window.__shoppingSelectionWrapped = true;
+  const original = window.showScreen;
+  window.showScreen = function (name) {
+    const supEl = document.getElementById('screen-supermarket');
+    const wasSupActive = !!(supEl && supEl.classList.contains('active'));
+    if (wasSupActive && name !== 'supermarket' && _shoppingSelectionMode) {
+      _exitShoppingSelectionMode();
+    }
+    return original.apply(this, arguments);
+  };
+})();
+
 // Afegir/editar supermercat
 function openSupermarketEdit(sm) {
   editingSupermarket = sm; // null = nou

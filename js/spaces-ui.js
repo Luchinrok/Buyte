@@ -450,6 +450,103 @@ function _showMoveMultipleProductsModal(items) {
   });
 }
 
+// ----- Moure MÚLTIPLES items BuyMe a un altre Espai (Fase C-2) -----
+// Mateix patró que _showMoveMultipleProductsModal però sobre items
+// de la llista de la compra. El cloud field és 'shoppingItems'.
+function _showMoveMultipleShoppingItemsModal(items) {
+  if (!items || !items.length) return;
+  const SS = window.SpacesSystem;
+  if (!SS || !window.FBSync) {
+    showToast(t('syncErrorOffline'));
+    return;
+  }
+  const targets = SS.getAvailableSpacesForMove();
+  if (targets.length === 0) {
+    showToast(t('moveProductNoSpaces'));
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const previewItems = items.slice(0, 5).map(p =>
+    (p.emoji || '') + ' ' + escapeHtml(p.name || '')
+  ).join(', ');
+  const more = items.length > 5 ? ' +' + (items.length - 5) : '';
+  const optionsHtml = targets.map(s =>
+    '<button type="button" class="space-option" data-space-id="' + escapeHtml(s.id) + '">' +
+      '<span class="space-option-icon">' + escapeHtml(s.icon || '🏠') + '</span>' +
+      '<span class="space-option-name">' + escapeHtml(s.name || '') + '</span>' +
+      '<span class="space-option-arrow">›</span>' +
+    '</button>'
+  ).join('');
+  overlay.innerHTML =
+    '<div class="modal-content space-modal-content">' +
+      '<div class="modal-emoji-big">📦</div>' +
+      '<p class="modal-title">' + escapeHtml(t('moveShoppingMultipleTitle')) + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(t('moveShoppingMultipleIntro', items.length)) + '</p>' +
+      '<p class="move-multi-preview">' + previewItems + escapeHtml(more) + '</p>' +
+      '<div class="space-options">' + optionsHtml + '</div>' +
+      '<div class="info-banner banner-info" style="margin-top: 12px;">' +
+        '<div class="info-banner-icon">ℹ️</div>' +
+        '<div class="info-banner-content"><p>' + escapeHtml(t('moveShoppingMultipleInfo')) + '</p></div>' +
+      '</div>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="move-shop-multi-cancel">' + escapeHtml(t('cancel')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#move-shop-multi-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelectorAll('.space-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.spaceId;
+      const target = targets.find(s => s.id === id);
+      if (!target) return;
+      close();
+      _executeMoveMultipleShoppingItems(items, target);
+    });
+  });
+}
+
+async function _executeMoveMultipleShoppingItems(items, targetSpace) {
+  if (!items || !items.length || !targetSpace || !targetSpace.syncCode) return;
+  _showSwitchingOverlay({ icon: '📦' }, t('moveShoppingMultipleInProgress', items.length));
+  try {
+    const ok = await window.FBSync.init();
+    if (!ok) throw new Error('Firebase init failed');
+    // El camp del cloud és 'shoppingItems' (camelCase) — no 'shopping'.
+    const existing = await window.FBSync.readListData(targetSpace.syncCode, 'shoppingItems');
+    const targetList = Array.isArray(existing) ? existing.slice() : [];
+    const baseTs = Date.now();
+    items.forEach((it, idx) => {
+      targetList.push(Object.assign({}, it, {
+        id: 's_' + baseTs + '_' + idx + '_' + Math.random().toString(36).slice(2, 5)
+      }));
+    });
+    await window.FBSync.writeListData(targetSpace.syncCode, 'shoppingItems', targetList);
+    if (typeof shoppingItems !== 'undefined' && Array.isArray(shoppingItems)) {
+      const ids = new Set(items.map(it => it.id));
+      shoppingItems = shoppingItems.filter(it => !ids.has(it.id));
+      if (typeof saveShoppingData === 'function') saveShoppingData();
+    }
+    if (window.ShoppingSelection && typeof window.ShoppingSelection.exit === 'function') {
+      window.ShoppingSelection.exit();
+    }
+    // Re-render de la pantalla del super: openSupermarket reaplica el
+    // render dels items del super actiu. Mateix patró que deleteShoppingItem.
+    if (typeof openSupermarket === 'function' && typeof currentSupermarketId !== 'undefined') {
+      openSupermarket(currentSupermarketId, { preserveMode: true });
+    }
+    _hideSwitchingOverlay();
+    showToast(t('moveShoppingMultipleDone', items.length, (targetSpace.icon || '') + ' ' + (targetSpace.name || '')));
+  } catch (e) {
+    _hideSwitchingOverlay();
+    console.error('[MoveShoppingMultiple] error:', e);
+    showToast(t('moveShoppingMultipleError'));
+  }
+}
+
+
 async function _executeMoveMultipleProducts(items, targetSpace) {
   if (!items || !items.length || !targetSpace || !targetSpace.syncCode) return;
   _showSwitchingOverlay({ icon: '📦' }, t('moveMultipleInProgress', items.length));
@@ -987,5 +1084,6 @@ window.SpacesUI = {
   refreshMoveProductBtn: _refreshMoveProductBtn,
   showMoveShoppingItemModal: _showMoveShoppingItemModal,
   refreshMoveShoppingItemBtn: _refreshMoveShoppingItemBtn,
-  showMoveMultipleProductsModal: _showMoveMultipleProductsModal
+  showMoveMultipleProductsModal: _showMoveMultipleProductsModal,
+  showMoveMultipleShoppingItemsModal: _showMoveMultipleShoppingItemsModal
 };

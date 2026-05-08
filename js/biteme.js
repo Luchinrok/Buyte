@@ -1203,7 +1203,7 @@ function _exitLevelsSelectionMode() {
   _levelsSelectionMode = false;
   _levelsSelectedIds.clear();
   document.body.classList.remove('selection-mode-active');
-  const toolbar = document.getElementById('levels-selection-toolbar');
+  const toolbar = document.getElementById('selection-toolbar');
   if (toolbar) toolbar.style.display = 'none';
   document.querySelectorAll('#levels-slider .product-item.is-selected').forEach(el => {
     el.classList.remove('is-selected');
@@ -1211,10 +1211,14 @@ function _exitLevelsSelectionMode() {
 }
 
 function _enterLevelsSelectionMode(initialId) {
+  // Defensiu: surt de qualsevol altra selecció activa abans (BuyMe).
+  if (window.ShoppingSelection && window.ShoppingSelection.isActive && window.ShoppingSelection.isActive()) {
+    window.ShoppingSelection.exit();
+  }
   _levelsSelectionMode = true;
   _levelsSelectedIds.clear();
   document.body.classList.add('selection-mode-active');
-  const toolbar = document.getElementById('levels-selection-toolbar');
+  const toolbar = document.getElementById('selection-toolbar');
   if (toolbar) toolbar.style.display = 'flex';
   if (initialId) _toggleLevelsSelection(initialId);
 }
@@ -1228,7 +1232,7 @@ function _toggleLevelsSelection(id) {
   document.querySelectorAll('#levels-slider .product-item[data-product-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]').forEach(el => {
     el.classList.toggle('is-selected', _levelsSelectedIds.has(id));
   });
-  const counter = document.getElementById('levels-selection-count');
+  const counter = document.getElementById('selection-count');
   if (counter) counter.textContent = (typeof t === 'function')
     ? t('selectionCount', _levelsSelectedIds.size)
     : String(_levelsSelectedIds.size);
