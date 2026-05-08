@@ -1235,6 +1235,39 @@ h1 {
   line-height: 1.4;
 }
 
+/* Avís permanent a la pestanya Còpies que explica quin és l'abast
+   real d'aquestes còpies (locals, no protegeixen contra pèrdua del
+   mòbil) i recomana Firebase sync + export per a una protecció total.
+   To informatiu (blau cyan) per distingir-lo del recordatori urgent
+   (.backup-export-reminder, ambré). */
+.backup-scope-notice {
+  background: rgba(33, 150, 243, 0.1);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.backup-scope-notice-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1565C0;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+.backup-scope-notice-text {
+  font-size: 12.5px;
+  color: var(--text-soft);
+  margin: 4px 0;
+  line-height: 1.45;
+}
+:root[data-theme="dark"] .backup-scope-notice {
+  background: rgba(33, 150, 243, 0.15);
+  border-color: rgba(33, 150, 243, 0.4);
+}
+:root[data-theme="dark"] .backup-scope-notice-title {
+  color: #90CAF9;
+}
+
 /* Recordatori inline quan fa molt que no s'exporta. Banner suau ambré
    (atenció però no urgent) amb botó × per descartar fins demà. */
 .backup-export-reminder {

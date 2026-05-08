@@ -1548,8 +1548,22 @@ function renderBackupsTab(area) {
     ? '<p class="backup-empty">' + escapeHtml(t('backupsEmpty')) + '</p>'
     : '<div class="backup-list">' + rows + '</div>';
 
+  // Avís d'abast: l'usuari ha de saber que aquestes còpies viuen al
+  // mòbil i NO el protegeixen si perd el dispositiu. Per a aquell cas
+  // li recomanem Firebase sync + exportar a fitxer. Mateix to que els
+  // banners d'alerta del recordatori d'export (.backup-export-reminder)
+  // però amb classe pròpia per donar-li un estil diferent (informatiu,
+  // no urgent).
+  const scopeNoticeBlock =
+    '<div class="backup-scope-notice">' +
+      '<p class="backup-scope-notice-title">' + escapeHtml(t('backupsScopeNoticeTitle')) + '</p>' +
+      '<p class="backup-scope-notice-text">' + escapeHtml(t('backupsScopeNotice')) + '</p>' +
+      '<p class="backup-scope-notice-text">' + escapeHtml(t('backupsScopeNoticeAction')) + '</p>' +
+    '</div>';
+
   area.innerHTML =
     reminderBlock +
+    scopeNoticeBlock +
     '<div class="backup-info-box">' +
       '<p class="backup-info-line">📅 ' + escapeHtml(t('backupsAutoHint')) + '</p>' +
       '<p class="backup-info-line">' + escapeHtml(t('backupsCount', backups.length)) + ' (' + t('backupsMax', BS.MAX_COUNT) + ')</p>' +
@@ -1599,7 +1613,17 @@ function _confirmRestoreBackup(timestamp) {
         showToast(t('backupsRestoreError'));
         return;
       }
-      showToast('✅ ' + t('backupsRestoreDone'));
+      // El backup ja s'ha aplicat al localStorage; reconstruïm la mateixa
+      // estructura {data:{...}} a partir de les claus actuals per generar
+      // un toast amb les xifres reals.
+      const dataSnapshot = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('eatmefirst_')) {
+          try { dataSnapshot[k] = JSON.parse(localStorage.getItem(k)); } catch (e) {}
+        }
+      }
+      showToast('✅ ' + _buildImportToast(dataSnapshot));
       // Si Firebase sync està actiu, pujar l'estat restaurat al cloud
       // ABANS del reload — vegeu el comentari paral·lel a importData.
       // Sense això, la sync silenciosament desfaria la restauració.
@@ -1611,6 +1635,31 @@ function _confirmRestoreBackup(timestamp) {
       setTimeout(() => window.location.reload(), reloadDelay);
     }
   );
+}
+
+// Construeix un toast informatiu amb les xifres del que s'acaba
+// d'importar/restaurar. Mostra només categories amb contingut perquè
+// no quedi un toast llarg amb molts "0". Recorre les claus rellevants
+// del payload (objecte amb estructura {key: parsedValue}).
+function _buildImportToast(data) {
+  if (!data || typeof data !== 'object') return t('importDone');
+  const parts = [];
+  const len = (key) => {
+    const v = data[key];
+    return Array.isArray(v) ? v.length : 0;
+  };
+  const nProducts = len('eatmefirst_products');
+  const nShopping = len('eatmefirst_shopping_items');
+  const nRecipes = len('eatmefirst_custom_recipes');
+  const nSupers = len('eatmefirst_supermarkets');
+  const nLocations = len('eatmefirst_locations');
+  if (nProducts > 0) parts.push(t('countProducts', nProducts));
+  if (nShopping > 0) parts.push(t('countShopping', nShopping));
+  if (nRecipes > 0) parts.push(t('countRecipes', nRecipes));
+  if (nSupers > 0) parts.push(t('countSupers', nSupers));
+  if (nLocations > 0) parts.push(t('countLocations', nLocations));
+  if (parts.length === 0) return t('importDone');
+  return t('importedDetailToast', { parts });
 }
 
 // Helper compartit per importData i _confirmRestoreBackup. Si Firebase
@@ -2408,7 +2457,7 @@ function importData() {
           // sobreescriu silenciosament les dades acabades d'importar.
           // L'usuari ho viu com "l'import no fa res".
           const reloadDelay = _syncImportedStateToCloud() ? 1800 : 800;
-          showToast(t('importDone'));
+          showToast(_buildImportToast(json.data));
           setTimeout(() => location.reload(), reloadDelay);
         }
       );
