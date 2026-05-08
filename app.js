@@ -6,6 +6,17 @@
    ============================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Migració al sistema d'Espais (FASE 1). Si l'usuari ja existeix
+  // (té eatmefirst_sync_code o dades) i encara no té cap Espai, en
+  // crea un per defecte ("🏠 Casa") heretant el codi de sync actual.
+  // Idempotent — es pot cridar a cada boot sense efectes secundaris.
+  // Cal cridar-ho ABANS de loadData/initSync perquè futures fases
+  // (3-4) llegiran l'Espai actiu per decidir quin codi Firebase fer
+  // servir.
+  if (window.SpacesSystem && typeof window.SpacesSystem.migrateToSpaces === 'function') {
+    try { window.SpacesSystem.migrateToSpaces(); } catch (e) { console.warn('[Spaces] migration error', e); }
+  }
+
   loadData();
   loadLocations();
   loadShoppingData();
