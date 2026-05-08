@@ -166,9 +166,233 @@ if (typeof document !== 'undefined') {
 }
 
 
-// Botons "Crear" / "Unir-me" del peu de la pantalla — Phase 3.
-function _onSpacesCreateClick() { showToast(t('spacesPhase3Soon')); }
-function _onSpacesJoinClick()   { showToast(t('spacesPhase3Soon')); }
+// ----- Botons "Crear" / "Unir-me" — modals integrats (FASE 3) -----
+// Tots dos modals creen un Espai LOCAL (a SpacesSystem) i, en el cas
+// de Crear, també un document a Firebase (lists/{codi}). NO fan
+// switch — els nous Espais queden a la llista però no s'activen.
+// El canvi d'Espai (i el clear/restore de dades locals associat) ve
+// a la FASE 4.
+
+function _onSpacesCreateClick() { _showCreateSpaceModal(); }
+function _onSpacesJoinClick()   { _showJoinSpaceModal(); }
+
+// Construeix l'HTML del picker d'icones reutilitzant les opcions
+// d'SpacesSystem. Default: la primera (🏠).
+function _buildIconPickerHtml(selectedIcon) {
+  const opts = (window.SpacesSystem && window.SpacesSystem.ICON_OPTIONS) || ['🏠'];
+  const sel = selectedIcon || opts[0];
+  return '<div class="icon-picker">' + opts.map(icon =>
+    '<button type="button" class="icon-option' + (icon === sel ? ' selected' : '') + '" data-icon="' + escapeHtml(icon) + '">' + icon + '</button>'
+  ).join('') + '</div>';
+}
+
+// Wire dels botons de l'icon picker dins d'un overlay concret.
+// Retorna una funció que retorna l'icona triada actual.
+function _wireIconPicker(scope) {
+  scope.querySelectorAll('.icon-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      scope.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+  return () => {
+    const sel = scope.querySelector('.icon-option.selected');
+    return sel ? sel.dataset.icon : '🏠';
+  };
+}
+
+
+function _showCreateSpaceModal() {
+  if (!window.FBSync || !window.SpacesSystem) {
+    showToast(t('syncErrorOffline'));
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal-content space-modal-content">' +
+      '<div class="modal-emoji-big">➕</div>' +
+      '<p class="modal-title">' + escapeHtml(t('spacesCreateTitle')) + '</p>' +
+      '<div class="form-group">' +
+        '<label>' + escapeHtml(t('spacesCreateNameLabel')) + '</label>' +
+        '<input type="text" id="space-create-name" maxlength="30" autocomplete="off" placeholder="' + escapeHtml(t('spacesCreateNamePlaceholder')) + '">' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label>' + escapeHtml(t('spacesCreateIconLabel')) + '</label>' +
+        _buildIconPickerHtml(null) +
+      '</div>' +
+      '<div class="info-banner banner-info" style="margin: 8px 0 4px;">' +
+        '<div class="info-banner-icon">ℹ️</div>' +
+        '<div class="info-banner-content">' +
+          '<strong>' + escapeHtml(t('spacesCreateInfoTitle')) + '</strong>' +
+          '<p>' + escapeHtml(t('spacesCreateInfo')) + '</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="space-create-cancel">' + escapeHtml(t('cancel')) + '</button>' +
+        '<button class="modal-confirm" id="space-create-confirm">' + escapeHtml(t('spacesCreateConfirm')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  const getIcon = _wireIconPicker(overlay);
+  const nameInput = overlay.querySelector('#space-create-name');
+  setTimeout(() => { nameInput && nameInput.focus(); }, 50);
+  overlay.querySelector('#space-create-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  const confirmBtn = overlay.querySelector('#space-create-confirm');
+  confirmBtn.addEventListener('click', async () => {
+    const name = (nameInput.value || '').trim();
+    if (!name) { showToast(t('needName')); return; }
+
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('is-disabled');
+    showToast(t('spacesCreatingCode'));
+
+    try {
+      const ok = await window.FBSync.init();
+      if (!ok) { showToast(t('syncErrorOffline')); confirmBtn.disabled = false; confirmBtn.classList.remove('is-disabled'); return; }
+
+      // Generació de codi únic — fins a 10 intents, com createNewList.
+      let code = '';
+      let attempts = 0;
+      do {
+        code = window.FBSync.generateCode();
+        attempts++;
+        if (attempts > 10) break;
+      } while (await window.FBSync.codeExists(code));
+      if (attempts > 10) {
+        showToast(t('spacesCodeUniqueError'));
+        confirmBtn.disabled = false; confirmBtn.classList.remove('is-disabled');
+        return;
+      }
+
+      // Document Firebase amb estat buit. NO copiem dades de l'Espai
+      // actual (això evita que en fer switch a la Fase 4 l'usuari es
+      // trobi amb dades duplicades). Locations buides perquè
+      // onRemoteData ja les ignora si length === 0.
+      await window.FBSync.createList(code, {
+        products: [],
+        locations: [],
+        stats: { consumed: 0, trashed: 0 },
+        supermarkets: [],
+        shoppingItems: []
+      });
+
+      // Afegim l'Espai al SpacesSystem (sense activar-lo).
+      const newSpace = window.SpacesSystem.createSpace(name, getIcon());
+      window.SpacesSystem.updateSpaceSyncCode(newSpace.id, code);
+
+      close();
+      renderSpacesList();
+      showToast('✅ ' + t('spacesCreated', name));
+    } catch (e) {
+      console.error('[Spaces] Error creant espai:', e);
+      showToast(t('spacesCreateError'));
+      confirmBtn.disabled = false;
+      confirmBtn.classList.remove('is-disabled');
+    }
+  });
+}
+
+
+function _showJoinSpaceModal() {
+  if (!window.FBSync || !window.SpacesSystem) {
+    showToast(t('syncErrorOffline'));
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal-content space-modal-content">' +
+      '<div class="modal-emoji-big">🔗</div>' +
+      '<p class="modal-title">' + escapeHtml(t('spacesJoinTitle')) + '</p>' +
+      '<div class="form-group">' +
+        '<label>' + escapeHtml(t('spacesJoinCodeLabel')) + '</label>' +
+        '<input type="text" id="space-join-code" placeholder="EMF-XXXX-XXXX" maxlength="13" autocomplete="off" style="text-transform:uppercase;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1px">' +
+        '<small>' + escapeHtml(t('spacesJoinCodeHint')) + '</small>' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label>' + escapeHtml(t('spacesJoinNameLabel')) + '</label>' +
+        '<input type="text" id="space-join-name" maxlength="30" autocomplete="off" placeholder="' + escapeHtml(t('spacesCreateNamePlaceholder')) + '">' +
+        '<small>' + escapeHtml(t('spacesJoinNameHint')) + '</small>' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label>' + escapeHtml(t('spacesCreateIconLabel')) + '</label>' +
+        _buildIconPickerHtml(null) +
+      '</div>' +
+      '<div class="info-banner banner-info" style="margin: 8px 0 4px;">' +
+        '<div class="info-banner-icon">ℹ️</div>' +
+        '<div class="info-banner-content">' +
+          '<strong>' + escapeHtml(t('spacesJoinInfoTitle')) + '</strong>' +
+          '<p>' + escapeHtml(t('spacesJoinInfo')) + '</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="space-join-cancel">' + escapeHtml(t('cancel')) + '</button>' +
+        '<button class="modal-confirm" id="space-join-confirm">' + escapeHtml(t('spacesJoinConfirm')) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  const getIcon = _wireIconPicker(overlay);
+  const codeInput = overlay.querySelector('#space-join-code');
+  const nameInput = overlay.querySelector('#space-join-name');
+  setTimeout(() => { codeInput && codeInput.focus(); }, 50);
+  overlay.querySelector('#space-join-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  const confirmBtn = overlay.querySelector('#space-join-confirm');
+  confirmBtn.addEventListener('click', async () => {
+    let code = (codeInput.value || '').trim().toUpperCase();
+    const name = (nameInput.value || '').trim();
+    if (!code) { showToast(t('syncCodeRequired')); return; }
+    if (!name) { showToast(t('needName')); return; }
+    // Acceptem variants sense prefix EMF- o sense guions, com fa
+    // joinExistingList de settings.js, per ser permissius.
+    if (!code.startsWith('EMF-')) code = 'EMF-' + code;
+    if (code.length === 12 && code.charAt(7) !== '-') {
+      code = code.slice(0, 8) + '-' + code.slice(8);
+    }
+    if (!/^EMF-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) {
+      showToast(t('syncCodeInvalid'));
+      return;
+    }
+    // Defensiu: ja tens aquest codi a un Espai? No el tornem a afegir.
+    const dup = window.SpacesSystem.getSpaces().find(s => s.syncCode === code);
+    if (dup) {
+      showToast(t('spacesAlreadyJoined', dup.name || ''));
+      return;
+    }
+
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('is-disabled');
+    showToast(t('spacesVerifying'));
+
+    try {
+      const ok = await window.FBSync.init();
+      if (!ok) { showToast(t('syncErrorOffline')); confirmBtn.disabled = false; confirmBtn.classList.remove('is-disabled'); return; }
+      const exists = await window.FBSync.codeExists(code);
+      if (!exists) {
+        showToast(t('syncCodeNotFound'));
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('is-disabled');
+        return;
+      }
+      const newSpace = window.SpacesSystem.createSpace(name, getIcon());
+      window.SpacesSystem.updateSpaceSyncCode(newSpace.id, code);
+      close();
+      renderSpacesList();
+      showToast('✅ ' + t('spacesJoined', name));
+    } catch (e) {
+      console.error('[Spaces] Error verificant codi:', e);
+      showToast(t('syncErrorJoin'));
+      confirmBtn.disabled = false;
+      confirmBtn.classList.remove('is-disabled');
+    }
+  });
+}
 
 
 // Wire dels botons (es crida una vegada des d'app.js al boot, com
