@@ -1239,6 +1239,18 @@ function renderSettingsContent() {
     return;
   }
 
+  if (activeContentTab === 'categories') {
+    // Embolcalla el cos de screen-manage-categories dins la pestanya.
+    // Llista, botó "Crear nova" i obertura del formulari d'edició
+    // continuen funcionant; screen-category-edit es registra com a fill
+    // perquè el seu back torni al sub-pàgina mentre l'embed és actiu.
+    _embedStandaloneBody(area, 'screen-manage-categories', 'screen-settings-content', ['screen-category-edit']);
+    if (typeof manageCategoriesOrigin !== 'undefined') manageCategoriesOrigin = 'settings';
+    if (typeof renderCategoriesList === 'function') renderCategoriesList();
+    _updateSettingsContentActionBtn();
+    return;
+  }
+
   if (activeContentTab === 'receptes') {
     // Embolcalla el cos de screen-cookme dins la pestanya. Filtres,
     // cercador, llista i botó "Afegir recepta nova" funcionen igual.

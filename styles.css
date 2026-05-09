@@ -5987,6 +5987,138 @@ body.selection-mode-active #shops-slider .arrow-btn {
   .cat-tab-icon { font-size: 14px; }
 }
 
+/* ============================================
+   Gestió de categories (FASE 3)
+   Pantalla #screen-manage-categories i #screen-category-edit
+   ============================================ */
+.categories-quick-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 8px 0;
+}
+.categories-manage-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+.categories-manage-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.categories-manage-btn:active { transform: scale(0.96); }
+
+.categories-mgmt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.category-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.category-row-icon {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.category-row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.category-row-name {
+  font-size: 15px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.category-row-count {
+  font-size: 12px;
+  color: var(--text-soft);
+  margin-top: 2px;
+}
+.category-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.cat-edit-btn,
+.cat-delete-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+.cat-edit-btn:hover,
+.cat-delete-btn:hover { background: var(--bg-secondary); }
+.cat-edit-btn:active,
+.cat-delete-btn:active { transform: scale(0.94); }
+
+.create-cat-btn { width: 100%; }
+
+/* Picker d'emoji a #screen-category-edit. Limitat a ~24 opcions; si
+   l'emoji actual no està a la llista (per ex. una categoria custom amb
+   un emoji estrany) renderCategoryEmojiPicker l'afegeix al final. */
+.category-emoji-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.cat-emoji-option {
+  width: 48px;
+  height: 48px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  font-size: 24px;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.cat-emoji-option:hover { background: var(--bg-secondary); }
+.cat-emoji-option:active { transform: scale(0.95); }
+.cat-emoji-option.selected {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  border-color: transparent;
+  transform: scale(1.05);
+}
+
 .header-icon-btn {
   width: 40px;
   height: 40px;

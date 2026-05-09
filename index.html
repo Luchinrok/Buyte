@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260509-7">
+  <link rel="stylesheet" href="styles.css?v=20260509-8">
 </head>
 <body>
 
@@ -814,6 +814,56 @@
     <button class="danger-btn" id="btn-delete-popular" data-i18n="delete" style="display:none;margin-top:10px"></button>
   </div>
 
+  <!-- PANTALLA GESTIÓ DE CATEGORIES (FASE 3)
+       Es pot obrir de 2 maneres: standalone (botó ⚙️ Gestionar a
+       #screen-popular) o embedded sota Configuració > Contingut >
+       Categories. La llista i les accions són les mateixes; el back
+       l'ajusta openManageCategories(origin) a js/populars.js. -->
+  <div id="screen-manage-categories" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="popular" aria-label="Back">‹</button>
+      <h1>🏷️ Categories</h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="info-banner banner-info">
+      <div class="info-banner-icon">ℹ️</div>
+      <div class="info-banner-content">
+        <strong>Personalitza les teves categories</strong>
+        <p>Pots crear, editar o eliminar categories. Si elimines una, els seus productes passaran a "Altres".</p>
+      </div>
+    </div>
+
+    <div id="categories-mgmt-list" class="categories-mgmt-list"></div>
+
+    <button id="btn-create-category" class="primary-btn create-cat-btn">➕ Crear nova categoria</button>
+  </div>
+
+  <!-- PANTALLA EDITAR / CREAR CATEGORIA (FASE 3)
+       Reutilitzada per crear (editingCategoryId=null) i editar
+       (editingCategoryId=cat_id). El botó "Eliminar" només surt en
+       editar i mai per a la "Altres" (catch-all). -->
+  <div id="screen-category-edit" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="manage-categories" aria-label="Back">‹</button>
+      <h1 id="category-edit-title">Categoria</h1>
+      <div style="width:40px"></div>
+    </header>
+
+    <div class="form-group">
+      <label for="input-category-name">Nom de la categoria</label>
+      <input type="text" id="input-category-name" maxlength="30" autocomplete="off" placeholder="Ex: Sense gluten">
+    </div>
+
+    <div class="form-group">
+      <label>Icona</label>
+      <div id="category-emoji-picker" class="category-emoji-picker"></div>
+    </div>
+
+    <button class="primary-btn" id="btn-save-category">Guardar</button>
+    <button class="danger-btn" id="btn-delete-category" style="display:none;margin-top:10px">🗑️ Eliminar categoria</button>
+  </div>
+
   <!-- PANTALLA SELECCIONAR EMOJI -->
   <div id="screen-emoji-picker" class="screen">
     <header class="top-bar">
@@ -1028,6 +1078,9 @@
          i sempre comença amb una pestanya virtual "Tots". -->
     <div class="categories-tabs-bar" id="categories-tabs-bar">
       <div class="categories-tabs-scroll" id="categories-tabs-scroll"></div>
+    </div>
+    <div class="categories-quick-actions">
+      <button type="button" class="categories-manage-btn" id="btn-manage-categories" title="Gestionar categories">⚙️ Gestionar</button>
     </div>
 
     <!-- Barra d'acció a dalt: Afegir + Ordenar. Sempre visible quan
@@ -1252,6 +1305,7 @@
       <button type="button" class="sub-tab" data-subtab="botigues">🏪 <span data-i18n="subTabBotigues"></span></button>
       <button type="button" class="sub-tab" data-subtab="zones">📍 <span data-i18n="subTabZones"></span></button>
       <button type="button" class="sub-tab" data-subtab="populars">⭐ <span data-i18n="subTabPopulars"></span></button>
+      <button type="button" class="sub-tab" data-subtab="categories">🏷️ <span data-i18n="subTabCategories">Categories</span></button>
       <button type="button" class="sub-tab" data-subtab="receptes">🍳 <span data-i18n="subTabReceptes"></span></button>
     </div>
 
@@ -1971,10 +2025,10 @@
   <script src="js/biteme.js?v=20260508-9"></script>
   <script src="js/shops.js?v=20260503-3"></script>
   <script src="js/buyme.js?v=20260509-6"></script>
-  <script src="js/populars.js?v=20260509-7"></script>
+  <script src="js/populars.js?v=20260509-8"></script>
   <script src="js/categories.js?v=20260509-3"></script>
   <script src="js/special-lists.js?v=20260503-3"></script>
-  <script src="js/settings.js?v=20260508-5"></script>
+  <script src="js/settings.js?v=20260509-8"></script>
   <script src="js/backup.js?v=20260508-2"></script>
   <script src="js/spaces.js?v=20260508-4"></script>
   <script src="js/spaces-ui.js?v=20260508-8"></script>

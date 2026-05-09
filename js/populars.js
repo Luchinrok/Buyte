@@ -550,3 +550,249 @@ function togglePopularEditMode() {
   popularMode = popularMode === 'view' ? 'edit' : 'view';
   renderPopularList();
 }
+
+/* ============================================================
+   FASE 3 — Gestió de categories (crear, editar, eliminar)
+   Pantalles: #screen-manage-categories (llista)
+              #screen-category-edit    (formulari, reusat per crear/editar)
+   Origen: 'popular' (botó ⚙️ Gestionar a #screen-popular)
+           'settings' (sub-tab a Configuració > Contingut > Categories)
+   ============================================================ */
+
+// Selector d'emoji limitat — la decisió FASE 3 és no oferir el picker
+// complet aquí. Aquests són els 24 més rellevants per categoritzar.
+const CATEGORY_EMOJI_OPTIONS = [
+  '🥛', '🍖', '🐟', '🥬', '🍎', '🥖', '🥫', '🍫',
+  '🥤', '❄️', '🌶️', '📦', '🍕', '🥗', '🍱', '🌮',
+  '🍝', '🍣', '☕', '🍷', '🌾', '🥚', '🍯', '🧀'
+];
+
+let editingCategoryId = null;       // null = crear nou; id = editar existent
+let selectedCategoryEmoji = '📦';   // emoji actiu al picker
+let manageCategoriesOrigin = 'popular'; // 'popular' o 'settings'
+
+function openManageCategories(origin) {
+  manageCategoriesOrigin = origin || 'popular';
+  // back-btn: 'popular' si venim de la pantalla de populars; si l'embed
+  // de Configuració > Contingut està actiu, _embedStandaloneBody ja
+  // sobreescriurà el data-back per fer que torni al sub-pàgina, així que
+  // posar 'popular' aquí és el default segur per a l'obertura standalone.
+  const backBtn = document.querySelector('#screen-manage-categories .back-btn');
+  if (backBtn) backBtn.dataset.back = 'popular';
+  renderCategoriesList();
+  showScreen('manage-categories');
+}
+
+function renderCategoriesList() {
+  const container = document.getElementById('categories-mgmt-list');
+  if (!container) return;
+  if (!window.CategoriesSystem || typeof window.CategoriesSystem.getCategories !== 'function') {
+    container.innerHTML = '<p class="empty-state">Sistema de categories no disponible</p>';
+    return;
+  }
+
+  const cats = window.CategoriesSystem.getCategories().slice().sort((a, b) => {
+    const oa = (typeof a.order === 'number') ? a.order : 999;
+    const ob = (typeof b.order === 'number') ? b.order : 999;
+    return oa - ob;
+  });
+
+  // Comptem productes per categoria per ensenyar-ho a la fila (informatiu).
+  const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
+    ? window.CategoriesSystem.getItemCategories() : {};
+  const counts = {};
+  Object.values(itemCats).forEach(cid => { counts[cid] = (counts[cid] || 0) + 1; });
+
+  container.innerHTML = cats.map(cat => {
+    const isCatchAll = !!cat.isCatchAll;
+    const n = counts[cat.id] || 0;
+    const countLabel = n === 0 ? 'Sense productes' : (n === 1 ? '1 producte' : n + ' productes');
+    return (
+      '<div class="category-row" data-cat-id="' + escapeHtml(cat.id) + '">' +
+        '<div class="category-row-main">' +
+          '<span class="category-row-icon">' + escapeHtml(cat.icon || '📦') + '</span>' +
+          '<div class="category-row-text">' +
+            '<strong class="category-row-name">' + escapeHtml(cat.name || cat.id) + '</strong>' +
+            '<small class="category-row-count">' + countLabel + (isCatchAll ? ' · Sistema' : '') + '</small>' +
+          '</div>' +
+        '</div>' +
+        '<div class="category-row-actions">' +
+          '<button type="button" class="cat-edit-btn" data-cat-id="' + escapeHtml(cat.id) + '" aria-label="Editar">✏️</button>' +
+          (isCatchAll ? '' : '<button type="button" class="cat-delete-btn" data-cat-id="' + escapeHtml(cat.id) + '" aria-label="Eliminar">🗑️</button>') +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+
+  container.querySelectorAll('.cat-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => openCategoryEdit(btn.dataset.catId));
+  });
+  container.querySelectorAll('.cat-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteCategoryFromList(btn.dataset.catId));
+  });
+}
+
+function openCategoryEdit(catId) {
+  editingCategoryId = catId || null;
+  const isNew = !catId;
+  const cat = isNew ? null : (typeof window.CategoriesSystem.getCategoryById === 'function'
+    ? window.CategoriesSystem.getCategoryById(catId) : null);
+
+  // Títol + camps
+  const titleEl = document.getElementById('category-edit-title');
+  if (titleEl) titleEl.textContent = isNew ? '➕ Nova categoria' : ('✏️ Editar "' + (cat ? cat.name : '') + '"');
+  const nameInput = document.getElementById('input-category-name');
+  if (nameInput) nameInput.value = (cat && cat.name) || '';
+  selectedCategoryEmoji = (cat && cat.icon) || '📦';
+  renderCategoryEmojiPicker();
+
+  // Botó eliminar: només en edició i mai per a la "Altres" (catch-all).
+  const delBtn = document.getElementById('btn-delete-category');
+  if (delBtn) {
+    const showDelete = !isNew && cat && !cat.isCatchAll;
+    delBtn.style.display = showDelete ? 'block' : 'none';
+  }
+
+  showScreen('category-edit');
+  // L'auto-focus al nom només quan creem (en editar és sorollós).
+  if (isNew && nameInput) {
+    setTimeout(() => { try { nameInput.focus(); } catch (e) {} }, 50);
+  }
+}
+
+function renderCategoryEmojiPicker() {
+  const picker = document.getElementById('category-emoji-picker');
+  if (!picker) return;
+
+  // Si l'emoji actual no està als 24 predefinits, l'afegim al final perquè
+  // l'usuari pugui veure'l com a "actiu" en editar (en lloc d'un que no és).
+  const list = CATEGORY_EMOJI_OPTIONS.slice();
+  if (selectedCategoryEmoji && list.indexOf(selectedCategoryEmoji) === -1) {
+    list.push(selectedCategoryEmoji);
+  }
+
+  picker.innerHTML = list.map(emoji => {
+    const isSel = emoji === selectedCategoryEmoji;
+    return '<button type="button" class="cat-emoji-option' + (isSel ? ' selected' : '') + '" data-emoji="' + escapeHtml(emoji) + '">' + escapeHtml(emoji) + '</button>';
+  }).join('');
+
+  picker.querySelectorAll('.cat-emoji-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedCategoryEmoji = btn.dataset.emoji;
+      picker.querySelectorAll('.cat-emoji-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+}
+
+function saveCategoryEdit() {
+  const nameInput = document.getElementById('input-category-name');
+  const name = nameInput ? String(nameInput.value || '').trim() : '';
+  if (!name) {
+    showToast('Cal posar un nom');
+    if (nameInput) try { nameInput.focus(); } catch (e) {}
+    return;
+  }
+  const icon = selectedCategoryEmoji || '📦';
+
+  try {
+    if (editingCategoryId) {
+      window.CategoriesSystem.updateCategory(editingCategoryId, { name, icon });
+      showToast('✅ "' + name + '" actualitzada');
+    } else {
+      window.CategoriesSystem.createCategory(name, icon);
+      showToast('✅ Categoria "' + name + '" creada');
+    }
+  } catch (err) {
+    console.warn('[Categories] save error', err);
+    showToast('Error guardant la categoria');
+    return;
+  }
+
+  // Re-renderitzem la llista i les pestanyes de la pantalla populars
+  // (sempre que existeixin al DOM — són compartides entre l'obertura
+  //  standalone i l'embedded).
+  renderCategoriesList();
+  if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+
+  editingCategoryId = null;
+  showScreen('manage-categories');
+}
+
+function deleteCategoryFromEdit() {
+  if (!editingCategoryId) return;
+  const cat = window.CategoriesSystem.getCategoryById(editingCategoryId);
+  if (!cat) return;
+  if (cat.isCatchAll) {
+    showToast('No es pot eliminar la categoria "Altres"');
+    return;
+  }
+  _confirmDeleteCategory(cat, () => {
+    editingCategoryId = null;
+    showScreen('manage-categories');
+  });
+}
+
+function deleteCategoryFromList(catId) {
+  const cat = window.CategoriesSystem.getCategoryById(catId);
+  if (!cat) return;
+  if (cat.isCatchAll) {
+    showToast('No es pot eliminar la categoria "Altres"');
+    return;
+  }
+  _confirmDeleteCategory(cat, null);
+}
+
+// Confirma l'eliminació amb confirm() natiu (mateix patró que la resta de
+// l'app — vegeu deletePopularItem). Si l'usuari accepta, elimina la
+// categoria, repinta llistes i pestanyes, i opcionalment crida onAfter
+// (útil quan venim del formulari d'edició per tornar a la llista).
+function _confirmDeleteCategory(cat, onAfter) {
+  const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
+    ? window.CategoriesSystem.getItemCategories() : {};
+  const affected = Object.values(itemCats).filter(cid => cid === cat.id).length;
+  const tail = affected > 0
+    ? '\n\n' + affected + ' producte' + (affected === 1 ? '' : 's') + ' passar' + (affected === 1 ? 'à' : 'an') + ' a "Altres".'
+    : '';
+  const msg = 'Eliminar la categoria "' + cat.name + '"?' + tail + '\n\nAquesta acció no es pot desfer.';
+  if (!confirm(msg)) return;
+
+  try {
+    window.CategoriesSystem.deleteCategory(cat.id);
+  } catch (err) {
+    showToast(err && err.message ? err.message : 'Error eliminant la categoria');
+    return;
+  }
+  showToast('Categoria "' + cat.name + '" eliminada');
+  // Si la categoria eliminada era el filtre actiu de pestanyes, tornem a "Tots".
+  if (typeof popularCategoryFilter !== 'undefined' && popularCategoryFilter === cat.id) {
+    popularCategoryFilter = 'all';
+  }
+  renderCategoriesList();
+  if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+  if (typeof renderPopularList === 'function') {
+    // Si l'usuari està a la pantalla de populars en aquest moment (cas
+    // probable: ha vingut via ⚙️ Gestionar) els seus productes filtrats
+    // poden haver canviat — repintem.
+    const popScreen = document.getElementById('screen-popular');
+    if (popScreen && popScreen.classList.contains('active')) renderPopularList();
+  }
+  if (typeof onAfter === 'function') onAfter();
+}
+
+// Listeners — s'enganxen al càrrec del DOM (idempotents via guard).
+(function _attachCategoryEditListeners() {
+  if (typeof document === 'undefined') return;
+  if (window.__categoryEditListenersAttached) return;
+  window.__categoryEditListenersAttached = true;
+  document.addEventListener('DOMContentLoaded', () => {
+    const saveBtn = document.getElementById('btn-save-category');
+    const delBtn = document.getElementById('btn-delete-category');
+    const createBtn = document.getElementById('btn-create-category');
+    const manageBtn = document.getElementById('btn-manage-categories');
+    if (saveBtn) saveBtn.addEventListener('click', saveCategoryEdit);
+    if (delBtn) delBtn.addEventListener('click', deleteCategoryFromEdit);
+    if (createBtn) createBtn.addEventListener('click', () => openCategoryEdit(null));
+    if (manageBtn) manageBtn.addEventListener('click', () => openManageCategories('popular'));
+  });
+})();
