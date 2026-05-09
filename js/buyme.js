@@ -1084,9 +1084,9 @@ function tryQuickBuyShoppingItem(item) {
   const locName = loc && typeof getLocationName === 'function' ? getLocationName(loc) : (newProduct.location || '');
   const daysText = newProduct.noExpiry
     ? t('noExpiryShort')
-    : t('daysShort')(prefill.days || 7);
+    : t('daysShort', prefill.days || 7);
   showUndoableToast({
-    message: t('quickBuyDone')(newProduct.emoji, newProduct.name, locName, daysText),
+    message: t('quickBuyDone', newProduct.emoji, newProduct.name, locName, daysText),
     durationMs: 5000,
     onUndo: () => undoQuickBuy(newProduct.id, item)
   });
@@ -1159,7 +1159,7 @@ function undoQuickBuy(newProductId, originalItem) {
   }
   if (typeof renderShoppingItems === 'function') renderShoppingItems();
   if (typeof renderHome === 'function') renderHome();
-  showToast(t('restoredToBuyMe')(originalItem ? originalItem.name : ''));
+  showToast(t('restoredToBuyMe', originalItem ? originalItem.name : ''));
 }
 
 // Compra ràpida en bloc des de la selecció múltiple del BuyMe.
@@ -1207,15 +1207,15 @@ function quickBuyMultipleSelected() {
   }
 
   if (pairs.length > 0) {
-    let msg = t('quickBuyDoneMulti')(pairs.length);
-    if (needsFormCount > 0) msg += '. ' + t('quickBuyNeedsForm')(needsFormCount);
+    let msg = t('quickBuyDoneMulti', pairs.length);
+    if (needsFormCount > 0) msg += '. ' + t('quickBuyNeedsForm', needsFormCount);
     showUndoableToast({
       message: msg,
       durationMs: 6000,
       onUndo: () => undoQuickBuyMultiple(pairs)
     });
   } else if (needsFormCount > 0) {
-    showToast(t('quickBuyNeedsForm')(needsFormCount));
+    showToast(t('quickBuyNeedsForm', needsFormCount));
   }
 }
 
@@ -1236,7 +1236,7 @@ function undoQuickBuyMultiple(pairs) {
   }
   if (typeof renderShoppingItems === 'function') renderShoppingItems();
   if (typeof renderHome === 'function') renderHome();
-  showToast(t('restoredMultipleToBuyMe')(pairs.length));
+  showToast(t('restoredMultipleToBuyMe', pairs.length));
 }
 
 // Toast amb botó "Desfer". Diferent del showToast clàssic (que NO té botó).

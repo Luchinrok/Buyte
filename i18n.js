@@ -515,7 +515,8 @@ const TRANSLATIONS = {
     restoredToBuyMe: (name) => '↺ ' + name + ' restaurat al BuyMe',
     restoredMultipleToBuyMe: (n) => '↺ ' + n + ' producte' + (n === 1 ? '' : 's') + ' restaurat' + (n === 1 ? '' : 's') + ' al BuyMe',
     daysShort: (n) => n + ' dies',
-    noExpiryShort: 'sense caducitat',
+    // (noExpiryShort: 'Sense data' ja existeix a la línia ~616 d'aquest mateix
+    //  bloc 'ca' i guanya per ser més tardà — reutilitzem aquesta clau.)
     emptyList: 'Llista buida',
     oneItem: '1 producte',
     manyItems: (n) => '' + n + ' productes',
