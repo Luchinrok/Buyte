@@ -8,7 +8,15 @@
      eatmefirst_popular_item_categories → mapa { itemId: categoryId }
 
    Namespace global: window.CategoriesSystem
+
+   Tot el fitxer va embolcallat en un IIFE per no contaminar el global
+   scope: js/product-data.js ja té un `EMOJI_TO_CATEGORY` (mapatge a
+   categories d'impacte/CO2), i com que els scripts es carreguen com a
+   classics — no mòduls — un `const` al top-level col·lisionaria.
    ============================================ */
+
+(function () {
+'use strict';
 
 const POPULAR_CATEGORIES_KEY = 'eatmefirst_popular_categories';
 const POPULAR_ITEM_CATEGORIES_KEY = 'eatmefirst_popular_item_categories';
@@ -256,3 +264,5 @@ window.CategoriesSystem = {
   detectCategoryForItem,
   migrateExistingPopulars
 };
+
+})();
