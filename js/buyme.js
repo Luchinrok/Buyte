@@ -1079,14 +1079,19 @@ function tryQuickBuyShoppingItem(item) {
   if (typeof bumpProductsAddedCounter === 'function') bumpProductsAddedCounter();
   if (typeof addXp === 'function') addXp(2, 'eatme-add');
 
-  // Toast amb opció Desfer.
+  // Toast amb opció Desfer. Strings inline en català (l'app és Catalan-only
+  // a runtime — vegeu t() a i18n.js que sempre llegeix TRANSLATIONS.ca).
+  // Inline en lloc de t('quickBuyDone', ...) perquè és immune a caches
+  // velles d'i18n.js: si l'usuari encara té el bundle antic, els claus nous
+  // de traducció no existirien i el toast no arribaria a renderitzar.
   const loc = (typeof getLocationById === 'function') ? getLocationById(newProduct.location) : null;
   const locName = loc && typeof getLocationName === 'function' ? getLocationName(loc) : (newProduct.location || '');
   const daysText = newProduct.noExpiry
-    ? t('noExpiryShort')
-    : t('daysShort', prefill.days || 7);
+    ? 'sense caducitat'
+    : (prefill.days || 7) + ' dies';
+  const emojiPart = newProduct.emoji ? newProduct.emoji + ' ' : '';
   showUndoableToast({
-    message: t('quickBuyDone', newProduct.emoji, newProduct.name, locName, daysText),
+    message: '✅ ' + emojiPart + newProduct.name + ' → ' + locName + ' (' + daysText + ')',
     durationMs: 5000,
     onUndo: () => undoQuickBuy(newProduct.id, item)
   });
@@ -1159,7 +1164,7 @@ function undoQuickBuy(newProductId, originalItem) {
   }
   if (typeof renderShoppingItems === 'function') renderShoppingItems();
   if (typeof renderHome === 'function') renderHome();
-  showToast(t('restoredToBuyMe', originalItem ? originalItem.name : ''));
+  showToast('↺ ' + (originalItem ? originalItem.name : '') + ' restaurat al BuyMe');
 }
 
 // Compra ràpida en bloc des de la selecció múltiple del BuyMe.
@@ -1207,15 +1212,18 @@ function quickBuyMultipleSelected() {
   }
 
   if (pairs.length > 0) {
-    let msg = t('quickBuyDoneMulti', pairs.length);
-    if (needsFormCount > 0) msg += '. ' + t('quickBuyNeedsForm', needsFormCount);
+    const nQ = pairs.length;
+    let msg = '✅ ' + nQ + ' producte' + (nQ === 1 ? '' : 's') + ' → EatMe';
+    if (needsFormCount > 0) {
+      msg += '. ' + needsFormCount + ' necessit' + (needsFormCount === 1 ? 'a' : 'en') + ' ompliment manual';
+    }
     showUndoableToast({
       message: msg,
       durationMs: 6000,
       onUndo: () => undoQuickBuyMultiple(pairs)
     });
   } else if (needsFormCount > 0) {
-    showToast(t('quickBuyNeedsForm', needsFormCount));
+    showToast(needsFormCount + ' necessit' + (needsFormCount === 1 ? 'a' : 'en') + ' ompliment manual');
   }
 }
 
@@ -1236,7 +1244,7 @@ function undoQuickBuyMultiple(pairs) {
   }
   if (typeof renderShoppingItems === 'function') renderShoppingItems();
   if (typeof renderHome === 'function') renderHome();
-  showToast(t('restoredMultipleToBuyMe', pairs.length));
+  showToast('↺ ' + pairs.length + ' producte' + (pairs.length === 1 ? '' : 's') + ' restaurat' + (pairs.length === 1 ? '' : 's') + ' al BuyMe');
 }
 
 // Toast amb botó "Desfer". Diferent del showToast clàssic (que NO té botó).
@@ -1262,7 +1270,8 @@ function showUndoableToast(opts) {
   const undoBtn = document.createElement('button');
   undoBtn.type = 'button';
   undoBtn.className = 'uts-undo';
-  undoBtn.textContent = t('undo');
+  // Inline català (Catalan-only a runtime) — vegeu nota a tryQuickBuyShoppingItem.
+  undoBtn.textContent = '↺ Desfer';
   toast.appendChild(undoBtn);
 
   document.body.appendChild(toast);

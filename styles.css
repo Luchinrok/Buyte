@@ -2902,6 +2902,25 @@ body.selection-mode-active .product-item {
   flex-shrink: 0;
 }
 
+/* Override per als items del BuyMe (#shops-slider): el contenidor és un
+   CSS Grid amb 4 columnes declarades (auto 1fr auto auto). Afegir el ::before
+   com a fill el converteix en una 5a columna implícita → el botó "Comprat"
+   baixa a una segona fila i l'item es duplica d'alçada. Solució: treure el
+   check del flux del grid amb position:absolute i fer espai amb padding-left.
+   Els productes EatMe (.product-item) usen flex i no necessiten aquest
+   override. */
+#shops-slider .shopping-item.is-selected {
+  position: relative;
+  padding-left: 36px;
+}
+#shops-slider .shopping-item.is-selected::before {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 0;
+}
+
 /* Durant el mode selecció, els botons d'acció dels items BuyMe
    (Comprat ✅, Editar ✏️, fletxes ▲▼) queden visualment apagats i
    no responen — així un tap a un item sempre toggleja la selecció,
