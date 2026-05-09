@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260509-6">
+  <link rel="stylesheet" href="styles.css?v=20260509-7">
 </head>
 <body>
 
@@ -1022,6 +1022,14 @@
 
     <input type="search" id="popular-search" class="popular-search" autocomplete="off">
 
+    <!-- Pestanyes de categories (FASE 2). Scroll horitzontal estil
+         WhatsApp. Es generen dinàmicament des de renderCategoryTabs()
+         a js/populars.js — la llista la dóna window.CategoriesSystem
+         i sempre comença amb una pestanya virtual "Tots". -->
+    <div class="categories-tabs-bar" id="categories-tabs-bar">
+      <div class="categories-tabs-scroll" id="categories-tabs-scroll"></div>
+    </div>
+
     <!-- Barra d'acció a dalt: Afegir + Ordenar. Sempre visible quan
          estem en mode edició perquè l'usuari no hagi de baixar fins al
          final d'una llista llarga. -->
@@ -1963,7 +1971,7 @@
   <script src="js/biteme.js?v=20260508-9"></script>
   <script src="js/shops.js?v=20260503-3"></script>
   <script src="js/buyme.js?v=20260509-6"></script>
-  <script src="js/populars.js?v=20260506-10"></script>
+  <script src="js/populars.js?v=20260509-7"></script>
   <script src="js/categories.js?v=20260509-3"></script>
   <script src="js/special-lists.js?v=20260503-3"></script>
   <script src="js/settings.js?v=20260508-5"></script>

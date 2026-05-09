@@ -287,6 +287,9 @@ function openPopular(origin) {
   popularOrigin = origin || 'home';
   popularMode = 'view';
   popularSearchQuery = '';
+  // FASE 2: cada vegada que s'obre la pantalla, reset del filtre de
+  // categoria a "Tots". Si l'usuari surt i torna, no recordem el filtre.
+  popularCategoryFilter = 'all';
   const searchInput = document.getElementById('popular-search');
   if (searchInput) searchInput.value = '';
   // Reset back-button: 'settings' o sub-pantalla 'settings-*' des de
@@ -299,12 +302,75 @@ function openPopular(origin) {
     } else if (popularOrigin === 'shopping') backBtn.dataset.back = 'shopping-item-edit';
     else backBtn.dataset.back = 'add';
   }
+  renderCategoryTabs();
   renderPopularList();
   showScreen('popular');
 }
 
 // Filtre de cerca actual a la pantalla de productes populars.
 let popularSearchQuery = '';
+// FASE 2: filtre de categoria. 'all' = totes; o el id d'una categoria
+// (cat_dairy, cat_meat, cat_user_*, cat_other...). Es reseteja cada cop
+// que s'obre la pantalla via openPopular.
+let popularCategoryFilter = 'all';
+
+// Renderitza la barra de pestanyes a dalt de la pantalla de populars.
+// Idempotent: la primera pestanya és sempre "Tots", la resta venen de
+// CategoriesSystem.getCategories(). Reordena segons el camp `order` de
+// cada categoria (ascendent). Click → setPopularCategoryFilter.
+function renderCategoryTabs() {
+  const scroll = document.getElementById('categories-tabs-scroll');
+  if (!scroll) return;
+  if (!window.CategoriesSystem || typeof window.CategoriesSystem.getCategories !== 'function') {
+    // Capa de dades no carregada — sense pestanyes és més robust que
+    // ensenyar només "Tots" sense que faci res.
+    scroll.innerHTML = '';
+    return;
+  }
+  const cats = window.CategoriesSystem.getCategories().slice().sort((a, b) => {
+    const oa = (typeof a.order === 'number') ? a.order : 999;
+    const ob = (typeof b.order === 'number') ? b.order : 999;
+    return oa - ob;
+  });
+
+  const active = popularCategoryFilter || 'all';
+
+  // "Tots" inline en català (l'app és Catalan-only a runtime — vegeu
+  // la nota a tryQuickBuyShoppingItem a buyme.js sobre caches velles).
+  let html = '<button type="button" class="cat-tab' + (active === 'all' ? ' cat-tab-active' : '') + '" data-cat-id="all">' +
+             '<span class="cat-tab-icon">📋</span>' +
+             '<span class="cat-tab-name">Tots</span>' +
+             '</button>';
+  cats.forEach(c => {
+    const isAct = c.id === active;
+    html += '<button type="button" class="cat-tab' + (isAct ? ' cat-tab-active' : '') + '" data-cat-id="' + escapeHtml(c.id) + '">' +
+            '<span class="cat-tab-icon">' + escapeHtml(c.icon || '📦') + '</span>' +
+            '<span class="cat-tab-name">' + escapeHtml(c.name || c.id) + '</span>' +
+            '</button>';
+  });
+  scroll.innerHTML = html;
+
+  scroll.querySelectorAll('.cat-tab').forEach(btn => {
+    btn.addEventListener('click', () => setPopularCategoryFilter(btn.dataset.catId));
+  });
+}
+
+function setPopularCategoryFilter(catId) {
+  popularCategoryFilter = catId || 'all';
+  // Actualització ràpida de l'estat actiu sense regenerar el DOM (evita
+  // perdre la posició de scroll horitzontal de la barra).
+  document.querySelectorAll('#categories-tabs-scroll .cat-tab').forEach(t => {
+    t.classList.toggle('cat-tab-active', t.dataset.catId === popularCategoryFilter);
+  });
+  // La pestanya activa ha de quedar visible — útil sobretot quan l'usuari
+  // ha tocat una pestanya parcialment fora del viewport horitzontal.
+  const active = document.querySelector('#categories-tabs-scroll .cat-tab.cat-tab-active');
+  if (active && typeof active.scrollIntoView === 'function') {
+    try { active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
+    catch (e) { /* navegadors antics sense les opcions */ }
+  }
+  renderPopularList();
+}
 
 function renderPopularList() {
   // Defensiu: re-aplicar la zona de "tornar" segons popularOrigin per si
@@ -327,12 +393,31 @@ function renderPopularList() {
   container.innerHTML = '';
   const allItems = getPopularProducts();
   const q = popularSearchQuery.toLowerCase().trim();
-  const items = q ? allItems.filter(p => p.name.toLowerCase().includes(q)) : allItems;
+  const catFilter = popularCategoryFilter || 'all';
+  const isCatFiltering = (catFilter && catFilter !== 'all');
+
+  // Filtrat combinat: text + categoria. Apliquem-los seqüencialment.
+  let items = q ? allItems.filter(p => p.name.toLowerCase().includes(q)) : allItems.slice();
+  if (isCatFiltering && window.CategoriesSystem) {
+    const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
+      ? window.CategoriesSystem.getItemCategories() : {};
+    items = items.filter(p => {
+      let cid = p && p.id ? itemCats[p.id] : null;
+      // Si el popular encara no està categoritzat (FASE 1 no feia migració
+      // automàtica — es farà a la FASE 4), detectem la categoria al moment.
+      if (!cid && typeof window.CategoriesSystem.detectCategoryForItem === 'function') {
+        cid = window.CategoriesSystem.detectCategoryForItem(p);
+      }
+      return cid === catFilter;
+    });
+  }
 
   if (items.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'empty-state';
-    empty.textContent = q ? t('noResults') : t('noPopular');
+    // Missatge específic per categoria (l'app és Catalan-only a runtime).
+    if (isCatFiltering) empty.textContent = 'No hi ha productes en aquesta categoria.';
+    else empty.textContent = q ? t('noResults') : t('noPopular');
     container.appendChild(empty);
     updatePopularButtons();
     return;
@@ -353,8 +438,10 @@ function renderPopularList() {
     const realIdx = allItems.indexOf(p);
     const isFirst = realIdx === 0;
     const isLast = realIdx === allItems.length - 1;
-    // En mode cerca filtrat, no permetem reordenar amb fletxes (no té sentit).
-    const showArrows = !q;
+    // En vistes filtrades (cerca o categoria) no permetem reordenar amb
+    // fletxes — l'ordre canviaria en la llista global de manera confusa
+    // perquè l'usuari només veu un subconjunt.
+    const showArrows = !q && !isCatFiltering;
     const row = document.createElement('div');
     row.className = 'popular-row';
 

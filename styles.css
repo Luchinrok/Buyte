@@ -5927,6 +5927,66 @@ body.selection-mode-active #shops-slider .arrow-btn {
   appearance: none;
 }
 
+/* ============================================
+   Pestanyes de categories (FASE 2)
+   Scroll horitzontal estil WhatsApp. La barra va entre el cercador i la
+   barra d'eines de la pantalla #screen-popular.
+   ============================================ */
+.categories-tabs-bar {
+  width: 100%;
+  margin: 0 0 10px 0;
+}
+.categories-tabs-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* Una mica de padding lateral perquè la primera/última pestanya no
+     quedi enganxada a la vora durant el scroll. */
+  padding: 4px 2px 6px 2px;
+}
+.categories-tabs-scroll::-webkit-scrollbar { display: none; }
+
+.cat-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+.cat-tab:hover { border-color: var(--primary); }
+.cat-tab:active { transform: scale(0.96); }
+.cat-tab-active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #FFFFFF;
+  border-color: transparent;
+  font-weight: 700;
+}
+.cat-tab-icon { font-size: 16px; line-height: 1; }
+.cat-tab-name { line-height: 1; }
+
+@media (max-width: 480px) {
+  .cat-tab { padding: 7px 12px; font-size: 12px; }
+  .cat-tab-icon { font-size: 14px; }
+}
+
 .header-icon-btn {
   width: 40px;
   height: 40px;
