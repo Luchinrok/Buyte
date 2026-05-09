@@ -209,9 +209,11 @@ function detectCategoryForItem(item) {
   }
 
   if (item.name) {
-    const lowerName = String(item.name).toLowerCase();
+    // Match per paraules senceres, no per subcadenes: "Detergent" no ha
+    // de coincidir amb "te", "Vinagre" no ha de coincidir amb "vi", etc.
+    const words = String(item.name).toLowerCase().split(/[\s,.\-_]+/);
     for (const keyword in KEYWORDS_TO_CATEGORY) {
-      if (lowerName.includes(keyword)) return KEYWORDS_TO_CATEGORY[keyword];
+      if (words.indexOf(keyword) !== -1) return KEYWORDS_TO_CATEGORY[keyword];
     }
   }
 
