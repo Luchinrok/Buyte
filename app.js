@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try { window.SpacesSystem.migrateToSpaces(); } catch (e) { console.warn('[Spaces] migration error', e); }
   }
 
+  // Categories de productes populars (FASE 1: només capa de dades).
+  // Garantim que les categories per defecte existeixen al localStorage.
+  // La migració dels populars existents es farà a la FASE 4 (banner).
+  if (window.CategoriesSystem && typeof window.CategoriesSystem.getCategories === 'function') {
+    try { window.CategoriesSystem.getCategories(); } catch (e) { console.warn('[Categories] init error', e); }
+  }
+
   loadData();
   loadLocations();
   loadShoppingData();
