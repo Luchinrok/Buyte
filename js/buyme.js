@@ -633,6 +633,11 @@ function _exitShoppingSelectionMode() {
   document.body.classList.remove('selection-mode-active');
   const toolbar = document.getElementById('selection-toolbar');
   if (toolbar) toolbar.style.display = 'none';
+  // El botó "Comprar tots" només té sentit per a la selecció del BuyMe; el
+  // tornem a amagar per que no aparegui si l'usuari entra després al mode
+  // selecció dels productes EatMe (LevelsSelection no toca aquest botó).
+  const buyAllBtn = document.getElementById('btn-selection-buy-all');
+  if (buyAllBtn) buyAllBtn.style.display = 'none';
   document.querySelectorAll('#shops-slider .shopping-item.is-selected').forEach(el => {
     el.classList.remove('is-selected');
   });
@@ -648,6 +653,11 @@ function _enterShoppingSelectionMode(initialId) {
   document.body.classList.add('selection-mode-active');
   const toolbar = document.getElementById('selection-toolbar');
   if (toolbar) toolbar.style.display = 'flex';
+  // Mostrem el botó "Comprar tots" — exclusiu d'aquesta selecció (BuyMe).
+  // LevelsSelection (productes EatMe) no el toca, així que es manté amagat
+  // quan estàs en aquell mode. _exitShoppingSelectionMode el torna a amagar.
+  const buyAllBtn = document.getElementById('btn-selection-buy-all');
+  if (buyAllBtn) buyAllBtn.style.display = '';
   if (initialId) _toggleShoppingSelection(initialId);
 }
 
@@ -1001,26 +1011,40 @@ function deleteShoppingItem() {
   openSupermarket(currentSupermarketId, { preserveMode: true });
 }
 
-// Quan l'usuari prem "Comprat" → obre el formulari del tracker amb el nom prefilfat
+// Quan l'usuari prem "Comprat" → si tenim prou dades (zona + caducitat),
+// crea el producte EatMe directament (compra ràpida amb undo). Si no,
+// cau al flux clàssic: obre el formulari prefillat perquè l'usuari
+// completi els camps que falten.
 function buyShoppingItem(item) {
+  if (tryQuickBuyShoppingItem(item)) return;
+
+  // Fallback: el comportament clàssic (formulari intermedi).
   pendingShoppingItemId = item.id;
   pendingShoppingSupermarketId = item.supermarketId;
+  const prefill = _buildShoppingPrefill(item);
+  if (typeof openAddForm === 'function') {
+    openAddForm(prefill);
+  } else {
+    showToast(t('error'));
+  }
+}
 
-  // Cerquem si aquest producte és a la llista de populars per pre-fillar dies + zona
+// Construeix el prefill estàndard per a un item de la compra (popular > history > item).
+// Retorna { name, emoji, qty, days, location, noExpiry, price, weight }.
+function _buildShoppingPrefill(item) {
   const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
-  const fromPopular = populars.find(p => p.name.toLowerCase().trim() === item.name.toLowerCase().trim());
+  const key = String(item.name || '').toLowerCase().trim();
+  const fromPopular = populars.find(p => p.name && p.name.toLowerCase().trim() === key);
+  const fromHistory = (Array.isArray(productHistory) ? productHistory : [])
+    .find(p => p.name && p.name.toLowerCase().trim() === key);
 
-  // També cerquem a l'historial
-  const fromHistory = productHistory.find(p => p.name.toLowerCase().trim() === item.name.toLowerCase().trim());
-
-  // Si el propi item té data, calculem els dies que falten
   let itemDays = null;
-  if (item.date) {
+  if (item.date && typeof daysUntil === 'function') {
     const diff = daysUntil(item.date);
     if (Number.isFinite(diff) && diff > 0) itemDays = diff;
   }
 
-  const prefill = {
+  return {
     name: item.name,
     emoji: item.emoji,
     qty: item.qty,
@@ -1029,14 +1053,238 @@ function buyShoppingItem(item) {
     noExpiry: !!(item.noExpiry || (fromPopular && fromPopular.noExpiry) || (fromHistory && fromHistory.noExpiry)),
     price: (fromPopular && typeof fromPopular.price === 'number') ? fromPopular.price
          : (fromHistory && typeof fromHistory.price === 'number') ? fromHistory.price
-         : undefined
+         : undefined,
+    weight: (fromPopular && fromPopular.weight) || (fromHistory && fromHistory.weight) || undefined
+  };
+}
+
+// Comprova si l'item es pot "comprar ràpid" (té zona i caducitat al popular/history).
+// Si sí: crea el producte directament + esborra de BuyMe + toast amb undo. Retorna true.
+// Si no: retorna false perquè el caller faci fallback al formulari.
+function tryQuickBuyShoppingItem(item) {
+  const prefill = _buildShoppingPrefill(item);
+  const hasZone = !!prefill.location;
+  const hasExpiry = !!prefill.days || !!prefill.noExpiry;
+  if (!hasZone || !hasExpiry) return false;
+
+  const newProduct = _quickBuyCore(item, prefill);
+  if (!newProduct) return false;
+
+  // Persistim, sincronitzem i re-renderitzem un sol cop per acció.
+  if (typeof saveData === 'function') saveData();
+  if (typeof saveShoppingData === 'function') saveShoppingData();
+  if (typeof renderShoppingItems === 'function') renderShoppingItems();
+
+  // Gamificació igual que saveNewProduct.
+  if (typeof bumpProductsAddedCounter === 'function') bumpProductsAddedCounter();
+  if (typeof addXp === 'function') addXp(2, 'eatme-add');
+
+  // Toast amb opció Desfer.
+  const loc = (typeof getLocationById === 'function') ? getLocationById(newProduct.location) : null;
+  const locName = loc && typeof getLocationName === 'function' ? getLocationName(loc) : (newProduct.location || '');
+  const daysText = newProduct.noExpiry
+    ? t('noExpiryShort')
+    : t('daysShort')(prefill.days || 7);
+  showUndoableToast({
+    message: t('quickBuyDone')(newProduct.emoji, newProduct.name, locName, daysText),
+    durationMs: 5000,
+    onUndo: () => undoQuickBuy(newProduct.id, item)
+  });
+
+  return true;
+}
+
+// Mutació pura sobre els arrays in-memory: afegeix el producte a `products`,
+// treu l'item de `shoppingItems`, registra a l'historial. NO desa, NO renderitza,
+// NO mostra toast — això es fa al caller per poder agrupar-ho en lots.
+// Retorna el newProduct (o null si no es pot construir).
+function _quickBuyCore(item, prefill) {
+  if (!prefill || !prefill.location) return null;
+
+  const today = new Date();
+  let dateStr = null;
+  if (!prefill.noExpiry) {
+    const expiry = new Date(today);
+    expiry.setDate(expiry.getDate() + (prefill.days || 7));
+    dateStr = (typeof formatDateLocal === 'function') ? formatDateLocal(expiry) : null;
+  }
+
+  const newProduct = {
+    id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
+    name: prefill.name,
+    emoji: prefill.emoji,
+    date: dateStr,
+    noExpiry: !!prefill.noExpiry,
+    location: prefill.location,
+    qty: (item && item.qty) || prefill.qty || '',
+    addedAt: new Date().toISOString()
+  };
+  if (typeof prefill.price === 'number' && prefill.price >= 0) newProduct.price = prefill.price;
+  if (prefill.weight) newProduct.weight = prefill.weight;
+
+  // frozenDate si va al congelador (mateixa regla que saveNewProduct).
+  const newProductLoc = (typeof getLocationById === 'function') ? getLocationById(prefill.location) : null;
+  if (newProductLoc && newProductLoc.category === 'freezer' && typeof formatDateLocal === 'function') {
+    newProduct.frozenDate = formatDateLocal(today);
+  }
+
+  // Aprenentatge: registra a l'historial / popular (mateixa crida que saveNewProduct).
+  if (typeof recordProductInHistory === 'function') {
+    recordProductInHistory(prefill.name, prefill.emoji, prefill.location,
+      prefill.days, !!prefill.noExpiry, newProduct.price, newProduct.weight);
+  }
+
+  if (!Array.isArray(products)) products = [];
+  products.push(newProduct);
+
+  if (Array.isArray(shoppingItems)) {
+    shoppingItems = shoppingItems.filter(it => it.id !== item.id);
+  }
+
+  return newProduct;
+}
+
+// Desfer una compra ràpida individual.
+function undoQuickBuy(newProductId, originalItem) {
+  if (Array.isArray(products)) {
+    products = products.filter(p => p.id !== newProductId);
+    if (typeof saveData === 'function') saveData();
+  }
+  if (Array.isArray(shoppingItems) && originalItem) {
+    // Defensiu: no dupliquem si l'item ja hi és (ex: l'usuari ha tornat a editar).
+    if (!shoppingItems.some(it => it.id === originalItem.id)) {
+      shoppingItems.push(originalItem);
+    }
+    if (typeof saveShoppingData === 'function') saveShoppingData();
+  }
+  if (typeof renderShoppingItems === 'function') renderShoppingItems();
+  if (typeof renderHome === 'function') renderHome();
+  showToast(t('restoredToBuyMe')(originalItem ? originalItem.name : ''));
+}
+
+// Compra ràpida en bloc des de la selecció múltiple del BuyMe.
+// Itera els items seleccionats, fa quick-buy als que tenen prou dades,
+// i agrupa una sola escriptura/render/toast al final.
+function quickBuyMultipleSelected() {
+  if (!window.ShoppingSelection || !window.ShoppingSelection.isActive()) return;
+  const ids = window.ShoppingSelection.getSelectedIds();
+  if (!ids || ids.length === 0) return;
+
+  // Snapshot dels items abans de mutar shoppingItems (els ids no canvien dins del bucle).
+  const items = (Array.isArray(shoppingItems) ? shoppingItems : []).filter(it => ids.indexOf(it.id) !== -1);
+  if (items.length === 0) return;
+
+  const pairs = []; // { newProductId, originalItem }
+  let needsFormCount = 0;
+
+  items.forEach(item => {
+    const prefill = _buildShoppingPrefill(item);
+    const hasZone = !!prefill.location;
+    const hasExpiry = !!prefill.days || !!prefill.noExpiry;
+    if (hasZone && hasExpiry) {
+      const np = _quickBuyCore(item, prefill);
+      if (np) {
+        pairs.push({ newProductId: np.id, originalItem: item });
+        // Gamificació per cada producte (mateix tractament que saveNewProduct).
+        if (typeof bumpProductsAddedCounter === 'function') bumpProductsAddedCounter();
+        if (typeof addXp === 'function') addXp(2, 'eatme-add');
+      }
+    } else {
+      needsFormCount++;
+    }
+  });
+
+  // Una sola escriptura + sync + render per a tot el bloc.
+  if (pairs.length > 0) {
+    if (typeof saveData === 'function') saveData();
+    if (typeof saveShoppingData === 'function') saveShoppingData();
+    if (typeof renderShoppingItems === 'function') renderShoppingItems();
+  }
+
+  // Sortir del mode selecció.
+  if (window.ShoppingSelection && typeof window.ShoppingSelection.exit === 'function') {
+    window.ShoppingSelection.exit();
+  }
+
+  if (pairs.length > 0) {
+    let msg = t('quickBuyDoneMulti')(pairs.length);
+    if (needsFormCount > 0) msg += '. ' + t('quickBuyNeedsForm')(needsFormCount);
+    showUndoableToast({
+      message: msg,
+      durationMs: 6000,
+      onUndo: () => undoQuickBuyMultiple(pairs)
+    });
+  } else if (needsFormCount > 0) {
+    showToast(t('quickBuyNeedsForm')(needsFormCount));
+  }
+}
+
+function undoQuickBuyMultiple(pairs) {
+  if (!Array.isArray(pairs) || pairs.length === 0) return;
+  const idsToRemove = new Set(pairs.map(p => p.newProductId));
+  if (Array.isArray(products)) {
+    products = products.filter(p => !idsToRemove.has(p.id));
+    if (typeof saveData === 'function') saveData();
+  }
+  if (Array.isArray(shoppingItems)) {
+    pairs.forEach(p => {
+      if (p.originalItem && !shoppingItems.some(it => it.id === p.originalItem.id)) {
+        shoppingItems.push(p.originalItem);
+      }
+    });
+    if (typeof saveShoppingData === 'function') saveShoppingData();
+  }
+  if (typeof renderShoppingItems === 'function') renderShoppingItems();
+  if (typeof renderHome === 'function') renderHome();
+  showToast(t('restoredMultipleToBuyMe')(pairs.length));
+}
+
+// Toast amb botó "Desfer". Diferent del showToast clàssic (que NO té botó).
+// Si ja hi ha un toast actiu, el substitueix — l'undo del toast antic queda
+// inaccessible (assumim que l'usuari ha decidit continuar amb la nova acció).
+function showUndoableToast(opts) {
+  const message = (opts && opts.message) || '';
+  const durationMs = (opts && typeof opts.durationMs === 'number') ? opts.durationMs : 5000;
+  const onUndo = opts && opts.onUndo;
+
+  const existing = document.getElementById('undoable-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'undoable-toast';
+  toast.className = 'undoable-toast';
+
+  const msgSpan = document.createElement('span');
+  msgSpan.className = 'uts-msg';
+  msgSpan.textContent = message;
+  toast.appendChild(msgSpan);
+
+  const undoBtn = document.createElement('button');
+  undoBtn.type = 'button';
+  undoBtn.className = 'uts-undo';
+  undoBtn.textContent = t('undo');
+  toast.appendChild(undoBtn);
+
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+
+  let undoClicked = false;
+  const dismiss = () => {
+    if (!toast.parentNode) return;
+    toast.classList.remove('show');
+    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
   };
 
-  if (typeof openAddForm === 'function') {
-    openAddForm(prefill);
-  } else {
-    showToast(t('error'));
-  }
+  const timer = setTimeout(() => { if (!undoClicked) dismiss(); }, durationMs);
+
+  undoBtn.addEventListener('click', () => {
+    undoClicked = true;
+    clearTimeout(timer);
+    if (typeof onUndo === 'function') {
+      try { onUndo(); } catch (e) { console.warn('[undo]', e); }
+    }
+    dismiss();
+  });
 }
 
 let pendingShoppingItemId = null; // si està definit, després de guardar producte traiem aquest item

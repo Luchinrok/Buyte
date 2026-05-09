@@ -124,6 +124,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Compra ràpida en bloc dels items BuyMe seleccionats. La visibilitat del
+  // botó la controla _enter/_exitShoppingSelectionMode a js/buyme.js — només
+  // surt mentre ShoppingSelection està activa.
+  const btnSelBuyAll = document.getElementById('btn-selection-buy-all');
+  if (btnSelBuyAll) btnSelBuyAll.addEventListener('click', () => {
+    if (!window.ShoppingSelection || !window.ShoppingSelection.isActive()) return;
+    if (window.ShoppingSelection.count() === 0) return;
+    if (typeof quickBuyMultipleSelected === 'function') quickBuyMultipleSelected();
+  });
+
   // Botó únic "Editar producte" — reutilitza screen-add en mode edició
   const btnEditProduct = document.getElementById('btn-edit-product');
   if (btnEditProduct) btnEditProduct.addEventListener('click', () => {

@@ -2833,7 +2833,8 @@ h1 {
   padding-top: calc(10px + env(safe-area-inset-top, 0px));
 }
 .selection-toolbar-cancel,
-.selection-toolbar-move {
+.selection-toolbar-move,
+.selection-toolbar-buy {
   background: rgba(255, 255, 255, 0.18);
   color: #FFFFFF;
   border: none;
@@ -2849,9 +2850,11 @@ h1 {
 }
 .selection-toolbar-cancel { padding: 6px 12px; font-size: 18px; }
 .selection-toolbar-cancel:active,
-.selection-toolbar-move:active { transform: scale(0.96); }
+.selection-toolbar-move:active,
+.selection-toolbar-buy:active { transform: scale(0.96); }
 .selection-toolbar-cancel:hover,
-.selection-toolbar-move:hover { background: rgba(255, 255, 255, 0.26); }
+.selection-toolbar-move:hover,
+.selection-toolbar-buy:hover { background: rgba(255, 255, 255, 0.26); }
 .selection-toolbar-count {
   font-weight: 800;
   font-size: 15px;
@@ -5163,6 +5166,59 @@ body.selection-mode-active #shops-slider .arrow-btn {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Toast amb botó "Desfer" (compra ràpida del BuyMe). Diferent del toast
+   simple: porta acció i és interactiu (no pointer-events:none). Es crea i
+   s'elimina dinàmicament des de showUndoableToast a js/buyme.js. */
+.undoable-toast {
+  position: fixed;
+  bottom: calc(80px + var(--safe-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 10px 10px 18px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 1100;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.25s, transform 0.25s;
+  max-width: calc(100% - 32px);
+}
+.undoable-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.undoable-toast .uts-msg {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.undoable-toast .uts-undo {
+  background: transparent;
+  color: var(--bg);
+  border: 1px solid currentColor;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+.undoable-toast .uts-undo:hover { background: rgba(255, 255, 255, 0.12); }
+.undoable-toast .uts-undo:active { transform: scale(0.95); }
 
 /* Fallback buttons (codi a mà) */
 .scanner-fallbacks {
