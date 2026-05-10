@@ -1081,6 +1081,29 @@ function openShoppingItemEdit(item) {
   document.getElementById('input-shopping-notes').value = isNew ? '' : (item.notes || '');
   selectedShoppingEmoji = isNew ? '🥛' : item.emoji;
 
+  // Preu i pes: el shopping item no els persisteix (la font de veritat és
+  // el popular catalogat amb el mateix nom). Quan editem, els pre-omplim
+  // del popular si existeix per donar contingut útil; quan és nou, també
+  // mirem si ja en tenim un de catalogat (el formulari "Afegir manualment"
+  // pot ser només una entrada ràpida sobre un producte ja conegut).
+  const priceInput = document.getElementById('input-shopping-price');
+  const weightInput = document.getElementById('input-shopping-weight');
+  if (priceInput) priceInput.value = '';
+  if (weightInput) weightInput.value = '';
+  if (!isNew && item && item.name && typeof getPopularProducts === 'function') {
+    const populars = getPopularProducts() || [];
+    const key = String(item.name).toLowerCase().trim();
+    const popular = populars.find(p => p.name && p.name.toLowerCase().trim() === key);
+    if (popular) {
+      if (priceInput && typeof popular.price === 'number' && popular.price >= 0) {
+        priceInput.value = String(popular.price);
+      }
+      if (weightInput && popular.weight) {
+        weightInput.value = String(popular.weight);
+      }
+    }
+  }
+
   const dateInput = document.getElementById('input-shopping-date');
   const noExpInput = document.getElementById('input-shopping-no-expiry');
   if (dateInput && noExpInput) {
@@ -1155,8 +1178,27 @@ function saveShoppingItem() {
   const noExpiry = !!(noExpInput && noExpInput.checked);
   const date = (!noExpiry && dateInput) ? dateInput.value : '';
 
-  // Aprenentatge: si l'usuari ha posat data o "no caduca", desem el producte
-  // als populars per recordar emoji + dies + flag noExpiry per la propera vegada.
+  // Preu i pes opcionals — propagaran al popular catalogat (no els
+  // persistim al shopping item). Parseig idèntic al de saveNewProduct
+  // (js/biteme.js): acceptem coma o punt com a separador decimal.
+  const priceInput = document.getElementById('input-shopping-price');
+  let price = null;
+  if (priceInput) {
+    const raw = String(priceInput.value || '').trim().replace(',', '.');
+    if (raw !== '') {
+      const parsed = parseFloat(raw);
+      if (!isNaN(parsed) && parsed >= 0) price = Math.round(parsed * 100) / 100;
+    }
+  }
+  const weightInput = document.getElementById('input-shopping-weight');
+  const weight = weightInput ? String(weightInput.value || '').trim() : '';
+  const hasPrice = price !== null;
+  const hasWeight = weight !== '';
+
+  // Aprenentatge: desem al catàleg de populars perquè la propera vegada
+  // (i el càlcul de cost al BuyMe) tinguin emoji+dies+price+weight. El
+  // gate original era `noExpiry || days` — l'estenem perquè un usuari
+  // que omple només preu/pes (sense data) també vegi el cost a la llista.
   const learnPopular = () => {
     if (typeof addToCustomPopular !== 'function') return;
     let days = null;
@@ -1164,8 +1206,8 @@ function saveShoppingItem() {
       const diff = daysUntil(date);
       if (Number.isFinite(diff) && diff > 0) days = diff;
     }
-    if (noExpiry || days) {
-      addToCustomPopular(name, selectedShoppingEmoji, days, null, noExpiry);
+    if (noExpiry || days || hasPrice || hasWeight) {
+      addToCustomPopular(name, selectedShoppingEmoji, days, null, noExpiry, price, weight);
     }
   };
 

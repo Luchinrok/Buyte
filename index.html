@@ -1683,6 +1683,28 @@
       <input type="text" id="input-shopping-qty" placeholder="2, 1L, 500g..." maxlength="20">
     </div>
 
+    <!-- Preu i pes opcionals: paral·lels als de #screen-add i
+         #screen-popular-edit. Es propaguen al popular catalogat via
+         addToCustomPopular dins saveShoppingItem perquè la propera
+         vegada (i el càlcul de cost al BuyMe) ja els tinguin. El
+         shopping item NO els persisteix — la font de veritat és el
+         popular (vegeu getEstimatedItemCost a js/buyme.js). -->
+    <div class="form-group">
+      <label data-i18n="priceLabel" for="input-shopping-price"></label>
+      <!-- type="text" + inputmode="decimal" enlloc de type="number":
+           type="number" amb step pot reformatar el value en blur (ex:
+           "3" → "2.99" en certs locales de Chrome) just abans que el
+           handler de Save llegeixi el valor. saveShoppingItem ja parsa
+           text amb .replace(',','.') + parseFloat. -->
+      <input type="text" id="input-shopping-price" inputmode="decimal" placeholder="2.50" autocomplete="off" maxlength="10">
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="weightLabel" for="input-shopping-weight"></label>
+      <input type="text" id="input-shopping-weight" placeholder="500g, 1kg, 1L..." maxlength="15" autocomplete="off">
+      <p class="form-hint" data-i18n="weightHint"></p>
+    </div>
+
     <div class="form-group">
       <label data-i18n="itemNotes" for="input-shopping-notes"></label>
       <input type="text" id="input-shopping-notes" placeholder="" maxlength="60">
