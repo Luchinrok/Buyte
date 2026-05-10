@@ -1565,6 +1565,20 @@
       </button>
     </div>
 
+    <!-- Resum del cost estimat per a la llista. Es calcula a partir del
+         preu del popular catalogat amb el mateix nom (vegeu
+         getEstimatedItemCost / getTotalEstimatedCost a js/buyme.js).
+         S'amaga si cap item té preu estimable o si la llista és buida.
+         La refresca _updateBuyMeCostSummary, cridat des de
+         _updateSupermarketHeader (cobreix open + slide change + post-render). -->
+    <div class="buyme-cost-summary" id="buyme-cost-summary" style="display:none">
+      <span class="cost-icon">💰</span>
+      <div class="cost-info">
+        <strong class="cost-total">—</strong>
+        <small class="cost-detail">—</small>
+      </div>
+    </div>
+
     <!-- Toggle de visualització: cronològic (ordre d'addició) vs.
          agrupat per categoria. La preferència es persisteix per
          supermercat — vegeu getBuyMeViewMode/setBuyMeViewMode a

@@ -389,6 +389,7 @@ function _updateSupermarketHeader() {
       : t('shoppingItemsCount', items.length);
   }
   _updateBuyMeViewToggleUI(currentSupermarketId);
+  _updateBuyMeCostSummary(currentSupermarketId);
 }
 
 // Sincronitza l'estat visual del toggle Cronològic/Per-categoria amb
@@ -401,6 +402,36 @@ function _updateBuyMeViewToggleUI(supermarketId) {
   wrapper.querySelectorAll('.view-mode-btn').forEach(btn => {
     btn.classList.toggle('view-mode-active', btn.dataset.mode === mode);
   });
+}
+
+// Refresca la barra "💰 Aprox. X,XX €" del super actual. S'amaga si
+// cap item té preu estimable (no volem mostrar "0,00 €" en una llista
+// d'items sense popular associat). Crida'm des de
+// _updateSupermarketHeader perquè es disparin tots els canvis (open,
+// slide change, post-buy/edit/delete).
+function _updateBuyMeCostSummary(supermarketId) {
+  const summary = document.getElementById('buyme-cost-summary');
+  if (!summary) return;
+  if (!supermarketId) { summary.style.display = 'none'; return; }
+  const items = getShoppingItemsBySupermarket(supermarketId);
+  if (!items || items.length === 0) { summary.style.display = 'none'; return; }
+  const result = getTotalEstimatedCost(items);
+  if (!result || result.countWithPrice === 0) {
+    summary.style.display = 'none';
+    return;
+  }
+  summary.style.display = 'flex';
+  const totalEl = summary.querySelector('.cost-total');
+  const detailEl = summary.querySelector('.cost-detail');
+  if (totalEl) totalEl.textContent = 'Aprox. ' + _formatEur(result.total);
+  if (detailEl) {
+    const n = result.countWithPrice;
+    let detail = n + (n === 1 ? ' producte' : ' productes');
+    if (result.countWithoutPrice > 0) {
+      detail += ' · ' + result.countWithoutPrice + ' sense preu';
+    }
+    detailEl.textContent = detail;
+  }
 }
 
 let supermarketItemsMode = 'view';
@@ -523,6 +554,68 @@ function setBuyMeViewMode(supermarketId, mode) {
   localStorage.setItem(VIEW_MODE_KEY_PREFIX + supermarketId, mode);
 }
 
+// Cost estimat d'un shopping item (€) — null si no es pot estimar.
+// Reutilitzem `getProductPrice` de js/product-data.js (no reimplementem
+// la lògica): hi ha tota la maquinària de CAS A/B/C ja resolta i
+// alineada amb els càlculs d'impacte. Construïm un producte sintètic
+// barrejant el `qty` de l'item del BuyMe amb el `price` i `weight` del
+// popular catalogat. Només estimem si el popular té `price > 0` —
+// d'altra manera getProductPrice cauria al fallback per categoria
+// (P2) i inventaria preus que no representen res que l'usuari hagi
+// confirmat. La política aquí és "sense preu = no es mostra".
+function getEstimatedItemCost(item, popularByName) {
+  if (!item || typeof getProductPrice !== 'function') return null;
+  const key = String(item.name || '').toLowerCase().trim();
+  if (!key || !popularByName) return null;
+  const popular = popularByName[key];
+  if (!popular || typeof popular.price !== 'number' || popular.price <= 0) return null;
+
+  const synth = {
+    emoji: item.emoji || popular.emoji,
+    qty: item.qty,
+    weight: popular.weight,
+    price: popular.price
+  };
+  const cost = getProductPrice(synth);
+  if (typeof cost !== 'number' || !isFinite(cost) || cost <= 0) return null;
+  return Math.round(cost * 100) / 100;
+}
+
+// Suma estimada per als items pendents d'una llista; retorna també
+// quants no s'han pogut estimar perquè el resum pugui dir "8 amb preu
+// · 4 sense". Retorna null si la llista és buida.
+function getTotalEstimatedCost(items) {
+  if (!items || items.length === 0) return null;
+  const populars = (typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : [];
+  const popularByName = {};
+  populars.forEach(p => { if (p && p.name) popularByName[p.name.toLowerCase()] = p; });
+  let total = 0;
+  let countWithPrice = 0;
+  let countWithoutPrice = 0;
+  items.forEach(item => {
+    const c = getEstimatedItemCost(item, popularByName);
+    if (c !== null) { total += c; countWithPrice++; }
+    else countWithoutPrice++;
+  });
+  return {
+    total: Math.round(total * 100) / 100,
+    countWithPrice,
+    countWithoutPrice
+  };
+}
+
+// Format catalanitzat: "1,20 €". Apliquem `toLocaleString` quan
+// existeix per agrupació de milers; fallback simple per a entorns
+// sense Intl.
+function _formatEur(amount) {
+  const n = Number(amount) || 0;
+  try {
+    return n.toLocaleString('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  } catch (e) {
+    return n.toFixed(2).replace('.', ',') + ' €';
+  }
+}
+
 // Resol la categoria d'un shopping item. Els shopping items no porten
 // cap referència al popular d'origen (vegeu addToShoppingList — només
 // guarden name/emoji), així que provem primer una concordança per nom
@@ -554,6 +647,7 @@ function _buildShoppingItemRow(item, opts) {
   const showArrows = o.showArrows !== false;
   const isFirst = !!o.isFirst;
   const isLast = !!o.isLast;
+  const cost = (typeof o.cost === 'number' && isFinite(o.cost) && o.cost > 0) ? o.cost : null;
 
   const div = document.createElement('div');
   div.className = 'shopping-item' + (mode === 'edit' ? ' shopping-item-edit-mode' : '');
@@ -561,6 +655,7 @@ function _buildShoppingItemRow(item, opts) {
   // i el toggle de selecció múltiple — vegeu _onShoppingTouchStart.
   div.dataset.itemId = item.id;
   const meta = item.notes ? `<p class="shopping-item-meta">${escapeHtml(item.notes)}</p>` : '';
+  const costHtml = cost !== null ? `<p class="shopping-item-cost">~${_formatEur(cost)}</p>` : '';
 
   if (mode === 'edit') {
     const arrowsHtml = showArrows ? `
@@ -573,6 +668,7 @@ function _buildShoppingItemRow(item, opts) {
         <div class="shopping-item-info">
           <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
           ${meta}
+          ${costHtml}
         </div>${arrowsHtml}
         <button class="shopping-item-edit" data-action="edit" data-id="${item.id}" data-item-id="${item.id}" aria-label="Edit">✏️</button>
       `;
@@ -582,6 +678,7 @@ function _buildShoppingItemRow(item, opts) {
         <div class="shopping-item-info">
           <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
           ${meta}
+          ${costHtml}
         </div>
         <button class="shopping-item-bought" data-action="bought" data-id="${item.id}" data-item-id="${item.id}" aria-label="Bought">
           <span style="font-size:18px">✅</span>
@@ -608,6 +705,14 @@ function _renderShopPageItems(smId, listEl, mode) {
     return;
   }
 
+  // Indexem els populars per nom (lowercase) un sol cop per a aquesta
+  // crida. Ho necessitem tant per a l'agrupació per categoria com per
+  // al càlcul del cost individual (getEstimatedItemCost), així que ho
+  // fem AbANS de bifurcar segons mode.
+  const populars = (typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : [];
+  const popularByName = {};
+  populars.forEach(p => { if (p && p.name) popularByName[p.name.toLowerCase()] = p; });
+
   const viewMode = getBuyMeViewMode(smId);
   const useCategory = viewMode === 'category'
     && window.CategoriesSystem
@@ -619,20 +724,14 @@ function _renderShopPageItems(smId, listEl, mode) {
         mode,
         showArrows: true,
         isFirst: idx === 0,
-        isLast: idx === items.length - 1
+        isLast: idx === items.length - 1,
+        cost: getEstimatedItemCost(item, popularByName)
       }));
     });
     return;
   }
 
   // ----- Mode "Per categoria" -----
-  // Indexem els populars per nom (lowercase) un sol cop per a aquesta
-  // crida — així respectem l'assignació manual de categoria que pugui
-  // existir a popular_item_categories per a un popular que coincideix
-  // pel nom amb un item del BuyMe.
-  const populars = (typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : [];
-  const popularByName = {};
-  populars.forEach(p => { if (p && p.name) popularByName[p.name.toLowerCase()] = p; });
   const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
     ? window.CategoriesSystem.getItemCategories() : {};
 
@@ -672,7 +771,11 @@ function _renderShopPageItems(smId, listEl, mode) {
       // saltaria entre categories de manera confusa. Mateix patró que
       // a js/populars.js (line ~598) quan el filtre per categoria
       // està actiu.
-      listEl.appendChild(_buildShoppingItemRow(item, { mode, showArrows: false }));
+      listEl.appendChild(_buildShoppingItemRow(item, {
+        mode,
+        showArrows: false,
+        cost: getEstimatedItemCost(item, popularByName)
+      }));
     });
   });
 }

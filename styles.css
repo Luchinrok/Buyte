@@ -4808,6 +4808,53 @@ body.selection-mode-active #shops-slider .arrow-btn {
   box-shadow: 0 1px 4px rgba(76, 175, 42, 0.4);
 }
 
+/* Resum del cost estimat (entre .shop-actions-bar i .buyme-view-toggle).
+   No-sticky a propòsit: la informació és més útil a la mirada inicial,
+   i la barra d'accions ja és sticky a sobre — apilar dos sticky
+   acumula altura visible i resta espai a la llista. */
+.buyme-cost-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  margin: 4px 0 8px;
+  background: linear-gradient(135deg, rgba(102, 187, 106, 0.10), rgba(46, 125, 50, 0.04));
+  border: 1px solid rgba(76, 175, 80, 0.18);
+  border-radius: 12px;
+}
+.buyme-cost-summary .cost-icon { font-size: 26px; line-height: 1; }
+.buyme-cost-summary .cost-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.buyme-cost-summary .cost-total {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--primary, #2E7D32);
+  line-height: 1.2;
+}
+.buyme-cost-summary .cost-detail {
+  font-size: 12px;
+  color: var(--text-soft, #666);
+  margin-top: 2px;
+}
+@media (max-width: 480px) {
+  .buyme-cost-summary { padding: 9px 12px; }
+  .buyme-cost-summary .cost-icon { font-size: 22px; }
+  .buyme-cost-summary .cost-total { font-size: 15px; }
+}
+
+/* Cost individual sota el nom del producte. */
+.shopping-item-cost {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary, #2E7D32);
+  opacity: 0.85;
+}
+
 /* Toggle "Cronològic / Per categoria" a #screen-supermarket. Viu just
    sota .shop-actions-bar i per fora del .shops-slider — així evitem
    el clonatge de slides amb loop:true (els listeners hi viurien
