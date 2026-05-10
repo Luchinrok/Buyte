@@ -965,5 +965,36 @@ function _confirmDeleteCategory(cat, onAfter) {
     if (delBtn) delBtn.addEventListener('click', deleteCategoryFromEdit);
     if (createBtn) createBtn.addEventListener('click', () => openCategoryEdit(null));
     if (manageBtn) manageBtn.addEventListener('click', () => openManageCategories('popular'));
+
+    // Botó "Re-categoritzar tots els productes" (FASE 4). Crida directament
+    // migrateExistingPopulars saltant el flag — la migració respecta les
+    // assignacions manuals (només omple categories que no existeixin al
+    // mapa popular_item_categories).
+    const rerunBtn = document.getElementById('btn-rerun-migration');
+    if (rerunBtn) rerunBtn.addEventListener('click', () => {
+      if (!window.CategoriesSystem || typeof window.CategoriesSystem.migrateExistingPopulars !== 'function') {
+        showToast('Sistema de categories no disponible');
+        return;
+      }
+      const onConfirm = () => {
+        const result = window.CategoriesSystem.migrateExistingPopulars();
+        showToast('✅ ' + result.migrated + '/' + result.total + ' productes re-categoritzats');
+        renderCategoriesList();
+        if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+        const popScreen = document.getElementById('screen-popular');
+        if (popScreen && popScreen.classList.contains('active')) renderPopularList();
+      };
+      if (typeof showConfirmModal === 'function') {
+        showConfirmModal(
+          '🔄',
+          'Re-categoritzar tots els productes?',
+          'L\'app tornarà a aplicar la detecció automàtica als productes que NO tinguis categoritzats manualment. Les teves assignacions manuals es mantindran intactes.',
+          { confirmLabel: 'Re-categoritzar', cancelLabel: 'Cancel·lar' },
+          onConfirm
+        );
+      } else {
+        onConfirm();
+      }
+    });
   });
 })();

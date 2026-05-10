@@ -33,6 +33,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof loadCustomRecipes === 'function') loadCustomRecipes();
   if (typeof loadRecipeOverrides === 'function') loadRecipeOverrides();
   if (typeof recordAppActivity === 'function') recordAppActivity();
+
+  // Categories — FASE 4: migració silenciosa dels populars existents.
+  // S'executa una sola vegada (flag eatmefirst_categories_migration_done)
+  // i ha d'anar DESPRÉS dels loaders perquè els populars ja siguin a
+  // localStorage. detectCategoryForItem assigna 'cat_other' quan no
+  // troba match, així que mai no rebenta encara que el catàleg sigui buit.
+  if (window.CategoriesSystem && typeof window.CategoriesSystem.runMigrationIfNeeded === 'function') {
+    try { window.CategoriesSystem.runMigrationIfNeeded(); } catch (e) { console.warn('[Categories] migration error', e); }
+  }
   if (typeof loadGamificationState === 'function') {
     loadGamificationState();
     // Primer boot després d'instal·lar la gamificació: desbloca retroactivament

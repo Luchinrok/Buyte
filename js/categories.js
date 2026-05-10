@@ -20,6 +20,7 @@
 
 const POPULAR_CATEGORIES_KEY = 'eatmefirst_popular_categories';
 const POPULAR_ITEM_CATEGORIES_KEY = 'eatmefirst_popular_item_categories';
+const MIGRATION_DONE_KEY = 'eatmefirst_categories_migration_done';
 
 const DEFAULT_CATEGORIES = [
   { id: 'cat_dairy',      name: 'Làctics',                icon: '🥛', isDefault: true, order: 1 },
@@ -249,6 +250,30 @@ function migrateExistingPopulars() {
   return { migrated, total: populars.length };
 }
 
+function isMigrationDone() {
+  return localStorage.getItem(MIGRATION_DONE_KEY) === '1';
+}
+
+function markMigrationDone() {
+  localStorage.setItem(MIGRATION_DONE_KEY, '1');
+}
+
+// Crida segura per al boot: si la migració ja s'ha fet aquesta versió,
+// no fa res. La FASE 4 la crida des d'app.js després que els populars
+// ja existeixen al localStorage. El botó "Re-categoritzar" de
+// Configuració crida directament `migrateExistingPopulars()` (saltant
+// el flag) per permetre re-execució manual.
+function runMigrationIfNeeded() {
+  if (isMigrationDone()) {
+    console.log('[Categories] Migració ja feta, saltant');
+    return { skipped: true };
+  }
+  const result = migrateExistingPopulars();
+  markMigrationDone();
+  console.log('[Categories] Migració completada: ' + result.migrated + '/' + result.total + ' productes categoritzats');
+  return result;
+}
+
 window.CategoriesSystem = {
   DEFAULT_CATEGORIES,
   EMOJI_TO_CATEGORY,
@@ -264,7 +289,9 @@ window.CategoriesSystem = {
   setItemCategory,
   getItemCategory,
   detectCategoryForItem,
-  migrateExistingPopulars
+  migrateExistingPopulars,
+  runMigrationIfNeeded,
+  isMigrationDone
 };
 
 })();

@@ -6085,6 +6085,23 @@ body.selection-mode-active #shops-slider .arrow-btn {
 
 .create-cat-btn { width: 100%; }
 
+/* Secció "avançada" al final de #screen-manage-categories: botó per
+   re-executar la migració automàtica (FASE 4). El botó salta el flag
+   eatmefirst_categories_migration_done — només re-corre la detecció;
+   les assignacions manuals NO es toquen (vegeu migrateExistingPopulars). */
+.categories-advanced-section {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--bg-soft, #F5F5F0);
+  border-radius: 12px;
+}
+.categories-advanced-section .secondary-btn { width: 100%; }
+.categories-advanced-help {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-soft, #666);
+}
+
 /* Picker d'emoji a #screen-category-edit. Limitat a ~24 opcions; si
    l'emoji actual no està a la llista (per ex. una categoria custom amb
    un emoji estrany) renderCategoryEmojiPicker l'afegeix al final. */
