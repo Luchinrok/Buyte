@@ -183,6 +183,13 @@ function openPopularEdit(idx) {
   selectedPopularEmoji = isNew ? '🥛' : item.emoji;
   document.getElementById('popular-emoji-current').textContent = selectedPopularEmoji;
 
+  // Categoria (FASE 3-bis): popular el select amb totes les categories i
+  // marquem la categoria que té assignada manualment (o "" per fer servir
+  // la detecció automàtica). El render del filtre a renderPopularList ja
+  // dóna prioritat a l'assignació manual sobre la detecció — vegeu el
+  // bloc `if (isCatFiltering && window.CategoriesSystem)`.
+  _populatePopularCategorySelect(isNew ? null : item);
+
   const delBtn = document.getElementById('btn-delete-popular');
   if (delBtn) delBtn.style.display = isNew ? 'none' : 'block';
 
@@ -197,6 +204,43 @@ function openPopularEdit(idx) {
   }
 
   showScreen('popular-edit');
+}
+
+// Helper per a openPopularEdit: omple el desplegable de categoria amb la
+// llista actual + opció "Detecció automàtica" i selecciona la categoria
+// assignada manualment al popular (si en té). En cas de NEW (item null),
+// es deixa la detecció automàtica.
+function _populatePopularCategorySelect(item) {
+  const sel = document.getElementById('input-popular-category');
+  if (!sel) return;
+  if (!window.CategoriesSystem || typeof window.CategoriesSystem.getCategories !== 'function') {
+    sel.innerHTML = '';
+    return;
+  }
+  const cats = window.CategoriesSystem.getCategories().slice().sort((a, b) => {
+    const oa = (typeof a.order === 'number') ? a.order : 999;
+    const ob = (typeof b.order === 'number') ? b.order : 999;
+    return oa - ob;
+  });
+  // Construïm via createElement perquè textContent escapa l'emoji+nom.
+  sel.innerHTML = '';
+  const auto = document.createElement('option');
+  auto.value = '';
+  auto.textContent = '— Detecció automàtica —';
+  sel.appendChild(auto);
+  cats.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = (c.icon || '📦') + ' ' + (c.name || c.id);
+    sel.appendChild(opt);
+  });
+
+  // Selecciona la categoria manual de l'item, si existeix.
+  let current = '';
+  if (item && item.id && typeof window.CategoriesSystem.getItemCategories === 'function') {
+    current = window.CategoriesSystem.getItemCategories()[item.id] || '';
+  }
+  sel.value = current;
 }
 
 function savePopularEdit() {
@@ -227,6 +271,7 @@ function savePopularEdit() {
   const location = selectedPopularLocation || 'pantry';
 
   const list = getPopularProducts();
+  let savedItemId = null;
   if (editingPopularIdx === null) {
     const entry = {
       id: 'pop-custom-' + Date.now(),
@@ -240,6 +285,7 @@ function savePopularEdit() {
     if (price !== null) entry.price = price;
     if (weight) entry.weight = weight;
     list.push(entry);
+    savedItemId = entry.id;
   } else {
     list[editingPopularIdx].name = name;
     list[editingPopularIdx].emoji = selectedPopularEmoji;
@@ -251,8 +297,32 @@ function savePopularEdit() {
     else delete list[editingPopularIdx].price;
     if (weight) list[editingPopularIdx].weight = weight;
     else delete list[editingPopularIdx].weight;
+    savedItemId = list[editingPopularIdx].id;
   }
   savePopularProducts(list);
+
+  // Categoria (FASE 3-bis): persisteix l'assignació manual o, si l'usuari
+  // ha tornat a "Detecció automàtica", elimina l'entrada del mapa
+  // perquè el filtre torni a fer servir detectCategoryForItem.
+  const catSelect = document.getElementById('input-popular-category');
+  if (catSelect && savedItemId && window.CategoriesSystem &&
+      typeof window.CategoriesSystem.getItemCategories === 'function') {
+    const chosen = catSelect.value || '';
+    if (chosen) {
+      window.CategoriesSystem.setItemCategory(savedItemId, chosen);
+    } else {
+      const map = window.CategoriesSystem.getItemCategories();
+      if (Object.prototype.hasOwnProperty.call(map, savedItemId)) {
+        delete map[savedItemId];
+        window.CategoriesSystem.saveItemCategories(map);
+      }
+    }
+    // Repintem la barra de pestanyes a screen-popular si està al DOM —
+    // evita que un canvi de categoria recent quedi invisible fins al
+    // pròxim render espontani.
+    if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+  }
+
   showToast(t('saved'));
   _returnFromPopularEdit();
 }
@@ -716,6 +786,23 @@ function saveCategoryEdit() {
   if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
 
   editingCategoryId = null;
+  _returnFromCategoryEdit();
+}
+
+// Tornar a la pantalla d'origen després de Save/Delete des de
+// #screen-category-edit. Si veníem de Configuració > Contingut >
+// Categories, re-embedim el sub-pàgina (mateix patró que
+// _returnFromPopularEdit). Si veníem del botó ⚙️ Gestionar de la
+// pantalla de populars, anem a la llista standalone — i el seu back
+// el deixem a 'popular' perquè així torni amb els tabs visibles.
+function _returnFromCategoryEdit() {
+  if (manageCategoriesOrigin === 'settings') {
+    if (typeof renderSettingsContent === 'function') renderSettingsContent();
+    showScreen('settings-content');
+    return;
+  }
+  const backBtn = document.querySelector('#screen-manage-categories .back-btn');
+  if (backBtn) backBtn.dataset.back = 'popular';
   showScreen('manage-categories');
 }
 
@@ -729,7 +816,7 @@ function deleteCategoryFromEdit() {
   }
   _confirmDeleteCategory(cat, () => {
     editingCategoryId = null;
-    showScreen('manage-categories');
+    _returnFromCategoryEdit();
   });
 }
 

@@ -767,6 +767,7 @@ const TRANSLATIONS = {
     subTabBotigues:    'Botigues',
     subTabZones:       'Zones',
     subTabPopulars:    'Productes',
+    subTabCategories:  'Categories',
     subTabReceptes:    'Receptes',
     manageStores:      'Gestionar botigues',
     manageZones:       'Gestionar zones',
