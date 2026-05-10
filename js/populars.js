@@ -206,42 +206,124 @@ function openPopularEdit(idx) {
   showScreen('popular-edit');
 }
 
-// Helper per a openPopularEdit: omple el desplegable de categoria amb la
-// llista actual + opció "Detecció automàtica" i selecciona la categoria
+// Helper per a openPopularEdit: omple el picker visual de categoria amb
+// la llista actual + opció "Detecció automàtica" i marca la categoria
 // assignada manualment al popular (si en té). En cas de NEW (item null),
 // es deixa la detecció automàtica.
+//
+// El picker és un botó + dropdown amagat (no un <select> nadiu) per ser
+// coherent amb la resta de pickers de l'app. La selecció es persisteix al
+// dataset.selectedCatId del botó; savePopularEdit el llegeix d'allà.
 function _populatePopularCategorySelect(item) {
-  const sel = document.getElementById('input-popular-category');
-  if (!sel) return;
+  const btn = document.getElementById('popular-category-picker-btn');
+  const dropdown = document.getElementById('popular-category-picker-dropdown');
+  if (!btn || !dropdown) return;
   if (!window.CategoriesSystem || typeof window.CategoriesSystem.getCategories !== 'function') {
-    sel.innerHTML = '';
+    dropdown.innerHTML = '';
     return;
   }
+
   const cats = window.CategoriesSystem.getCategories().slice().sort((a, b) => {
     const oa = (typeof a.order === 'number') ? a.order : 999;
     const ob = (typeof b.order === 'number') ? b.order : 999;
     return oa - ob;
   });
-  // Construïm via createElement perquè textContent escapa l'emoji+nom.
-  sel.innerHTML = '';
-  const auto = document.createElement('option');
-  auto.value = '';
-  auto.textContent = '— Detecció automàtica —';
-  sel.appendChild(auto);
-  cats.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = (c.icon || '📦') + ' ' + (c.name || c.id);
-    sel.appendChild(opt);
-  });
 
-  // Selecciona la categoria manual de l'item, si existeix.
+  // "Detecció automàtica" sempre primer; després totes les categories.
+  const opts = [{ id: '', icon: '📋', name: 'Detecció automàtica' }];
+  cats.forEach(c => opts.push({ id: c.id, icon: c.icon || '📦', name: c.name || c.id }));
+
+  dropdown.innerHTML = opts.map(o =>
+    '<button type="button" class="category-option" data-cat-id="' + escapeHtml(o.id) + '">' +
+      '<span class="cat-option-icon">' + escapeHtml(o.icon) + '</span>' +
+      '<span class="cat-option-name">' + escapeHtml(o.name) + '</span>' +
+    '</button>'
+  ).join('');
+
+  // Determina la selecció actual a partir del mapa d'assignacions manuals.
   let current = '';
   if (item && item.id && typeof window.CategoriesSystem.getItemCategories === 'function') {
     current = window.CategoriesSystem.getItemCategories()[item.id] || '';
   }
-  sel.value = current;
+  _setPopularCategoryPickerSelection(current);
+
+  // Re-bind dels handlers d'opció — el dropdown s'ha re-renderitzat.
+  dropdown.querySelectorAll('.category-option').forEach(opt => {
+    opt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _setPopularCategoryPickerSelection(opt.dataset.catId || '');
+      _closePopularCategoryPickerDropdown();
+    });
+  });
+
+  // Sempre tancat al obrir el formulari.
+  _closePopularCategoryPickerDropdown();
 }
+
+function _setPopularCategoryPickerSelection(catId) {
+  const btn = document.getElementById('popular-category-picker-btn');
+  if (!btn) return;
+  btn.dataset.selectedCatId = catId || '';
+  const iconEl = btn.querySelector('.picker-icon');
+  const labelEl = btn.querySelector('.picker-label');
+  if (!catId) {
+    if (iconEl) iconEl.textContent = '📋';
+    if (labelEl) labelEl.textContent = 'Detecció automàtica';
+    return;
+  }
+  const cat = (typeof window.CategoriesSystem.getCategoryById === 'function')
+    ? window.CategoriesSystem.getCategoryById(catId) : null;
+  if (cat) {
+    if (iconEl) iconEl.textContent = cat.icon || '📦';
+    if (labelEl) labelEl.textContent = cat.name || catId;
+  }
+}
+
+function _togglePopularCategoryPickerDropdown() {
+  const dropdown = document.getElementById('popular-category-picker-dropdown');
+  const btn = document.getElementById('popular-category-picker-btn');
+  if (!dropdown || !btn) return;
+  if (dropdown.hasAttribute('hidden')) {
+    dropdown.removeAttribute('hidden');
+    btn.classList.add('open');
+  } else {
+    _closePopularCategoryPickerDropdown();
+  }
+}
+
+function _closePopularCategoryPickerDropdown() {
+  const dropdown = document.getElementById('popular-category-picker-dropdown');
+  const btn = document.getElementById('popular-category-picker-btn');
+  if (dropdown) dropdown.setAttribute('hidden', '');
+  if (btn) btn.classList.remove('open');
+}
+
+// Listeners globals per al picker — toggle del botó, click-fora i Escape.
+// Idempotents via guard (amb `id` el grep és barat); s'enganxen una sola
+// vegada al càrrec del DOM.
+(function _attachPopularCategoryPickerListeners() {
+  if (typeof document === 'undefined') return;
+  if (window.__popCatPickerListeners) return;
+  window.__popCatPickerListeners = true;
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('popular-category-picker-btn');
+    if (btn) btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _togglePopularCategoryPickerDropdown();
+    });
+  });
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('popular-category-picker-dropdown');
+    const btn = document.getElementById('popular-category-picker-btn');
+    if (!dropdown || dropdown.hasAttribute('hidden')) return;
+    if (btn && btn.contains(e.target)) return;
+    if (dropdown.contains(e.target)) return;
+    _closePopularCategoryPickerDropdown();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') _closePopularCategoryPickerDropdown();
+  });
+})();
 
 function savePopularEdit() {
   const name = document.getElementById('input-popular-name').value.trim();
@@ -304,10 +386,12 @@ function savePopularEdit() {
   // Categoria (FASE 3-bis): persisteix l'assignació manual o, si l'usuari
   // ha tornat a "Detecció automàtica", elimina l'entrada del mapa
   // perquè el filtre torni a fer servir detectCategoryForItem.
-  const catSelect = document.getElementById('input-popular-category');
-  if (catSelect && savedItemId && window.CategoriesSystem &&
+  // El valor seleccionat viu al dataset del botó del picker — vegeu
+  // _setPopularCategoryPickerSelection.
+  const catBtn = document.getElementById('popular-category-picker-btn');
+  if (catBtn && savedItemId && window.CategoriesSystem &&
       typeof window.CategoriesSystem.getItemCategories === 'function') {
-    const chosen = catSelect.value || '';
+    const chosen = catBtn.dataset.selectedCatId || '';
     if (chosen) {
       window.CategoriesSystem.setItemCategory(savedItemId, chosen);
     } else {

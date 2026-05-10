@@ -757,7 +757,7 @@ const TRANSLATIONS = {
     categoryRegional:    'Regional',
     categoryRegionalSub: 'Idioma, país',
     categoryContent:     'Contingut',
-    categoryContentSub:  'Botigues, zones, populars, receptes',
+    categoryContentSub:  'Botigues, zones, productes, categories, receptes',
     categoryActivity:    'Activitat',
     categoryActivitySub: 'Impacte, estadístiques i suggeriments',
     categoryApp:         'Aplicació',

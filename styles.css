@@ -6119,6 +6119,104 @@ body.selection-mode-active #shops-slider .arrow-btn {
   transform: scale(1.05);
 }
 
+/* ============================================
+   Picker visual de categoria (FASE 3-bis)
+   Botó + dropdown a #screen-popular-edit. Substitueix el <select>
+   nadiu per coherència amb la resta de pickers de l'app.
+   ============================================ */
+.category-picker-wrap { position: relative; }
+
+.category-picker-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  color: var(--text);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.category-picker-btn:hover { border-color: var(--primary); }
+.category-picker-btn.open { border-color: var(--primary); }
+.category-picker-btn .picker-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.category-picker-btn .picker-label {
+  flex: 1;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.category-picker-btn .picker-arrow {
+  font-size: 14px;
+  opacity: 0.6;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.category-picker-btn.open .picker-arrow { transform: rotate(180deg); }
+
+.category-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 50;
+  padding: 4px;
+}
+.category-picker-dropdown[hidden] { display: none; }
+
+.category-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s;
+}
+.category-option:hover { background: var(--bg-secondary); }
+.category-option .cat-option-icon {
+  font-size: 20px;
+  line-height: 1;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.category-option .cat-option-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .header-icon-btn {
   width: 40px;
   height: 40px;

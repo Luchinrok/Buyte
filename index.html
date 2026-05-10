@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260509-8">
+  <link rel="stylesheet" href="styles.css?v=20260510-2">
 </head>
 <body>
 
@@ -812,10 +812,19 @@
 
     <!-- Categoria del producte popular (FASE 3-bis). Per defecte
          l'aplicació usa "detecció automàtica" (per emoji/paraula clau);
-         l'usuari pot fixar-ne una explícitament aquí. -->
+         l'usuari pot fixar-ne una explícitament aquí. Picker visual
+         (botó + dropdown) coherent amb la resta de pickers de l'app
+         — vegeu CSS .category-picker-* a styles.css. -->
     <div class="form-group">
-      <label for="input-popular-category">Categoria</label>
-      <select id="input-popular-category" class="select-input"></select>
+      <label for="popular-category-picker-btn">Categoria</label>
+      <div class="category-picker-wrap">
+        <button type="button" class="category-picker-btn" id="popular-category-picker-btn" data-selected-cat-id="">
+          <span class="picker-icon">📋</span>
+          <span class="picker-label">Detecció automàtica</span>
+          <span class="picker-arrow">▾</span>
+        </button>
+        <div class="category-picker-dropdown" id="popular-category-picker-dropdown" hidden></div>
+      </div>
     </div>
 
     <button class="primary-btn" id="btn-save-popular" data-i18n="save"></button>
@@ -2027,13 +2036,13 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260508-4"></script>
   <script src="notifications.js?v=20260503-3"></script>
-  <script src="i18n.js?v=20260510-1"></script>
+  <script src="i18n.js?v=20260510-2"></script>
   <script src="js/core.js?v=20260506-6"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260508-9"></script>
   <script src="js/shops.js?v=20260503-3"></script>
   <script src="js/buyme.js?v=20260509-6"></script>
-  <script src="js/populars.js?v=20260510-1"></script>
+  <script src="js/populars.js?v=20260510-2"></script>
   <script src="js/categories.js?v=20260509-3"></script>
   <script src="js/special-lists.js?v=20260503-3"></script>
   <script src="js/settings.js?v=20260509-8"></script>
