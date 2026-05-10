@@ -388,6 +388,19 @@ function _updateSupermarketHeader() {
       ? t('shoppingEmptyHint')
       : t('shoppingItemsCount', items.length);
   }
+  _updateBuyMeViewToggleUI(currentSupermarketId);
+}
+
+// Sincronitza l'estat visual del toggle Cronològic/Per-categoria amb
+// el mode persistit del super passat. Idempotent — segur cridar-la a
+// cada slide change i a openSupermarket.
+function _updateBuyMeViewToggleUI(supermarketId) {
+  const wrapper = document.getElementById('buyme-view-toggle');
+  if (!wrapper) return;
+  const mode = getBuyMeViewMode(supermarketId);
+  wrapper.querySelectorAll('.view-mode-btn').forEach(btn => {
+    btn.classList.toggle('view-mode-active', btn.dataset.mode === mode);
+  });
 }
 
 let supermarketItemsMode = 'view';
@@ -495,6 +508,90 @@ function renderShoppingItems() {
   _updateSupermarketHeader();
 }
 
+// Mode de visualització dels items per supermercat: 'chronological'
+// (ordre d'addició — el comportament històric) o 'category' (agrupats
+// per categoria amb capçaleres). Es persisteix per supermercat.
+const VIEW_MODE_KEY_PREFIX = 'eatmefirst_buyme_view_mode_';
+
+function getBuyMeViewMode(supermarketId) {
+  if (!supermarketId) return 'chronological';
+  return localStorage.getItem(VIEW_MODE_KEY_PREFIX + supermarketId) || 'chronological';
+}
+
+function setBuyMeViewMode(supermarketId, mode) {
+  if (!supermarketId) return;
+  localStorage.setItem(VIEW_MODE_KEY_PREFIX + supermarketId, mode);
+}
+
+// Resol la categoria d'un shopping item. Els shopping items no porten
+// cap referència al popular d'origen (vegeu addToShoppingList — només
+// guarden name/emoji), així que provem primer una concordança per nom
+// amb els populars per honorar qualsevol assignació manual de categoria
+// que l'usuari hagi fet a la pantalla de populars; si no hi ha popular,
+// caem a la detecció heurística sobre el mateix item.
+function _resolveShoppingItemCategory(item, popularByName, itemCats) {
+  if (!item || !window.CategoriesSystem) return 'cat_other';
+  if (item.name && popularByName) {
+    const popular = popularByName[item.name.toLowerCase()];
+    if (popular) {
+      const cid = itemCats[popular.id];
+      if (cid) return cid;
+      return window.CategoriesSystem.detectCategoryForItem(popular);
+    }
+  }
+  return window.CategoriesSystem.detectCategoryForItem(item);
+}
+
+// Builder d'una fila .shopping-item (compartit entre el render
+// cronològic i l'agrupat per categoria). Retorna l'element ja preparat
+// per appendChild — IMPORTANT: cap addEventListener aquí, l'acció va
+// per delegació a _initShopsActionsDelegate (vegeu el comentari extens
+// allà sobre per què: amb loop:true Swiper clona slides i els
+// listeners directes es perden).
+function _buildShoppingItemRow(item, opts) {
+  const o = opts || {};
+  const mode = o.mode || 'view';
+  const showArrows = o.showArrows !== false;
+  const isFirst = !!o.isFirst;
+  const isLast = !!o.isLast;
+
+  const div = document.createElement('div');
+  div.className = 'shopping-item' + (mode === 'edit' ? ' shopping-item-edit-mode' : '');
+  // data-item-id al .shopping-item habilita la delegació de long-press
+  // i el toggle de selecció múltiple — vegeu _onShoppingTouchStart.
+  div.dataset.itemId = item.id;
+  const meta = item.notes ? `<p class="shopping-item-meta">${escapeHtml(item.notes)}</p>` : '';
+
+  if (mode === 'edit') {
+    const arrowsHtml = showArrows ? `
+        <div class="shopping-item-arrows">
+          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" data-item-id="${item.id}" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
+          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" data-item-id="${item.id}" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
+        </div>` : '';
+    div.innerHTML = `
+        <div class="shopping-item-emoji">${item.emoji}</div>
+        <div class="shopping-item-info">
+          <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
+          ${meta}
+        </div>${arrowsHtml}
+        <button class="shopping-item-edit" data-action="edit" data-id="${item.id}" data-item-id="${item.id}" aria-label="Edit">✏️</button>
+      `;
+  } else {
+    div.innerHTML = `
+        <div class="shopping-item-emoji">${item.emoji}</div>
+        <div class="shopping-item-info">
+          <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
+          ${meta}
+        </div>
+        <button class="shopping-item-bought" data-action="bought" data-id="${item.id}" data-item-id="${item.id}" aria-label="Bought">
+          <span style="font-size:18px">✅</span>
+          <span data-i18n="bought">${t('bought')}</span>
+        </button>
+      `;
+  }
+  return div;
+}
+
 function _renderShopPageItems(smId, listEl, mode) {
   listEl.innerHTML = '';
   const items = getShoppingItemsBySupermarket(smId);
@@ -511,58 +608,72 @@ function _renderShopPageItems(smId, listEl, mode) {
     return;
   }
 
-  // IMPORTANT: cap addEventListener directe als botons aquí. Els
-  // listeners directes es perden quan Swiper clona el slide per al
-  // loop:true (cloneNode no transfereix listeners), i això era la
-  // causa del bug "BuyMe falla al mòbil al voltant de la costura del
-  // loop". Tot el dispatch d'accions va via _initShopsActionsDelegate
-  // — un sol listener al pare #shops-slider que SÍ sobreviu el
-  // clonatge perquè viu en un node que Swiper no clona.
-  items.forEach((item, idx) => {
-    const isFirst = idx === 0;
-    const isLast = idx === items.length - 1;
-    const div = document.createElement('div');
-    div.className = 'shopping-item' + (mode === 'edit' ? ' shopping-item-edit-mode' : '');
-    // data-item-id al .shopping-item (no només als botons d'acció
-    // interns) habilita la delegation de long-press i el toggle de
-    // selecció múltiple — vegeu _onShoppingTouchStart i
-    // _onShoppingItemClickInSelection a aquest mateix fitxer.
-    // Sense aquest atribut, el closest('.shopping-item') trobava el
-    // div però la comprovació `dataset.itemId` fallava silenciosament
-    // i el mode selecció no s'activava mai.
-    div.dataset.itemId = item.id;
-    const meta = item.notes
-      ? `<p class="shopping-item-meta">${escapeHtml(item.notes)}</p>`
-      : '';
+  const viewMode = getBuyMeViewMode(smId);
+  const useCategory = viewMode === 'category'
+    && window.CategoriesSystem
+    && typeof window.CategoriesSystem.getCategories === 'function';
 
-    if (mode === 'edit') {
-      div.innerHTML = `
-        <div class="shopping-item-emoji">${item.emoji}</div>
-        <div class="shopping-item-info">
-          <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
-          ${meta}
-        </div>
-        <div class="shopping-item-arrows">
-          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" data-item-id="${item.id}" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
-          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" data-item-id="${item.id}" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
-        </div>
-        <button class="shopping-item-edit" data-action="edit" data-id="${item.id}" data-item-id="${item.id}" aria-label="Edit">✏️</button>
-      `;
-    } else {
-      div.innerHTML = `
-        <div class="shopping-item-emoji">${item.emoji}</div>
-        <div class="shopping-item-info">
-          <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
-          ${meta}
-        </div>
-        <button class="shopping-item-bought" data-action="bought" data-id="${item.id}" data-item-id="${item.id}" aria-label="Bought">
-          <span style="font-size:18px">✅</span>
-          <span data-i18n="bought">${t('bought')}</span>
-        </button>
-      `;
-    }
+  if (!useCategory) {
+    items.forEach((item, idx) => {
+      listEl.appendChild(_buildShoppingItemRow(item, {
+        mode,
+        showArrows: true,
+        isFirst: idx === 0,
+        isLast: idx === items.length - 1
+      }));
+    });
+    return;
+  }
 
-    listEl.appendChild(div);
+  // ----- Mode "Per categoria" -----
+  // Indexem els populars per nom (lowercase) un sol cop per a aquesta
+  // crida — així respectem l'assignació manual de categoria que pugui
+  // existir a popular_item_categories per a un popular que coincideix
+  // pel nom amb un item del BuyMe.
+  const populars = (typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : [];
+  const popularByName = {};
+  populars.forEach(p => { if (p && p.name) popularByName[p.name.toLowerCase()] = p; });
+  const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
+    ? window.CategoriesSystem.getItemCategories() : {};
+
+  // Agrupem mantenint l'ordre original (cronològic) dins de cada
+  // categoria — l'ordre d'aparició del primer item d'una categoria
+  // determinaria l'ordre dels grups si no estableixíssim un ordre
+  // canònic, però aquí seguim l'ordre de la pantalla de Categories
+  // (camp `order`). "Altres" queda al final perquè té order=99.
+  const grouped = {};
+  items.forEach(item => {
+    const cid = _resolveShoppingItemCategory(item, popularByName, itemCats) || 'cat_other';
+    if (!grouped[cid]) grouped[cid] = [];
+    grouped[cid].push(item);
+  });
+
+  const cats = window.CategoriesSystem.getCategories().slice().sort((a, b) => {
+    const oa = (typeof a.order === 'number') ? a.order : 999;
+    const ob = (typeof b.order === 'number') ? b.order : 999;
+    return oa - ob;
+  });
+
+  cats.forEach(cat => {
+    const groupItems = grouped[cat.id];
+    if (!groupItems || groupItems.length === 0) return;
+    const header = document.createElement('div');
+    header.className = 'category-section-header';
+    header.innerHTML = `
+      <span class="cat-section-icon">${escapeHtml(cat.icon || '📦')}</span>
+      <span class="cat-section-name">${escapeHtml(cat.name || cat.id)}</span>
+      <span class="cat-section-count">(${groupItems.length})</span>
+    `;
+    listEl.appendChild(header);
+    groupItems.forEach(item => {
+      // Sense fletxes en mode agrupat: l'índex global per supermercat
+      // (sobre el qual opera moveShoppingItem) no es correspon amb la
+      // posició visible dins del grup, així que reordenar amb fletxes
+      // saltaria entre categories de manera confusa. Mateix patró que
+      // a js/populars.js (line ~598) quan el filtre per categoria
+      // està actiu.
+      listEl.appendChild(_buildShoppingItemRow(item, { mode, showArrows: false }));
+    });
   });
 }
 
@@ -742,6 +853,45 @@ window.ShoppingSelection = {
   count: () => _shoppingSelectedIds.size,
   getSelectedIds: () => Array.from(_shoppingSelectedIds)
 };
+
+// Listener del toggle de visualització (Cronològic / Per categoria).
+// Viu fora de #shops-slider — Swiper no clona aquest node, així que
+// addEventListener directe és segur (a diferència dels botons d'acció
+// dels items, que han d'anar per delegació al pare per sobreviure el
+// loop:true). Click → desa el mode per al super actiu, repinta nomes
+// les pàgines d'aquest super (querySelectorAll perquè amb loop:true
+// pot existir un duplicat) i actualitza la UI del toggle.
+(function _wireBuyMeViewToggle() {
+  if (typeof document === 'undefined') return;
+  if (window.__buyMeViewToggleWired) return;
+  window.__buyMeViewToggleWired = true;
+  document.addEventListener('DOMContentLoaded', () => {
+    const wrapper = document.getElementById('buyme-view-toggle');
+    if (!wrapper) return;
+    wrapper.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest && e.target.closest('.view-mode-btn');
+      if (!btn || !wrapper.contains(btn)) return;
+      const mode = btn.dataset.mode;
+      if (!mode || !currentSupermarketId) return;
+      if (getBuyMeViewMode(currentSupermarketId) === mode) {
+        _updateBuyMeViewToggleUI(currentSupermarketId);
+        return;
+      }
+      setBuyMeViewMode(currentSupermarketId, mode);
+      _updateBuyMeViewToggleUI(currentSupermarketId);
+      // Repintem només les pàgines del super actiu. Mateix patró que
+      // slideChange a _ensureShopsSwiper: querySelectorAll cobreix
+      // l'original + el clone que Swiper afegeix amb loop:true.
+      const slider = document.getElementById('shops-slider');
+      if (!slider) return;
+      const pages = slider.querySelectorAll('.shop-page[data-sm-id="' + currentSupermarketId + '"]');
+      pages.forEach(page => {
+        const list = page.querySelector('.shopping-items-list');
+        if (list) _renderShopPageItems(currentSupermarketId, list, supermarketItemsMode);
+      });
+    });
+  });
+})();
 
 // En sortir de #screen-supermarket, surt del mode selecció. Mateixa
 // mecànica que el wrapper de showScreen a biteme.js per a #screen-list

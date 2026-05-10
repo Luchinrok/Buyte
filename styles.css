@@ -4808,6 +4808,73 @@ body.selection-mode-active #shops-slider .arrow-btn {
   box-shadow: 0 1px 4px rgba(76, 175, 42, 0.4);
 }
 
+/* Toggle "Cronològic / Per categoria" a #screen-supermarket. Viu just
+   sota .shop-actions-bar i per fora del .shops-slider — així evitem
+   el clonatge de slides amb loop:true (els listeners hi viurien
+   directes, no via delegació al slider). */
+.buyme-view-toggle {
+  display: flex;
+  gap: 6px;
+  padding: 6px 0 10px;
+  margin-bottom: 6px;
+}
+.view-mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #E0E0E0);
+  background: var(--card-bg, #fff);
+  color: var(--text, #333);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.05s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.view-mode-btn:hover { background: var(--bg-soft, #F5F5F0); }
+.view-mode-btn:active { transform: scale(0.98); }
+.view-mode-active {
+  background: linear-gradient(135deg, #66BB6A, #2E7D32);
+  color: white;
+  border-color: transparent;
+  font-weight: 700;
+}
+.view-mode-btn .mode-icon { font-size: 15px; }
+
+/* Capçaleres de categoria a la llista d'items en mode "Per categoria".
+   No són sticky a propòsit — viuen dins de .shopping-items-list, que
+   està sota .shop-page (slide de Swiper amb transforms 3D); sticky
+   dins de slides transformats és inestable. */
+.category-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px 6px;
+  margin-top: 4px;
+  border-bottom: 2px solid var(--primary, #4CAF50);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text, #333);
+}
+.category-section-header:first-child { margin-top: 0; }
+.cat-section-icon { font-size: 20px; }
+.cat-section-name { flex: 1; }
+.cat-section-count {
+  color: var(--text-soft, #666);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .view-mode-btn { font-size: 12px; padding: 7px 10px; }
+  .category-section-header { font-size: 14px; }
+}
+
 /* Items dins d'un supermercat */
 .shopping-items-list {
   display: flex;
