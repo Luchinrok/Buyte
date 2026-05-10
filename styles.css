@@ -242,14 +242,16 @@ h1 {
    #screen-supermarket).
 
    Mateix patró que .zones-slider, vegeu el comentari extens d'allà
-   sobre per què cal height: 70vh fixa per al cube effect: cada
-   botiga té un nombre diferent d'items, i sense altura fixa cada
-   cara del cub tenia una mida diferent — Swiper no podia calcular
-   la rotació coherent i el slider es quedava "pillat" enmig d'una
-   transició al primer swipe. */
+   sobre per què cal height fixa per al cube effect: cada botiga té
+   un nombre diferent d'items, i sense altura fixa cada cara del cub
+   tenia una mida diferent — Swiper no podia calcular la rotació
+   coherent i el slider es quedava "pillat" enmig d'una transició al
+   primer swipe. 80vh (abans 70vh) maximitza la zona scrollable de la
+   llista d'items dins el cube — segueix sent altura fixa (vh es
+   resol a l'inici i totes les cares prenen el mateix valor). */
 .shops-slider {
   width: calc(100% + 40px);
-  height: 70vh;
+  height: 80vh;
   flex: 0 1 auto;
   margin-left: -20px;
   margin-right: -20px;
@@ -4816,8 +4818,8 @@ body.selection-mode-active #shops-slider .arrow-btn {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  margin: 4px 0 8px;
+  padding: 8px 14px;
+  margin: 2px 0 6px;
   background: linear-gradient(135deg, rgba(102, 187, 106, 0.10), rgba(46, 125, 50, 0.04));
   border: 1px solid rgba(76, 175, 80, 0.18);
   border-radius: 12px;
@@ -4862,8 +4864,8 @@ body.selection-mode-active #shops-slider .arrow-btn {
 .buyme-view-toggle {
   display: flex;
   gap: 6px;
-  padding: 6px 0 10px;
-  margin-bottom: 6px;
+  padding: 4px 0 6px;
+  margin-bottom: 4px;
 }
 .view-mode-btn {
   flex: 1;
@@ -4871,7 +4873,7 @@ body.selection-mode-active #shops-slider .arrow-btn {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-radius: 10px;
   border: 1px solid var(--border, #E0E0E0);
   background: var(--card-bg, #fff);
