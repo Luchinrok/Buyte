@@ -889,6 +889,10 @@ window.ShoppingSelection = {
         const list = page.querySelector('.shopping-items-list');
         if (list) _renderShopPageItems(currentSupermarketId, list, supermarketItemsMode);
       });
+      // Defensiu: treu el focus del botó perquè cap navegador retingui
+      // l'estat :focus visible (sobretot a mòbil, on el tap manté
+      // focus fins al següent toc en una altra zona).
+      try { btn.blur(); } catch (e) {}
     });
   });
 })();

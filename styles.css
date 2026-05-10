@@ -4835,10 +4835,27 @@ body.selection-mode-active #shops-slider .arrow-btn {
   transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.05s;
   -webkit-appearance: none;
   appearance: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.view-mode-btn:hover { background: var(--bg-soft, #F5F5F0); }
-.view-mode-btn:active { transform: scale(0.98); }
-.view-mode-active {
+/* Hover/active només per al botó NO actiu — abans `.view-mode-btn:hover`
+   tenia més especificitat (0,2,0) que `.view-mode-active` (0,1,0) i
+   pisava el gradient verd quan el cursor / focus quedava sobre el
+   botó després del click. Vegeu `js/buyme.js` (btn.blur() defensiu). */
+.view-mode-btn:not(.view-mode-active):hover { background: var(--bg-soft, #F5F5F0); }
+.view-mode-btn:not(.view-mode-active):active {
+  background: var(--bg-soft, #F5F5F0);
+  transform: scale(0.98);
+}
+/* Accessibilitat: outline només en focus per teclat (no per click). */
+.view-mode-btn:focus-visible {
+  outline: 2px solid var(--primary, #4CAF50);
+  outline-offset: 2px;
+}
+.view-mode-active,
+.view-mode-active:hover,
+.view-mode-active:focus,
+.view-mode-active:active {
   background: linear-gradient(135deg, #66BB6A, #2E7D32);
   color: white;
   border-color: transparent;
@@ -6038,9 +6055,16 @@ body.selection-mode-active #shops-slider .arrow-btn {
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
 }
-.cat-tab:hover { border-color: var(--primary); }
-.cat-tab:active { transform: scale(0.96); }
-.cat-tab-active {
+/* Hover/active només per al tab NO actiu — sense `:not(.cat-tab-active)`
+   l'especificitat de `.cat-tab:hover` (0,2,0) pisa el gradient verd
+   de `.cat-tab-active` (0,1,0) i el tab queda blanc fins que el
+   cursor surt. Mateix bug que tenia `.view-mode-btn` al BuyMe. */
+.cat-tab:not(.cat-tab-active):hover { border-color: var(--primary); }
+.cat-tab:not(.cat-tab-active):active { transform: scale(0.96); }
+.cat-tab-active,
+.cat-tab-active:hover,
+.cat-tab-active:focus,
+.cat-tab-active:active {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: #FFFFFF;
   border-color: transparent;
