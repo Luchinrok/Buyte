@@ -5083,23 +5083,31 @@ body.selection-mode-active #shops-slider .arrow-btn {
   border: 1px solid var(--border);
   border-radius: 14px;
   transition: transform 0.12s;
-  /* user-select:none ELIMINAT de .shopping-item (i fills) — vam
-     intentar bloquejar la selecció de text aquí com a mitigació
-     de zones mortes a iOS, però el fix real va resultar ser
-     transform:translateZ(0) al .shopping-items-list (vegeu allà).
-     Mantenir user-select:none sobre items provocava una regressió
-     específica a mode CRONOLÒGIC al iOS WebKit: 3 zones de scroll
-     asimètric (top només cap avall, mig mort, bottom només cap
-     amunt). En mode CATEGORIA, els .category-section-header
-     intercalats "trencaven la cadena" d'elements germans amb
-     user-select:none i el bug no es manifestava.
-     Trade-off acceptat: l'usuari pot fer copy-paste de noms de
-     producte via long-press iOS. Per a una llista de la compra
-     personal és UX neutral.
-     Headers .category-section-header MANTENEN el seu user-select
-     (vegeu allà): no formen cadena llarga, no disparen el quirk
-     de WebKit, i el text de header llarg sí necessita bloqueig
-     contra el menú de selecció nadiu. */
+}
+
+/* user-select CONDICIONAL sobre items, només a mode CATEGORIA:
+   Vam observar empíricament al mòbil real iOS:
+   - mode CATEGORIA NECESSITA user-select:none als items per evitar
+     dead zones al mig (sense això, la zona morta torna).
+   - mode CRONOLÒGIC NO POT TENIR user-select:none als items o
+     dispara un bug de WebKit amb cadenes d'elements germans
+     idèntics: 3 zones de scroll asimètric (top només cap avall,
+     mig mort, bottom només cap amunt).
+   - Categoria té els .category-section-header intercalats que
+     "trenquen la cadena" i no disparen el bug.
+   La solució és aplicar la propietat NOMÉS quan la classe
+   `view-mode-categoria` viu al .shopping-items-list. Aquesta
+   classe es toggleja a _renderShopPageItems (js/buyme.js ~línia
+   814) basat en getBuyMeViewMode. Així cada mode rep el seu fix
+   òptim sense interferència amb l'altre. */
+.shopping-items-list.view-mode-categoria .shopping-item,
+.shopping-items-list.view-mode-categoria .shopping-item-name,
+.shopping-items-list.view-mode-categoria .shopping-item-meta,
+.shopping-items-list.view-mode-categoria .shopping-item-cost,
+.shopping-items-list.view-mode-categoria .shopping-item-info,
+.shopping-items-list.view-mode-categoria .shopping-item-emoji {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .shopping-item-emoji {

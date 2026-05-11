@@ -811,6 +811,14 @@ function _renderShopPageItems(smId, listEl, mode) {
     && window.CategoriesSystem
     && typeof window.CategoriesSystem.getCategories === 'function';
 
+  // Classe per al CSS condicional de user-select sobre items: necessari
+  // a mode categoria (sense ell la zona morta del mig torna) però NOCIU
+  // a mode cronològic (genera un patró de 3 zones de scroll trencat per
+  // un bug de WebKit amb cadenes d'elements amb user-select:none). El
+  // toggle s'actualitza a cada re-render per garantir consistència
+  // (incloent el canvi de mode via el toggle de la UI).
+  listEl.classList.toggle('view-mode-categoria', !!useCategory);
+
   if (!useCategory) {
     items.forEach((item, idx) => {
       listEl.appendChild(_buildShoppingItemRow(item, {
