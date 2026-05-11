@@ -5029,19 +5029,26 @@ body.selection-mode-active #shops-slider .arrow-btn {
   transition: transform 0.12s;
 }
 
-/* user-select:none sobre items per evitar la dead zone al mig de
-   la llista que iOS Safari disparava amb text seleccionable als
-   items. El mode cronològic (que pateixí un bug de WebKit amb
-   cadenes llargues d'elements amb user-select:none) es va eliminar
-   en favor d'usar sempre el render agrupat per categoria, on els
-   .category-section-header trenquen la cadena. Per tant ara podem
-   aplicar la propietat globalment als items sense scope condicional. */
-.shopping-item,
-.shopping-item-name,
-.shopping-item-meta,
-.shopping-item-cost,
-.shopping-item-info,
-.shopping-item-emoji {
+/* user-select:none SCOPED a .shopping-items-list.view-mode-categoria
+   (no global a `.shopping-item`):
+   Vam provar primer la versió global després d'eliminar el toggle
+   Cronològic/Categoria, però al mòbil real iOS WebKit tornava a
+   manifestar el patró de 3 zones (top scroll només cap avall, mig
+   mort, bottom només cap amunt). Tornar a la versió SCOPED resol
+   el bug, tot i que la classe `view-mode-categoria` ara és
+   estàtica (sempre present, no condicional, perquè cronològic ja no
+   existeix).
+   La raó tècnica per què iOS distingeix entre regla scoped i global
+   NO és evident — possiblement WebKit aplica user-select per un
+   path CSS diferent segons l'especificitat del selector o el
+   matching del descendant combinator. Mantenim el scope per cautela
+   empírica fins que tinguem un test reduït que ho confirmi. */
+.shopping-items-list.view-mode-categoria .shopping-item,
+.shopping-items-list.view-mode-categoria .shopping-item-name,
+.shopping-items-list.view-mode-categoria .shopping-item-meta,
+.shopping-items-list.view-mode-categoria .shopping-item-cost,
+.shopping-items-list.view-mode-categoria .shopping-item-info,
+.shopping-items-list.view-mode-categoria .shopping-item-emoji {
   user-select: none;
   -webkit-user-select: none;
 }
