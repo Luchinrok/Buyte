@@ -311,11 +311,39 @@ h1 {
      al rendering 3D) i la llista té el seu propi scroll. Aquí és on
      "absorbim" la diferència d'altura entre botigues amb pocs i
      molts items: el cub es manté de mida fixa, l'usuari fa scroll
-     dins. */
+     dins.
+
+     IMPORTANT — display:block (override del flex base):
+     el contenidor scrollable NO pot ser un flex container a iOS
+     Safari amb -webkit-overflow-scrolling:touch — el hit-test del
+     scroll engine no integra bé flex children + momentum scroll i
+     l'usuari nota que pot scrollar des d'unes zones de la llista
+     però no des d'altres (zones "mortes" al mig). Recuperem
+     l'espaiat de `gap: 10px` amb margin-bottom als fills directes
+     (vegeu sota). També netegem el margin-bottom: 16px del base
+     que en flex:1 + overflow:auto crea una banda morta al fons. */
+  display: block;
+  margin-bottom: 0;
   overflow-y: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  /* touch-action: pan-y diu al browser explícitament "vertical
+     pan = scroll natiu aquí". Sense això, el browser dedueix
+     l'acció i en certs casos cedeix el touch a Swiper (que viu
+     més amunt al DOM) en lloc d'usar-lo per scrollar la llista. */
+  touch-action: pan-y;
   min-height: 0;
+}
+
+/* Espaiat entre items + headers de categoria. Substitueix el
+   `gap: 10px` que perdem en passar a display:block. `> *` perquè
+   el :last-child no necessita margin-bottom (afegiríem una banda
+   morta al fons igual com el margin del base). */
+.shop-page > .shopping-items-list > * {
+  margin-bottom: 10px;
+}
+.shop-page > .shopping-items-list > *:last-child {
+  margin-bottom: 0;
 }
 
 .shop-page > .shopping-items-list::-webkit-scrollbar { display: none; }
