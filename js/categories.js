@@ -29,11 +29,15 @@ const DEFAULT_CATEGORIES = [
   { id: 'cat_vegetables', name: 'Verdures',               icon: '🥬', isDefault: true, order: 4 },
   { id: 'cat_fruits',     name: 'Fruites',                icon: '🍎', isDefault: true, order: 5 },
   { id: 'cat_bakery',     name: 'Forn i pa',              icon: '🥖', isDefault: true, order: 6 },
-  { id: 'cat_canned',     name: 'Conserves',              icon: '🥫', isDefault: true, order: 7 },
-  { id: 'cat_sweets',     name: 'Dolços i postres',       icon: '🍫', isDefault: true, order: 8 },
-  { id: 'cat_drinks',     name: 'Begudes',                icon: '🥤', isDefault: true, order: 9 },
-  { id: 'cat_frozen',     name: 'Congelats',              icon: '❄️', isDefault: true, order: 10 },
-  { id: 'cat_spices',     name: 'Espècies i condiments',  icon: '🌶️', isDefault: true, order: 11 },
+  // v2 (2026): cat_grains afegit entre cat_bakery i cat_canned. Per a
+  // usuaris existents amb el catàleg ja al localStorage, getCategories()
+  // detecta la seva absència i l'insereix idempotentment + reordena.
+  { id: 'cat_grains',     name: 'Arròs i pasta',          icon: '🍚', isDefault: true, order: 7 },
+  { id: 'cat_canned',     name: 'Conserves',              icon: '🥫', isDefault: true, order: 8 },
+  { id: 'cat_sweets',     name: 'Dolços i postres',       icon: '🍫', isDefault: true, order: 9 },
+  { id: 'cat_drinks',     name: 'Begudes',                icon: '🥤', isDefault: true, order: 10 },
+  { id: 'cat_frozen',     name: 'Congelats',              icon: '❄️', isDefault: true, order: 11 },
+  { id: 'cat_spices',     name: 'Espècies i condiments',  icon: '🌶️', isDefault: true, order: 12 },
   { id: 'cat_other',      name: 'Altres',                 icon: '📦', isDefault: true, order: 99, isCatchAll: true }
 ];
 
@@ -77,7 +81,14 @@ const EMOJI_TO_CATEGORY = {
   // Congelats
   '❄️': 'cat_frozen', '🧊': 'cat_frozen',
   // Espècies i condiments
-  '🌶️': 'cat_spices', '🧂': 'cat_spices', '🌿': 'cat_spices'
+  '🌶️': 'cat_spices', '🧂': 'cat_spices', '🌿': 'cat_spices',
+  // === Catàleg v2 (2026): nous emojis ===
+  // Saltats (mateix valor que la versió anterior): 🍮, ☕, 🍷, 🍺, 🥗, 🧄, 🧃
+  '🍚': 'cat_grains', '🍝': 'cat_grains',
+  '🌱': 'cat_vegetables',
+  '🫘': 'cat_canned',
+  '🥣': 'cat_bakery',
+  '🍔': 'cat_meat', '🌭': 'cat_meat'
 };
 
 // Detecció per paraules clau (en cas que l'emoji no sigui prou específic).
@@ -117,7 +128,20 @@ const KEYWORDS_TO_CATEGORY = {
   // Espècies / condiments
   'sal': 'cat_spices', 'pebre': 'cat_spices', 'oli': 'cat_spices',
   'vinagre': 'cat_spices', 'mostassa': 'cat_spices', 'maionesa': 'cat_spices',
-  'salsa': 'cat_spices'
+  'salsa': 'cat_spices',
+  // === Catàleg v2 (2026): nous keywords ===
+  // SKIPS (exact match ja existeix): 'cafè', 'vi', 'cervesa', 'suc', 'embotit'
+  // SKIPS PER CONFLICTE (no overwriteejem; la migració v2 assigna per nom
+  // explícit als productes específics afectats):
+  //   'crema' (existent cat_dairy; v2 vol cat_sweets per "Crema catalana")
+  //   'mongetes' (existent cat_vegetables; v2 vol cat_canned per "Mongetes en pot")
+  'pasta': 'cat_grains', 'arròs': 'cat_grains', 'espaguetis': 'cat_grains',
+  'cereals': 'cat_bakery',
+  'refrescos': 'cat_drinks',
+  'botifarra': 'cat_meat', 'salsitxes': 'cat_meat', 'hamburgueses': 'cat_meat',
+  'calçots': 'cat_vegetables', 'amanida': 'cat_vegetables', 'all': 'cat_vegetables',
+  'olives': 'cat_canned', 'romesco': 'cat_canned',
+  'pastís': 'cat_sweets', 'melmelada': 'cat_sweets'
 };
 
 function getCategories() {
@@ -127,7 +151,26 @@ function getCategories() {
     return DEFAULT_CATEGORIES.map(c => ({ ...c }));
   }
   try {
-    return JSON.parse(stored);
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) throw new Error('not an array');
+    // Migració idempotent per a usuaris existents: si manca cat_grains
+    // (afegit a v2), l'inserim i reescrivim els `order` de les categories
+    // per defecte segons la llista canònica. Les categories CUSTOM
+    // (id 'cat_user_*') es deixen intactes — només actualitzem els
+    // orders dels defaults. Flag separat de la migració de productes
+    // (CATALOG_V2_FLAG_KEY); aquest path es disparé sol quan l'usuari
+    // ja tenia el catàleg de categories al localStorage abans de v2.
+    const hasGrains = parsed.some(c => c && c.id === 'cat_grains');
+    if (!hasGrains) {
+      const grainsDef = DEFAULT_CATEGORIES.find(c => c.id === 'cat_grains');
+      if (grainsDef) parsed.push({ ...grainsDef });
+      DEFAULT_CATEGORIES.forEach(defCat => {
+        const existing = parsed.find(c => c && c.id === defCat.id);
+        if (existing) existing.order = defCat.order;
+      });
+      saveCategories(parsed);
+    }
+    return parsed;
   } catch (e) {
     saveCategories(DEFAULT_CATEGORIES);
     return DEFAULT_CATEGORIES.map(c => ({ ...c }));
@@ -274,6 +317,109 @@ function runMigrationIfNeeded() {
   return result;
 }
 
+// === Catàleg v2 (2026): migració one-shot ===
+// Assigna categoria als 34 productes nous afegits a POPULAR_PRODUCTS i
+// força el moviment de Pasta/Arròs de cat_other → cat_grains. Resolt
+// el match per NOM canònic (no per id), perquè els ids dels productes
+// nous depenen de la posició a l'array i no són estables si es
+// reordena el catàleg. Flag dedicat: CATALOG_V2_FLAG_KEY.
+const CATALOG_V2_FLAG_KEY = 'eatmefirst_catalog_v2_migration_done';
+
+const CATALOG_V2_TARGETS = {
+  'pasta': 'cat_grains',
+  'arròs': 'cat_grains',
+  'embotit': 'cat_meat',
+  'fruita': 'cat_fruits',
+  'suc': 'cat_drinks',
+  'tovalloletes': 'cat_other',
+  'pastís': 'cat_sweets',
+  'espelmes': 'cat_other',
+  'globus': 'cat_other',
+  'aperitius': 'cat_other',
+  'refrescos': 'cat_drinks',
+  'olives': 'cat_canned',
+  'plats i gots': 'cat_other',
+  'regal': 'cat_other',
+  'patates xips': 'cat_other',
+  'calçots': 'cat_vegetables',
+  'salsa romesco': 'cat_canned',
+  'carn brasa': 'cat_meat',
+  'botifarra': 'cat_meat',
+  'vi': 'cat_drinks',
+  'mongetes': 'cat_canned',
+  'crema catalana': 'cat_sweets',
+  'cafè': 'cat_drinks',
+  'melmelada': 'cat_sweets',
+  'cereals': 'cat_other',
+  'carn vermella': 'cat_meat',
+  'salsitxes': 'cat_meat',
+  'hamburgueses': 'cat_meat',
+  'carbó': 'cat_other',
+  'cervesa': 'cat_drinks',
+  'amanida': 'cat_vegetables',
+  'espaguetis': 'cat_grains',
+  'tomàquet fregit': 'cat_canned',
+  'all': 'cat_vegetables',
+  'vi negre': 'cat_drinks',
+  'formatge ratllat': 'cat_dairy'
+};
+
+// Productes que poden haver estat assignats a cat_other per la
+// migració v1 (perquè no tenien match a EMOJI_TO_CATEGORY ni a
+// KEYWORDS_TO_CATEGORY abans de v2). v2 els força a la seva categoria
+// correcta encara que ja tinguin un valor.
+const CATALOG_V2_FORCE_MOVES = new Set(['pasta', 'arròs']);
+
+function runCatalogV2Migration() {
+  if (localStorage.getItem(CATALOG_V2_FLAG_KEY) === '1') {
+    return { skipped: true };
+  }
+  let populars = [];
+  if (typeof getPopularProducts === 'function') {
+    try { populars = getPopularProducts() || []; } catch (e) { populars = []; }
+  }
+  const PRODUCTS = (typeof POPULAR_PRODUCTS !== 'undefined') ? POPULAR_PRODUCTS : [];
+  const LANGS = ['ca','es','en','fr','it','de','pt','nl','ja','zh','ko'];
+  const itemCategories = getItemCategories();
+  let assigned = 0, moved = 0;
+  populars.forEach(item => {
+    if (!item || !item.id || typeof item.name !== 'string') return;
+    const lower = item.name.toLowerCase().trim();
+    // Match directe pel nom de l'usuari (en l'idioma actiu)
+    let canonicalKey = CATALOG_V2_TARGETS[lower] ? lower : null;
+    // Si no troba directe: busca al catàleg el producte que té aquest
+    // nom en algun idioma i pren el seu `ca` per consultar el mapa.
+    if (!canonicalKey) {
+      for (const p of PRODUCTS) {
+        const hit = LANGS.some(lg => p[lg] && p[lg].toLowerCase() === lower);
+        if (hit && p.ca && CATALOG_V2_TARGETS[p.ca.toLowerCase()]) {
+          canonicalKey = p.ca.toLowerCase();
+          break;
+        }
+      }
+    }
+    if (!canonicalKey) return;
+    const targetCat = CATALOG_V2_TARGETS[canonicalKey];
+    const current = itemCategories[item.id];
+    if (current === targetCat) return;
+    // Force-override per Pasta/Arròs si venien de cat_other
+    if (CATALOG_V2_FORCE_MOVES.has(canonicalKey) && current === 'cat_other') {
+      itemCategories[item.id] = targetCat;
+      moved++;
+      return;
+    }
+    // Resta: només assigna si no hi havia res (respecta tria manual)
+    if (!current) {
+      itemCategories[item.id] = targetCat;
+      assigned++;
+    }
+  });
+  saveItemCategories(itemCategories);
+  localStorage.setItem(CATALOG_V2_FLAG_KEY, '1');
+  console.log('[Categories v2] Assignats: ' + assigned + ', moguts: ' + moved);
+  return { skipped: false, assigned, moved };
+}
+
 window.CategoriesSystem = {
   DEFAULT_CATEGORIES,
   EMOJI_TO_CATEGORY,
@@ -291,6 +437,7 @@ window.CategoriesSystem = {
   detectCategoryForItem,
   migrateExistingPopulars,
   runMigrationIfNeeded,
+  runCatalogV2Migration,
   isMigrationDone
 };
 

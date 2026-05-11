@@ -25,6 +25,9 @@ function getPopularProducts() {
   const lang = getCurrentLang();
   const canonicalByName = buildPopularNameIndex();
   const customRaw = localStorage.getItem('eatmefirst_popular_custom');
+  // Llistes d'idiomes per al fallback de nom i per detectar duplicats
+  // a la injecció catàleg→cache (vegeu sota).
+  const LANGS = ['ca','es','en','fr','it','de','pt','nl','ja','zh','ko'];
   if (customRaw) {
     try {
       const custom = JSON.parse(customRaw);
@@ -64,6 +67,40 @@ function getPopularProducts() {
           }
         }
       });
+      // Injecció catàleg→cache: assegura que tot producte del catàleg
+      // POPULAR_PRODUCTS està representat a la cache. Sense això, usuaris
+      // amb cache existent (a 'eatmefirst_popular_custom') no veurien mai
+      // els productes nous afegits al catàleg en versions posteriors
+      // (vegeu 'ampliació catàleg 2026' a core.js). Match per QUALSEVOL
+      // idioma per no afegir duplicats quan l'usuari ja té el producte
+      // amb un nom traduït diferent al canònic.
+      const customNamesLower = new Set();
+      custom.forEach(it => {
+        if (it && typeof it.name === 'string') {
+          customNamesLower.add(it.name.toLowerCase().trim());
+        }
+      });
+      POPULAR_PRODUCTS.forEach((p, idx) => {
+        const matchesExisting = LANGS.some(lg => p[lg] && customNamesLower.has(p[lg].toLowerCase()));
+        if (matchesExisting) return;
+        const name = p[lang] || p.en || p.ca || p.es ||
+          Object.values(p).find(v => typeof v === 'string') || '???';
+        let location = p.location;
+        if (!location && typeof guessLocationFromName === 'function') {
+          location = guessLocationFromName(name);
+        }
+        const entry = {
+          id: 'pop-' + idx,
+          name: name,
+          emoji: p.emoji,
+          days: p.days,
+          location: location || 'pantry'
+        };
+        if (typeof p.price === 'number') entry.price = p.price;
+        if (p.weight) entry.weight = p.weight;
+        custom.push(entry);
+        migrated = true;
+      });
       if (migrated) {
         localStorage.setItem('eatmefirst_popular_custom', JSON.stringify(custom));
       }
@@ -72,7 +109,12 @@ function getPopularProducts() {
   }
   // Per defecte: del catàleg, usant la zona canònica
   return POPULAR_PRODUCTS.map((p, idx) => {
-    const name = p[lang] || p.en;
+    // Fallback robust: idioma actiu → en → ca → es → primer string
+    // disponible → '???'. Evita render literal de "undefined" i
+    // corrupció a Firestore quan algun producte només té alguns
+    // idiomes definits (cas dels productes locals/intraduïbles).
+    const name = p[lang] || p.en || p.ca || p.es ||
+      Object.values(p).find(v => typeof v === 'string') || '???';
     let location = p.location;
     if (!location && typeof guessLocationFromName === 'function') {
       location = guessLocationFromName(name);

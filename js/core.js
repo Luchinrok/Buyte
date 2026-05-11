@@ -42,7 +42,49 @@ const POPULAR_PRODUCTS = [
   { ca: 'Galetes', es: 'Galletas', en: 'Cookies', fr: 'Biscuits', it: 'Biscotti', de: 'Kekse', pt: 'Bolachas', nl: 'Koekjes', ja: 'クッキー', zh: '饼干', ko: '쿠키', emoji: '🍪', days: 90, location: 'pantry', price: 1.50, weight: '300g' },
   // Begudes → aigua al rebost; suc a la nevera
   { ca: 'Aigua', es: 'Agua', en: 'Water', fr: 'Eau', it: 'Acqua', de: 'Wasser', pt: 'Água', nl: 'Water', ja: '水', zh: '水', ko: '물', emoji: '💧', days: 365, location: 'pantry', price: 0.50, weight: '1.5L' },
-  { ca: 'Suc de taronja', es: 'Zumo de naranja', en: 'Orange juice', fr: 'Jus d\'orange', it: 'Succo d\'arancia', de: 'Orangensaft', pt: 'Suco de laranja', nl: 'Sinaasappelsap', ja: 'オレンジジュース', zh: '橙汁', ko: '오렌지 주스', emoji: '🧃', days: 7, location: 'fridge', price: 2.00, weight: '1L' }
+  { ca: 'Suc de taronja', es: 'Zumo de naranja', en: 'Orange juice', fr: 'Jus d\'orange', it: 'Succo d\'arancia', de: 'Orangensaft', pt: 'Suco de laranja', nl: 'Sinaasappelsap', ja: 'オレンジジュース', zh: '橙汁', ko: '오렌지 주스', emoji: '🧃', days: 7, location: 'fridge', price: 2.00, weight: '1L' },
+  // === Ampliació catàleg 2026 ===
+  // Productes nous afegits per cobrir els items de DEFAULT_SPECIAL_LISTS
+  // i ampliar la categorització. Només omplim `ca` + `en` per ara;
+  // el fallback robust de populars.js:getPopularProducts mostra `en`
+  // (i pertinent fallback) quan l'usuari té un idioma sense traducció.
+  // Productes no-aliment (Espelmes, Globus, Plats i gots, Regal,
+  // Carbó, Tovalloletes) ometen `days` i sovint `location` perquè no
+  // tenen caducitat ni zona d'emmagatzematge clara.
+  { ca: 'Embotit', en: 'Cold cuts', emoji: '🥓', days: 7, location: 'fridge', price: 2.50, weight: '200g' },
+  { ca: 'Fruita', en: 'Fruit', emoji: '🍎', days: 7, location: 'fruit_bowl', price: 1.50, weight: '1kg' },
+  { ca: 'Suc', en: 'Juice', emoji: '🧃', days: 10, location: 'pantry', price: 1.80, weight: '1L' },
+  { ca: 'Tovalloletes', en: 'Wet wipes', emoji: '🧻', price: 1.20 },
+  { ca: 'Pastís', en: 'Cake', emoji: '🎂', days: 3, location: 'fridge', price: 12.00 },
+  { ca: 'Espelmes', en: 'Candles', emoji: '🕯️', price: 2.00 },
+  { ca: 'Globus', en: 'Balloons', emoji: '🎈', price: 3.50 },
+  { ca: 'Aperitius', en: 'Snacks', emoji: '🥨', days: 60, location: 'pantry', price: 2.50, weight: '200g' },
+  { ca: 'Refrescos', en: 'Soft drinks', emoji: '🥤', days: 180, location: 'pantry', price: 1.50, weight: '2L' },
+  { ca: 'Olives', en: 'Olives', emoji: '🫒', days: 90, location: 'pantry', price: 1.80, weight: '350g' },
+  { ca: 'Plats i gots', en: 'Plates and cups', emoji: '🍽️', price: 3.00 },
+  { ca: 'Regal', en: 'Gift', emoji: '🎁', price: 15.00 },
+  { ca: 'Patates xips', en: 'Potato chips', emoji: '🥔', days: 90, location: 'pantry', price: 1.80, weight: '160g' },
+  { ca: 'Calçots', en: 'Calçots', emoji: '🌱', days: 4, location: 'fridge', price: 0.50 },
+  { ca: 'Salsa romesco', en: 'Romesco sauce', emoji: '🥫', days: 30, location: 'fridge', price: 3.50, weight: '200g' },
+  { ca: 'Carn brasa', en: 'Grilling meat', emoji: '🥩', days: 3, location: 'fridge', price: 12.00, weight: '1kg' },
+  { ca: 'Botifarra', en: 'Catalan sausage', emoji: '🌭', days: 5, location: 'fridge', price: 4.50, weight: '500g' },
+  { ca: 'Vi', en: 'Wine', emoji: '🍷', days: 730, location: 'pantry', price: 5.00, weight: '750ml' },
+  { ca: 'Mongetes', en: 'Beans', emoji: '🫘', days: 365, location: 'pantry', price: 2.00, weight: '400g' },
+  { ca: 'Crema catalana', en: 'Catalan cream', emoji: '🍮', days: 5, location: 'fridge', price: 3.00 },
+  { ca: 'Cafè', en: 'Coffee', emoji: '☕', days: 365, location: 'pantry', price: 4.50, weight: '250g' },
+  { ca: 'Melmelada', en: 'Jam', emoji: '🍓', days: 180, location: 'pantry', price: 2.50, weight: '340g' },
+  { ca: 'Cereals', en: 'Cereals', emoji: '🥣', days: 180, location: 'pantry', price: 3.00, weight: '500g' },
+  { ca: 'Carn vermella', en: 'Red meat', emoji: '🥩', days: 3, location: 'fridge', price: 14.00, weight: '1kg' },
+  { ca: 'Salsitxes', en: 'Sausages', emoji: '🌭', days: 7, location: 'fridge', price: 3.50, weight: '400g' },
+  { ca: 'Hamburgueses', en: 'Burgers', emoji: '🍔', days: 5, location: 'fridge', price: 5.00 },
+  { ca: 'Carbó', en: 'Charcoal', emoji: '🪵', location: 'pantry', price: 6.00, weight: '3kg' },
+  { ca: 'Cervesa', en: 'Beer', emoji: '🍺', days: 365, location: 'pantry', price: 6.00 },
+  { ca: 'Amanida', en: 'Salad', emoji: '🥗', days: 5, location: 'fridge', price: 1.80, weight: '250g' },
+  { ca: 'Espaguetis', en: 'Spaghetti', emoji: '🍝', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
+  { ca: 'Tomàquet fregit', en: 'Fried tomato', emoji: '🥫', days: 30, location: 'pantry', price: 1.50, weight: '350g' },
+  { ca: 'All', en: 'Garlic', emoji: '🧄', days: 90, location: 'pantry', price: 0.80 },
+  { ca: 'Vi negre', en: 'Red wine', emoji: '🍷', days: 730, location: 'pantry', price: 5.00, weight: '750ml' },
+  { ca: 'Formatge ratllat', en: 'Grated cheese', emoji: '🧀', days: 30, location: 'fridge', price: 2.50, weight: '150g' }
 ];
 
 // Catàleg d'emojis organitzat per categoria. Es fa servir tant per l'EMOJI

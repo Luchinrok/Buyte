@@ -16,7 +16,7 @@ const DEFAULT_SPECIAL_LISTS = [
       { name: 'Pa', emoji: '🥖', qty: '' },
       { name: 'Embotit', emoji: '🥓', qty: '' },
       { name: 'Formatge', emoji: '🧀', qty: '' },
-      { name: 'Tomàquet', emoji: '🍅', qty: '' },
+      { name: 'Tomàquets', emoji: '🍅', qty: '' },
       { name: 'Aigua', emoji: '💧', qty: '' },
       { name: 'Fruita', emoji: '🍎', qty: '' },
       { name: 'Galetes', emoji: '🍪', qty: '' },
@@ -32,7 +32,7 @@ const DEFAULT_SPECIAL_LISTS = [
       { name: 'Globus', emoji: '🎈', qty: '' },
       { name: 'Aperitius', emoji: '🥨', qty: '' },
       { name: 'Refrescos', emoji: '🥤', qty: '' },
-      { name: 'Patates', emoji: '🍟', qty: '' },
+      { name: 'Patates xips', emoji: '🍟', qty: '' },
       { name: 'Olives', emoji: '🫒', qty: '' },
       { name: 'Plats i gots', emoji: '🍽️', qty: '' },
       { name: 'Regal', emoji: '🎁', qty: '' }
@@ -60,7 +60,7 @@ const DEFAULT_SPECIAL_LISTS = [
       { name: 'Mantega', emoji: '🧈', qty: '' },
       { name: 'Melmelada', emoji: '🍓', qty: '' },
       { name: 'Cereals', emoji: '🥣', qty: '' },
-      { name: 'Suc taronja', emoji: '🧃', qty: '' }
+      { name: 'Suc de taronja', emoji: '🧃', qty: '' }
     ]
   },
   {
@@ -84,7 +84,7 @@ const DEFAULT_SPECIAL_LISTS = [
       { name: 'Carn picada', emoji: '🥩', qty: '' },
       { name: 'Formatge ratllat', emoji: '🧀', qty: '' },
       { name: 'All', emoji: '🧄', qty: '' },
-      { name: 'Ceba', emoji: '🧅', qty: '' },
+      { name: 'Cebes', emoji: '🧅', qty: '' },
       { name: 'Vi negre', emoji: '🍷', qty: '' }
     ]
   }

@@ -42,6 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.CategoriesSystem && typeof window.CategoriesSystem.runMigrationIfNeeded === 'function') {
     try { window.CategoriesSystem.runMigrationIfNeeded(); } catch (e) { console.warn('[Categories] migration error', e); }
   }
+  // Migració v2 (catàleg 2026): assigna categoria als productes nous
+  // afegits a POPULAR_PRODUCTS i mou Pasta/Arròs de cat_other →
+  // cat_grains. Flag separat (eatmefirst_catalog_v2_migration_done)
+  // perquè és independent de la migració v1 que pot haver-se executat
+  // amb el catàleg antic. Cal anar després de v1 perquè es construeixi
+  // primer el mapa item_categories per a tots els productes.
+  if (window.CategoriesSystem && typeof window.CategoriesSystem.runCatalogV2Migration === 'function') {
+    try { window.CategoriesSystem.runCatalogV2Migration(); } catch (e) { console.warn('[Categories v2] migration error', e); }
+  }
   if (typeof loadGamificationState === 'function') {
     loadGamificationState();
     // Primer boot després d'instal·lar la gamificació: desbloca retroactivament
