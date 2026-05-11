@@ -412,15 +412,27 @@ function _updateBuyMeViewToggleUI(supermarketId) {
 function _updateBuyMeCostSummary(supermarketId) {
   const summary = document.getElementById('buyme-cost-summary');
   if (!summary) return;
-  if (!supermarketId) { summary.style.display = 'none'; return; }
+  const prevDisplay = summary.style.display;
+  const setDisplay = (val) => {
+    summary.style.display = val;
+    // El .shops-slider és flex:1 dins #screen-supermarket (vegeu el
+    // bloc CSS de .shops-slider). Si la cromia per sobre canvia mida
+    // — i el cost summary apareixent/desapareixent és l'únic cas no
+    // cobert per _scrollToSupermarket — l'altura del slider canvia i
+    // la cube geometry queda obsoleta. swiper.update() la recalcula.
+    if (prevDisplay !== val && _shopsSwiper) {
+      try { _shopsSwiper.update(); } catch (e) {}
+    }
+  };
+  if (!supermarketId) { setDisplay('none'); return; }
   const items = getShoppingItemsBySupermarket(supermarketId);
-  if (!items || items.length === 0) { summary.style.display = 'none'; return; }
+  if (!items || items.length === 0) { setDisplay('none'); return; }
   const result = getTotalEstimatedCost(items);
   if (!result || result.countWithPrice === 0) {
-    summary.style.display = 'none';
+    setDisplay('none');
     return;
   }
-  summary.style.display = 'flex';
+  setDisplay('flex');
   const totalEl = summary.querySelector('.cost-total');
   const detailEl = summary.querySelector('.cost-detail');
   if (totalEl) totalEl.textContent = 'Aprox. ' + _formatEur(result.total);
@@ -433,6 +445,24 @@ function _updateBuyMeCostSummary(supermarketId) {
     detailEl.textContent = detail;
   }
 }
+
+// Manté la cube geometry sincronitzada amb canvis de viewport: amb
+// .shops-slider en flex:1 dins #screen-supermarket (bloquejat a 100dvh),
+// rotar el dispositiu, mostrar/amagar la barra del navegador mòbil o
+// redimensionar la finestra alteren la seva altura. Sense aquest update,
+// Swiper continua usant la geometria antiga del cub i les transicions
+// queden visualment imprecises o "pillades".
+(function _wireShopsSwiperResize() {
+  if (typeof window === 'undefined') return;
+  if (window.__shopsSwiperResizeWired) return;
+  window.__shopsSwiperResizeWired = true;
+  const onResize = () => {
+    if (!_shopsSwiper) return;
+    try { _shopsSwiper.update(); } catch (e) {}
+  };
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+})();
 
 let supermarketItemsMode = 'view';
 

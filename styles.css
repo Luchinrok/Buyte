@@ -241,25 +241,52 @@ h1 {
 /* ===== SLIDER 3D DE SUPERMERCATS (#shops-slider dins
    #screen-supermarket).
 
-   Mateix patró que .zones-slider, vegeu el comentari extens d'allà
-   sobre per què cal height fixa per al cube effect: cada botiga té
-   un nombre diferent d'items, i sense altura fixa cada cara del cub
-   tenia una mida diferent — Swiper no podia calcular la rotació
-   coherent i el slider es quedava "pillat" enmig d'una transició al
-   primer swipe. 70vh: vam provar 80vh per maximitzar la zona visible,
-   però amb tota la cromia per sobre (top-bar + dots + section-hint +
-   shop-actions-bar + buyme-cost-summary + buyme-view-toggle), el total
-   del .screen passa de 100vh, el body comença a fer scroll, i els
-   gestos tàctils s'enduen al scroll del body en lloc del scroll intern
-   de .shopping-items-list — l'usuari percep que "no funciona l'scroll".
-   Si cal més espai visible, redueix la cromia superior, no l'altura
-   del cube. */
+   Estratègia "scroll únic":
+   - #screen-supermarket.active està bloquejat a 100dvh + overflow:hidden
+     (vegeu el bloc més avall) → el body NO scrolleja mai.
+   - Tota la cromia (top-bar, dots, hint, actions-bar, cost-summary,
+     view-toggle) viu com a flex-items flex-none a sobre i queda FIXA.
+   - Aquest slider és flex:1 i ocupa TOT l'espai vertical restant.
+   - L'única scroll real és el .shopping-items-list dins de cada
+     .shop-page (cube face).
+
+   Sobre el cube effect i altures variables: el cub necessita que totes
+   les cares tinguin la mateixa mida QUAN Swiper llegeix la geometria.
+   Amb flex:1, l'altura pot canviar si la cromia per sobre canvia (ex:
+   el buyme-cost-summary apareix/desapareix). Compensem cridant
+   swiper.update() en aquests moments:
+     - _updateBuyMeCostSummary (toggle del cost summary) — js/buyme.js
+     - resize / orientationchange — listener a js/buyme.js
+     - _scrollToSupermarket (open + slide change) ja en cridava dos. */
 .shops-slider {
   width: calc(100% + 40px);
-  height: 70vh;
-  flex: 0 1 auto;
+  flex: 1 1 0;
+  min-height: 0;
   margin-left: -20px;
   margin-right: -20px;
+  overflow: hidden;
+}
+
+/* "Scroll únic" al supermercat: la pantalla ocupa exactament l'àrea de
+   contingut del body (viewport − safe-area paddings) i no scrolleja —
+   el body es manté quiet i tota la cromia (top-bar, dots, hint,
+   actions-bar, cost-summary, view-toggle) queda fixa a dalt. L'únic
+   scroll real és .shopping-items-list dins el cube. Per què height:100%
+   i no 100dvh: amb box-sizing:border-box global, body té height:100%
+   amb safe-top/safe-bottom paddings; el seu content-box ja és la zona
+   "útil". height:100% al fill resol contra aquest content-box i evita
+   que el screen sobresurti per sota del safe-area-inset-bottom (cosa
+   que faria que body tornés a scrollar — el bug que estem corregint).
+   La resta de pantalles segueixen creixent verticalment (min-height
+   100vh) — vegeu .screen / .screen.active. */
+#screen-supermarket.screen.active {
+  /* CRÍTIC: cal sobreescriure min-height:100vh de .screen base — sense
+     això, min-height (aplicat DESPRÉS de height per spec) força la
+     pantalla a 100vh i no a 100% del content-box del body. Quan hi ha
+     safe-area-inset > 0, 100vh > content-box, body torna a scrollar. */
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
   overflow: hidden;
 }
 
