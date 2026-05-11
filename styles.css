@@ -333,6 +333,24 @@ h1 {
      més amunt al DOM) en lloc d'usar-lo per scrollar la llista. */
   touch-action: pan-y;
   min-height: 0;
+  /* WebKit bug workaround: scroll containers amb overflow:auto
+     dins de transform:3D ancestors (com el cube Swiper a .shop-page)
+     tenen un patró de 3 zones mortes al touch:
+       - Top: scroll només permès cap a baix
+       - Mig: scroll bloquejat
+       - Bottom: scroll només permès cap a dalt
+     El hit-test de touch al centre del compositing layer falla per
+     un error de WebKit en propagar el touchstart a un descendent
+     amb overflow:auto quan l'ancestor té transforms 3D.
+     translateZ(0) força la creació d'un compositing layer propi
+     per a la llista, desacoblat del 3D context del cube. La rotació
+     del cube segueix afectant el render visual del .shop-page (com
+     a fill 2D del cube face), però els touch events s'enruten
+     correctament al scroll natiu d'aquesta llista.
+     Validat al mòbil real (iOS Safari) després de descartar les
+     hipòtesis de user-select / -webkit-touch-callout (mitigacions
+     parcials/coincidents, no causes reals). */
+  transform: translateZ(0);
 }
 
 /* Espaiat entre items + headers de categoria. Substitueix el
