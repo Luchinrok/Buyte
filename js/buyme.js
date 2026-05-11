@@ -239,6 +239,33 @@ function _ensureShopsSwiper() {
     // raonablement possibles per evitar que el cub quedi a mitges.
     threshold: 5,
     touchRatio: 1,
+    // touchAngle: 25 (default Swiper: 45). Decideix quan Swiper
+    // captura un touch com a "swipe horitzontal del cube":
+    //   angle del moviment des d'horitzontal ≤ touchAngle → CAPTURA
+    //   angle del moviment des d'horitzontal > touchAngle → CEDEIX
+    //                                              al scroll natiu
+    // Amb el default 45°, qualsevol swipe entre 0° i 45° de
+    // l'horitzontal era interpretat com a "canvi de super". Però el
+    // dit humà MAI fa un swipe vertical perfecte (90°) — sempre hi
+    // ha jitter horitzontal d'1-15°. Si en mòbil l'usuari fa un
+    // swipe quasi-vertical amb component horitzontal de jitter,
+    // l'angle inicial pot caure dins 0-45° → Swiper captura el
+    // touch → l'usuari percep "zona morta" (no rota cub, no
+    // scrolleja la llista). Reduir a 25° aïlla només els swipes
+    // CLARAMENT horitzontals (0-25°) i deixa tots els altres
+    // (26-90°, inclosos jitter de verticals) a scroll natiu.
+    //
+    // Decisió de mantenir el swipe cube: NO afegim swiper-no-swiping
+    // a .shopping-items-list. La llista és L'ÚNIC element dins
+    // .shop-page (vegeu renderShoppingItems ~línia 530), així que
+    // marcar-la com a no-swiping mataria el swipe cube en pràctica
+    // (les franges laterals de 20px del padding NO són zona
+    // d'interacció natural). Conservem el swipe cube com a UX i
+    // confiem que touchAngle:25 sol és prou per filtrar el jitter.
+    // Si encara queden zones mortes, el següent pas és afegir
+    // swiper-no-swiping a la llista i confiar exclusivament en els
+    // dots clicables per canviar de super.
+    touchAngle: 25,
     longSwipes: true,
     longSwipesRatio: 0.2,
     longSwipesMs: 200,
@@ -1204,12 +1231,21 @@ function renderShoppingEmojiPicker() {
   renderShoppingEmojiPickerBtn();
 }
 
-// Cerca productes a l'EatMe amb nom similar (substring en qualsevol direcció).
+// Cerca productes a l'EatMe amb el mateix nom (igualtat normalitzada).
 // S'utilitza per avisar abans d'afegir duplicats a la llista de la compra.
+// Normalització: lowercase + trim + col·lapsa espais múltiples → un sol
+// espai. Així "Suc  de taronja" (doble espai) i "suc de taronja" matchegen.
+// Abans usàvem substring bidireccional (`a.includes(b) || b.includes(a)`)
+// que produïa fals positius: escriure "Pastís" matchejava "Pa" perquè
+// "pastís".includes("pa") = true. Mateix bug per Vi/Vinagre, Sal/Salsitxes,
+// Te/Tetera, All/Allioli, etc. Igualtat estricta després de normalitzar
+// elimina tota aquesta classe de bugs i és determinista.
 function findExistingAtHome(name) {
   if (!name) return [];
-  const lowerName = name.toLowerCase();
-  return products.filter(p => p.name.toLowerCase().includes(lowerName) || lowerName.includes(p.name.toLowerCase()));
+  const norm = s => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  const target = norm(name);
+  if (!target) return [];
+  return products.filter(p => norm(p.name) === target);
 }
 
 // Quan ve marcat a true, saveShoppingItem salta la comprovació "ja en tens"
