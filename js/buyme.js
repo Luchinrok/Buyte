@@ -564,28 +564,27 @@ function renderShoppingItems() {
       page.className = 'shop-page swiper-slide';
       page.dataset.smId = sm.id;
       const list = document.createElement('div');
-      // Classes al list:
-      //   `swiper-no-swiping` (Swiper): quan un touchstart cau sobre
-      //   aquest element o un descendent, Swiper NO processa el
-      //   touchmove. Garantia que l'scroll vertical va al motor natiu
-      //   sense ser capturat pel cube effect. Trade-off: perdem el
-      //   swipe horizontal per canviar de super des de la zona dels
-      //   items; els .sm-dots-container són la via primària.
+      // Classe `swiper-no-swiping` reconeguda nativament per Swiper:
+      // quan un touchstart cau sobre un element amb aquesta classe
+      // (o un descendent), Swiper NO processa el touchmove —
+      // l'esdeveniment va íntegrament al scroll natiu del browser.
       //
-      //   `view-mode-categoria` (CSS scope): empíricament cal aquesta
-      //   classe perquè user-select:none als items resolgui les zones
-      //   mortes a iOS WebKit. Sense ella (o amb la regla user-select
-      //   aplicada globalment a `.shopping-item` directament), iOS
-      //   torna a manifestar el patró de 3 zones (top scroll només
-      //   cap avall, mig mort, bottom només cap amunt). La raó tècnica
-      //   exacta NO és evident — pot ser que WebKit tracti el path
-      //   d'aplicació de user-select diferent segons l'especificitat
-      //   del selector o el matching del descendant combinator. Vam
-      //   provar empíricament: regla scoped → categoria funciona,
-      //   regla global → categoria també té 3-zone bug. Mantenim el
-      //   scope tot i que el toggle Cronològic/Categoria ja no
-      //   existeix (sempre rendegem categoria); la classe és estàtica.
-      list.className = 'shopping-items-list swiper-no-swiping view-mode-categoria';
+      // Per què cal: el cube effect de Swiper amb touchAngle:25
+      // (vegeu _ensureShopsSwiper ~línia 240) NO és suficient per
+      // separar scroll vertical de swipe horizontal a la zona dels
+      // items. Validat empíricament: amb scrollHeight 1662 i només
+      // touchAngle baix, les zones mortes persistien per la captura
+      // borderline de Swiper. swiper-no-swiping fa la separació
+      // DETERMINISTA: a dins la llista, Swiper no toca res; el
+      // browser gestiona tot.
+      //
+      // Trade-off (vegeu comentari extens a touchAngle): perdem el
+      // swipe-cube des de la zona dels items. Els .sm-dots-container
+      // passen a ser la via PRIMÀRIA per canviar de super; el swipe-
+      // cube queda residualment disponible des de les franges de
+      // 20px laterals (el padding de .shop-page) on touchAngle:25
+      // segueix protegint contra captures borderline.
+      list.className = 'shopping-items-list swiper-no-swiping';
       page.appendChild(list);
       wrapper.appendChild(page);
     });
