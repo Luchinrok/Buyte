@@ -1020,12 +1020,30 @@ window.ShoppingSelection = {
       const pages = slider.querySelectorAll('.shop-page[data-sm-id="' + currentSupermarketId + '"]');
       pages.forEach(page => {
         const list = page.querySelector('.shopping-items-list');
-        if (list) _renderShopPageItems(currentSupermarketId, list, supermarketItemsMode);
+        if (!list) return;
+        _renderShopPageItems(currentSupermarketId, list, supermarketItemsMode);
+        // CRÍTIC per al scroll en mode categoria: en canviar de mode,
+        // el contingut de la llista canvia d'altura total (mode
+        // categoria afegeix .category-section-header entre items). El
+        // scrollTop anterior pot apuntar a una zona que ja no existeix
+        // o que visualment sembla "blocada". El reset a 0 fa que el
+        // mode nou comenci des de l'inici i el scroll funcioni
+        // immediatament — sense això, l'usuari intentava scrollar des
+        // d'una posició estranya i percebia el scroll com "trencat".
+        list.scrollTop = 0;
       });
       // Defensiu: treu el focus del botó perquè cap navegador retingui
       // l'estat :focus visible (sobretot a mòbil, on el tap manté
       // focus fins al següent toc en una altra zona).
       try { btn.blur(); } catch (e) {}
+      // Refresca la cube geometry per si la cromia hagués canviat
+      // (paranoia: el cost summary no depèn del mode, però aquesta
+      // crida és barata i evita classes senceres de bugs de cube
+      // "stale" si en el futur el rendering condicional del mode
+      // afecta la cromia superior).
+      if (_shopsSwiper) {
+        try { _shopsSwiper.update(); } catch (e) {}
+      }
     });
   });
 })();
