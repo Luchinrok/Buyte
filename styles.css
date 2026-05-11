@@ -5083,57 +5083,23 @@ body.selection-mode-active #shops-slider .arrow-btn {
   border: 1px solid var(--border);
   border-radius: 14px;
   transition: transform 0.12s;
-  /* Bloqueig de selecció de text — extensió del fix de
-     .category-section-header al cas dels items.
-     Diagnòstic: després d'aplicar user-select:none als headers, la
-     zona morta del scroll a iOS s'estretava però no desapareixia
-     completament. La causa restant: els items tenen text seleccionable
-     (.shopping-item-cost especialment, sense `white-space:nowrap`
-     ni `overflow:hidden` que limitin la selecció), i iOS Safari
-     captura el touchstart sobre aquest text per iniciar gest de
-     selecció, bloquejant scroll.
-     El catàleg v2 (2026) AGREUJA aquest cas: la injecció catàleg→
-     cache afegeix preus a 34 productes nous, així que la majoria
-     d'items mostren ara la línia "~X,XX €". Més línies de text
-     seleccionable per pantalla → més probabilitat que el touch caigui
-     sobre una. El mode "Per categoria" es nota més per la densitat
-     compactada amb headers intercalats; el mode "Cronològic" tenia
-     el bug latent però disimulat per densitat menor de text.
-     Bloquegem selecció a l'item sencer i als fills textuals (vegeu
-     més avall) per garantir scroll determinista. Trade-off: l'usuari
-     NO pot fer copy-paste de noms de producte via long-press iOS —
-     alternativa: el botó Edit ja permet veure/modificar. Per a una
-     llista de la compra personal és UX acceptable.
-     `.shopping-item-bought` queda intacte: és un `<button>` natiu
-     i ja té user-select:none implícit del browser.
-
-     IMPORTANT — `-webkit-touch-callout: none` ELIMINAT a items:
-     a iOS Safari real, posar aquesta propietat sobre una cadena
-     llarga d'elements germans idèntics (com els .shopping-item
-     consecutius en mode CRONOLÒGIC) trenca el touch handling de
-     scroll. Resultat: 3 zones (top scrolleja avall, mig mort, baix
-     scrolleja amunt). En mode CATEGORIA els .category-section-header
-     intercalats trenquen la cadena i el bug no apareix. Mantenim
-     `-webkit-touch-callout` als headers (allà sí cal — el text llarg
-     d'un header sí dispara el menú nadiu al long-press), però NO a
-     items. user-select + -webkit-user-select són suficients per
-     evitar selecció a la pràctica. */
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-/* Fills textuals de l'item: cal ser explícit perquè la inheritance
-   de user-select no és consistent entre navegadors (vegeu el comentari
-   simètric a .cat-section-icon/.cat-section-name/.cat-section-count).
-   `-webkit-touch-callout` també OMITTIT aquí pel mateix motiu que al
-   pare .shopping-item. */
-.shopping-item-name,
-.shopping-item-meta,
-.shopping-item-cost,
-.shopping-item-info,
-.shopping-item-emoji {
-  user-select: none;
-  -webkit-user-select: none;
+  /* user-select:none ELIMINAT de .shopping-item (i fills) — vam
+     intentar bloquejar la selecció de text aquí com a mitigació
+     de zones mortes a iOS, però el fix real va resultar ser
+     transform:translateZ(0) al .shopping-items-list (vegeu allà).
+     Mantenir user-select:none sobre items provocava una regressió
+     específica a mode CRONOLÒGIC al iOS WebKit: 3 zones de scroll
+     asimètric (top només cap avall, mig mort, bottom només cap
+     amunt). En mode CATEGORIA, els .category-section-header
+     intercalats "trencaven la cadena" d'elements germans amb
+     user-select:none i el bug no es manifestava.
+     Trade-off acceptat: l'usuari pot fer copy-paste de noms de
+     producte via long-press iOS. Per a una llista de la compra
+     personal és UX neutral.
+     Headers .category-section-header MANTENEN el seu user-select
+     (vegeu allà): no formen cadena llarga, no disparen el quirk
+     de WebKit, i el text de header llarg sí necessita bloqueig
+     contra el menú de selecció nadiu. */
 }
 
 .shopping-item-emoji {
