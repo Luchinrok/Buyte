@@ -4935,61 +4935,6 @@ body.selection-mode-active #shops-slider .arrow-btn {
   opacity: 0.85;
 }
 
-/* Toggle "Cronològic / Per categoria" a #screen-supermarket. Viu just
-   sota .shop-actions-bar i per fora del .shops-slider — així evitem
-   el clonatge de slides amb loop:true (els listeners hi viurien
-   directes, no via delegació al slider). */
-.buyme-view-toggle {
-  display: flex;
-  gap: 6px;
-  padding: 4px 0 6px;
-  margin-bottom: 4px;
-}
-.view-mode-btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border, #E0E0E0);
-  background: var(--card-bg, #fff);
-  color: var(--text, #333);
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.05s;
-  -webkit-appearance: none;
-  appearance: none;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
-/* Hover/active només per al botó NO actiu — abans `.view-mode-btn:hover`
-   tenia més especificitat (0,2,0) que `.view-mode-active` (0,1,0) i
-   pisava el gradient verd quan el cursor / focus quedava sobre el
-   botó després del click. Vegeu `js/buyme.js` (btn.blur() defensiu). */
-.view-mode-btn:not(.view-mode-active):hover { background: var(--bg-soft, #F5F5F0); }
-.view-mode-btn:not(.view-mode-active):active {
-  background: var(--bg-soft, #F5F5F0);
-  transform: scale(0.98);
-}
-/* Accessibilitat: outline només en focus per teclat (no per click). */
-.view-mode-btn:focus-visible {
-  outline: 2px solid var(--primary, #4CAF50);
-  outline-offset: 2px;
-}
-.view-mode-active,
-.view-mode-active:hover,
-.view-mode-active:focus,
-.view-mode-active:active {
-  background: linear-gradient(135deg, #66BB6A, #2E7D32);
-  color: white;
-  border-color: transparent;
-  font-weight: 700;
-}
-.view-mode-btn .mode-icon { font-size: 15px; }
-
 /* Capçaleres de categoria a la llista d'items en mode "Per categoria".
    No són sticky a propòsit — viuen dins de .shopping-items-list, que
    està sota .shop-page (slide de Swiper amb transforms 3D); sticky
@@ -5061,7 +5006,6 @@ body.selection-mode-active #shops-slider .arrow-btn {
 }
 
 @media (max-width: 480px) {
-  .view-mode-btn { font-size: 12px; padding: 7px 10px; }
   .category-section-header { font-size: 14px; }
 }
 
@@ -5085,27 +5029,19 @@ body.selection-mode-active #shops-slider .arrow-btn {
   transition: transform 0.12s;
 }
 
-/* user-select CONDICIONAL sobre items, només a mode CATEGORIA:
-   Vam observar empíricament al mòbil real iOS:
-   - mode CATEGORIA NECESSITA user-select:none als items per evitar
-     dead zones al mig (sense això, la zona morta torna).
-   - mode CRONOLÒGIC NO POT TENIR user-select:none als items o
-     dispara un bug de WebKit amb cadenes d'elements germans
-     idèntics: 3 zones de scroll asimètric (top només cap avall,
-     mig mort, bottom només cap amunt).
-   - Categoria té els .category-section-header intercalats que
-     "trenquen la cadena" i no disparen el bug.
-   La solució és aplicar la propietat NOMÉS quan la classe
-   `view-mode-categoria` viu al .shopping-items-list. Aquesta
-   classe es toggleja a _renderShopPageItems (js/buyme.js ~línia
-   814) basat en getBuyMeViewMode. Així cada mode rep el seu fix
-   òptim sense interferència amb l'altre. */
-.shopping-items-list.view-mode-categoria .shopping-item,
-.shopping-items-list.view-mode-categoria .shopping-item-name,
-.shopping-items-list.view-mode-categoria .shopping-item-meta,
-.shopping-items-list.view-mode-categoria .shopping-item-cost,
-.shopping-items-list.view-mode-categoria .shopping-item-info,
-.shopping-items-list.view-mode-categoria .shopping-item-emoji {
+/* user-select:none sobre items per evitar la dead zone al mig de
+   la llista que iOS Safari disparava amb text seleccionable als
+   items. El mode cronològic (que pateixí un bug de WebKit amb
+   cadenes llargues d'elements amb user-select:none) es va eliminar
+   en favor d'usar sempre el render agrupat per categoria, on els
+   .category-section-header trenquen la cadena. Per tant ara podem
+   aplicar la propietat globalment als items sense scope condicional. */
+.shopping-item,
+.shopping-item-name,
+.shopping-item-meta,
+.shopping-item-cost,
+.shopping-item-info,
+.shopping-item-emoji {
   user-select: none;
   -webkit-user-select: none;
 }
