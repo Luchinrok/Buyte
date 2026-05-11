@@ -255,16 +255,32 @@ function _ensureShopsSwiper() {
     // CLARAMENT horitzontals (0-25°) i deixa tots els altres
     // (26-90°, inclosos jitter de verticals) a scroll natiu.
     //
-    // Decisió de mantenir el swipe cube: NO afegim swiper-no-swiping
-    // a .shopping-items-list. La llista és L'ÚNIC element dins
-    // .shop-page (vegeu renderShoppingItems ~línia 530), així que
-    // marcar-la com a no-swiping mataria el swipe cube en pràctica
-    // (les franges laterals de 20px del padding NO són zona
-    // d'interacció natural). Conservem el swipe cube com a UX i
-    // confiem que touchAngle:25 sol és prou per filtrar el jitter.
-    // Si encara queden zones mortes, el següent pas és afegir
-    // swiper-no-swiping a la llista i confiar exclusivament en els
-    // dots clicables per canviar de super.
+    // touchAngle:25 SOL no va ser suficient: validat empíricament
+    // amb scrollHeight 1662 / clientHeight 372, zones mortes encara
+    // persistents. La causa: el padding lateral de 20px de
+    // .shop-page (vegeu styles.css:.shop-page) també capta touch
+    // events, i a la zona principal (.shopping-items-list) la
+    // captura de Swiper amb angle borderline encara passava.
+    //
+    // Per això combinem amb (B) `swiper-no-swiping` al className
+    // de la llista (vegeu renderShoppingItems ~línia 537):
+    //   - swiper-no-swiping bloqueja Swiper a la zona PRINCIPAL
+    //     d'interacció (els items, gran part del cube face).
+    //   - touchAngle:25 redueix l'agressivitat de Swiper a la zona
+    //     RESIDUAL (les franges laterals de 20px del padding).
+    // Els dos NO són redundants: cobreixen zones diferents.
+    //
+    // Trade-off acceptat: perdem el swipe-cube DES DE LA ZONA DELS
+    // ITEMS (que era la zona principal d'iniciació gestual). Els
+    // .sm-dots-container (clicables) passen a ser la via PRIMÀRIA
+    // de canvi de super. El swipe-cube queda residualment disponible
+    // des de les franges de 20px laterals de la cube face, però
+    // assumim que la gran majoria d'usuaris usaran els dots.
+    //
+    // Decisió documentada: prioritzem SCROLL DETERMINISTA dins la
+    // llista (cas dominant: scrollar entre molts items) sobre SWIPE
+    // GESTUAL del cube (cas secundari: canviar de super). Els dots
+    // són una alternativa accessible amb la mateixa funcionalitat.
     touchAngle: 25,
     longSwipes: true,
     longSwipesRatio: 0.2,
@@ -561,7 +577,27 @@ function renderShoppingItems() {
       page.className = 'shop-page swiper-slide';
       page.dataset.smId = sm.id;
       const list = document.createElement('div');
-      list.className = 'shopping-items-list';
+      // Classe `swiper-no-swiping` reconeguda nativament per Swiper:
+      // quan un touchstart cau sobre un element amb aquesta classe
+      // (o un descendent), Swiper NO processa el touchmove —
+      // l'esdeveniment va íntegrament al scroll natiu del browser.
+      //
+      // Per què cal: el cube effect de Swiper amb touchAngle:25
+      // (vegeu _ensureShopsSwiper ~línia 240) NO és suficient per
+      // separar scroll vertical de swipe horizontal a la zona dels
+      // items. Validat empíricament: amb scrollHeight 1662 i només
+      // touchAngle baix, les zones mortes persistien per la captura
+      // borderline de Swiper. swiper-no-swiping fa la separació
+      // DETERMINISTA: a dins la llista, Swiper no toca res; el
+      // browser gestiona tot.
+      //
+      // Trade-off (vegeu comentari extens a touchAngle): perdem el
+      // swipe-cube des de la zona dels items. Els .sm-dots-container
+      // passen a ser la via PRIMÀRIA per canviar de super; el swipe-
+      // cube queda residualment disponible des de les franges de
+      // 20px laterals (el padding de .shop-page) on touchAngle:25
+      // segueix protegint contra captures borderline.
+      list.className = 'shopping-items-list swiper-no-swiping';
       page.appendChild(list);
       wrapper.appendChild(page);
     });

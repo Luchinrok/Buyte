@@ -4986,8 +4986,54 @@ body.selection-mode-active #shops-slider .arrow-btn {
   font-weight: 700;
   font-size: 15px;
   color: var(--text, #333);
+  /* Bloqueig de selecció de text — FIX CRÍTIC per al scroll a iOS:
+     A iOS Safari, fer touchstart sobre text seleccionable inicia un
+     gest de selecció de text (no scroll). iOS captura el touch
+     esperant que l'usuari arrossegui per ampliar la selecció,
+     mostra la lupa, i NO propaga el moviment com a scroll. Resultat
+     a l'usuari: "zona morta" sobre la capçalera — toca i res no
+     respon.
+
+     Els .shopping-item germans NO patien aquest bug per dos motius
+     accidentals: el .shopping-item-name té white-space:nowrap +
+     overflow:hidden (text clipat = difícil de seleccionar), i el
+     botó .shopping-item-bought té user-select:none implícit per ser
+     un <button>. Les capçaleres no tenien cap d'aquestes barreres
+     i el text quedava seleccionable per defecte.
+
+     Per què aquesta combinació de propietats:
+       - user-select:none: estàndard CSS modern (Chromium, Firefox).
+       - -webkit-user-select:none: vital per a Safari/iOS (no usa
+         encara la propietat sense prefix en totes les versions).
+       - -webkit-touch-callout:none: treu el menú contextual de
+         "copiar/seleccionar" que iOS mostra al long-press i que
+         també captura touch durant el pressing.
+
+     Per què NO `pointer-events: none`:
+     Volem reservar la possibilitat futura d'afegir interacció a la
+     capçalera (col·lapsar secció, menú contextual propi, etc.).
+     `pointer-events:none` mataria tota futura interacció; les tres
+     propietats d'aquí només maten la selecció/callout natiu — el
+     element segueix sent clicable. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .category-section-header:first-child { margin-top: 0; }
+/* Els fills de la capçalera són <span> amb text. El touchstart pot
+   caure sobre qualsevol d'ells (l'emoji, el nom, el comptador). Cal
+   propagar el bloqueig de selecció a tots o iOS encara capturarà el
+   touch quan l'usuari toqui directament un fill. La inheritance de
+   user-select dels pares NO es propaga automàticament a tots els
+   navegadors amb la consistencia que necessitem aquí; val més
+   ser explícit. */
+.cat-section-icon,
+.cat-section-name,
+.cat-section-count {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
 .cat-section-icon { font-size: 20px; }
 .cat-section-name { flex: 1; }
 .cat-section-count {
@@ -5019,6 +5065,45 @@ body.selection-mode-active #shops-slider .arrow-btn {
   border: 1px solid var(--border);
   border-radius: 14px;
   transition: transform 0.12s;
+  /* Bloqueig de selecció de text — extensió del fix de
+     .category-section-header al cas dels items.
+     Diagnòstic: després d'aplicar user-select:none als headers, la
+     zona morta del scroll a iOS s'estretava però no desapareixia
+     completament. La causa restant: els items tenen text seleccionable
+     (.shopping-item-cost especialment, sense `white-space:nowrap`
+     ni `overflow:hidden` que limitin la selecció), i iOS Safari
+     captura el touchstart sobre aquest text per iniciar gest de
+     selecció, bloquejant scroll.
+     El catàleg v2 (2026) AGREUJA aquest cas: la injecció catàleg→
+     cache afegeix preus a 34 productes nous, així que la majoria
+     d'items mostren ara la línia "~X,XX €". Més línies de text
+     seleccionable per pantalla → més probabilitat que el touch caigui
+     sobre una. El mode "Per categoria" es nota més per la densitat
+     compactada amb headers intercalats; el mode "Cronològic" tenia
+     el bug latent però disimulat per densitat menor de text.
+     Bloquegem selecció a l'item sencer i als fills textuals (vegeu
+     més avall) per garantir scroll determinista. Trade-off: l'usuari
+     NO pot fer copy-paste de noms de producte via long-press iOS —
+     alternativa: el botó Edit ja permet veure/modificar. Per a una
+     llista de la compra personal és UX acceptable.
+     `.shopping-item-bought` queda intacte: és un `<button>` natiu
+     i ja té user-select:none implícit del browser. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Fills textuals de l'item: cal ser explícit perquè la inheritance
+   de user-select no és consistent entre navegadors (vegeu el comentari
+   simètric a .cat-section-icon/.cat-section-name/.cat-section-count). */
+.shopping-item-name,
+.shopping-item-meta,
+.shopping-item-cost,
+.shopping-item-info,
+.shopping-item-emoji {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .shopping-item-emoji {
