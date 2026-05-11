@@ -246,12 +246,17 @@ h1 {
    un nombre diferent d'items, i sense altura fixa cada cara del cub
    tenia una mida diferent — Swiper no podia calcular la rotació
    coherent i el slider es quedava "pillat" enmig d'una transició al
-   primer swipe. 80vh (abans 70vh) maximitza la zona scrollable de la
-   llista d'items dins el cube — segueix sent altura fixa (vh es
-   resol a l'inici i totes les cares prenen el mateix valor). */
+   primer swipe. 70vh: vam provar 80vh per maximitzar la zona visible,
+   però amb tota la cromia per sobre (top-bar + dots + section-hint +
+   shop-actions-bar + buyme-cost-summary + buyme-view-toggle), el total
+   del .screen passa de 100vh, el body comença a fer scroll, i els
+   gestos tàctils s'enduen al scroll del body en lloc del scroll intern
+   de .shopping-items-list — l'usuari percep que "no funciona l'scroll".
+   Si cal més espai visible, redueix la cromia superior, no l'altura
+   del cube. */
 .shops-slider {
   width: calc(100% + 40px);
-  height: 80vh;
+  height: 70vh;
   flex: 0 1 auto;
   margin-left: -20px;
   margin-right: -20px;
