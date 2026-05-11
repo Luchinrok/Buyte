@@ -5087,15 +5087,28 @@ body.selection-mode-active #shops-slider .arrow-btn {
      alternativa: el botó Edit ja permet veure/modificar. Per a una
      llista de la compra personal és UX acceptable.
      `.shopping-item-bought` queda intacte: és un `<button>` natiu
-     i ja té user-select:none implícit del browser. */
+     i ja té user-select:none implícit del browser.
+
+     IMPORTANT — `-webkit-touch-callout: none` ELIMINAT a items:
+     a iOS Safari real, posar aquesta propietat sobre una cadena
+     llarga d'elements germans idèntics (com els .shopping-item
+     consecutius en mode CRONOLÒGIC) trenca el touch handling de
+     scroll. Resultat: 3 zones (top scrolleja avall, mig mort, baix
+     scrolleja amunt). En mode CATEGORIA els .category-section-header
+     intercalats trenquen la cadena i el bug no apareix. Mantenim
+     `-webkit-touch-callout` als headers (allà sí cal — el text llarg
+     d'un header sí dispara el menú nadiu al long-press), però NO a
+     items. user-select + -webkit-user-select són suficients per
+     evitar selecció a la pràctica. */
   user-select: none;
   -webkit-user-select: none;
-  -webkit-touch-callout: none;
 }
 
 /* Fills textuals de l'item: cal ser explícit perquè la inheritance
    de user-select no és consistent entre navegadors (vegeu el comentari
-   simètric a .cat-section-icon/.cat-section-name/.cat-section-count). */
+   simètric a .cat-section-icon/.cat-section-name/.cat-section-count).
+   `-webkit-touch-callout` també OMITTIT aquí pel mateix motiu que al
+   pare .shopping-item. */
 .shopping-item-name,
 .shopping-item-meta,
 .shopping-item-cost,
@@ -5103,7 +5116,6 @@ body.selection-mode-active #shops-slider .arrow-btn {
 .shopping-item-emoji {
   user-select: none;
   -webkit-user-select: none;
-  -webkit-touch-callout: none;
 }
 
 .shopping-item-emoji {
