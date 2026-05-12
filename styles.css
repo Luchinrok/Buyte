@@ -4915,6 +4915,22 @@ body.selection-mode-active #shops-slider .arrow-btn {
   font-weight: 600;
   color: var(--primary, #2E7D32);
   opacity: 0.85;
+  /* Pas 1 — Bloqueig de selecció de text sobre el cost estimat:
+     Hipòtesi: a iOS Safari, el touchstart sobre text seleccionable
+     inicia un gest de selecció (mostra la lupa) i captura el touch,
+     bloquejant l'scroll de la llista en aquesta zona. Resultat: dead
+     zones amb el patró de 3 zones (top scroll només cap avall, mig
+     mort, bottom només cap amunt).
+     `.shopping-item-cost` és l'únic element afegit pel catàleg v2
+     (vegeu commit 75963fa) que crea text obert i seleccionable als
+     items — els germans .shopping-item-name i .shopping-item-meta
+     tenen `white-space: nowrap` + `overflow: hidden` que mitiga la
+     selecció. Bloquegem només aquest element per validar la
+     hipòtesi amb un canvi mínim i aïllat.
+     Si NO resol: revertir i escalar a .shopping-item-name i
+     .shopping-item-meta (Pas 2), després al list (Pas 3). */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Toggle "Cronològic / Per categoria" a #screen-supermarket. Viu just
