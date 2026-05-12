@@ -1581,6 +1581,22 @@
       </div>
     </div>
 
+    <!-- Toggle de visualització: cronològic (ordre d'addició) vs.
+         agrupat per categoria. La preferència es persisteix per
+         supermercat — vegeu getBuyMeViewMode/setBuyMeViewMode a
+         js/buyme.js. La UI reflecteix el mode del super actualment
+         visible al slider; en canviar de slide, _updateBuyMeViewToggleUI
+         (cridat des de _updateSupermarketHeader) la sincronitza. -->
+    <div class="buyme-view-toggle" id="buyme-view-toggle">
+      <button class="view-mode-btn view-mode-active" data-mode="chronological" type="button">
+        <span class="mode-icon">📋</span>
+        <span class="mode-label">Cronològic</span>
+      </button>
+      <button class="view-mode-btn" data-mode="category" type="button">
+        <span class="mode-icon">🏷️</span>
+        <span class="mode-label">Per categoria</span>
+      </button>
+    </div>
 
     <!-- Slider 3D estil Stories (Swiper.js, effect: creative). El
          contingut de cada supermercat es construeix a

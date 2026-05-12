@@ -4933,6 +4933,61 @@ body.selection-mode-active #shops-slider .arrow-btn {
   -webkit-user-select: none;
 }
 
+/* Toggle "Cronològic / Per categoria" a #screen-supermarket. Viu just
+   sota .shop-actions-bar i per fora del .shops-slider — així evitem
+   el clonatge de slides amb loop:true (els listeners hi viurien
+   directes, no via delegació al slider). */
+.buyme-view-toggle {
+  display: flex;
+  gap: 6px;
+  padding: 4px 0 6px;
+  margin-bottom: 4px;
+}
+.view-mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #E0E0E0);
+  background: var(--card-bg, #fff);
+  color: var(--text, #333);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.05s;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Hover/active només per al botó NO actiu — abans `.view-mode-btn:hover`
+   tenia més especificitat (0,2,0) que `.view-mode-active` (0,1,0) i
+   pisava el gradient verd quan el cursor / focus quedava sobre el
+   botó després del click. Vegeu `js/buyme.js` (btn.blur() defensiu). */
+.view-mode-btn:not(.view-mode-active):hover { background: var(--bg-soft, #F5F5F0); }
+.view-mode-btn:not(.view-mode-active):active {
+  background: var(--bg-soft, #F5F5F0);
+  transform: scale(0.98);
+}
+/* Accessibilitat: outline només en focus per teclat (no per click). */
+.view-mode-btn:focus-visible {
+  outline: 2px solid var(--primary, #4CAF50);
+  outline-offset: 2px;
+}
+.view-mode-active,
+.view-mode-active:hover,
+.view-mode-active:focus,
+.view-mode-active:active {
+  background: linear-gradient(135deg, #66BB6A, #2E7D32);
+  color: white;
+  border-color: transparent;
+  font-weight: 700;
+}
+.view-mode-btn .mode-icon { font-size: 15px; }
+
 /* Capçaleres de categoria a la llista d'items en mode "Per categoria".
    No són sticky a propòsit — viuen dins de .shopping-items-list, que
    està sota .shop-page (slide de Swiper amb transforms 3D); sticky
@@ -4958,6 +5013,7 @@ body.selection-mode-active #shops-slider .arrow-btn {
 }
 
 @media (max-width: 480px) {
+  .view-mode-btn { font-size: 12px; padding: 7px 10px; }
   .category-section-header { font-size: 14px; }
 }
 
