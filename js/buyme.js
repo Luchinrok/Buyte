@@ -1204,12 +1204,21 @@ function renderShoppingEmojiPicker() {
   renderShoppingEmojiPickerBtn();
 }
 
-// Cerca productes a l'EatMe amb nom similar (substring en qualsevol direcció).
+// Cerca productes a l'EatMe amb el mateix nom (igualtat normalitzada).
 // S'utilitza per avisar abans d'afegir duplicats a la llista de la compra.
+// Normalització: lowercase + trim + col·lapsa espais múltiples → un sol
+// espai. Així "Suc  de taronja" (doble espai) i "suc de taronja" matchegen.
+// Abans usàvem substring bidireccional (`a.includes(b) || b.includes(a)`)
+// que produïa fals positius: escriure "Pastís" matchejava "Pa" perquè
+// "pastís".includes("pa") = true. Mateix bug per Vi/Vinagre, Sal/Salsitxes,
+// Te/Tetera, All/Allioli, etc. Igualtat estricta després de normalitzar
+// elimina tota aquesta classe de bugs i és determinista.
 function findExistingAtHome(name) {
   if (!name) return [];
-  const lowerName = name.toLowerCase();
-  return products.filter(p => p.name.toLowerCase().includes(lowerName) || lowerName.includes(p.name.toLowerCase()));
+  const norm = s => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  const target = norm(name);
+  if (!target) return [];
+  return products.filter(p => norm(p.name) === target);
 }
 
 // Quan ve marcat a true, saveShoppingItem salta la comprovació "ja en tens"
