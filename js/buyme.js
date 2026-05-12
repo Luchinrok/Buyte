@@ -388,20 +388,7 @@ function _updateSupermarketHeader() {
       ? t('shoppingEmptyHint')
       : t('shoppingItemsCount', items.length);
   }
-  _updateBuyMeViewToggleUI(currentSupermarketId);
   _updateBuyMeCostSummary(currentSupermarketId);
-}
-
-// Sincronitza l'estat visual del toggle Cronològic/Per-categoria amb
-// el mode persistit del super passat. Idempotent — segur cridar-la a
-// cada slide change i a openSupermarket.
-function _updateBuyMeViewToggleUI(supermarketId) {
-  const wrapper = document.getElementById('buyme-view-toggle');
-  if (!wrapper) return;
-  const mode = getBuyMeViewMode(supermarketId);
-  wrapper.querySelectorAll('.view-mode-btn').forEach(btn => {
-    btn.classList.toggle('view-mode-active', btn.dataset.mode === mode);
-  });
 }
 
 // Refresca la barra "💰 Aprox. X,XX €" del super actual. S'amaga si
@@ -569,21 +556,6 @@ function renderShoppingItems() {
   _updateSupermarketHeader();
 }
 
-// Mode de visualització dels items per supermercat: 'chronological'
-// (ordre d'addició — el comportament històric) o 'category' (agrupats
-// per categoria amb capçaleres). Es persisteix per supermercat.
-const VIEW_MODE_KEY_PREFIX = 'eatmefirst_buyme_view_mode_';
-
-function getBuyMeViewMode(supermarketId) {
-  if (!supermarketId) return 'chronological';
-  return localStorage.getItem(VIEW_MODE_KEY_PREFIX + supermarketId) || 'chronological';
-}
-
-function setBuyMeViewMode(supermarketId, mode) {
-  if (!supermarketId) return;
-  localStorage.setItem(VIEW_MODE_KEY_PREFIX + supermarketId, mode);
-}
-
 // Cost estimat d'un shopping item (€) — null si no es pot estimar.
 // Reutilitzem `getProductPrice` de js/product-data.js (no reimplementem
 // la lògica): hi ha tota la maquinària de CAS A/B/C ja resolta i
@@ -743,25 +715,28 @@ function _renderShopPageItems(smId, listEl, mode) {
   const popularByName = {};
   populars.forEach(p => { if (p && p.name) popularByName[p.name.toLowerCase()] = p; });
 
-  const viewMode = getBuyMeViewMode(smId);
-  const useCategory = viewMode === 'category'
-    && window.CategoriesSystem
-    && typeof window.CategoriesSystem.getCategories === 'function';
-
-  if (!useCategory) {
-    items.forEach((item, idx) => {
+  // Sempre rendering agrupat per categoria. El toggle Cronològic/Per
+  // categoria es va eliminar perquè el mode Cronològic disparava un
+  // bug de iOS Safari (dead zones del scroll). La causa real va
+  // resultar ser la selecció de text sobre `.shopping-item-cost`
+  // (vegeu styles.css), fixada amb user-select:none. Per consistència
+  // i simplicitat, sempre mostrem agrupació per categoria — és la
+  // vista més útil i ara funciona fiable.
+  //
+  // Fallback graceful: si el sistema de categories no està disponible
+  // (CategoriesSystem absent o sense getCategories), caiem a un render
+  // plà sense agrupació. No hauria de passar en pràctica.
+  if (!window.CategoriesSystem || typeof window.CategoriesSystem.getCategories !== 'function') {
+    items.forEach(item => {
       listEl.appendChild(_buildShoppingItemRow(item, {
         mode,
-        showArrows: true,
-        isFirst: idx === 0,
-        isLast: idx === items.length - 1,
+        showArrows: false,
         cost: getEstimatedItemCost(item, popularByName)
       }));
     });
     return;
   }
 
-  // ----- Mode "Per categoria" -----
   const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
     ? window.CategoriesSystem.getItemCategories() : {};
 
@@ -986,67 +961,6 @@ window.ShoppingSelection = {
   count: () => _shoppingSelectedIds.size,
   getSelectedIds: () => Array.from(_shoppingSelectedIds)
 };
-
-// Listener del toggle de visualització (Cronològic / Per categoria).
-// Viu fora de #shops-slider — Swiper no clona aquest node, així que
-// addEventListener directe és segur (a diferència dels botons d'acció
-// dels items, que han d'anar per delegació al pare per sobreviure el
-// loop:true). Click → desa el mode per al super actiu, repinta nomes
-// les pàgines d'aquest super (querySelectorAll perquè amb loop:true
-// pot existir un duplicat) i actualitza la UI del toggle.
-(function _wireBuyMeViewToggle() {
-  if (typeof document === 'undefined') return;
-  if (window.__buyMeViewToggleWired) return;
-  window.__buyMeViewToggleWired = true;
-  document.addEventListener('DOMContentLoaded', () => {
-    const wrapper = document.getElementById('buyme-view-toggle');
-    if (!wrapper) return;
-    wrapper.addEventListener('click', (e) => {
-      const btn = e.target && e.target.closest && e.target.closest('.view-mode-btn');
-      if (!btn || !wrapper.contains(btn)) return;
-      const mode = btn.dataset.mode;
-      if (!mode || !currentSupermarketId) return;
-      if (getBuyMeViewMode(currentSupermarketId) === mode) {
-        _updateBuyMeViewToggleUI(currentSupermarketId);
-        return;
-      }
-      setBuyMeViewMode(currentSupermarketId, mode);
-      _updateBuyMeViewToggleUI(currentSupermarketId);
-      // Repintem només les pàgines del super actiu. Mateix patró que
-      // slideChange a _ensureShopsSwiper: querySelectorAll cobreix
-      // l'original + el clone que Swiper afegeix amb loop:true.
-      const slider = document.getElementById('shops-slider');
-      if (!slider) return;
-      const pages = slider.querySelectorAll('.shop-page[data-sm-id="' + currentSupermarketId + '"]');
-      pages.forEach(page => {
-        const list = page.querySelector('.shopping-items-list');
-        if (!list) return;
-        _renderShopPageItems(currentSupermarketId, list, supermarketItemsMode);
-        // CRÍTIC per al scroll en mode categoria: en canviar de mode,
-        // el contingut de la llista canvia d'altura total (mode
-        // categoria afegeix .category-section-header entre items). El
-        // scrollTop anterior pot apuntar a una zona que ja no existeix
-        // o que visualment sembla "blocada". El reset a 0 fa que el
-        // mode nou comenci des de l'inici i el scroll funcioni
-        // immediatament — sense això, l'usuari intentava scrollar des
-        // d'una posició estranya i percebia el scroll com "trencat".
-        list.scrollTop = 0;
-      });
-      // Defensiu: treu el focus del botó perquè cap navegador retingui
-      // l'estat :focus visible (sobretot a mòbil, on el tap manté
-      // focus fins al següent toc en una altra zona).
-      try { btn.blur(); } catch (e) {}
-      // Refresca la cube geometry per si la cromia hagués canviat
-      // (paranoia: el cost summary no depèn del mode, però aquesta
-      // crida és barata i evita classes senceres de bugs de cube
-      // "stale" si en el futur el rendering condicional del mode
-      // afecta la cromia superior).
-      if (_shopsSwiper) {
-        try { _shopsSwiper.update(); } catch (e) {}
-      }
-    });
-  });
-})();
 
 // En sortir de #screen-supermarket, surt del mode selecció. Mateixa
 // mecànica que el wrapper de showScreen a biteme.js per a #screen-list
