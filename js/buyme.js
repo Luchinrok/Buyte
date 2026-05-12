@@ -257,37 +257,22 @@ function _ensureShopsSwiper() {
     // (sense això, calia "doble clic" per activar accions als slides
     // que no fossin l'inicial).
     touchStartPreventDefault: false,
-    // loop: false (canviat de true).
+    // loop: true reactivat. La causa del bug d'overlap anterior
+    // (contingut d'una botiga apareixia fantasma sota una altra a la
+    // costura del loop) era que slideChange cridava
+    // renderShoppingItems, que rebuilda tota l'estructura DOM dels
+    // slides — incompatible amb el inventori intern de Swiper amb
+    // duplicats. Ara slideChange NOMÉS re-renderitza la llista
+    // d'items del slide ANTERIOR via querySelectorAll, i això inclou
+    // tant l'original com el seu clone (si en té). Cap mutació
+    // d'estructura, cap desincronització.
     //
-    // Per què: investigació empírica al mòbil real revela que els
-    // clones que Swiper genera amb loop:true queden DESFASATS dels
-    // slides originals. Cas observat amb 3 supers (5 slides totals:
-    // 2 clones + 3 originals):
-    //   - Slide 0 (clone esquerre): scrollHeight 3413
-    //   - Slide 3 (original del mateix super): scrollHeight 547
-    // El mateix super, però el clone tenia 6x el contingut de
-    // l'original. Conseqüència: l'scroll de la llista interna trenca
-    // de manera intermitent en canviar de super (clone activa amb
-    // contingut diferent del que esperen els touch handlers / scroll
-    // engine).
-    //
-    // El nostre codi (vegeu renderShoppingItems línia 560 i
-    // slideChange callback línia 318) INTENTA renderitzar a totes
-    // les .shop-page via querySelectorAll, incloent clones. Però en
-    // pràctica això NO sincronitza les clones, per algun motiu intern
-    // de Swiper que no hem identificat (regeneració de clones a algun
-    // event, dataset trencat al deep-clone, o reflow conservant
-    // contingut antic). Sense logs reals al mòbil iOS no podem
-    // confirmar la causa exacta.
-    //
-    // Trade-off acceptat: perdem la rotació cíclica (de l'últim super
-    // ja no es pot "swipe" fins al primer). Els .sm-dots-container
-    // segueixen com a via primària de navegació entre supers i
-    // cobreixen el cas. Guanyem scroll determinista en canviar de
-    // super, que és la prioritat clara.
-    //
-    // loopAdditionalSlides ja no aplica (sense loop, sense clones).
-    loop: false,
+    // loopAdditionalSlides: 0 important per al cube — Swiper només
+    // necessita 1 clone a cada extrem (no 2+) per fer la transició
+    // cíclica seamless en cube. Més clones afegirien duplicats
+    // innecessaris al wrapper.
+    loop: true,
+    loopAdditionalSlides: 0,
     pagination: {
       el: '#supermarket-dots',
       clickable: true,
