@@ -793,6 +793,13 @@ function renderCategoriesList() {
     return oa - ob;
   });
 
+  // Identifiquem la primera i última categoria "movibles" (excloent
+  // cat_other que sempre queda fixa a baix). Servirà per deshabilitar
+  // els botons ▲ a la primera i ▼ a la última.
+  const movables = cats.filter(c => !c.isCatchAll);
+  const firstMovableId = movables.length > 0 ? movables[0].id : null;
+  const lastMovableId = movables.length > 0 ? movables[movables.length - 1].id : null;
+
   // Comptem productes per categoria per ensenyar-ho a la fila (informatiu).
   const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
     ? window.CategoriesSystem.getItemCategories() : {};
@@ -801,8 +808,16 @@ function renderCategoriesList() {
 
   container.innerHTML = cats.map(cat => {
     const isCatchAll = !!cat.isCatchAll;
+    const isFirstMovable = cat.id === firstMovableId;
+    const isLastMovable = cat.id === lastMovableId;
     const n = counts[cat.id] || 0;
     const countLabel = n === 0 ? 'Sense productes' : (n === 1 ? '1 producte' : n + ' productes');
+    // Fletxes només per a categories movibles (no cat_other). Disabled
+    // a la primera (no es pot pujar) i a l'última (no es pot baixar).
+    const moveBtns = isCatchAll ? '' : (
+      '<button type="button" class="cat-move-btn cat-move-up" data-cat-id="' + escapeHtml(cat.id) + '"' + (isFirstMovable ? ' disabled' : '') + ' aria-label="Pujar">▲</button>' +
+      '<button type="button" class="cat-move-btn cat-move-down" data-cat-id="' + escapeHtml(cat.id) + '"' + (isLastMovable ? ' disabled' : '') + ' aria-label="Baixar">▼</button>'
+    );
     return (
       '<div class="category-row" data-cat-id="' + escapeHtml(cat.id) + '">' +
         '<div class="category-row-main">' +
@@ -813,6 +828,7 @@ function renderCategoriesList() {
           '</div>' +
         '</div>' +
         '<div class="category-row-actions">' +
+          moveBtns +
           '<button type="button" class="cat-edit-btn" data-cat-id="' + escapeHtml(cat.id) + '" aria-label="Editar">✏️</button>' +
           (isCatchAll ? '' : '<button type="button" class="cat-delete-btn" data-cat-id="' + escapeHtml(cat.id) + '" aria-label="Eliminar">🗑️</button>') +
         '</div>' +
@@ -820,6 +836,26 @@ function renderCategoriesList() {
     );
   }).join('');
 
+  container.querySelectorAll('.cat-move-up').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      if (window.CategoriesSystem.moveCategoryUp(btn.dataset.catId)) {
+        renderCategoriesList();
+        // Si l'usuari té la pantalla de populars oberta, els tabs de
+        // categoria poden haver canviat d'ordre — repintem.
+        if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+      }
+    });
+  });
+  container.querySelectorAll('.cat-move-down').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      if (window.CategoriesSystem.moveCategoryDown(btn.dataset.catId)) {
+        renderCategoriesList();
+        if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+      }
+    });
+  });
   container.querySelectorAll('.cat-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => openCategoryEdit(btn.dataset.catId));
   });

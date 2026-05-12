@@ -186,6 +186,45 @@ function getCategoryById(id) {
   return cats.find(c => c.id === id) || cats.find(c => c.id === 'cat_other') || null;
 }
 
+// Reorder: intercanvi de l'`order` entre dues categories veïnes per
+// permetre que l'usuari controli l'ordre amb fletxes ▲▼ a la UI de
+// gestió. cat_other (isCatchAll) queda exclosa — sempre l'última.
+//
+// Implementació via swap d'`order`: més robust que reassignar tot
+// l'array perquè preserva els ordres existents de les categories no
+// involucrades i no toca cat_other (que té order:99 fixe).
+function _swapOrderWithNeighbor(catId, direction) {
+  const cats = getCategories();
+  const sorted = cats.slice().sort((a, b) => {
+    const oa = (typeof a.order === 'number') ? a.order : 999;
+    const ob = (typeof b.order === 'number') ? b.order : 999;
+    return oa - ob;
+  });
+  const idx = sorted.findIndex(c => c && c.id === catId);
+  if (idx < 0) return false;
+  const current = sorted[idx];
+  if (current.isCatchAll) return false; // Altres no es mou
+  const neighborIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (neighborIdx < 0 || neighborIdx >= sorted.length) return false;
+  const neighbor = sorted[neighborIdx];
+  if (neighbor.isCatchAll) return false; // No saltar per sobre/sota de Altres
+  const tmp = current.order;
+  current.order = neighbor.order;
+  neighbor.order = tmp;
+  // `sorted` conté referències als mateixos objectes de `cats`; les
+  // mutacions ja s'han aplicat. Persistim l'array original.
+  saveCategories(cats);
+  return true;
+}
+
+function moveCategoryUp(catId) {
+  return _swapOrderWithNeighbor(catId, 'up');
+}
+
+function moveCategoryDown(catId) {
+  return _swapOrderWithNeighbor(catId, 'down');
+}
+
 function createCategory(name, icon) {
   const categories = getCategories();
   const newCat = {
@@ -430,6 +469,8 @@ window.CategoriesSystem = {
   createCategory,
   updateCategory,
   deleteCategory,
+  moveCategoryUp,
+  moveCategoryDown,
   getItemCategories,
   saveItemCategories,
   setItemCategory,

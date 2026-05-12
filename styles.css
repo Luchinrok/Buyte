@@ -6283,7 +6283,8 @@ body.selection-mode-active #shops-slider .arrow-btn {
   flex-shrink: 0;
 }
 .cat-edit-btn,
-.cat-delete-btn {
+.cat-delete-btn,
+.cat-move-btn {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -6292,12 +6293,29 @@ body.selection-mode-active #shops-slider .arrow-btn {
   font-family: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, transform 0.1s;
+  transition: background 0.15s, transform 0.1s, opacity 0.15s;
 }
 .cat-edit-btn:hover,
-.cat-delete-btn:hover { background: var(--bg-secondary); }
+.cat-delete-btn:hover,
+.cat-move-btn:not(:disabled):hover { background: var(--bg-secondary); }
 .cat-edit-btn:active,
-.cat-delete-btn:active { transform: scale(0.94); }
+.cat-delete-btn:active,
+.cat-move-btn:not(:disabled):active { transform: scale(0.94); }
+
+/* Botons de reordenació (▲▼) a cada fila de categoria. Una mica més
+   estretets que edit/delete perquè en venen dos per fila i comparteixen
+   espai amb les altres dues accions. Quan estan disabled (primera fila
+   ▲ i última ▼) queden semitransparents i sense interacció. */
+.cat-move-btn {
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1;
+  min-width: 32px;
+}
+.cat-move-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 
 .create-cat-btn { width: 100%; }
 
