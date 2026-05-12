@@ -4938,18 +4938,22 @@ body.selection-mode-active #shops-slider .arrow-btn {
    el clonatge de slides amb loop:true (els listeners hi viurien
    directes, no via delegació al slider).
 
-   OCULTAT PER UX (display:none):
+   OCULTAT PER UX (visibility:hidden, NO display:none):
    La vista per categoria és l'única que volem mostrar — més útil
    agrupada. NO eliminem el DOM ni el JS associats perquè empíricament
    hem comprovat que fer-ho trenca l'scroll al mòbil iOS (reproduïble
-   en 2 intents: commits 74ac57a i ed4726d, ambdós revertits). Causa
-   de l'acoblament no identificada — el toggle queda "viu però
-   invisible" com a workaround pragmàtic fins que tinguem una sessió
-   per investigar la causa real amb mètode incremental.
-   Els `view-mode-btn` interns segueixen sent funcionals (handlers a
-   buyme.js); l'usuari simplement no els veu mai. */
+   en 2 intents: commits 74ac57a i ed4726d, ambdós revertits).
+   Tampoc usem `display: none` perquè elimina l'espai del layout —
+   el .shops-slider (flex:1) creixia per ocupar el buit, el cube face
+   creixia, i el bug d'scroll a iOS tornava a aparèixer en alguns
+   supers (els que tenien prou items per disparar-lo amb l'altura
+   nova). `visibility: hidden` invisibilita l'element MANTENINT
+   l'espai al layout — així el slider conserva l'altura exacta
+   d'abans, el cube face també, i el scroll funciona consistent.
+   Trade-off acceptat: hi ha un espai buit visual al lloc del toggle. */
 .buyme-view-toggle {
-  display: none;
+  visibility: hidden;
+  display: flex;
   gap: 6px;
   padding: 4px 0 6px;
   margin-bottom: 4px;
