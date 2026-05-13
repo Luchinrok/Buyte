@@ -747,11 +747,22 @@ function _smartBannerAction(banner) {
     case 'badgeProgress':
       return () => {
         if (typeof openAchievements === 'function') openAchievements();
+        // #screen-achievements té data-back="impact" hardcoded per a
+        // la navegació normal (Settings → Activitat → Impacte → Èxits).
+        // Quan s'entra des del banner del launcher cal apuntar al
+        // launcher directament. Mateix patró que a1492f9 / b9afe7c.
+        const _b = document.querySelector('#screen-achievements .back-btn');
+        if (_b) _b.dataset.back = 'launcher';
       };
     case 'weeklyRecap':
       return () => {
         if (typeof openImpact === 'function') openImpact();
         else showScreen('impact');
+        // #screen-impact té data-back="settings" hardcoded per a la
+        // navegació normal des de Configuració. Quan s'entra des del
+        // banner del launcher cal apuntar al launcher.
+        const _b = document.querySelector('#screen-impact .back-btn');
+        if (_b) _b.dataset.back = 'launcher';
       };
     case 'reactivation':
       // Tornar al launcher (home de l'app).
