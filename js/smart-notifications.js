@@ -689,22 +689,34 @@ function _smartBannerAction(banner) {
     }
     case 'expiry': {
       // 1 producte → detall; >1 → pantalla d'alertes (productes urgents).
+      // En tots dos casos l'usuari ve del launcher (banner), no de
+      // #screen-home → forcem el back-btn al launcher perquè tornar
+      // no caigui a l'EatMe intern. Vegeu el diagnòstic complet al
+      // commit message.
       if (banner.productId) {
         return () => {
           const list = (typeof products !== 'undefined') ? products : [];
           const p = list.find(x => x.id === banner.productId);
           if (p && typeof openProductDetail === 'function') {
-            openProductDetail(p, 'home');
+            // 'launcher' enlloc de 'home' — el banner viu al launcher.
+            openProductDetail(p, 'launcher');
           } else {
             // Producte ja no existeix — caigut a la llista general.
             if (typeof renderAlerts === 'function') renderAlerts();
             showScreen('alerts');
+            const _b = document.querySelector('#screen-alerts .back-btn');
+            if (_b) _b.dataset.back = 'launcher';
           }
         };
       }
       return () => {
         if (typeof renderAlerts === 'function') renderAlerts();
         showScreen('alerts');
+        // #screen-alerts té data-back="home" hardcoded a HTML per a la
+        // navegació interna d'EatMe (#screen-home → Alertes). Quan
+        // s'entra des del banner del launcher cal sobreescriure-ho.
+        const _b = document.querySelector('#screen-alerts .back-btn');
+        if (_b) _b.dataset.back = 'launcher';
       };
     }
     case 'mealReminder':
@@ -713,6 +725,11 @@ function _smartBannerAction(banner) {
         if (typeof viewAllSortMode !== 'undefined') viewAllSortMode = 'expiry';
         if (typeof openViewAll === 'function') openViewAll();
         else { if (typeof renderViewAll === 'function') renderViewAll(); showScreen('view-all'); }
+        // Mateix patró que 'expiry': el back-btn de #screen-view-all
+        // té data-back="home" per a navegació interna d'EatMe. Quan
+        // s'entra des del banner del launcher cal apuntar al launcher.
+        const _b = document.querySelector('#screen-view-all .back-btn');
+        if (_b) _b.dataset.back = 'launcher';
       };
     case 'cookmeInspiration':
       return () => {
