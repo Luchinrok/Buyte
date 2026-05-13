@@ -459,6 +459,83 @@ function runCatalogV2Migration() {
   return { skipped: false, assigned, moved };
 }
 
+// === Migració v3 (neteja del cache d'usuari) ===
+// Detectat als usuaris existents: entrades a 'eatmefirst_popular_custom'
+// amb dades inconsistents (productes que no caduquen amb days:7 absurd
+// per defecte del formulari, o sense weight quan en el catàleg sí n'hi
+// ha). Aquesta migració:
+//   - Treu camps `days` als 4 productes no-aliment que els tenen per
+//     accident (Tovalloletes, Espelmes, Globus, Plats i gots).
+//   - Afegeix `noExpiry:true` als 6 productes no-aliment (els 4
+//     anteriors + Regal + Carbó) si no el tenen.
+//   - Afegeix `weight` per defecte als 5 productes que en pràctica es
+//     compren per unitat/pack (Ous, Crema catalana, Hamburgueses,
+//     Cervesa, All).
+// IMPORTANT: respecta personalitzacions de l'usuari → només AFEGEIX
+// camps quan no existeixen, però SÍ elimina `days` quan és incoherent
+// amb noExpiry:true (no és una personalització; és contaminació).
+// Flag dedicat perquè s'executi una sola vegada per usuari.
+const CATALOG_V3_FLAG_KEY = 'eatmefirst_catalog_v3_migration_done';
+
+const CATALOG_V3_FIXES = {
+  'tovalloletes':   { remove: ['days'], add: { noExpiry: true } },
+  'espelmes':       { remove: ['days'], add: { noExpiry: true } },
+  'globus':         { remove: ['days'], add: { noExpiry: true } },
+  'plats i gots':   { remove: ['days'], add: { noExpiry: true } },
+  'regal':          { remove: [],       add: { noExpiry: true } },
+  'carbó':          { remove: [],       add: { noExpiry: true } },
+  'ous':            { remove: [],       add: { weight: '12u' } },
+  'crema catalana': { remove: [],       add: { weight: '4u' } },
+  'hamburgueses':   { remove: [],       add: { weight: '4u' } },
+  'cervesa':        { remove: [],       add: { weight: '6x33cl' } },
+  'all':            { remove: [],       add: { weight: '3u' } }
+};
+
+function runCatalogV3Migration() {
+  if (localStorage.getItem(CATALOG_V3_FLAG_KEY) === '1') {
+    return { skipped: true };
+  }
+  const customRaw = localStorage.getItem('eatmefirst_popular_custom');
+  if (!customRaw) {
+    localStorage.setItem(CATALOG_V3_FLAG_KEY, '1');
+    return { skipped: false, updated: 0 };
+  }
+  let custom;
+  try { custom = JSON.parse(customRaw); } catch (e) {
+    localStorage.setItem(CATALOG_V3_FLAG_KEY, '1');
+    return { skipped: false, error: 'parse' };
+  }
+  if (!Array.isArray(custom)) {
+    localStorage.setItem(CATALOG_V3_FLAG_KEY, '1');
+    return { skipped: false, error: 'not array' };
+  }
+  let updated = 0;
+  custom.forEach(item => {
+    if (!item || typeof item.name !== 'string') return;
+    const key = item.name.toLowerCase().trim();
+    const fix = CATALOG_V3_FIXES[key];
+    if (!fix) return;
+    let touched = false;
+    fix.remove.forEach(field => {
+      if (Object.prototype.hasOwnProperty.call(item, field)) {
+        delete item[field];
+        touched = true;
+      }
+    });
+    Object.keys(fix.add).forEach(field => {
+      if (!Object.prototype.hasOwnProperty.call(item, field) || item[field] === undefined) {
+        item[field] = fix.add[field];
+        touched = true;
+      }
+    });
+    if (touched) updated++;
+  });
+  localStorage.setItem('eatmefirst_popular_custom', JSON.stringify(custom));
+  localStorage.setItem(CATALOG_V3_FLAG_KEY, '1');
+  console.log('[Catalog v3] Updated ' + updated + ' items');
+  return { skipped: false, updated };
+}
+
 window.CategoriesSystem = {
   DEFAULT_CATEGORIES,
   EMOJI_TO_CATEGORY,
@@ -479,6 +556,7 @@ window.CategoriesSystem = {
   migrateExistingPopulars,
   runMigrationIfNeeded,
   runCatalogV2Migration,
+  runCatalogV3Migration,
   isMigrationDone
 };
 

@@ -51,6 +51,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.CategoriesSystem && typeof window.CategoriesSystem.runCatalogV2Migration === 'function') {
     try { window.CategoriesSystem.runCatalogV2Migration(); } catch (e) { console.warn('[Categories v2] migration error', e); }
   }
+  // Migració v3 (neteja cache d'usuari): treu `days` als productes
+  // no-aliment (noExpiry) i afegeix `weight` defaults. Flag separat
+  // eatmefirst_catalog_v3_migration_done. Independent de v1/v2.
+  // Vegeu runCatalogV3Migration a js/categories.js per al detall.
+  if (window.CategoriesSystem && typeof window.CategoriesSystem.runCatalogV3Migration === 'function') {
+    try { window.CategoriesSystem.runCatalogV3Migration(); } catch (e) { console.warn('[Catalog v3] migration error', e); }
+  }
   if (typeof loadGamificationState === 'function') {
     loadGamificationState();
     // Primer boot després d'instal·lar la gamificació: desbloca retroactivament
