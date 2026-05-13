@@ -59,6 +59,20 @@ function onRemoteData(remoteData) {
     _setPurchaseHistoryFromSync(remoteData.purchaseHistory);
   }
 
+  // Cache de populars (eatmefirst_popular_custom): mateixa regla
+  // conservadora que purchaseHistory — no esborrar local si remot
+  // arriba buit. Escrivim directament al localStorage per evitar
+  // un loop savePopularProducts → pushToServer → onRemoteData.
+  //
+  // LIMITACIÓ CONEGUDA: igual que purchaseHistory, si en el futur
+  // s'implementa "esborrar tot el catàleg popular custom", la
+  // guarda length > 0 ho bloquejarà entre dispositius.
+  if (remoteData.popularCustom
+      && Array.isArray(remoteData.popularCustom)
+      && remoteData.popularCustom.length > 0) {
+    localStorage.setItem('eatmefirst_popular_custom', JSON.stringify(remoteData.popularCustom));
+  }
+
   localStorage.setItem('eatmefirst_products', JSON.stringify(products));
   localStorage.setItem('eatmefirst_locations', JSON.stringify(locations));
   localStorage.setItem('eatmefirst_stats', JSON.stringify(stats));
@@ -93,7 +107,8 @@ function pushToServer() {
       stats: stats,
       supermarkets: supermarkets,
       shoppingItems: shoppingItems,
-      purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {}
+      purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {},
+      popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : []
     });
   }
 }
@@ -154,7 +169,8 @@ async function createNewList() {
       stats: stats,
       supermarkets: supermarkets,
       shoppingItems: shoppingItems,
-      purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {}
+      purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {},
+      popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : []
     });
     await window.FBSync.connectToList(code, onRemoteData);
 
@@ -1781,7 +1797,8 @@ function _syncImportedStateToCloud() {
       stats: JSON.parse(localStorage.getItem('eatmefirst_stats') || '{}'),
       supermarkets: JSON.parse(localStorage.getItem('eatmefirst_supermarkets') || '[]'),
       shoppingItems: JSON.parse(localStorage.getItem('eatmefirst_shopping_items') || '[]'),
-      purchaseHistory: JSON.parse(localStorage.getItem('eatmefirst_purchase_history') || '{}')
+      purchaseHistory: JSON.parse(localStorage.getItem('eatmefirst_purchase_history') || '{}'),
+      popularCustom: JSON.parse(localStorage.getItem('eatmefirst_popular_custom') || '[]')
     };
     window.FBSync.upload(payload);
     return true;

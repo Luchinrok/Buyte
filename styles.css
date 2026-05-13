@@ -10019,3 +10019,87 @@ body.selection-mode-active #shops-slider .arrow-btn {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ============================================
+   COMMIT 3b: EDICIÓ ACTIVA A "EDITAR ÚLTIMES COMPRES"
+   Inputs editables, toggle "No caduca" interactiu, save enabled
+   state, modal del custom range picker.
+   ============================================ */
+
+/* Focus visual als inputs editables */
+.rp-field input:not(:disabled):focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* Control de caducitat: date input | badge "No caduca" + toggle */
+.rp-expiry-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.rp-no-expiry-badge {
+  display: inline-block;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(76, 175, 80, 0.15);
+  color: #2E7D32;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: center;
+}
+:root[data-theme="dark"] .rp-no-expiry-badge {
+  background: rgba(76, 175, 80, 0.25);
+  color: #A5D6A7;
+}
+/* Toggle checkbox "No caduca" — etiqueta inline compacta */
+.rp-no-expiry-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted, #999);
+  cursor: pointer;
+  user-select: none;
+}
+.rp-no-expiry-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Botó "Desar canvis" enabled */
+.rp-save-btn:not(:disabled) {
+  background: var(--primary);
+  color: white;
+}
+.rp-save-btn:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+/* Modal "Rang personalitzat" (reuse de .modal-overlay) */
+.rp-range-modal {
+  min-width: 260px;
+  max-width: 320px;
+}
+.rp-range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0;
+}
+.rp-range-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #999);
+}
+.rp-range-field input[type="date"] {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+}
