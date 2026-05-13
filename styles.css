@@ -241,52 +241,34 @@ h1 {
 /* ===== SLIDER 3D DE SUPERMERCATS (#shops-slider dins
    #screen-supermarket).
 
-   Estratègia "scroll únic":
-   - #screen-supermarket.active està bloquejat a 100dvh + overflow:hidden
-     (vegeu el bloc més avall) → el body NO scrolleja mai.
-   - Tota la cromia (top-bar, dots, hint, actions-bar, cost-summary,
-     view-toggle) viu com a flex-items flex-none a sobre i queda FIXA.
-   - Aquest slider és flex:1 i ocupa TOT l'espai vertical restant.
-   - L'única scroll real és el .shopping-items-list dins de cada
-     .shop-page (cube face).
+   Mateix patró que .zones-slider (EatMe zones) i .levels-slider
+   (EatMe nivells): height fixa per a l'efecte cube, body scroll
+   natural per a la cromia + inner .shopping-items-list amb
+   overflow:auto per a la llista d'items.
 
-   Sobre el cube effect i altures variables: el cub necessita que totes
-   les cares tinguin la mateixa mida QUAN Swiper llegeix la geometria.
-   Amb flex:1, l'altura pot canviar si la cromia per sobre canvia (ex:
-   el buyme-cost-summary apareix/desapareix). Compensem cridant
-   swiper.update() en aquests moments:
-     - _updateBuyMeCostSummary (toggle del cost summary) — js/buyme.js
-     - resize / orientationchange — listener a js/buyme.js
-     - _scrollToSupermarket (open + slide change) ja en cridava dos. */
+   IMPORTANT — altura FIXA del slider:
+   El cub de Swiper requereix que totes les cares tinguin exactament
+   les mateixes dimensions. Sense altura fixa, Swiper calcula la
+   geometria del cub a partir d'una altura que pot variar entre
+   inicialització i cada slideTo, i el cub es queda "pillat" enmig
+   d'una transició. 70vh dóna a Swiper un valor estable.
+
+   Sobre el body scroll: el #screen-supermarket NO està bloquejat
+   (a diferència d'una versió antiga 9d187d9..6d085f4 que sí ho
+   estava). Si la cromia + 70vh excedeixen el viewport, el body
+   scrolleja com a qualsevol .screen. Aquesta era la causa del bug
+   iOS on l'scroll de la 1a botiga funcionava i de les altres no:
+   amb el lock, el touch hit-test queda atrapat entre el body
+   (immòbil) i l'inner overflow:auto després d'una cube rotation.
+   El #levels-slider usa exactament el mateix patró i funciona. */
 .shops-slider {
   width: calc(100% + 40px);
-  flex: 1 1 0;
-  min-height: 0;
+  height: 70vh;
+  flex: 0 1 auto;
   margin-left: -20px;
   margin-right: -20px;
-  overflow: hidden;
-}
-
-/* "Scroll únic" al supermercat: la pantalla ocupa exactament l'àrea de
-   contingut del body (viewport − safe-area paddings) i no scrolleja —
-   el body es manté quiet i tota la cromia (top-bar, dots, hint,
-   actions-bar, cost-summary, view-toggle) queda fixa a dalt. L'únic
-   scroll real és .shopping-items-list dins el cube. Per què height:100%
-   i no 100dvh: amb box-sizing:border-box global, body té height:100%
-   amb safe-top/safe-bottom paddings; el seu content-box ja és la zona
-   "útil". height:100% al fill resol contra aquest content-box i evita
-   que el screen sobresurti per sota del safe-area-inset-bottom (cosa
-   que faria que body tornés a scrollar — el bug que estem corregint).
-   La resta de pantalles segueixen creixent verticalment (min-height
-   100vh) — vegeu .screen / .screen.active. */
-#screen-supermarket.screen.active {
-  /* CRÍTIC: cal sobreescriure min-height:100vh de .screen base — sense
-     això, min-height (aplicat DESPRÉS de height per spec) força la
-     pantalla a 100vh i no a 100% del content-box del body. Quan hi ha
-     safe-area-inset > 0, 100vh > content-box, body torna a scrollar. */
-  min-height: 0;
-  height: 100%;
-  max-height: 100%;
+  /* Swiper amb effect:cube posiciona els slides amb transforms
+     absoluts; overflow:hidden perquè les rotacions no s'escapin. */
   overflow: hidden;
 }
 
