@@ -1409,7 +1409,16 @@ function _buildShoppingPrefill(item) {
 function tryQuickBuyShoppingItem(item) {
   const prefill = _buildShoppingPrefill(item);
   const hasZone = !!prefill.location;
-  const hasExpiry = !!prefill.days || !!prefill.noExpiry;
+  // hasExpiry estricte: requereix days NUMBER explícit o noExpiry true.
+  // Abans era `!!prefill.days || !!prefill.noExpiry` — semànticament
+  // equivalent per a la majoria de casos però acceptava qualsevol valor
+  // truthy a days. Forçar `typeof === 'number'` blinda contra futurs
+  // canvis a _buildShoppingPrefill que retornessin strings o booleans.
+  // Si NO hi ha days number i NO és noExpiry → fallback al formulari
+  // manual (path B) perquè l'usuari pugui omplir caducitat conscient.
+  // Vegeu el comentari extens a _quickBuyCore sobre per què no fem
+  // fallback silenciós a "7 dies".
+  const hasExpiry = typeof prefill.days === 'number' || !!prefill.noExpiry;
   if (!hasZone || !hasExpiry) return false;
 
   const newProduct = _quickBuyCore(item, prefill);
@@ -1455,7 +1464,16 @@ function _quickBuyCore(item, prefill) {
   let dateStr = null;
   if (!prefill.noExpiry) {
     const expiry = new Date(today);
-    expiry.setDate(expiry.getDate() + (prefill.days || 7));
+    // Sense fallback `|| 7`: caducitats fantasma silencioses de 7 dies
+    // són pitjor que un formulari manual on l'usuari completa el camp
+    // conscient. La guarda de tryQuickBuyShoppingItem (`hasExpiry =
+    // typeof prefill.days === 'number' || !!prefill.noExpiry`) garanteix
+    // que quan arribem aquí amb !prefill.noExpiry, prefill.days és un
+    // number. Si en el futur algun caller crida _quickBuyCore saltant-se
+    // tryQuickBuyShoppingItem amb prefill.days no-number, expiry serà
+    // Invalid Date i formatDateLocal retornarà NaN/null — fail-loud
+    // enlloc de silenciosa contaminació amb caducitat de 7 dies.
+    expiry.setDate(expiry.getDate() + prefill.days);
     dateStr = (typeof formatDateLocal === 'function') ? formatDateLocal(expiry) : null;
   }
 
