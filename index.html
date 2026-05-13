@@ -345,10 +345,16 @@
       </button>
     </div>
 
-    <button id="btn-view-all" class="view-all-btn">
-      <span style="font-size:18px;margin-right:8px">📋</span>
-      <span data-i18n="viewAll"></span>
-    </button>
+    <div class="home-actions-row">
+      <button id="btn-view-all" class="view-all-btn">
+        <span style="font-size:18px;margin-right:8px">📋</span>
+        <span data-i18n="viewAll"></span>
+      </button>
+      <button id="btn-recent-purchases" class="view-all-btn">
+        <span style="font-size:18px;margin-right:8px">🧾</span>
+        <span>Editar compres</span>
+      </button>
+    </div>
 
     <button id="add-btn" class="primary-btn" data-i18n="addProduct"></button>
   </div>
@@ -374,6 +380,30 @@
     </div>
 
     <div id="view-all-list" class="view-all-list"></div>
+  </div>
+
+  <!-- PANTALLA EDITAR ÚLTIMES COMPRES (Commit 3a: només lectura).
+       La capacitat d'editar i desar canvis arriba al Commit 3b.
+       Llegeix products (EatMe) filtrant per addedAt; els productes
+       sense addedAt són exclosos silenciosament. Wiring a
+       js/recent-purchases.js. -->
+  <div id="screen-recent-purchases" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
+      <h1>Editar últimes compres</h1>
+      <div style="width:40px"></div>
+    </header>
+    <div class="rp-filter-bar">
+      <button class="rp-filter-btn active" data-range="today" type="button">Avui</button>
+      <button class="rp-filter-btn" data-range="week" type="button">Setmana</button>
+      <button class="rp-filter-btn" data-range="month" type="button">Mes</button>
+      <button class="rp-filter-btn" data-range="custom" type="button">Personalitzar</button>
+    </div>
+    <div class="rp-list" id="rp-list"></div>
+    <footer class="rp-footer">
+      <button class="rp-cancel-btn" type="button">Tornar</button>
+      <button class="rp-save-btn" type="button" disabled>Desar canvis</button>
+    </footer>
   </div>
 
   <!-- PANTALLA NEVERA / CONGELADOR / REBOST (vista amb 4 prestatges)
@@ -2105,6 +2135,7 @@
   <script src="js/populars.js?v=20260510-2"></script>
   <script src="js/categories.js?v=20260509-3"></script>
   <script src="js/purchase-history.js?v=20260513-1"></script>
+  <script src="js/recent-purchases.js?v=20260513-1"></script>
   <script src="js/special-lists.js?v=20260503-3"></script>
   <script src="js/settings.js?v=20260509-8"></script>
   <script src="js/backup.js?v=20260508-2"></script>
