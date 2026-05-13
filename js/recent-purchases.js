@@ -114,8 +114,35 @@
     btn.textContent = count > 0 ? ('Desar canvis (' + count + ')') : 'Desar canvis';
   }
 
-  // === Render de cards (mode editable) ===
+  // === Resum financer (rang actiu + count + total dels filtrats) ===
+  function _rpUpdateSummary() {
+    const summary = document.querySelector('#screen-recent-purchases .rp-summary');
+    if (!summary) return;
+    const filtered = _rpFilterProducts(_rpCurrentRange);
+    const total = filtered.reduce((s, p) => s + (typeof p.price === 'number' ? p.price : 0), 0);
+    const count = filtered.length;
+    let label;
+    if (_rpCurrentRange === 'today') label = 'Avui';
+    else if (_rpCurrentRange === 'week') label = 'Última setmana';
+    else if (_rpCurrentRange === 'month') label = 'Últim mes';
+    else if (_rpCurrentRange === 'custom' && _rpCustomRange.from && _rpCustomRange.to) {
+      const fmt = (ymd) => { const p = ymd.split('-'); return p[2] + '/' + p[1]; };
+      label = fmt(_rpCustomRange.from) + ' - ' + fmt(_rpCustomRange.to);
+    } else {
+      label = 'Personalitzat';
+    }
+    const labelEl = summary.querySelector('.rp-summary-label');
+    const metaEl = summary.querySelector('.rp-summary-meta');
+    if (labelEl) labelEl.textContent = label;
+    if (metaEl) {
+      const compresWord = count === 1 ? 'compra' : 'compres';
+      metaEl.textContent = count + ' ' + compresWord + ' · ' + total.toFixed(2) + ' €';
+    }
+  }
+
+  // === Render de la taula (capçalera sticky + files) ===
   function _rpRender() {
+    _rpUpdateSummary();
     const list = document.getElementById('rp-list');
     if (!list) return;
     const filtered = _rpFilterProducts(_rpCurrentRange);
@@ -124,68 +151,63 @@
       return;
     }
     list.innerHTML = '';
-    filtered.forEach(p => list.appendChild(_rpBuildCard(p)));
+    // Capçalera sticky com a primer fill de .rp-list (no apareix quan
+    // la llista és buida — més net que mostrar-la sense files).
+    const header = document.createElement('div');
+    header.className = 'rp-table-header';
+    header.innerHTML = '<div>Producte</div><div>€</div><div>Pes/Qtat</div><div>Caducitat</div>';
+    list.appendChild(header);
+    filtered.forEach(p => list.appendChild(_rpBuildRow(p)));
   }
 
-  function _rpBuildCard(p) {
-    const card = document.createElement('div');
-    card.className = 'rp-card';
-    card.dataset.productId = p.id;
+  function _rpBuildRow(p) {
+    const row = document.createElement('div');
+    row.className = 'rp-row';
+    row.dataset.productId = p.id;
 
-    // Header
-    const header = document.createElement('div');
-    header.className = 'rp-card-header';
+    // Col 1: producte (emoji + nom-stack)
+    const colProduct = document.createElement('div');
+    colProduct.className = 'rp-col-product';
     const emoji = document.createElement('span');
-    emoji.className = 'rp-card-emoji';
+    emoji.className = 'rp-emoji';
     emoji.textContent = p.emoji || '📦';
-    const nameWrap = document.createElement('div');
-    nameWrap.className = 'rp-card-name-wrap';
+    const nameStack = document.createElement('div');
+    nameStack.className = 'rp-name-stack';
     const name = document.createElement('div');
-    name.className = 'rp-card-name';
+    name.className = 'rp-name';
     name.textContent = p.name || '';
     const date = document.createElement('div');
-    date.className = 'rp-card-date';
+    date.className = 'rp-date';
     date.textContent = _rpFormatAddedAt(p.addedAt);
-    nameWrap.appendChild(name);
-    nameWrap.appendChild(date);
-    header.appendChild(emoji);
-    header.appendChild(nameWrap);
-    card.appendChild(header);
+    nameStack.appendChild(name);
+    nameStack.appendChild(date);
+    colProduct.appendChild(emoji);
+    colProduct.appendChild(nameStack);
 
-    // Body: 3 fields (price, weight, expiry-control)
-    const body = document.createElement('div');
-    body.className = 'rp-card-body';
-
-    // Preu
-    const priceField = document.createElement('div');
-    priceField.className = 'rp-field';
-    priceField.innerHTML = '<label>Preu pagat (€)</label>';
+    // Col 2: preu
+    const colPrice = document.createElement('div');
+    colPrice.className = 'rp-col-price';
     const priceInput = document.createElement('input');
     priceInput.type = 'text';
     priceInput.inputMode = 'decimal';
     priceInput.value = (typeof p.price === 'number') ? String(p.price) : '';
     priceInput.addEventListener('input', () => _rpOnFieldChange(p, 'price', priceInput.value));
-    priceField.appendChild(priceInput);
+    colPrice.appendChild(priceInput);
 
-    // Pes
-    const weightField = document.createElement('div');
-    weightField.className = 'rp-field';
-    weightField.innerHTML = '<label>Pes / Qtat</label>';
+    // Col 3: pes
+    const colWeight = document.createElement('div');
+    colWeight.className = 'rp-col-weight';
     const weightInput = document.createElement('input');
     weightInput.type = 'text';
     weightInput.value = p.weight || '';
     weightInput.addEventListener('input', () => _rpOnFieldChange(p, 'weight', weightInput.value));
-    weightField.appendChild(weightInput);
+    colWeight.appendChild(weightInput);
 
-    // Caducitat amb toggle "No caduca"
-    const expiryField = document.createElement('div');
-    expiryField.className = 'rp-field rp-field-expiry';
-    expiryField.innerHTML = '<label>Caducitat</label>';
-    const ctrl = document.createElement('div');
-    ctrl.className = 'rp-expiry-control';
+    // Col 4: caducitat (date | badge + toggle petit sempre visible)
+    const colExpiry = document.createElement('div');
+    colExpiry.className = 'rp-col-expiry';
     const dateInput = document.createElement('input');
     dateInput.type = 'date';
-    dateInput.className = 'rp-expiry-date';
     dateInput.value = p.date || '';
     dateInput.style.display = p.noExpiry ? 'none' : '';
     dateInput.addEventListener('input', () => _rpOnFieldChange(p, 'date', dateInput.value));
@@ -194,32 +216,29 @@
     badge.textContent = 'No caduca';
     badge.style.display = p.noExpiry ? '' : 'none';
     const toggleLabel = document.createElement('label');
-    toggleLabel.className = 'rp-no-expiry-toggle';
+    toggleLabel.className = 'rp-toggle-small';
     const toggleInput = document.createElement('input');
     toggleInput.type = 'checkbox';
     toggleInput.checked = !!p.noExpiry;
     toggleInput.addEventListener('change', () => {
       const v = toggleInput.checked;
-      // Show/hide date input inline (no full re-render).
       dateInput.style.display = v ? 'none' : '';
       badge.style.display = v ? '' : 'none';
       if (v) dateInput.value = '';
       _rpOnFieldChange(p, 'noExpiry', v);
       if (v) _rpOnFieldChange(p, 'date', '');
     });
-    const toggleText = document.createTextNode(' No caduca');
     toggleLabel.appendChild(toggleInput);
-    toggleLabel.appendChild(toggleText);
-    ctrl.appendChild(dateInput);
-    ctrl.appendChild(badge);
-    ctrl.appendChild(toggleLabel);
-    expiryField.appendChild(ctrl);
+    toggleLabel.appendChild(document.createTextNode(' No caduca'));
+    colExpiry.appendChild(dateInput);
+    colExpiry.appendChild(badge);
+    colExpiry.appendChild(toggleLabel);
 
-    body.appendChild(priceField);
-    body.appendChild(weightField);
-    body.appendChild(expiryField);
-    card.appendChild(body);
-    return card;
+    row.appendChild(colProduct);
+    row.appendChild(colPrice);
+    row.appendChild(colWeight);
+    row.appendChild(colExpiry);
+    return row;
   }
 
   // === Tracking de canvis ===
@@ -416,6 +435,11 @@
     const count = editedIds.length;
     _rpEditStates = {};
     _rpUpdateSaveBtn();
+    // Refresca el resum financer: els preus poden haver canviat → el
+    // total mostrat al panell de dalt ha de reflectir-ho abans de
+    // navegar. (En pràctica l'usuari surt de la pantalla, però si
+    // tornés sense recarregar veuria el total stale.)
+    _rpUpdateSummary();
     if (typeof showToast === 'function') {
       showToast('✓ ' + count + (count === 1 ? ' producte actualitzat' : ' productes actualitzats'));
     }
