@@ -115,11 +115,25 @@
   }
 
   // === Resum financer (rang actiu + count + total dels filtrats) ===
+  // El total reflecteix edits pendents als preus: si hi ha una entrada
+  // a _rpEditStates[p.id].price, s'usa enlloc del product.price desat.
+  // Així l'usuari veu el nou total en temps real mentre edita.
   function _rpUpdateSummary() {
     const summary = document.querySelector('#screen-recent-purchases .rp-summary');
     if (!summary) return;
     const filtered = _rpFilterProducts(_rpCurrentRange);
-    const total = filtered.reduce((s, p) => s + (typeof p.price === 'number' ? p.price : 0), 0);
+    const total = filtered.reduce((s, p) => {
+      const edits = _rpEditStates[p.id] || {};
+      let effectivePrice;
+      if ('price' in edits) {
+        const cleaned = String(edits.price).replace(',', '.').trim();
+        const parsed = parseFloat(cleaned);
+        effectivePrice = Number.isFinite(parsed) ? parsed : 0;
+      } else {
+        effectivePrice = (typeof p.price === 'number') ? p.price : 0;
+      }
+      return s + effectivePrice;
+    }, 0);
     const count = filtered.length;
     let label;
     if (_rpCurrentRange === 'today') label = 'Avui';
@@ -151,19 +165,29 @@
       return;
     }
     list.innerHTML = '';
-    // Capçalera sticky com a primer fill de .rp-list (no apareix quan
-    // la llista és buida — més net que mostrar-la sense files).
+    // Capçalera sticky com a primer fill de .rp-list. Només 3 cols
+    // ara (Producte | € | Pes) — la caducitat viu a la sub-fila 2
+    // de cada producte amb label inline.
     const header = document.createElement('div');
     header.className = 'rp-table-header';
-    header.innerHTML = '<div>Producte</div><div>€</div><div>Pes/Qtat</div><div>Caducitat</div>';
+    header.innerHTML = '<div class="rp-col-product">Producte</div>'
+      + '<div class="rp-col-price">€</div>'
+      + '<div class="rp-col-weight">Pes</div>';
     list.appendChild(header);
     filtered.forEach(p => list.appendChild(_rpBuildRow(p)));
   }
 
+  // Estructura del .rp-row en 2 sub-files:
+  //   .rp-main  → [producte (emoji+nom+data)] [€ input] [pes input]
+  //   .rp-secondary → [Caducitat:] [date input] [□ No caduca]
   function _rpBuildRow(p) {
     const row = document.createElement('div');
     row.className = 'rp-row';
     row.dataset.productId = p.id;
+
+    // === Sub-fila 1: .rp-main ===
+    const main = document.createElement('div');
+    main.className = 'rp-main';
 
     // Col 1: producte (emoji + nom-stack)
     const colProduct = document.createElement('div');
@@ -203,9 +227,18 @@
     weightInput.addEventListener('input', () => _rpOnFieldChange(p, 'weight', weightInput.value));
     colWeight.appendChild(weightInput);
 
-    // Col 4: caducitat (date | badge + toggle petit sempre visible)
+    main.appendChild(colProduct);
+    main.appendChild(colPrice);
+    main.appendChild(colWeight);
+
+    // === Sub-fila 2: .rp-secondary (caducitat + toggle) ===
+    const secondary = document.createElement('div');
+    secondary.className = 'rp-secondary';
     const colExpiry = document.createElement('div');
     colExpiry.className = 'rp-col-expiry';
+    const expiryLabel = document.createElement('span');
+    expiryLabel.className = 'rp-col-label';
+    expiryLabel.textContent = 'Caducitat';
     const dateInput = document.createElement('input');
     dateInput.type = 'date';
     dateInput.value = p.date || '';
@@ -230,14 +263,14 @@
     });
     toggleLabel.appendChild(toggleInput);
     toggleLabel.appendChild(document.createTextNode(' No caduca'));
+    colExpiry.appendChild(expiryLabel);
     colExpiry.appendChild(dateInput);
     colExpiry.appendChild(badge);
     colExpiry.appendChild(toggleLabel);
+    secondary.appendChild(colExpiry);
 
-    row.appendChild(colProduct);
-    row.appendChild(colPrice);
-    row.appendChild(colWeight);
-    row.appendChild(colExpiry);
+    row.appendChild(main);
+    row.appendChild(secondary);
     return row;
   }
 
@@ -268,6 +301,11 @@
       _rpEditStates[product.id] = state;
     }
     _rpUpdateSaveBtn();
+    // Resum en temps real per als canvis de preu (els únics que afecten
+    // el total mostrat). Perf: O(n) sobre productes filtrats + 1 reflow
+    // de 2 textContent — innocu fins ~50 productes. Si en el futur cal
+    // suport per a llistes molt llargues, considerar debounce 100-150ms.
+    if (field === 'price') _rpUpdateSummary();
   }
 
   // === Helpers ===
