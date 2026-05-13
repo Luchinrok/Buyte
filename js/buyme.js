@@ -330,7 +330,25 @@ function _ensureShopsSwiper() {
       slideChangeTransitionEnd: function() {
         const swiper = this;
         const active = swiper.slides && swiper.slides[swiper.activeIndex];
-        if (active) active.style.pointerEvents = 'auto';
+        if (!active) return;
+        active.style.pointerEvents = 'auto';
+        // Bug iOS Safari: la 1a botiga scrolleja bé (la seva
+        // .shopping-items-list estava facing-forward des de l'init i
+        // iOS hi va lligar el touch scroll engine). Les següents
+        // botigues entren a la vista via cube rotation 3D — el motor
+        // d'scroll d'iOS NO re-vincula l'overflow:auto en un fill
+        // d'un pare amb transform 3D quan aquest torna a 0°.
+        //
+        // Workaround: forcem un re-attach togglejant overflow-y i
+        // disparant un reflow al .shopping-items-list de la nova cara
+        // activa, just després que acabi la transició del cub.
+        const list = active.querySelector('.shopping-items-list');
+        if (list) {
+          const prev = list.style.overflowY;
+          list.style.overflowY = 'hidden';
+          void list.offsetHeight; // reflow forçat
+          list.style.overflowY = prev || '';
+        }
       }
     }
   });
