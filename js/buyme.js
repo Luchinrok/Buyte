@@ -201,180 +201,48 @@ function openSupermarket(id, options) {
   requestAnimationFrame(() => _scrollToSupermarket(currentSupermarketId, false));
 }
 
-// Swiper.js per al slider de supermercats (vegeu el paral·lel a
-// js/biteme.js per a zones). Es crea peresosament a _ensureShopsSwiper
-// la primera vegada que el slider té dimensions (screen-supermarket
-// .active). A diferència del slider de zones, el conjunt de slides
-// pot canviar entre sessions perquè l'usuari pot activar/desactivar
-// supermercats — quan això passa, renderShoppingItems destrueix la
-// instància actual abans de reconstruir el DOM, i el següent
-// _scrollToSupermarket crea una de nova.
-let _shopsSwiper = null;
+// ============================================================
+// BuyMe single-page (sense Swiper)
+// ============================================================
+// Decisió: NO fem servir Swiper al BuyMe (a diferència del slider de
+// zones a js/biteme.js i del slider de filtres a js/cookme.js, que sí
+// el conserven).
+//
+// Història del bug que va motivar la decisió:
+//   A iOS Safari, una .shopping-items-list amb overflow:auto que viu
+//   dins d'una .shop-page (cara d'un cub 3D de Swiper effect:'cube')
+//   només mantenia el touch scroll engine d'iOS vinculat a la cara
+//   facing-forward des de l'init (la 1a botiga). Les cares que
+//   entraven via rotació 3D del cub (botigues 2a, 3a, ...) NO
+//   re-vinculaven el motor d'scroll d'iOS, fent que l'scroll de la
+//   llista interna quedés trencat.
+//
+//   Intents fallits documentats (totes les commits són al git log):
+//     - 976cc6d / 24d0402: loop:true → false (eliminar clones).
+//       Hipòtesi descartada (els clones desfasats eren un símptoma,
+//       no la causa arrel). Revertit a 59117a2 / b79b68c.
+//     - 817e2e8: kick d'overflow al slideChangeTransitionEnd
+//       (toggle overflow-y:hidden → reflow → auto per re-vincular).
+//       No funcionava. Revertit a b045c54.
+//
+// Solució nuclear: eliminar Swiper del BuyMe. Una sola .shop-page
+// que es repinta en canviar de super. Navegació entre supers només
+// via #supermarket-dots (tap-only). Trade-off acceptat: es perd el
+// gest de swipe entre botigues. Els dots ja existien com a via
+// alternativa de navegació i ara són l'única.
 
-function _ensureShopsSwiper() {
-  if (_shopsSwiper) return _shopsSwiper;
-  const slider = document.getElementById('shops-slider');
-  if (!slider || !slider.clientWidth) return null;
-  _shopsSwiper = new Swiper('#shops-slider', {
-    // Vegeu la configuració idèntica a _ensureZonesSwiper a
-    // js/biteme.js. effect: 'cube' substitueix l'antic 'creative' que
-    // amb rotació de 30° era massa subtil per donar la sensació de
-    // cub real, i tenia un bug on el primer swipe a BuyMe no avançava
-    // completament (l'usuari havia de lliscar dues vegades).
-    effect: 'cube',
-    cubeEffect: {
-      // Vegeu el comentari paral·lel a _ensureZonesSwiper de
-      // js/biteme.js: shadow:false treu l'ombra projectada sota el
-      // cub que quedava mal integrada amb el fons de la pantalla.
-      shadow: false,
-      slideShadows: true,
-      shadowOffset: 20,
-      shadowScale: 0.94
-    },
-    speed: 600,
-    grabCursor: true,
-    // Vegeu el bloc paral·lel (extens) a _ensureZonesSwiper de
-    // js/biteme.js. longSwipesRatio: 0.2 + longSwipesMs: 200 +
-    // resistanceRatio: 0.85 — els llindars més permissibles
-    // raonablement possibles per evitar que el cub quedi a mitges.
-    threshold: 5,
-    touchRatio: 1,
-    longSwipes: true,
-    longSwipesRatio: 0.2,
-    longSwipesMs: 200,
-    shortSwipes: true,
-    followFinger: true,
-    resistanceRatio: 0.85,
-    // Vegeu el comentari paral·lel a _ensureZonesSwiper a
-    // js/biteme.js: en mòbil, el jitter del dit + preventClicks:true
-    // bloqueja taps. Els taps a items de la llista de la compra
-    // han de funcionar.
-    preventClicks: false,
-    preventClicksPropagation: false,
-    // touchStartPreventDefault: false — vegeu el comentari paral·lel
-    // a _ensureZonesSwiper a js/biteme.js. Cal a Android perquè el
-    // browser dispari el click event natural després del touchend
-    // (sense això, calia "doble clic" per activar accions als slides
-    // que no fossin l'inicial).
-    touchStartPreventDefault: false,
-    // loop: true reactivat. La causa del bug d'overlap anterior
-    // (contingut d'una botiga apareixia fantasma sota una altra a la
-    // costura del loop) era que slideChange cridava
-    // renderShoppingItems, que rebuilda tota l'estructura DOM dels
-    // slides — incompatible amb el inventori intern de Swiper amb
-    // duplicats. Ara slideChange NOMÉS re-renderitza la llista
-    // d'items del slide ANTERIOR via querySelectorAll, i això inclou
-    // tant l'original com el seu clone (si en té). Cap mutació
-    // d'estructura, cap desincronització.
-    //
-    // loopAdditionalSlides: 0 important per al cube — Swiper només
-    // necessita 1 clone a cada extrem (no 2+) per fer la transició
-    // cíclica seamless en cube. Més clones afegirien duplicats
-    // innecessaris al wrapper.
-    loop: true,
-    loopAdditionalSlides: 0,
-    pagination: {
-      el: '#supermarket-dots',
-      clickable: true,
-      bulletClass: 'sm-dot',
-      bulletActiveClass: 'active',
-      renderBullet: function(index, className) {
-        // index és l'índex REAL (sense duplicats); mapeja directament
-        // a la llista de supers visibles.
-        const supers = getBuyMeVisibleSupermarkets();
-        const sm = supers[index];
-        const id = sm ? sm.id : '';
-        const label = sm ? sm.name : '';
-        return '<button class="' + className + '" type="button" data-sm-id="' + id + '" aria-label="' + label + '"></button>';
-      }
-    },
-    on: {
-      slideChange: function() {
-        const supers = getBuyMeVisibleSupermarkets();
-        const sm = supers[this.realIndex];
-        if (!sm || sm.id === currentSupermarketId) return;
-        const oldId = currentSupermarketId;
-        currentSupermarketId = sm.id;
-        // En canviar de super, sortim del mode d'edició (cada super
-        // hauria de començar en mode visualització).
-        supermarketItemsMode = 'view';
-        updateSupermarketEditBtn();
-        _updateSupermarketHeader();
-        // CRÍTIC: NO crideu renderShoppingItems aquí. Era el causant
-        // d'un loop infinit slideChange → renderShoppingItems →
-        // destroy(swiper) → rebuild slides → init nou swiper →
-        // slideToLoop → slideChange → ... La causa: amb loop:true
-        // Swiper afegeix slides duplicades al wrapper (clones de la
-        // primera/última per fer la transició cíclica seamless).
-        // existingIds llavors incloïa aquests duplicats, no coincidia
-        // amb wantedIds (només originals), sameSet=false, i destruïm
-        // tot.
-        //
-        // Aquí només cal: re-renderitzar el slide ANTERIOR en mode
-        // 'view' (per si l'usuari l'havia deixat en mode 'edit'). El
-        // nou slide ja estava en 'view' (no era currentSupermarketId
-        // abans). querySelectorAll perquè amb loop:true pot existir
-        // un duplicat del slide antic també.
-        if (oldId && this.el) {
-          const oldPages = this.el.querySelectorAll('.shop-page[data-sm-id="' + oldId + '"]');
-          oldPages.forEach(page => {
-            const list = page.querySelector('.shopping-items-list');
-            if (list) _renderShopPageItems(oldId, list, 'view');
-          });
-        }
-      },
-      // Mateix fallback que a _ensureZonesSwiper a js/biteme.js:
-      // pointer-events:auto explícit al slide actiu post-transició
-      // perquè els taps al primer toc registrin sense necessitat
-      // de doble click.
-      slideChangeTransitionEnd: function() {
-        const swiper = this;
-        const active = swiper.slides && swiper.slides[swiper.activeIndex];
-        if (active) active.style.pointerEvents = 'auto';
-      }
-    }
-  });
-  return _shopsSwiper;
-}
-
-function _scrollToSupermarket(id, smooth) {
-  const supers = getBuyMeVisibleSupermarkets();
-  const idx = supers.findIndex(s => s.id === id);
-  if (idx < 0) return;
-  const swiper = _ensureShopsSwiper();
-  if (!swiper) {
-    // Pantalla encara no .active (clientWidth=0). Reintenta al
-    // següent frame; quan showScreen('supermarket') s'hagi aplicat,
-    // _ensureShopsSwiper podrà crear la instància.
-    requestAnimationFrame(() => _scrollToSupermarket(id, smooth));
-    return;
+// "Scroll" a un super: en single-page és simplement assegurar que el
+// super donat és el currentSupermarketId i que la llista interna
+// queda al top. El paràmetre `smooth` ja no aplica (no hi ha
+// transició entre supers).
+function _scrollToSupermarket(id, _smooth) {
+  if (id && id !== currentSupermarketId) {
+    currentSupermarketId = id;
+    renderShoppingItems();
   }
-  // update() obligat abans del slideTo: aquesta era la causa real del
-  // bug "BuyMe es queda a mitges al primer swipe". Quan el slider
-  // s'instancia mentre la pantalla és .active però acaba de ser-ho,
-  // les dimensions del seu rectangle interior poden no estar
-  // estabilitzades. update() força un recàlcul de la cube geometry.
-  swiper.update();
-  // slideToLoop (no slideTo) perquè loop:true està activat — slideTo
-  // operaria sobre l'array intern amb duplicats.
-  swiper.slideToLoop(idx, smooth ? 600 : 0);
-  // Segon update() amb un petit delay per cobrir el cas on els items
-  // dins de .shopping-items-list es renderitzen / canvien d'altura
-  // després que la pantalla s'hagi mostrat. Sense això, en alguns
-  // casos d'entrada inicial Swiper calculava la cube geometry abans
-  // que els items haguessin acabat de pintar i la rotació quedava
-  // visualment imprecisa.
-  setTimeout(() => {
-    if (_shopsSwiper === swiper) swiper.update();
-  }, 120);
+  const list = document.querySelector('#shops-slider .shop-page > .shopping-items-list');
+  if (list) list.scrollTop = 0;
 }
-
-(function _wireShopsResnap() {
-  if (typeof window === 'undefined') return;
-  if (window.__shopsSliderResizeWired) return;
-  window.__shopsSliderResizeWired = true;
-  // Swiper té el seu propi ResizeObserver intern; res a fer aquí.
-})();
 
 function _updateSupermarketHeader() {
   const sm = getSupermarketById(currentSupermarketId);
@@ -412,17 +280,8 @@ function _updateBuyMeViewToggleUI(supermarketId) {
 function _updateBuyMeCostSummary(supermarketId) {
   const summary = document.getElementById('buyme-cost-summary');
   if (!summary) return;
-  const prevDisplay = summary.style.display;
   const setDisplay = (val) => {
     summary.style.display = val;
-    // El .shops-slider és flex:1 dins #screen-supermarket (vegeu el
-    // bloc CSS de .shops-slider). Si la cromia per sobre canvia mida
-    // — i el cost summary apareixent/desapareixent és l'únic cas no
-    // cobert per _scrollToSupermarket — l'altura del slider canvia i
-    // la cube geometry queda obsoleta. swiper.update() la recalcula.
-    if (prevDisplay !== val && _shopsSwiper) {
-      try { _shopsSwiper.update(); } catch (e) {}
-    }
   };
   if (!supermarketId) { setDisplay('none'); return; }
   const items = getShoppingItemsBySupermarket(supermarketId);
@@ -446,24 +305,6 @@ function _updateBuyMeCostSummary(supermarketId) {
   }
 }
 
-// Manté la cube geometry sincronitzada amb canvis de viewport: amb
-// .shops-slider en flex:1 dins #screen-supermarket (bloquejat a 100dvh),
-// rotar el dispositiu, mostrar/amagar la barra del navegador mòbil o
-// redimensionar la finestra alteren la seva altura. Sense aquest update,
-// Swiper continua usant la geometria antiga del cub i les transicions
-// queden visualment imprecises o "pillades".
-(function _wireShopsSwiperResize() {
-  if (typeof window === 'undefined') return;
-  if (window.__shopsSwiperResizeWired) return;
-  window.__shopsSwiperResizeWired = true;
-  const onResize = () => {
-    if (!_shopsSwiper) return;
-    try { _shopsSwiper.update(); } catch (e) {}
-  };
-  window.addEventListener('resize', onResize);
-  window.addEventListener('orientationchange', onResize);
-})();
-
 let supermarketItemsMode = 'view';
 
 function toggleSupermarketItemsMode() {
@@ -478,94 +319,96 @@ function updateSupermarketEditBtn() {
   btn.textContent = supermarketItemsMode === 'edit' ? '✓' : '✏️';
 }
 
-// No-op stub. La paginació la renderitza Swiper via pagination.el =
-// '#supermarket-dots' a _ensureShopsSwiper. Mantenim aquesta funció
-// definida per backward compat amb callers heretats.
-function renderSupermarketDots() {}
+// Renderitza els dots de navegació entre supers a #supermarket-dots.
+// Single-page: cada dot és un <button> que en fer tap canvia
+// currentSupermarketId i repinta la única .shop-page. NO és swipeable.
+function renderSupermarketDots() {
+  const container = document.getElementById('supermarket-dots');
+  if (!container) return;
+  const supers = getBuyMeVisibleSupermarkets();
+  // Reconstruïm només si la llista o l'ordre dels supers han canviat
+  // (sino, només actualitzem la classe .active). Idempotència
+  // important: render-cycle freqüent (open, dot tap, post-buy/edit).
+  const wantedIds = supers.map(s => s.id).join('|');
+  if (container.dataset.smIds !== wantedIds) {
+    container.dataset.smIds = wantedIds;
+    container.innerHTML = '';
+    supers.forEach(sm => {
+      const dot = document.createElement('button');
+      dot.className = 'sm-dot';
+      dot.type = 'button';
+      dot.dataset.smId = sm.id;
+      dot.setAttribute('aria-label', sm.name);
+      dot.addEventListener('click', () => _selectSupermarket(sm.id));
+      container.appendChild(dot);
+    });
+  }
+  Array.from(container.children).forEach(dot => {
+    dot.classList.toggle('active', dot.dataset.smId === currentSupermarketId);
+  });
+}
 
-// El swipe entre supermercats ara el gestiona scroll-snap natiu del
-// .shops-slider (vegeu styles.css). Conservem la funció com a hook
-// buit perquè openSupermarket encara la crida.
+// Tap a un dot → canvia currentSupermarketId, surt del mode edició
+// (cada super ha de començar en mode 'view'), repinta i scrolleja
+// la llista interna al top. Centralitzat aquí perquè el callback dels
+// dots i altres punts d'entrada futurs comparteixin la mateixa lògica.
+function _selectSupermarket(id) {
+  if (!id || id === currentSupermarketId) return;
+  currentSupermarketId = id;
+  supermarketItemsMode = 'view';
+  updateSupermarketEditBtn();
+  renderShoppingItems();
+  const list = document.querySelector('#shops-slider .shop-page > .shopping-items-list');
+  if (list) list.scrollTop = 0;
+}
+
+// Stub: el swipe entre supers ja no existeix (vegeu el comentari
+// d'arquitectura a dalt). Conservem la funció definida perquè
+// openSupermarket l'hagués pogut cridar a versions anteriors.
 function setupSupermarketSwipe() {}
 
-// Construeix les pàgines del slider (#shops-slider) i ompla cadascuna
-// amb els items del seu supermercat. Només la pàgina del supermercat
-// actual mostra el mode d'edició actiu (la resta es renderitzen en
-// mode 'view' per evitar UI inconsistent en pàgines no-visibles).
+// Renderitza la única .shop-page dins de #shops-slider amb els items
+// del super actual. NO multi-page (vegeu el comentari d'arquitectura
+// a dalt). En canviar de super, els callers han de canviar
+// currentSupermarketId i tornar a cridar renderShoppingItems().
 function renderShoppingItems() {
   const slider = document.getElementById('shops-slider');
   if (!slider) return;
-  const wrapper = slider.querySelector('.swiper-wrapper');
-  if (!wrapper) return;
 
-  // Garantim que el delegate de clicks dels botons d'acció estigui
-  // enganxat al pare #shops-slider. Idempotent (guarda interna via
-  // dataset). Vegeu el comentari extens a _initShopsActionsDelegate.
+  // Delegate de clicks dels botons d'acció dels items. Idempotent
+  // (guarda interna via dataset). Vegeu _initShopsActionsDelegate.
   _initShopsActionsDelegate();
 
   const supers = getBuyMeVisibleSupermarkets();
-
-  // Construïm les pàgines (.swiper-slide) un sol cop o quan canvia el
-  // conjunt de supermercats actius (l'usuari pot activar/desactivar
-  // supers a settings). Si la llista canvia, primer destruïm la
-  // instància de Swiper existent — Swiper té el seu propi inventari
-  // de slides i si modifiquem el DOM directament queda desincronitzat.
-  //
-  // CRÍTIC: amb loop:true, Swiper afegeix slides duplicats al wrapper
-  // (clones de primera/última per a la transició cíclica). Cal
-  // FILTRAR aquests duplicats abans de comparar — sense això
-  // existingIds.length sempre seria > wantedIds.length post-init,
-  // sameSet sempre seria false, sempre destruiríem i rebuildaríem,
-  // i tot dins d'un loop infinit.
-  const existingIds = Array.from(wrapper.children)
-    .filter(c => !c.classList.contains('swiper-slide-duplicate'))
-    .map(c => c.dataset.smId);
-  const wantedIds = supers.map(s => s.id);
-  const sameSet = existingIds.length === wantedIds.length
-    && existingIds.every((id, i) => id === wantedIds[i]);
-  if (!sameSet) {
-    if (_shopsSwiper) {
-      _shopsSwiper.destroy(true, true);
-      _shopsSwiper = null;
-    }
-    wrapper.innerHTML = '';
-    supers.forEach(sm => {
-      const page = document.createElement('div');
-      page.className = 'shop-page swiper-slide';
-      page.dataset.smId = sm.id;
-      const list = document.createElement('div');
-      list.className = 'shopping-items-list';
-      page.appendChild(list);
-      wrapper.appendChild(page);
-    });
-    // Si l'usuari té un super activament obert i ha estat eliminat,
-    // ens caiem cap al primer disponible (evita slideTo amb idx=-1).
-    if (currentSupermarketId && supers.findIndex(s => s.id === currentSupermarketId) < 0 && supers.length > 0) {
-      currentSupermarketId = supers[0].id;
-    }
-    // Si la pantalla és visible ara mateix, lazy-recreem la
-    // instància de Swiper a la pàgina del super actual. Si no, ja ho
-    // farà openSupermarket via rAF al proper canvi de pantalla.
-    const screen = document.getElementById('screen-supermarket');
-    if (screen && screen.classList.contains('active') && currentSupermarketId) {
-      requestAnimationFrame(() => _scrollToSupermarket(currentSupermarketId, false));
-    }
+  // Fallback si el super actiu s'ha eliminat / desactivat.
+  if (currentSupermarketId && supers.findIndex(s => s.id === currentSupermarketId) < 0 && supers.length > 0) {
+    currentSupermarketId = supers[0].id;
   }
 
-  // Renderitzem els items de cada pàgina. querySelectorAll (no
-  // querySelector) perquè amb loop:true Swiper té duplicats de
-  // primera/última al wrapper, i tots dos (original + clone)
-  // necessiten contingut consistent — sense això, en arribar a la
-  // costura del loop l'usuari veuria un slide buit.
-  supers.forEach(sm => {
-    const pages = wrapper.querySelectorAll('.shop-page[data-sm-id="' + sm.id + '"]');
-    const mode = (sm.id === currentSupermarketId) ? supermarketItemsMode : 'view';
-    pages.forEach(page => {
-      const list = page.querySelector('.shopping-items-list');
-      if (list) _renderShopPageItems(sm.id, list, mode);
-    });
-  });
+  // Una sola .shop-page. La creem la primera vegada i en les crides
+  // posteriors la reutilitzem (només repintem la .shopping-items-list
+  // i actualitzem el dataset.smId). Reutilitzar la mateixa pàgina és
+  // important: garanteix que iOS mantingui el touch scroll engine
+  // vinculat a la .shopping-items-list (era el bug original que va
+  // motivar l'eliminació del Swiper cube — vegeu comentari a dalt).
+  let page = slider.querySelector('.shop-page');
+  if (!page) {
+    page = document.createElement('div');
+    page.className = 'shop-page';
+    const newList = document.createElement('div');
+    newList.className = 'shopping-items-list';
+    page.appendChild(newList);
+    slider.appendChild(page);
+  }
+  page.dataset.smId = currentSupermarketId || '';
+  const list = page.querySelector('.shopping-items-list');
+  if (list && currentSupermarketId) {
+    _renderShopPageItems(currentSupermarketId, list, supermarketItemsMode);
+  } else if (list) {
+    list.innerHTML = '';
+  }
 
+  renderSupermarketDots();
   _updateSupermarketHeader();
 }
 
@@ -810,13 +653,13 @@ function _renderShopPageItems(smId, listEl, mode) {
   });
 }
 
-// Event delegation per als botons d'acció dins dels .shop-page del
-// shopsSwiper. Es registra UN sol cop al contenidor #shops-slider
-// (guardat amb dataset.actionsDelegated). Sobreviu el clonatge de
-// slides que fa Swiper amb loop:true — al contrari dels listeners
-// directes als botons, que es perdien al clone i feien que la
-// primera/última botiga no respongués al voltant de la costura del
-// loop. Aquesta és l'opció A del diagnòstic del BuyMe-mobile bug.
+// Event delegation per als botons d'acció dins de la .shop-page de
+// #shops-slider. Es registra UN sol cop (guardat amb
+// dataset.actionsDelegated). Mantenim la delegació (en lloc de
+// listeners directes als botons) perquè el contingut de la llista
+// es re-renderitza freqüentment (canvi de mode, canvi de super,
+// post-buy/edit/move) i un listener directe es perdria a cada
+// repinta.
 function _initShopsActionsDelegate() {
   const slider = document.getElementById('shops-slider');
   if (!slider || slider.dataset.actionsDelegated === '1') return;
@@ -848,12 +691,6 @@ function _initShopsActionsDelegate() {
     }
   });
 }
-
-// No-op stub: la sincronització "swipe → currentSupermarketId" la fa
-// el callback slideChange dins de _ensureShopsSwiper. Conservem la
-// funció perquè renderShoppingItems la cridava abans i podria
-// quedar-ne alguna referència.
-function _setupShopsSliderScrollListener() {}
 
 
 // =========================================================
@@ -989,11 +826,9 @@ window.ShoppingSelection = {
 
 // Listener del toggle de visualització (Cronològic / Per categoria).
 // Viu fora de #shops-slider — Swiper no clona aquest node, així que
-// addEventListener directe és segur (a diferència dels botons d'acció
-// dels items, que han d'anar per delegació al pare per sobreviure el
-// loop:true). Click → desa el mode per al super actiu, repinta nomes
-// les pàgines d'aquest super (querySelectorAll perquè amb loop:true
-// pot existir un duplicat) i actualitza la UI del toggle.
+// addEventListener directe és segur. Click → desa el mode per al
+// super actiu, repinta l'única .shop-page d'aquest super, actualitza
+// la UI del toggle.
 (function _wireBuyMeViewToggle() {
   if (typeof document === 'undefined') return;
   if (window.__buyMeViewToggleWired) return;
@@ -1012,38 +847,16 @@ window.ShoppingSelection = {
       }
       setBuyMeViewMode(currentSupermarketId, mode);
       _updateBuyMeViewToggleUI(currentSupermarketId);
-      // Repintem només les pàgines del super actiu. Mateix patró que
-      // slideChange a _ensureShopsSwiper: querySelectorAll cobreix
-      // l'original + el clone que Swiper afegeix amb loop:true.
-      const slider = document.getElementById('shops-slider');
-      if (!slider) return;
-      const pages = slider.querySelectorAll('.shop-page[data-sm-id="' + currentSupermarketId + '"]');
-      pages.forEach(page => {
-        const list = page.querySelector('.shopping-items-list');
-        if (!list) return;
+      // Repinta la llista del super actiu i scroll al top: en canviar
+      // de mode (cronològic ↔ categoria) l'altura total canvia i un
+      // scrollTop antic apuntaria a una zona que visualment sembla
+      // "blocada". El reset fa que el mode nou comenci des de l'inici.
+      const list = document.querySelector('#shops-slider .shop-page > .shopping-items-list');
+      if (list) {
         _renderShopPageItems(currentSupermarketId, list, supermarketItemsMode);
-        // CRÍTIC per al scroll en mode categoria: en canviar de mode,
-        // el contingut de la llista canvia d'altura total (mode
-        // categoria afegeix .category-section-header entre items). El
-        // scrollTop anterior pot apuntar a una zona que ja no existeix
-        // o que visualment sembla "blocada". El reset a 0 fa que el
-        // mode nou comenci des de l'inici i el scroll funcioni
-        // immediatament — sense això, l'usuari intentava scrollar des
-        // d'una posició estranya i percebia el scroll com "trencat".
         list.scrollTop = 0;
-      });
-      // Defensiu: treu el focus del botó perquè cap navegador retingui
-      // l'estat :focus visible (sobretot a mòbil, on el tap manté
-      // focus fins al següent toc en una altra zona).
-      try { btn.blur(); } catch (e) {}
-      // Refresca la cube geometry per si la cromia hagués canviat
-      // (paranoia: el cost summary no depèn del mode, però aquesta
-      // crida és barata i evita classes senceres de bugs de cube
-      // "stale" si en el futur el rendering condicional del mode
-      // afecta la cromia superior).
-      if (_shopsSwiper) {
-        try { _shopsSwiper.update(); } catch (e) {}
       }
+      try { btn.blur(); } catch (e) {}
     });
   });
 })();

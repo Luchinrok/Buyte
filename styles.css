@@ -291,13 +291,11 @@ h1 {
 }
 
 .shop-page {
-  /* La mida la fixa Swiper (.swiper-slide del bundle aplica
-     height: 100% al cube effect). Aquí només la disposició interna.
-     IMPORTANT: NO posem overflow-y aquí. Swiper effect:'cube' aplica
-     transforms 3D al .swiper-wrapper i als seus .swiper-slide; un
-     overflow != visible al slide crea un stacking context que aplana
-     el rendering 3D al Chromium/Safari, fent que el cub aparegui pla.
-     L'overflow vertical va a .shopping-items-list. */
+  /* Single-page (sense Swiper). Mida explícita 100% perquè
+     anteriorment l'heretava de .swiper-slide (del bundle de Swiper).
+     L'overflow vertical va a .shopping-items-list — aquí no posem
+     overflow-y per no crear un stacking context innecessari. */
+  height: 100%;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -307,11 +305,10 @@ h1 {
 
 .shop-page > .shopping-items-list {
   flex: 1;
-  /* Scroll vertical local: la cara del cub és overflow:visible (per
-     al rendering 3D) i la llista té el seu propi scroll. Aquí és on
-     "absorbim" la diferència d'altura entre botigues amb pocs i
-     molts items: el cub es manté de mida fixa, l'usuari fa scroll
-     dins.
+  /* Scroll vertical local de la llista d'items del super actiu.
+     Aquí és on "absorbim" la diferència d'altura entre botigues amb
+     pocs i molts items: la .shop-page es manté de mida fixa, l'usuari
+     fa scroll dins.
 
      IMPORTANT — display:block (override del flex base):
      el contenidor scrollable NO pot ser un flex container a iOS
@@ -328,9 +325,7 @@ h1 {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   /* touch-action: pan-y diu al browser explícitament "vertical
-     pan = scroll natiu aquí". Sense això, el browser dedueix
-     l'acció i en certs casos cedeix el touch a Swiper (que viu
-     més amunt al DOM) en lloc d'usar-lo per scrollar la llista. */
+     pan = scroll natiu aquí". Defensiu. */
   touch-action: pan-y;
   min-height: 0;
 }
