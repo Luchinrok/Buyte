@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadShoppingData();
   if (typeof loadSpecialLists === 'function') loadSpecialLists();
   loadProductHistory();
+  if (typeof loadPurchaseHistory === 'function') loadPurchaseHistory();
   if (typeof loadRecipeUsage === 'function') loadRecipeUsage();
   if (typeof loadCustomRecipes === 'function') loadCustomRecipes();
   if (typeof loadRecipeOverrides === 'function') loadRecipeOverrides();

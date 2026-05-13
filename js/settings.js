@@ -41,11 +41,30 @@ function onRemoteData(remoteData) {
   if (Array.isArray(remoteData.supermarkets)) supermarkets = remoteData.supermarkets;
   if (Array.isArray(remoteData.shoppingItems)) shoppingItems = remoteData.shoppingItems;
 
+  // Purchase history: regla conservadora — NO esborrar local quan el
+  // remot és buit ({} o sense camp). Només sobreescrivim si el remot
+  // té contingut real. Mai sobreescriure local amb undefined (la
+  // guarda Object.keys > 0 cobreix els dos casos).
+  //
+  // LIMITACIÓ CONEGUDA: si en el futur s'implementa "esborrar tot el
+  // history" com a acció d'usuari, aquesta guarda impedirà la
+  // propagació entre dispositius (B mantindrà dades antigues encara
+  // que A hagi esborrat). Caldrà un mecanisme explícit (tombstone,
+  // last_update timestamp, etc.) si arriba aquell cas.
+  if (remoteData.purchaseHistory
+      && typeof remoteData.purchaseHistory === 'object'
+      && !Array.isArray(remoteData.purchaseHistory)
+      && Object.keys(remoteData.purchaseHistory).length > 0
+      && typeof _setPurchaseHistoryFromSync === 'function') {
+    _setPurchaseHistoryFromSync(remoteData.purchaseHistory);
+  }
+
   localStorage.setItem('eatmefirst_products', JSON.stringify(products));
   localStorage.setItem('eatmefirst_locations', JSON.stringify(locations));
   localStorage.setItem('eatmefirst_stats', JSON.stringify(stats));
   localStorage.setItem('eatmefirst_supermarkets', JSON.stringify(supermarkets));
   localStorage.setItem('eatmefirst_shopping_items', JSON.stringify(shoppingItems));
+  // purchaseHistory ja s'ha escrit dins de _setPurchaseHistoryFromSync.
 
   if (typeof renderHome === 'function') renderHome();
   const sectionScreen = document.getElementById('screen-section');
@@ -73,7 +92,8 @@ function pushToServer() {
       locations: locations,
       stats: stats,
       supermarkets: supermarkets,
-      shoppingItems: shoppingItems
+      shoppingItems: shoppingItems,
+      purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {}
     });
   }
 }
@@ -133,7 +153,8 @@ async function createNewList() {
       locations: locations,
       stats: stats,
       supermarkets: supermarkets,
-      shoppingItems: shoppingItems
+      shoppingItems: shoppingItems,
+      purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {}
     });
     await window.FBSync.connectToList(code, onRemoteData);
 
@@ -1759,7 +1780,8 @@ function _syncImportedStateToCloud() {
       locations: JSON.parse(localStorage.getItem('eatmefirst_locations') || '[]'),
       stats: JSON.parse(localStorage.getItem('eatmefirst_stats') || '{}'),
       supermarkets: JSON.parse(localStorage.getItem('eatmefirst_supermarkets') || '[]'),
-      shoppingItems: JSON.parse(localStorage.getItem('eatmefirst_shopping_items') || '[]')
+      shoppingItems: JSON.parse(localStorage.getItem('eatmefirst_shopping_items') || '[]'),
+      purchaseHistory: JSON.parse(localStorage.getItem('eatmefirst_purchase_history') || '{}')
     };
     window.FBSync.upload(payload);
     return true;

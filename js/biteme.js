@@ -2226,6 +2226,37 @@ function saveNewProduct() {
     saveShoppingData();
     pendingShoppingItemId = null;
 
+    // Registre al purchase history (path fallback amb form manual).
+    // Resol popularId via match per nom contra la cache de populars;
+    // calcula days_calc dels valors realment desats al producte.
+    //
+    // days_calc = daysUntil(newProduct.date) representa la durada de
+    // vida útil estimada des de la compra. Coincideix amb "dies fins
+    // a caducitat" perquè la compra és avui. Si en el futur s'implementa
+    // "compra retroactiva" amb data anterior a avui, caldrà ajustar
+    // aquest càlcul.
+    if (typeof recordPurchase === 'function') {
+      const _populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
+      const _nkey = String(newProduct.name || '').toLowerCase().trim();
+      const _matched = _populars.find(p => p.name && p.name.toLowerCase().trim() === _nkey);
+      let _daysCalc = null;
+      if (!newProduct.noExpiry && newProduct.date && typeof daysUntil === 'function') {
+        const d = daysUntil(newProduct.date);
+        if (Number.isFinite(d)) _daysCalc = d;
+      }
+      const _sm = (typeof getSupermarketById === 'function') ? getSupermarketById(fromShopping) : null;
+      recordPurchase({
+        popularId: _matched ? _matched.id : null,
+        name: newProduct.name,
+        price: (typeof newProduct.price === 'number') ? newProduct.price : undefined,
+        weight: newProduct.weight || undefined,
+        days_calc: _daysCalc,
+        days_real: null,
+        supermarket: (_sm && _sm.name) || null,
+        productId: newProduct.id
+      });
+    }
+
     // Si estem en mode de compra guiada, continuem comprant
     if (fromShopping) {
       pendingShoppingSupermarketId = null;

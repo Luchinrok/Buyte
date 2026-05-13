@@ -1398,7 +1398,8 @@ function _buildShoppingPrefill(item) {
     price: (fromPopular && typeof fromPopular.price === 'number') ? fromPopular.price
          : (fromHistory && typeof fromHistory.price === 'number') ? fromHistory.price
          : undefined,
-    weight: (fromPopular && fromPopular.weight) || (fromHistory && fromHistory.weight) || undefined
+    weight: (fromPopular && fromPopular.weight) || (fromHistory && fromHistory.weight) || undefined,
+    popularId: (fromPopular && fromPopular.id) || null
   };
 }
 
@@ -1485,6 +1486,27 @@ function _quickBuyCore(item, prefill) {
 
   if (!Array.isArray(products)) products = [];
   products.push(newProduct);
+
+  // Registre al purchase history (vegeu js/purchase-history.js).
+  // No-op silenciós si el mòdul encara no està carregat. El
+  // supermarket s'extreu de l'item original — el prefill no en té.
+  // days_calc forçat a null quan noExpiry per coherència: prefill.days
+  // pot ser non-null en aquest cas (productHistory amb dades residuals
+  // o popular pre-migració v3) i no té sentit registrar dies de vida
+  // útil per a un producte que no caduca.
+  if (typeof recordPurchase === 'function') {
+    const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(item.supermarketId) : null;
+    recordPurchase({
+      popularId: prefill.popularId,
+      name: prefill.name,
+      price: prefill.price,
+      weight: prefill.weight,
+      days_calc: prefill.noExpiry ? null : prefill.days,
+      days_real: null,
+      supermarket: (sm && sm.name) || null,
+      productId: newProduct.id
+    });
+  }
 
   if (Array.isArray(shoppingItems)) {
     shoppingItems = shoppingItems.filter(it => it.id !== item.id);
