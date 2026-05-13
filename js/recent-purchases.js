@@ -60,10 +60,18 @@
     const d = new Date(addedAt);
     if (isNaN(d.getTime())) return '';
     const now = new Date();
-    if (d.toDateString() === now.toDateString()) {
-      return 'Avui a les ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    }
-    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) return 'Avui ' + hh + ':' + mm;
+    // "Ahir" = mateix dia hauria de ser ahir local. Comparem a partir
+    // de la dia 0 (00:00 local) per evitar problemes amb hores.
+    const today0 = new Date(now); today0.setHours(0, 0, 0, 0);
+    const d0 = new Date(d); d0.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((today0.getTime() - d0.getTime()) / 86400000);
+    if (diffDays === 1) return 'Ahir ' + hh + ':' + mm;
+    if (diffDays >= 2 && diffDays <= 7) return 'Fa ' + diffDays + ' dies';
+    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
   }
 
   function _rpUpdateFilterButtons() {

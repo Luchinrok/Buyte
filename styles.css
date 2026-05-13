@@ -9890,63 +9890,79 @@ body.selection-mode-active #shops-slider .arrow-btn {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
 }
+/* Header en una sola fila: emoji + nom esquerra, data compacta dreta.
+   align-items:baseline perquè nom i data quedin alineats pel text. */
 .rp-card-header {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 .rp-card-emoji {
-  font-size: 28px;
+  font-size: 20px;
   flex-shrink: 0;
 }
+/* name-wrap ara conté nom + data en row (no stack vertical). El JS
+   afegeix els 2 fills en aquest ordre, baseline els alinea, i
+   space-between empeny la data a la dreta. */
 .rp-card-name-wrap {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 .rp-card-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .rp-card-date {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted, #999);
-  margin-top: 2px;
+  margin-top: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-/* Body: grid 2 cols (Preu | Pes) + Caducitat full-width */
+/* Body: 3 cols (Preu | Pes | Caducitat) en una sola row. Si en pantalles
+   estretes resulta massa apinyat, considerarem un media query de
+   fallback a 2+1 més endavant. */
 .rp-card-body {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
 }
 .rp-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-.rp-field-expiry {
-  grid-column: 1 / -1;
+  min-width: 0;
 }
 .rp-field label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted, #999);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .rp-field input {
-  padding: 8px 10px;
+  padding: 6px 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg);
   color: var(--text);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
+  min-width: 0;
 }
 .rp-field input:disabled {
   opacity: 0.7;
@@ -9956,12 +9972,13 @@ body.selection-mode-active #shops-slider .arrow-btn {
 /* Badge "No caduca" enlloc d'input date quan product.noExpiry */
 .rp-no-expiry {
   display: inline-block;
-  padding: 8px 12px;
+  padding: 6px 8px;
   border-radius: 8px;
   background: rgba(76, 175, 80, 0.15);
   color: #2E7D32;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 :root[data-theme="dark"] .rp-no-expiry {
   background: rgba(76, 175, 80, 0.25);
