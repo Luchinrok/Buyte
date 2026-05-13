@@ -257,36 +257,22 @@ function _ensureShopsSwiper() {
     // (sense això, calia "doble clic" per activar accions als slides
     // que no fossin l'inicial).
     touchStartPreventDefault: false,
-    // loop: false. Re-aplicació del fix del commit 976cc6d (revertit
-    // a 59117a2 sense raó documentada — vegeu git log).
+    // loop: true reactivat. La causa del bug d'overlap anterior
+    // (contingut d'una botiga apareixia fantasma sota una altra a la
+    // costura del loop) era que slideChange cridava
+    // renderShoppingItems, que rebuilda tota l'estructura DOM dels
+    // slides — incompatible amb el inventori intern de Swiper amb
+    // duplicats. Ara slideChange NOMÉS re-renderitza la llista
+    // d'items del slide ANTERIOR via querySelectorAll, i això inclou
+    // tant l'original com el seu clone (si en té). Cap mutació
+    // d'estructura, cap desincronització.
     //
-    // Per què: investigació empírica al mòbil real va mostrar que els
-    // clones que Swiper genera amb loop:true queden DESFASATS dels
-    // slides originals. Cas observat amb 3 supers (5 slides totals al
-    // wrapper: 2 clones + 3 originals):
-    //   Pos 0 (clone esquerre)    scrollHeight 3413
-    //   Pos 1 (original prev)     scrollHeight 1900
-    //   Pos 2 (original active)   scrollHeight 1980
-    //   Pos 3 (original next)     scrollHeight  547
-    //   Pos 4 (clone dret)        scrollHeight  547
-    // El clone Pos 0 i l'original Pos 3 corresponen al MATEIX super,
-    // però el clone té 6x el contingut. Símptoma resultant: la 1a
-    // visita a una botiga scrolleja bé, però després d'un swipe (cube
-    // rotation) cap a una altra, l'scroll de la llista interna queda
-    // trencat de manera intermitent.
-    //
-    // El nostre codi intenta sincronitzar tots els .shop-page via
-    // querySelectorAll (renderShoppingItems línia ~560 + slideChange
-    // callback línia ~318), però en pràctica NO sincronitza les
-    // clones (regeneració interna, deep-clone que perd dataset, o
-    // reflow que conserva contingut antic — no s'ha pogut confirmar
-    // sense remote inspect a iOS).
-    //
-    // Sense loop → sense clones → sense desincronització → sense bug.
-    // Trade-off: es perd la rotació cíclica (de l'últim super ja no
-    // es swipea fins al primer). Els #supermarket-dots cobreixen la
-    // navegació entre supers no adjacents perfectament.
-    loop: false,
+    // loopAdditionalSlides: 0 important per al cube — Swiper només
+    // necessita 1 clone a cada extrem (no 2+) per fer la transició
+    // cíclica seamless en cube. Més clones afegirien duplicats
+    // innecessaris al wrapper.
+    loop: true,
+    loopAdditionalSlides: 0,
     pagination: {
       el: '#supermarket-dots',
       clickable: true,
