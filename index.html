@@ -1598,14 +1598,14 @@
       </button>
     </div>
 
-    <!-- Single-page del super actiu. Sense Swiper, sense swipe,
-         sense cube. La navegació entre supers va només via
-         #supermarket-dots (tap-only) — motiu: a iOS Safari l'scroll
-         intern es trencava per a cares no-inicials del cube
-         (vegeu comentari extens a js/buyme.js). El contingut el
-         construeix renderShoppingItems(); els dots,
-         renderSupermarketDots(). -->
-    <div class="shops-slider" id="shops-slider"></div>
+    <!-- Slider 3D estil Stories (Swiper.js, effect: creative). El
+         contingut de cada supermercat es construeix a
+         renderShoppingItems() i va dins de .swiper-wrapper. Els dots
+         es renderitzen a #supermarket-dots (vegeu pagination.el a
+         _ensureShopsSwiper a js/buyme.js). -->
+    <div class="shops-slider swiper" id="shops-slider">
+      <div class="swiper-wrapper"></div>
+    </div>
   </div>
 
   <!-- PANTALLA AFEGIR/EDITAR SUPERMERCAT -->
