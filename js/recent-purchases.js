@@ -481,14 +481,12 @@
     if (typeof showToast === 'function') {
       showToast('✓ ' + count + (count === 1 ? ' producte actualitzat' : ' productes actualitzats'));
     }
-    // Simula click del back-btn perquè respecti data-back i la
-    // delegació central d'app.js. Si en el futur la pantalla d'origen
-    // canvia (data-back), aquesta navegació seguirà essent correcta
-    // sense haver de tocar aquest fitxer. El listener capture-phase
-    // del back-btn ja no para res perquè _rpEditStates = {}.
-    const _backBtnPost = document.querySelector('#screen-recent-purchases .back-btn');
-    if (_backBtnPost) _backBtnPost.click();
-    else if (typeof showScreen === 'function') showScreen('home');
+    // Quedar-se a la pantalla — l'usuari probablement vol seguir
+    // editant més productes. _rpRender repinta amb els valors recent
+    // desats com a nous "originals" (els canvis pendents queden buits
+    // perquè _rpEditStates = {} i la pròxima edició compara contra
+    // els nous valors). També recalcula el resum financer.
+    _rpRender();
   }
 
   // === Custom range modal ===
@@ -535,6 +533,35 @@
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   }
 
+  // === Modal de confirmació per descartar canvis pendents ===
+  // Substitueix el confirm() natiu (lleig i no-stylable) per un
+  // .modal-overlay coherent amb la resta dels modals de l'app. Botó
+  // destructiu amb .modal-confirm-danger (estil vermell ja definit
+  // a styles.css). El callback és asíncron — vegeu el handler del
+  // back-btn per a la gestió de la propagació del click.
+  function _rpConfirmDiscard(count, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const word = count === 1 ? 'canvi' : 'canvis';
+    overlay.innerHTML =
+      '<div class="modal-content">' +
+        '<p class="modal-title">Canvis sense desar</p>' +
+        '<p class="modal-sub">Tens ' + count + ' ' + word + ' sense desar. Si surts es perdran.</p>' +
+        '<div class="modal-buttons">' +
+          '<button class="modal-cancel" id="rp-discard-cancel">Quedar-me</button>' +
+          '<button class="modal-confirm modal-confirm-danger" id="rp-discard-confirm">Sortir sense desar</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+    overlay.querySelector('#rp-discard-cancel').addEventListener('click', close);
+    overlay.querySelector('#rp-discard-confirm').addEventListener('click', () => {
+      close();
+      if (typeof onConfirm === 'function') onConfirm();
+    });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  }
+
   // === Wiring (DOMContentLoaded) ===
   document.addEventListener('DOMContentLoaded', function() {
     const accessBtn = document.getElementById('btn-recent-purchases');
@@ -562,13 +589,14 @@
     const cancelBtn = document.querySelector('#screen-recent-purchases .rp-cancel-btn');
     if (cancelBtn) cancelBtn.addEventListener('click', function() {
       const count = Object.keys(_rpEditStates).length;
-      if (count > 0) {
-        const msg = 'Tens ' + count + ' canvi' + (count === 1 ? '' : 's')
-                  + ' sense desar. Si surts es perdran. Continuar?';
-        if (!confirm(msg)) return;
-        _rpEditStates = {};
+      if (count === 0) {
+        if (typeof showScreen === 'function') showScreen('home');
+        return;
       }
-      if (typeof showScreen === 'function') showScreen('home');
+      _rpConfirmDiscard(count, () => {
+        _rpEditStates = {};
+        if (typeof showScreen === 'function') showScreen('home');
+      });
     });
 
     // Back-btn (gestionat per delegació central a app.js). Intercepta amb
@@ -579,14 +607,17 @@
       backBtn.addEventListener('click', function(e) {
         const count = Object.keys(_rpEditStates).length;
         if (count === 0) return;
-        const msg = 'Tens ' + count + ' canvi' + (count === 1 ? '' : 's')
-                  + ' sense desar. Si surts es perdran. Continuar?';
-        if (!confirm(msg)) {
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          return;
-        }
-        _rpEditStates = {};
+        // Atura SEMPRE la delegació central perquè el modal és asíncron
+        // (no podem decidir aquí mateix si deixar passar el click). Si
+        // l'usuari confirma sortir, re-disparem el click amb estat net
+        // i la delegació farà la navegació real: capture-phase tornarà
+        // aquí amb count===0 → return → bubble-phase navega.
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        _rpConfirmDiscard(count, () => {
+          _rpEditStates = {};
+          backBtn.click();
+        });
       }, true); // capture
     }
   });
