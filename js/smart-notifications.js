@@ -762,6 +762,13 @@ function _smartBannerAction(banner) {
         if (typeof activeActivityTab !== 'undefined') activeActivityTab = 'suggeriments';
         if (typeof openSettingsActivity === 'function') openSettingsActivity();
         else showScreen('settings-activity');
+        // Mateix patró que els banners d'EatMe (vegeu commit a1492f9):
+        // #screen-settings-activity té data-back="settings" hardcoded
+        // per a la navegació normal (Settings → Activitat → back →
+        // Settings). Quan s'entra des del banner del launcher cal
+        // apuntar al launcher.
+        const _b = document.querySelector('#screen-settings-activity .back-btn');
+        if (_b) _b.dataset.back = 'launcher';
       };
     default:
       return null;
