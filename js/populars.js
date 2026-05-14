@@ -200,9 +200,18 @@ function openPopularEdit(idx) {
 
   document.getElementById('popular-edit-title').textContent = isNew ? t('newPopular') : t('editPopular');
   document.getElementById('input-popular-name').value = isNew ? '' : item.name;
-  document.getElementById('input-popular-days').value = isNew ? '7' : item.days;
+  // El camp days només té sentit si l'item caduca. Si !item.noExpiry,
+  // amaguem el wrapper #popular-days-row sencer (label + input) i deixem
+  // value al default 7 perquè si l'usuari desmarca "No caduca" reaparegui
+  // amb un valor sa. Si item té days numèric, el carreguem; sinó (cas
+  // típic dels productes noExpiry residuals), fallback a 7.
   const noExpInput = document.getElementById('input-popular-no-expiry');
-  if (noExpInput) noExpInput.checked = !!(item && item.noExpiry);
+  const daysInput = document.getElementById('input-popular-days');
+  const daysRow = document.getElementById('popular-days-row');
+  const itemNoExpiry = !!(item && item.noExpiry);
+  if (noExpInput) noExpInput.checked = itemNoExpiry;
+  if (daysInput) daysInput.value = (item && typeof item.days === 'number') ? item.days : 7;
+  if (daysRow) daysRow.style.display = itemNoExpiry ? 'none' : '';
 
   const priceInput = document.getElementById('input-popular-price');
   if (priceInput) {
@@ -399,13 +408,17 @@ function savePopularEdit() {
   if (editingPopularIdx === null) {
     const entry = {
       id: 'pop-custom-' + Date.now(),
-      name, emoji: selectedPopularEmoji, days, noExpiry, location,
+      name, emoji: selectedPopularEmoji, noExpiry, location,
       // Marca que aquesta entrada té valors explícits posats per l'usuari,
       // perquè l'aprenentatge automàtic (addToCustomPopular) no els
       // sobreescrigui sense voler la propera vegada que es desi un producte
       // amb el mateix nom.
       userEdited: true
     };
+    // days només si l'item caduca — sino contaminaríem productes noExpiry
+    // amb el default 7 que el form sempre té carregat al fons (és l'origen
+    // del bug que la migració v3 a categories.js neteja a posteriori).
+    if (!noExpiry) entry.days = days;
     if (price !== null) entry.price = price;
     if (weight) entry.weight = weight;
     list.push(entry);
@@ -413,10 +426,14 @@ function savePopularEdit() {
   } else {
     list[editingPopularIdx].name = name;
     list[editingPopularIdx].emoji = selectedPopularEmoji;
-    list[editingPopularIdx].days = days;
     list[editingPopularIdx].noExpiry = noExpiry;
     list[editingPopularIdx].location = location;
     list[editingPopularIdx].userEdited = true;
+    // days: si l'usuari ha marcat noExpiry, eliminem el camp existent
+    // perquè el cache quedi coherent. Si !noExpiry, escrivim el days
+    // capturat del form.
+    if (noExpiry) delete list[editingPopularIdx].days;
+    else list[editingPopularIdx].days = days;
     if (price !== null) list[editingPopularIdx].price = price;
     else delete list[editingPopularIdx].price;
     if (weight) list[editingPopularIdx].weight = weight;
@@ -1073,6 +1090,25 @@ function _confirmDeleteCategory(cat, onAfter) {
       } else {
         onConfirm();
       }
+    });
+  });
+})();
+
+// Listener al toggle "No caduca" del form d'edició de populars:
+// mostra/amaga inline el camp days segons l'estat del checkbox. Wire
+// UNA sola vegada al DOMContentLoaded (idempotent via flag global).
+// Patró simètric a l'usat a la vista "Editar últimes compres"
+// (vegeu js/recent-purchases.js _rpBuildRow → toggle "No caduca").
+(function _wirePopularNoExpiryToggle() {
+  if (typeof document === 'undefined') return;
+  if (window.__popularNoExpiryToggleWired) return;
+  window.__popularNoExpiryToggleWired = true;
+  document.addEventListener('DOMContentLoaded', () => {
+    const noExpInput = document.getElementById('input-popular-no-expiry');
+    const daysRow = document.getElementById('popular-days-row');
+    if (!noExpInput || !daysRow) return;
+    noExpInput.addEventListener('change', () => {
+      daysRow.style.display = noExpInput.checked ? 'none' : '';
     });
   });
 })();

@@ -822,8 +822,13 @@
     </div>
 
     <div class="form-group">
-      <label data-i18n="durationDays" for="input-popular-days"></label>
-      <input type="number" id="input-popular-days" min="1" max="3650" value="7">
+      <!-- Wrapper #popular-days-row perquè JS pugui amagar label+input
+           junts quan l'usuari marca "No caduca". Vegeu openPopularEdit i
+           _wirePopularNoExpiryToggle a js/populars.js. -->
+      <div id="popular-days-row">
+        <label data-i18n="durationDays" for="input-popular-days"></label>
+        <input type="number" id="input-popular-days" min="1" max="3650" value="7">
+      </div>
       <label class="no-expiry-label">
         <input type="checkbox" id="input-popular-no-expiry">
         <span class="no-expiry-text" data-i18n="noExpiry"></span>
