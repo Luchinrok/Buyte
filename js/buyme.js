@@ -707,6 +707,97 @@ function _buildShoppingItemRow(item, opts) {
   return div;
 }
 
+// ============================================
+// Ordre de categories PER SUPER al BuyMe
+// ============================================
+// Cada super pot tenir el seu ordre de categories diferent (la
+// disposició física del super real). Settings → Gestió de categories
+// segueix amb el camp `order` global (ordre per defecte usat si un
+// super NO té override). cat_other sempre l'última.
+//
+// Format al localStorage 'eatmefirst_category_order_by_super':
+//   {
+//     "mercadona-id-xxx": ["cat_fruits", "cat_vegetables", ...],
+//     "bonpreu-id-yyy":   ["cat_meat", "cat_dairy", ...]
+//   }
+// Categories no presents a l'array hereten l'ordre global. cat_other
+// sempre al final, mai a l'array (és l'última fixa).
+
+const CATEGORY_ORDER_BY_SUPER_KEY = 'eatmefirst_category_order_by_super';
+
+function _readCategoryOrderMap() {
+  try {
+    const raw = localStorage.getItem(CATEGORY_ORDER_BY_SUPER_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+  } catch (e) { return {}; }
+}
+
+function _writeCategoryOrderMap(map) {
+  try {
+    localStorage.setItem(CATEGORY_ORDER_BY_SUPER_KEY, JSON.stringify(map));
+  } catch (e) {}
+  if (typeof pushToServer === 'function') pushToServer();
+}
+
+// Retorna les categories ordenades segons override del super (si en
+// té) + restants per ordre global + cat_other sempre l'última.
+function _getCategoryOrderForSuper(superId, allCategories) {
+  const sorted = (cats) => cats.slice().sort((a, b) => {
+    const oa = (typeof a.order === 'number') ? a.order : 999;
+    const ob = (typeof b.order === 'number') ? b.order : 999;
+    return oa - ob;
+  });
+  const map = _readCategoryOrderMap();
+  const superOrder = superId ? map[superId] : null;
+  if (!Array.isArray(superOrder) || superOrder.length === 0) {
+    return sorted(allCategories);
+  }
+  // Aplica override del super
+  const positioned = [];
+  const remaining = allCategories.slice();
+  superOrder.forEach(id => {
+    const idx = remaining.findIndex(c => c.id === id);
+    if (idx >= 0) positioned.push(remaining.splice(idx, 1)[0]);
+  });
+  // Categories restants per ordre global. cat_other té order:99 a
+  // DEFAULT_CATEGORIES (categories.js:41), així que el sort la deixa
+  // al final naturalment.
+  return positioned.concat(sorted(remaining));
+}
+
+// Mou una categoria amunt/avall a l'ordre del super donat. Retorna
+// true si hi ha hagut canvi efectiu. Si el super no té override
+// encara, inicialitza l'array amb l'ordre global actual (excloent
+// cat_other, que sempre va al final).
+function _moveCategoryInSuper(superId, catId, direction) {
+  if (!superId || !catId) return false;
+  if (!window.CategoriesSystem || typeof window.CategoriesSystem.getCategories !== 'function') return false;
+  const map = _readCategoryOrderMap();
+  if (!Array.isArray(map[superId])) {
+    const cats = window.CategoriesSystem.getCategories()
+      .filter(c => !c.isCatchAll)
+      .sort((a, b) => {
+        const oa = (typeof a.order === 'number') ? a.order : 999;
+        const ob = (typeof b.order === 'number') ? b.order : 999;
+        return oa - ob;
+      })
+      .map(c => c.id);
+    map[superId] = cats;
+  }
+  const arr = map[superId];
+  const idx = arr.indexOf(catId);
+  if (idx < 0) return false;
+  const neighborIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (neighborIdx < 0 || neighborIdx >= arr.length) return false;
+  const tmp = arr[idx];
+  arr[idx] = arr[neighborIdx];
+  arr[neighborIdx] = tmp;
+  _writeCategoryOrderMap(map);
+  return true;
+}
+
 function _renderShopPageItems(smId, listEl, mode) {
   listEl.innerHTML = '';
   const items = getShoppingItemsBySupermarket(smId);
@@ -765,22 +856,47 @@ function _renderShopPageItems(smId, listEl, mode) {
     grouped[cid].push(item);
   });
 
-  const cats = window.CategoriesSystem.getCategories().slice().sort((a, b) => {
-    const oa = (typeof a.order === 'number') ? a.order : 999;
-    const ob = (typeof b.order === 'number') ? b.order : 999;
-    return oa - ob;
-  });
+  // Ordre PER SUPER (vegeu _getCategoryOrderForSuper a dalt). Si el
+  // super no té override, cau a l'ordre global de Settings (camp
+  // `order`). cat_other sempre l'última.
+  const cats = _getCategoryOrderForSuper(smId, window.CategoriesSystem.getCategories());
+
+  // Primera i última categoria movibles segons l'ordre resultat —
+  // pot diferir entre supers. Servirà per disabled del ▲ a la primera
+  // i ▼ a l'última.
+  const movables = cats.filter(c => !c.isCatchAll);
+  const firstMovableId = movables.length > 0 ? movables[0].id : null;
+  const lastMovableId = movables.length > 0 ? movables[movables.length - 1].id : null;
+
+  // Botons ▲▼ només en mode edit (✏️ actiu). Coherent amb la resta
+  // de l'UX d'edició de l'app.
+  const isEditMode = mode === 'edit';
 
   cats.forEach(cat => {
     const groupItems = grouped[cat.id];
     if (!groupItems || groupItems.length === 0) return;
     const header = document.createElement('div');
     header.className = 'category-section-header';
+    const isCatchAll = !!cat.isCatchAll;
+    const isFirstMovable = cat.id === firstMovableId;
+    const isLastMovable = cat.id === lastMovableId;
+    // Botons NO per a cat_other (sempre fixa al final) ni en mode
+    // 'view'. Reutilitzem .cat-move-btn de Settings (zero CSS nou).
+    const moveBtnsHtml = (isCatchAll || !isEditMode) ? '' : (
+      '<button type="button" class="cat-move-btn cat-move-up" data-cat-id="' + escapeHtml(cat.id) + '"' + (isFirstMovable ? ' disabled' : '') + ' aria-label="Pujar">▲</button>' +
+      '<button type="button" class="cat-move-btn cat-move-down" data-cat-id="' + escapeHtml(cat.id) + '"' + (isLastMovable ? ' disabled' : '') + ' aria-label="Baixar">▼</button>'
+    );
     header.innerHTML = `
       <span class="cat-section-icon">${escapeHtml(cat.icon || '📦')}</span>
       <span class="cat-section-name">${escapeHtml(cat.name || cat.id)}</span>
       <span class="cat-section-count">(${groupItems.length})</span>
+      ${moveBtnsHtml}
     `;
+    // Els clicks dels botons ▲▼ es gestionen via delegació central
+    // a _initShopsActionsDelegate (case .cat-move-btn). Listeners
+    // directes aquí NO sobreviurien al clonatge de slides que fa
+    // Swiper amb loop:true — mateix patró que els botons d'acció
+    // dels items.
     listEl.appendChild(header);
     groupItems.forEach(item => {
       // Sense fletxes en mode agrupat: l'índex global per supermercat
@@ -810,29 +926,53 @@ function _initShopsActionsDelegate() {
   if (!slider || slider.dataset.actionsDelegated === '1') return;
   slider.dataset.actionsDelegated = '1';
   slider.addEventListener('click', (e) => {
+    // === A) Botons d'acció dels items ([data-action][data-item-id]) ===
     const btn = e.target && e.target.closest && e.target.closest('[data-action][data-item-id]');
-    if (!btn || !slider.contains(btn)) return;
-    if (btn.disabled) return;
-    const action = btn.dataset.action;
-    const itemId = btn.dataset.itemId;
-    if (!action || !itemId) return;
-    // Trobem l'item a la llista global. shoppingItems és l'array
-    // global; els items tenen un id únic. (És el mateix patró que
-    // moveShoppingItem usa internament a js/shops.js.)
-    const item = (Array.isArray(shoppingItems) ? shoppingItems : []).find(it => it.id === itemId);
-    if (!item) return;
-    if (action === 'bought') {
-      buyShoppingItem(item);
-    } else if (action === 'edit') {
-      openShoppingItemEdit(item);
-    } else if (action === 'up' || action === 'down') {
-      // moveShoppingItem(idx, ±1) treballa amb l'índex DINS de la
-      // llista d'items del super actual. Calculem-lo a partir de
-      // l'item.id.
-      const supItems = getShoppingItemsBySupermarket(currentSupermarketId);
-      const idx = supItems.findIndex(it => it.id === itemId);
-      if (idx < 0) return;
-      moveShoppingItem(idx, action === 'up' ? -1 : 1);
+    if (btn && slider.contains(btn)) {
+      if (btn.disabled) return;
+      const action = btn.dataset.action;
+      const itemId = btn.dataset.itemId;
+      if (!action || !itemId) return;
+      // Trobem l'item a la llista global. shoppingItems és l'array
+      // global; els items tenen un id únic. (És el mateix patró que
+      // moveShoppingItem usa internament a js/shops.js.)
+      const item = (Array.isArray(shoppingItems) ? shoppingItems : []).find(it => it.id === itemId);
+      if (!item) return;
+      if (action === 'bought') {
+        buyShoppingItem(item);
+      } else if (action === 'edit') {
+        openShoppingItemEdit(item);
+      } else if (action === 'up' || action === 'down') {
+        // moveShoppingItem(idx, ±1) treballa amb l'índex DINS de la
+        // llista d'items del super actual. Calculem-lo a partir de
+        // l'item.id.
+        const supItems = getShoppingItemsBySupermarket(currentSupermarketId);
+        const idx = supItems.findIndex(it => it.id === itemId);
+        if (idx < 0) return;
+        moveShoppingItem(idx, action === 'up' ? -1 : 1);
+      }
+      return;
+    }
+
+    // === B) Botons ▲▼ de reorder de categories (.cat-move-btn) ===
+    // Via delegació perquè els headers viuen dins de .shop-page que
+    // Swiper amb loop:true clona. Listeners directes no sobreviuen
+    // als clones — vegeu el comentari a _renderShopPageItems sobre
+    // per què els ▲▼ NO tenen addEventListener directe. El superId
+    // ve del .shop-page pare (data-sm-id), no de currentSupermarketId,
+    // perquè un clone pot estar visible sense ser el currentSuper.
+    const moveBtn = e.target && e.target.closest && e.target.closest('.cat-move-btn');
+    if (moveBtn && slider.contains(moveBtn)) {
+      if (moveBtn.disabled) return;
+      const catId = moveBtn.dataset.catId;
+      const page = moveBtn.closest('.shop-page');
+      const superId = page && page.dataset ? page.dataset.smId : null;
+      if (!catId || !superId) return;
+      const isUp = moveBtn.classList.contains('cat-move-up');
+      const direction = isUp ? 'up' : 'down';
+      if (_moveCategoryInSuper(superId, catId, direction) && typeof renderShoppingItems === 'function') {
+        renderShoppingItems();
+      }
     }
   });
 }

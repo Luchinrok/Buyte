@@ -73,6 +73,17 @@ function onRemoteData(remoteData) {
     localStorage.setItem('eatmefirst_popular_custom', JSON.stringify(remoteData.popularCustom));
   }
 
+  // Ordre de categories per super (BuyMe): mateixa regla conservadora
+  // — només sobreescriure local si remot té contingut real. Cap loop
+  // perquè escrivim directament al localStorage; no hi ha funció save.
+  if (remoteData.categoryOrderBySuper
+      && typeof remoteData.categoryOrderBySuper === 'object'
+      && !Array.isArray(remoteData.categoryOrderBySuper)
+      && Object.keys(remoteData.categoryOrderBySuper).length > 0) {
+    localStorage.setItem('eatmefirst_category_order_by_super',
+      JSON.stringify(remoteData.categoryOrderBySuper));
+  }
+
   localStorage.setItem('eatmefirst_products', JSON.stringify(products));
   localStorage.setItem('eatmefirst_locations', JSON.stringify(locations));
   localStorage.setItem('eatmefirst_stats', JSON.stringify(stats));
@@ -108,7 +119,8 @@ function pushToServer() {
       supermarkets: supermarkets,
       shoppingItems: shoppingItems,
       purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {},
-      popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : []
+      popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : [],
+      categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}')
     });
   }
 }
@@ -170,7 +182,8 @@ async function createNewList() {
       supermarkets: supermarkets,
       shoppingItems: shoppingItems,
       purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {},
-      popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : []
+      popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : [],
+      categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}')
     });
     await window.FBSync.connectToList(code, onRemoteData);
 
@@ -1798,7 +1811,8 @@ function _syncImportedStateToCloud() {
       supermarkets: JSON.parse(localStorage.getItem('eatmefirst_supermarkets') || '[]'),
       shoppingItems: JSON.parse(localStorage.getItem('eatmefirst_shopping_items') || '[]'),
       purchaseHistory: JSON.parse(localStorage.getItem('eatmefirst_purchase_history') || '{}'),
-      popularCustom: JSON.parse(localStorage.getItem('eatmefirst_popular_custom') || '[]')
+      popularCustom: JSON.parse(localStorage.getItem('eatmefirst_popular_custom') || '[]'),
+      categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}')
     };
     window.FBSync.upload(payload);
     return true;
