@@ -1392,6 +1392,7 @@
     <div class="sub-tabs-container" data-tabs="activity">
       <button type="button" class="sub-tab" data-subtab="impacte">📊 <span data-i18n="subTabImpacte"></span></button>
       <button type="button" class="sub-tab" data-subtab="estadistiques">📈 <span data-i18n="subTabEstadistiques"></span></button>
+      <button type="button" class="sub-tab" data-subtab="despeses">💰 <span>Despeses</span></button>
       <button type="button" class="sub-tab" data-subtab="suggeriments">🧠 <span data-i18n="subTabSuggestions"></span></button>
     </div>
 
@@ -1942,6 +1943,31 @@
     <div id="stats-body" class="stats-content"></div>
   </div>
 
+  <!-- PANTALLA DESPESES (embed sub-tab de Activitat).
+       Agrega purchase_history per mostrar despesa al període, evolució
+       6 mesos, comparativa per super i top productes per cost acumulat.
+       Vegeu js/expenses.js. -->
+  <div id="screen-expenses" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <h1>💰 <span>Despeses</span></h1>
+      <div style="width:40px"></div>
+    </header>
+    <div id="expenses-empty" class="impact-empty" style="display:none">
+      <div class="celebrate-emoji">💰</div>
+      <p class="celebrate-title">Encara no hi ha dades de despeses</p>
+      <p class="celebrate-sub">Les teves compres s'aniran registrant a mesura que utilitzes el BuyMe.</p>
+    </div>
+    <div id="expenses-body">
+      <div class="impact-period-pills" id="expenses-period-pills">
+        <button class="impact-period-pill" data-period="week">Setmana</button>
+        <button class="impact-period-pill active" data-period="month">Mes</button>
+        <button class="impact-period-pill" data-period="all">Tot</button>
+      </div>
+      <div id="expenses-cards"></div>
+    </div>
+  </div>
+
   <!-- PANTALLA EL MEU IMPACTE -->
   <div id="screen-impact" class="screen">
     <header class="top-bar">
@@ -2158,6 +2184,7 @@
   <script src="js/spaces-ui.js?v=20260508-8"></script>
   <script src="js/modals.js?v=20260503-3"></script>
   <script src="js/impact.js?v=20260503-3"></script>
+  <script src="js/expenses.js?v=20260515-1"></script>
   <script src="js/recipes-data.js?v=20260506-10"></script>
   <script src="js/cookme.js?v=20260508-4"></script>
   <script src="js/badges-data.js?v=20260506-10"></script>

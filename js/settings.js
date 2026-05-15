@@ -1380,6 +1380,17 @@ function renderSettingsActivity() {
     return;
   }
 
+  if (activeActivityTab === 'despeses') {
+    // Embolcalla el cos de screen-expenses. renderExpenses() calcula
+    // les agregacions des de purchase_history a cada crida — no cal
+    // refresh automàtic més enllà del render. 3 estats:
+    // (1) sense history → empty global; (2) history sí però no al
+    // període → cards amb 0/placeholder; (3) ple → cards normals.
+    _embedStandaloneBody(area, 'screen-expenses', 'screen-settings-activity');
+    if (typeof renderExpenses === 'function') renderExpenses();
+    return;
+  }
+
   if (activeActivityTab === 'suggeriments') {
     // No depèn de cap pantalla externa: renderitzem directament. Restaurem
     // qualsevol embed previ perquè el contingut prestat torni a casa.
