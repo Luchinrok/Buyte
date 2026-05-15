@@ -759,7 +759,7 @@ const TRANSLATIONS = {
     categoryContent:     'Contingut',
     categoryContentSub:  'Botigues, zones, productes, categories, receptes',
     categoryActivity:    'Activitat',
-    categoryActivitySub: 'Impacte, estadístiques i suggeriments',
+    categoryActivitySub: 'Impacte, estadístiques, despeses i suggeriments',
     categoryApp:         'Aplicació',
     categoryAppSub:      'Aparença, notificacions, sincronització',
     categoryData:        'Dades',
