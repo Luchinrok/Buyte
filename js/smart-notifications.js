@@ -279,18 +279,71 @@ function getActiveBanners() {
   const out = [];
 
   // 1. EXPIRED (per producte ja caducat). Es comporta com qualsevol altre
-  //    banner — descartable amb X, torna l'endemà.
+  //    banner — descartable amb X, torna l'endemà. Si N≥3 productes ja
+  //    caducats, mostrem 1 banner agregat enlloc de N individuals per
+  //    reduir soroll al home menu. Click → #screen-alerts (la llista
+  //    ordenada per urgència gestiona ella mateixa el filtre visual).
   if (_isTypeEnabled('expiry')) {
-    _computeExpiredBanners().forEach(b => {
-      if (!isBannerDismissedToday(b.id)) out.push(b);
-    });
+    const expiredList = _computeExpiredBanners();
+    if (expiredList.length >= 3) {
+      const aggId = 'expired-aggregated';
+      if (!isBannerDismissedToday(aggId)) {
+        out.push({
+          id: aggId,
+          type: 'expired',
+          emoji: '🚨',
+          body: '🚨 ' + expiredList.length + ' productes ja han caducat'
+          // sense productId → el banner action obrirà #screen-alerts.
+          // Dismiss de l'agregat NO afecta els dismisses individuals
+          // (ids diferents), i viceversa.
+        });
+      }
+    } else {
+      // 1 o 2 productes: comportament individual com fins ara.
+      expiredList.forEach(b => {
+        if (!isBannerDismissedToday(b.id)) out.push(b);
+      });
+    }
   }
 
-  // 2. EXPIRY (per producte que caduca avui o demà).
+  // 2. EXPIRY (per producte que caduca avui o demà). Avui (d=0) i demà
+  //    (d=1) s'agreguen per separat: si un dels dos grups té N≥3, es
+  //    mostra 1 banner agregat d'aquell grup. Pots tenir mix: 2 avui
+  //    individuals + 1 agregat "5 demà".
   if (_isTypeEnabled('expiry')) {
-    _computeExpiryBanners().forEach(b => {
-      if (!isBannerDismissedToday(b.id)) out.push(b);
-    });
+    const expiryList = _computeExpiryBanners();
+    const today = expiryList.filter(b => b._days === 0);
+    const tomorrow = expiryList.filter(b => b._days === 1);
+
+    // Avui
+    if (today.length >= 3) {
+      const aggId = 'expiry-today-aggregated';
+      if (!isBannerDismissedToday(aggId)) {
+        out.push({
+          id: aggId,
+          type: 'expiry',
+          emoji: '🚨',
+          body: '🚨 ' + today.length + ' productes caduquen avui'
+        });
+      }
+    } else {
+      today.forEach(b => { if (!isBannerDismissedToday(b.id)) out.push(b); });
+    }
+
+    // Demà
+    if (tomorrow.length >= 3) {
+      const aggId = 'expiry-tomorrow-aggregated';
+      if (!isBannerDismissedToday(aggId)) {
+        out.push({
+          id: aggId,
+          type: 'expiry',
+          emoji: '⏰',
+          body: '⏰ ' + tomorrow.length + ' productes caduquen demà'
+        });
+      }
+    } else {
+      tomorrow.forEach(b => { if (!isBannerDismissedToday(b.id)) out.push(b); });
+    }
   }
 
   // 3. AGREGATS — un banner per tipus, descartable per dia.
@@ -675,16 +728,24 @@ function _smartBannerAction(banner) {
   const typeId = banner.type;
   switch (typeId) {
     case 'expired': {
-      // Banner d'un producte JA CADUCAT — sempre porta al detall.
+      // Individual (té productId): porta al detall del producte.
+      // Agregat (sense productId, N≥3 productes caducats): porta a la
+      // llista d'alertes amb back="launcher" (mateix patró que els
+      // altres banners agregats — vegeu a1492f9).
       return () => {
-        const list = (typeof products !== 'undefined') ? products : [];
-        const p = list.find(x => x.id === banner.productId);
-        if (p && typeof openProductDetail === 'function') {
-          openProductDetail(p, 'home');
-        } else {
-          // Si ja no existeix, només refresquem (el banner desapareixerà sol).
-          if (typeof renderSmartNotifBanners === 'function') renderSmartNotifBanners();
+        if (banner.productId) {
+          const list = (typeof products !== 'undefined') ? products : [];
+          const p = list.find(x => x.id === banner.productId);
+          if (p && typeof openProductDetail === 'function') {
+            openProductDetail(p, 'home');
+            return;
+          }
+          // Producte ja no existeix — fall-through a la llista d'alertes.
         }
+        if (typeof renderAlerts === 'function') renderAlerts();
+        showScreen('alerts');
+        const _b = document.querySelector('#screen-alerts .back-btn');
+        if (_b) _b.dataset.back = 'launcher';
       };
     }
     case 'expiry': {
