@@ -1084,8 +1084,7 @@ function renderRecipeEditForm() {
     btn.classList.toggle('active', btn.dataset.value === editingRecipeData.difficulty);
   });
 
-  const catEl = document.getElementById('recipe-edit-category');
-  if (catEl) catEl.value = editingRecipeData.category || 'esmorzar';
+  _populateRecipeCategorySelect(editingRecipeData.category || 'esmorzar');
 
   const tipEl = document.getElementById('recipe-edit-tip');
   if (tipEl) {
@@ -1308,8 +1307,8 @@ function saveRecipeFromForm() {
   if (timeEl) editingRecipeData.time = Math.max(1, parseInt(timeEl.value, 10) || 0);
   // Servings ve del stepper (ja sincronitzat a editingRecipeData via adjustRecipeEditServings)
   editingRecipeData.servings = Math.min(20, Math.max(1, parseInt(editingRecipeData.servings, 10) || 1));
-  const catEl = document.getElementById('recipe-edit-category');
-  if (catEl) editingRecipeData.category = catEl.value;
+  const recipeCatBtn = document.getElementById('recipe-edit-category-picker-btn');
+  if (recipeCatBtn) editingRecipeData.category = recipeCatBtn.dataset.selectedCatId || 'esmorzar';
   const tipEl = document.getElementById('recipe-edit-tip');
   if (tipEl) editingRecipeData.tip = (tipEl.value || '').trim();
   editingRecipeData.emoji = selectedRecipeEmoji || editingRecipeData.emoji || '🍳';
@@ -1605,3 +1604,101 @@ function _initCookMeActionsDelegate(_slider) { /* listener viu a document */ }
 if (typeof document !== 'undefined') {
   document.addEventListener('click', _onCookMeSliderClick);
 }
+
+// ============================================
+// Dropdown custom de categoria de recepta (#recipe-edit-category-picker-*)
+// ============================================
+// Mateix patró que l'editor de productes populars
+// (vegeu _populatePopularCategorySelect a js/populars.js). Reutilitza
+// les classes CSS .category-picker-* + .category-option + .picker-* que
+// són agnòstiques del context (zero CSS nou). Les categories de
+// recepta són constants — no es poden crear/editar des de l'UI (a
+// diferència de les categories de productes a CategoriesSystem).
+const RECIPE_CATEGORIES = [
+  { id: 'esmorzar',  name: 'Esmorzar',           icon: '🌅' },
+  { id: 'primer',    name: 'Primer / Amanida',   icon: '🥗' },
+  { id: 'pasta',     name: 'Pasta i arrossos',   icon: '🍝' },
+  { id: 'carn-peix', name: 'Carn i peix',        icon: '🍗' },
+  { id: 'plat-unic', name: 'Plat únic',          icon: '🍕' },
+  { id: 'postre',    name: 'Postre',             icon: '🍓' }
+];
+
+function _populateRecipeCategorySelect(currentValue) {
+  const btn = document.getElementById('recipe-edit-category-picker-btn');
+  const dropdown = document.getElementById('recipe-edit-category-picker-dropdown');
+  if (!btn || !dropdown) return;
+  dropdown.innerHTML = RECIPE_CATEGORIES.map(o =>
+    '<button type="button" class="category-option" data-cat-id="' + escapeHtml(o.id) + '">' +
+      '<span class="cat-option-icon">' + escapeHtml(o.icon) + '</span>' +
+      '<span class="cat-option-name">' + escapeHtml(o.name) + '</span>' +
+    '</button>'
+  ).join('');
+  const initial = currentValue && RECIPE_CATEGORIES.some(c => c.id === currentValue)
+    ? currentValue : 'esmorzar';
+  _setRecipeCategoryPickerSelection(initial);
+  dropdown.querySelectorAll('.category-option').forEach(opt => {
+    opt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _setRecipeCategoryPickerSelection(opt.dataset.catId || 'esmorzar');
+      _closeRecipeCategoryPickerDropdown();
+    });
+  });
+  _closeRecipeCategoryPickerDropdown();
+}
+
+function _setRecipeCategoryPickerSelection(catId) {
+  const btn = document.getElementById('recipe-edit-category-picker-btn');
+  if (!btn) return;
+  btn.dataset.selectedCatId = catId || 'esmorzar';
+  const cat = RECIPE_CATEGORIES.find(c => c.id === catId) || RECIPE_CATEGORIES[0];
+  const iconEl = btn.querySelector('.picker-icon');
+  const labelEl = btn.querySelector('.picker-label');
+  if (iconEl) iconEl.textContent = cat.icon;
+  if (labelEl) labelEl.textContent = cat.name;
+}
+
+function _toggleRecipeCategoryPickerDropdown() {
+  const dropdown = document.getElementById('recipe-edit-category-picker-dropdown');
+  const btn = document.getElementById('recipe-edit-category-picker-btn');
+  if (!dropdown || !btn) return;
+  if (dropdown.hasAttribute('hidden')) {
+    dropdown.removeAttribute('hidden');
+    btn.classList.add('open');
+  } else {
+    _closeRecipeCategoryPickerDropdown();
+  }
+}
+
+function _closeRecipeCategoryPickerDropdown() {
+  const dropdown = document.getElementById('recipe-edit-category-picker-dropdown');
+  const btn = document.getElementById('recipe-edit-category-picker-btn');
+  if (dropdown) dropdown.setAttribute('hidden', '');
+  if (btn) btn.classList.remove('open');
+}
+
+// Listeners globals — toggle al click del btn, click-fora tanca, Esc
+// tanca. Idempotents via flag global. Mateix patró que
+// _attachPopularCategoryPickerListeners a populars.js.
+(function _attachRecipeCategoryPickerListeners() {
+  if (typeof document === 'undefined') return;
+  if (window.__recipeCatPickerListeners) return;
+  window.__recipeCatPickerListeners = true;
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('recipe-edit-category-picker-btn');
+    if (btn) btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _toggleRecipeCategoryPickerDropdown();
+    });
+  });
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('recipe-edit-category-picker-dropdown');
+    const btn = document.getElementById('recipe-edit-category-picker-btn');
+    if (!dropdown || dropdown.hasAttribute('hidden')) return;
+    if (btn && btn.contains(e.target)) return;
+    if (dropdown.contains(e.target)) return;
+    _closeRecipeCategoryPickerDropdown();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') _closeRecipeCategoryPickerDropdown();
+  });
+})();

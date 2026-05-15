@@ -7953,9 +7953,10 @@ body.selection-mode-active #shops-slider .arrow-btn {
   flex: 1 1 auto;
   max-width: 220px;
 }
-.recipe-edit-detail-row .recipe-edit-category-select {
+.recipe-edit-detail-row .category-picker-wrap {
   margin-left: auto;
   flex: 1 1 auto;
+  max-width: 220px;
 }
 
 .recipe-edit-segmented {

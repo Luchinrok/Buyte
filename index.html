@@ -631,14 +631,18 @@
 
       <div class="recipe-edit-detail-row">
         <span class="recipe-edit-detail-label">📂 <span data-i18n="recipeCategory"></span></span>
-        <select id="recipe-edit-category" class="select-input recipe-edit-category-select">
-          <option value="esmorzar">🌅 Esmorzar</option>
-          <option value="primer">🥗 Primer / Amanida</option>
-          <option value="pasta">🍝 Pasta i arrossos</option>
-          <option value="carn-peix">🍗 Carn i peix</option>
-          <option value="plat-unic">🍕 Plat únic</option>
-          <option value="postre">🍓 Postre</option>
-        </select>
+        <!-- Dropdown custom (botó + dropdown amagat), mateix patró que
+             #popular-category-picker-btn a l'editor de productes
+             populars. Reutilitza les classes CSS .category-picker-*
+             (agnòstiques del context). Lògica a js/cookme.js. -->
+        <div class="category-picker-wrap">
+          <button type="button" class="category-picker-btn" id="recipe-edit-category-picker-btn" data-selected-cat-id="esmorzar">
+            <span class="picker-icon">🌅</span>
+            <span class="picker-label">Esmorzar</span>
+            <span class="picker-arrow">▾</span>
+          </button>
+          <div class="category-picker-dropdown" id="recipe-edit-category-picker-dropdown" hidden></div>
+        </div>
       </div>
     </section>
 
