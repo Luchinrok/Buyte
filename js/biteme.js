@@ -493,6 +493,306 @@ function getLocationById(id) {
   return locations.find(l => l.id === id) || locations[0];
 }
 
+// =============================================================
+//   MIGRACIÓ v2 — Productes agrupats amb lots[] + mirrors
+//   Fase A v2: el producte té lots[] PERÒ també manté camps mirror
+//   (date, location, qty, price, weight, frozenDate, noExpiry,
+//   addedAt, consumedPercent) sincronitzats amb el lot més urgent.
+//   Els callers existents que llegeixen p.date / p.location etc.
+//   directament segueixen funcionant sense canvis. Els helpers
+//   (getLots / getPrimaryLot / ...) també hi tenen accés via lots[].
+//   Vegeu memory/feedback-data-model-migration-needs-mirror.md per
+//   la lliçó apresa que justifica aquesta arquitectura.
+// =============================================================
+
+const _PRODUCTS_V2_BACKUP_KEY = 'eatmefirst_backup_pre_v2_migration';
+const _PRODUCTS_V2_MIGRATION_FLAG = 'eatmefirst_products_v2_migration_done';
+const _APP_VERSION_FOR_BACKUP = 'v2.0';
+
+// Mateixa normalització que findExistingAtHome (buyme.js:1346) per
+// coherència entre detecció de duplicats al runtime i el merge del
+// moment de la migració.
+function _normForGrouping(s) {
+  return String(s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+// Construeix un lot v2 a partir dels camps d'un producte legacy.
+// Compartit entre la migració one-shot i el fallback de getLots().
+function _buildLotFromLegacy(product) {
+  const qtyStr = (product && product.qty) || '';
+  const qtyNum = (typeof parseQtyNumber === 'function') ? parseQtyNumber(qtyStr) : null;
+
+  const lot = {
+    id: 'lot-legacy-' + (product && product.id ? product.id : Date.now().toString() + Math.random().toString(36).slice(2, 6)),
+    date: (product && product.date) || null,
+    noExpiry: !!(product && product.noExpiry),
+    location: (product && product.location) || 'pantry',
+    addedAt: (product && product.addedAt) || new Date().toISOString(),
+    frozenDate: (product && product.frozenDate) || null,
+    supermarket: null
+  };
+  if (product && typeof product.price === 'number' && product.price >= 0) lot.price = product.price;
+  if (product && product.weight) lot.weight = product.weight;
+
+  if (qtyNum !== null) {
+    lot.consumptionMode = 'quantity';
+    lot.qtyInitial = qtyNum;
+    lot.qtyRemaining = qtyNum;
+    lot.unit = 'units';
+    return lot;
+  }
+
+  const trimmed = qtyStr.trim();
+  const m = trimmed && trimmed.match(/^([\d.,]+)\s*(ml|l|g|kg)$/i);
+  if (m) {
+    const num = parseFloat(m[1].replace(',', '.'));
+    if (Number.isFinite(num)) {
+      lot.consumptionMode = 'quantity';
+      lot.qtyInitial = num;
+      lot.qtyRemaining = num;
+      lot.unit = m[2].toLowerCase();
+      return lot;
+    }
+  }
+
+  lot.consumptionMode = 'percent';
+  lot.percentRemaining = Math.max(0, Math.min(100, 100 - ((product && product.consumedPercent) || 0)));
+  return lot;
+}
+
+// Converteix un producte legacy (planet) al format v2 amb lots[] +
+// mirrors. El primer lot és el derivat del producte legacy; els
+// mirrors al nivell producte preserven els camps que els callers
+// llegeixen directament.
+function _migrateLegacyProduct(legacy) {
+  const lot = _buildLotFromLegacy(legacy);
+  // ID estable nou per al lot (no el prefix 'lot-legacy-' que el
+  // fallback runtime fa servir per a lots virtuals).
+  lot.id = 'lot-' + Date.now().toString() + '-' + Math.random().toString(36).slice(2, 6);
+
+  const migrated = {
+    id: (legacy && legacy.id) || (Date.now().toString() + Math.random().toString(36).slice(2, 6)),
+    popularId: (legacy && legacy.popularId) || null,
+    name: legacy ? legacy.name : '',
+    emoji: (legacy && legacy.emoji) || '🥫',
+    __v: 2,
+    lots: [lot],
+    // MIRRORS — backward-compat per a callers existents.
+    date: lot.date,
+    noExpiry: !!lot.noExpiry,
+    location: lot.location,
+    qty: (legacy && legacy.qty) || '',
+    addedAt: lot.addedAt,
+    frozenDate: lot.frozenDate,
+    consumedPercent: (legacy && legacy.consumedPercent) || 0
+  };
+  if (typeof lot.price === 'number') migrated.price = lot.price;
+  if (lot.weight) migrated.weight = lot.weight;
+  return migrated;
+}
+
+// Re-sincronitza els camps mirror al nivell producte amb el lot
+// més urgent. Cridada per la migració després d'un auto-merge i
+// preparada per a Fase B (consum/edit canviarà lots[] i caldrà
+// re-mirror). NO la criden els callers UI existents a Fase A v2.
+// qty i addedAt NO es regeneren: són els originals del producte
+// host (qty pot ser un resum textual; addedAt és la data d'alta
+// del producte agrupat).
+function _refreshProductMirrors(product) {
+  if (!product || !Array.isArray(product.lots) || product.lots.length === 0) return;
+  const primary = getPrimaryLot(product);
+  if (!primary) return;
+  product.date = primary.date;
+  product.noExpiry = !!primary.noExpiry;
+  product.location = primary.location;
+  product.frozenDate = primary.frozenDate;
+  if (typeof primary.price === 'number') product.price = primary.price;
+  else delete product.price;
+  if (primary.weight) product.weight = primary.weight;
+  else delete product.weight;
+}
+
+// Transformació PURA d'un array de productes (legacy o v2 barrejats)
+// a v2 amb auto-merge de duplicats 1-lot per (nom, emoji, location).
+// Productes ja v2 amb múltiples lots passen sense tocar.
+function _transformProductsToV2(rawArr) {
+  if (!Array.isArray(rawArr)) return { products: [], mergedCount: 0 };
+
+  const migrated = [];
+  for (const p of rawArr) {
+    if (!p || typeof p !== 'object') continue;
+    if (p.__v === 2 && Array.isArray(p.lots)) {
+      migrated.push(p);
+    } else {
+      migrated.push(_migrateLegacyProduct(p));
+    }
+  }
+
+  let mergedCount = 0;
+  const groups = new Map();
+  const result = [];
+  const mergedHosts = new Set();
+  for (const prod of migrated) {
+    if (!Array.isArray(prod.lots) || prod.lots.length !== 1) {
+      result.push(prod);
+      continue;
+    }
+    const lot = prod.lots[0];
+    const key = _normForGrouping(prod.name) + '|' + (prod.emoji || '') + '|' + (lot && lot.location ? lot.location : '');
+    if (groups.has(key)) {
+      const host = groups.get(key);
+      host.lots.push(...prod.lots);
+      mergedCount++;
+      mergedHosts.add(host);
+    } else {
+      groups.set(key, prod);
+      result.push(prod);
+    }
+  }
+
+  // Post-merge: re-sincronitzar mirrors als hosts que han rebut lots
+  // fusionats — el lot més urgent pot venir d'un dels productes que
+  // s'ha incorporat, no del host original.
+  for (const host of mergedHosts) {
+    _refreshProductMirrors(host);
+  }
+
+  return { products: result, mergedCount };
+}
+
+// Auto-backup indelible abans de la migració. Idempotent: només crea
+// la clau si encara no existeix. Cobrim products + popularCustom +
+// consumption_history per cobertura preventiva.
+function _createMigrationBackup() {
+  try {
+    if (localStorage.getItem(_PRODUCTS_V2_BACKUP_KEY)) return;
+    const payload = {
+      timestamp: new Date().toISOString(),
+      appVersion: _APP_VERSION_FOR_BACKUP,
+      products: JSON.parse(localStorage.getItem('eatmefirst_products') || '[]'),
+      popularCustom: JSON.parse(localStorage.getItem('eatmefirst_popular_custom') || '[]'),
+      consumptionHistory: JSON.parse(localStorage.getItem('eatmefirst_consumption_history') || '[]')
+    };
+    localStorage.setItem(_PRODUCTS_V2_BACKUP_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.warn('[v2 migration] backup failed:', e);
+  }
+}
+
+// Migració one-shot al boot. Flag a localStorage garanteix execució
+// única per dispositiu. La transformació és idempotent — re-executar-la
+// sobre dades ja v2 dóna el mateix resultat — però el flag evita el
+// treball innecessari i un segon backup.
+function runProductsV2Migration() {
+  try {
+    if (localStorage.getItem(_PRODUCTS_V2_MIGRATION_FLAG) === '1') {
+      return { skipped: true };
+    }
+    _createMigrationBackup();
+    const raw = JSON.parse(localStorage.getItem('eatmefirst_products') || '[]');
+    const { products: migrated, mergedCount } = _transformProductsToV2(raw);
+    localStorage.setItem('eatmefirst_products', JSON.stringify(migrated));
+    localStorage.setItem(_PRODUCTS_V2_MIGRATION_FLAG, '1');
+    console.log('[v2 migration] done: total=' + migrated.length + ' merged=' + mergedCount);
+    return { skipped: false, total: migrated.length, merged: mergedCount };
+  } catch (e) {
+    console.error('[v2 migration] failed:', e);
+    return { skipped: false, error: String(e) };
+  }
+}
+
+// =============================================================
+//   HELPERS de producte agrupat
+//   Resilients a productes legacy via fallback transparent:
+//   getLots(legacyProd) retorna [lot-virtual] sense mutar el producte.
+//   Fase A v2 no els consumeix encara; fases B+ els integraran als
+//   reads gradualment, i les fases finals retiraran els mirrors.
+// =============================================================
+
+function getLots(product) {
+  if (!product || typeof product !== 'object') return [];
+  if (product.__v === 2 && Array.isArray(product.lots)) return product.lots;
+  return [_buildLotFromLegacy(product)];
+}
+
+function getPrimaryLot(product) {
+  const lots = getLots(product);
+  if (lots.length === 0) return null;
+  if (lots.length === 1) return lots[0];
+  const sorted = lots.slice().sort((a, b) => {
+    if (a.noExpiry && b.noExpiry) return 0;
+    if (a.noExpiry) return 1;
+    if (b.noExpiry) return -1;
+    const da = a.date ? new Date(a.date).getTime() : Number.POSITIVE_INFINITY;
+    const db = b.date ? new Date(b.date).getTime() : Number.POSITIVE_INFINITY;
+    return da - db;
+  });
+  return sorted[0];
+}
+
+function getPrimaryDate(product) {
+  const lot = getPrimaryLot(product);
+  return lot ? lot.date : null;
+}
+
+function getPrimaryLocation(product) {
+  const lot = getPrimaryLot(product);
+  return lot ? lot.location : null;
+}
+
+function getLotById(product, lotId) {
+  if (!product || !lotId) return null;
+  const lots = getLots(product);
+  return lots.find(l => l && l.id === lotId) || null;
+}
+
+// Suma agregada per unitat + comptador de lots 'percent'. Útil per a
+// futurs displays tipus "Tens 3 lots: 1.5L + 500g + 2u (+ 1 lot al 60%)".
+function getTotalQty(product) {
+  const out = { byUnit: Object.create(null), percentLots: 0, percentAvg: 0 };
+  const lots = getLots(product);
+  let pctSum = 0;
+  let pctCount = 0;
+  for (const lot of lots) {
+    if (!lot) continue;
+    if (lot.consumptionMode === 'quantity' && Number.isFinite(lot.qtyRemaining)) {
+      const u = lot.unit || 'units';
+      out.byUnit[u] = (out.byUnit[u] || 0) + lot.qtyRemaining;
+    } else if (lot.consumptionMode === 'percent' && Number.isFinite(lot.percentRemaining)) {
+      pctSum += lot.percentRemaining;
+      pctCount++;
+    }
+  }
+  out.percentLots = pctCount;
+  out.percentAvg = pctCount > 0 ? pctSum / pctCount : 0;
+  return out;
+}
+
+function getLotsByLocation(product, location) {
+  return getLots(product).filter(l => l && l.location === location);
+}
+
+// API exposada per a altres mòduls. settings.js:onRemoteData fa servir
+// _transformProductsToV2 i _createMigrationBackup per processar dades
+// remotes abans d'aplicar-les localment. _refreshProductMirrors
+// s'exposa per a Fase B (no es crida des de UI a Fase A v2).
+if (typeof window !== 'undefined') {
+  window.PRODUCT_HELPERS = {
+    getLots: getLots,
+    getPrimaryLot: getPrimaryLot,
+    getPrimaryDate: getPrimaryDate,
+    getPrimaryLocation: getPrimaryLocation,
+    getLotById: getLotById,
+    getTotalQty: getTotalQty,
+    getLotsByLocation: getLotsByLocation,
+    refreshMirrors: _refreshProductMirrors
+  };
+  window.runProductsV2Migration = runProductsV2Migration;
+  window._transformProductsToV2 = _transformProductsToV2;
+  window._createMigrationBackup = _createMigrationBackup;
+  window._refreshProductMirrors = _refreshProductMirrors;
+}
+
 // DADES
 function saveData() {
   localStorage.setItem('eatmefirst_products', JSON.stringify(products));
@@ -501,6 +801,7 @@ function saveData() {
 }
 
 function loadData() {
+  runProductsV2Migration();
   const p = localStorage.getItem('eatmefirst_products');
   const s = localStorage.getItem('eatmefirst_stats');
   if (p) { try { products = JSON.parse(p); } catch(e){ products = []; } }

@@ -35,7 +35,19 @@ function onRemoteData(remoteData) {
   if (!remoteData) return;
   applyingRemote = true;
 
-  if (Array.isArray(remoteData.products)) products = remoteData.products;
+  if (Array.isArray(remoteData.products)) {
+    // Backup + transformació v2 abans d'aplicar — cobreix el cas en
+    // què un altre dispositiu encara emet format legacy. Idempotent
+    // gràcies al flag a localStorage i a la guarda de _createMigrationBackup.
+    if (typeof window._createMigrationBackup === 'function') {
+      try { window._createMigrationBackup(); } catch (e) {}
+    }
+    if (typeof window._transformProductsToV2 === 'function') {
+      products = window._transformProductsToV2(remoteData.products).products;
+    } else {
+      products = remoteData.products;
+    }
+  }
   if (Array.isArray(remoteData.locations) && remoteData.locations.length > 0) locations = remoteData.locations;
   if (remoteData.stats && typeof remoteData.stats === 'object') stats = remoteData.stats;
   if (Array.isArray(remoteData.supermarkets)) supermarkets = remoteData.supermarkets;
