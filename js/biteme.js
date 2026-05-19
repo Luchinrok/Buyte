@@ -592,12 +592,11 @@ function _migrateLegacyProduct(legacy) {
 }
 
 // Re-sincronitza els camps mirror al nivell producte amb el lot
-// més urgent. Cridada per la migració després d'un auto-merge i
-// preparada per a Fase B (consum/edit canviarà lots[] i caldrà
-// re-mirror). NO la criden els callers UI existents a Fase A v2.
-// qty i addedAt NO es regeneren: són els originals del producte
-// host (qty pot ser un resum textual; addedAt és la data d'alta
-// del producte agrupat).
+// més urgent + qty agregat. Cridada per la migració després d'un
+// auto-merge, per _addLotToProduct (Fase C) i per
+// _removeLotFromProduct (undo de fusió). addedAt NO es regenera
+// (és la data d'alta del producte agrupat). qty SÍ es regenera
+// agregant els lots (Fase C+).
 function _refreshProductMirrors(product) {
   if (!product || !Array.isArray(product.lots) || product.lots.length === 0) return;
   const primary = getPrimaryLot(product);
@@ -610,6 +609,87 @@ function _refreshProductMirrors(product) {
   else delete product.price;
   if (primary.weight) product.weight = primary.weight;
   else delete product.weight;
+  product.qty = _computeAggregatedQty(product.lots);
+}
+
+// Convenció de display per a les unitats: lowercase internament,
+// però liter en majúscula (convenció SI). La resta es deixen tal qual.
+function _displayUnit(unit) {
+  if (unit === 'l') return 'L';
+  return unit || '';
+}
+
+// Genera el string qty agregat a partir dels lots. Estratègia:
+//   - Suma unitats COMPATIBLES (g+kg → grams interns; ml+L → ml interns)
+//     i tria la unitat de display segons el total:
+//       gramsTotal >= 1000 → "X kg"; altrament → "X g"
+//       mlTotal    >= 1000 → "X L";  altrament → "X ml"
+//     'units' va sense unitat ("12").
+//   - Multiples tipus mesurables (ex: kg+L) → "1.5 kg + 500 ml"
+//   - Lots percent: si HI HA quantitats mesurables → " (i N lot(s) més)"
+//                   si NOMÉS percent → "N lot(s)"
+//   - Sense res (ni quantity ni percent) → ""
+function _computeAggregatedQty(lots) {
+  if (!Array.isArray(lots) || lots.length === 0) return '';
+
+  let gramsTotal = 0;
+  let mlTotal = 0;
+  let unitsTotal = 0;
+  let hasGrams = false;
+  let hasMl = false;
+  let hasUnits = false;
+  let percentCount = 0;
+
+  for (const lot of lots) {
+    if (!lot) continue;
+    if (lot.consumptionMode === 'quantity' && Number.isFinite(lot.qtyRemaining)) {
+      const unit = (lot.unit || 'units').toLowerCase();
+      if (unit === 'kg') {
+        gramsTotal += lot.qtyRemaining * 1000;
+        hasGrams = true;
+      } else if (unit === 'g') {
+        gramsTotal += lot.qtyRemaining;
+        hasGrams = true;
+      } else if (unit === 'l') {
+        mlTotal += lot.qtyRemaining * 1000;
+        hasMl = true;
+      } else if (unit === 'ml') {
+        mlTotal += lot.qtyRemaining;
+        hasMl = true;
+      } else {
+        unitsTotal += lot.qtyRemaining;
+        hasUnits = true;
+      }
+    } else if (lot.consumptionMode === 'percent') {
+      percentCount++;
+    }
+  }
+
+  const measurableParts = [];
+  if (hasGrams) {
+    if (gramsTotal >= 1000) {
+      const kg = gramsTotal / 1000;
+      measurableParts.push((Number.isInteger(kg) ? String(kg) : String(Math.round(kg * 100) / 100)) + ' kg');
+    } else {
+      measurableParts.push(Math.round(gramsTotal) + ' g');
+    }
+  }
+  if (hasMl) {
+    if (mlTotal >= 1000) {
+      const l = mlTotal / 1000;
+      measurableParts.push((Number.isInteger(l) ? String(l) : String(Math.round(l * 100) / 100)) + ' L');
+    } else {
+      measurableParts.push(Math.round(mlTotal) + ' ml');
+    }
+  }
+  if (hasUnits) {
+    measurableParts.push(String(unitsTotal));
+  }
+
+  const measurableStr = measurableParts.join(' + ');
+  if (percentCount === 0) return measurableStr;
+  if (measurableParts.length === 0) return percentCount + ' lot' + (percentCount === 1 ? '' : 's');
+  return measurableStr + ' (i ' + percentCount + ' lot' + (percentCount === 1 ? '' : 's') + ' més)';
 }
 
 // Transformació PURA d'un array de productes (legacy o v2 barrejats)
@@ -679,6 +759,40 @@ function _createMigrationBackup() {
   }
 }
 
+// One-shot per a Fase C+: refresca els qty mirrors dels productes
+// multi-lot existents. Necessari perquè la Fase A v2 va deixar qty
+// = legacy.qty del host (no agregat). Després d'aquest one-shot,
+// p.qty representa la suma agregada dels lots (vegeu
+// _computeAggregatedQty). Idempotent via flag separat — no
+// invalida la flag de la migració v2 ni torna a fer backup.
+const _QTY_MIRROR_REFRESH_FLAG = 'eatmefirst_qty_mirror_refresh_done';
+function runQtyMirrorRefresh() {
+  try {
+    if (localStorage.getItem(_QTY_MIRROR_REFRESH_FLAG) === '1') {
+      return { skipped: true };
+    }
+    const raw = JSON.parse(localStorage.getItem('eatmefirst_products') || '[]');
+    if (!Array.isArray(raw)) {
+      localStorage.setItem(_QTY_MIRROR_REFRESH_FLAG, '1');
+      return { skipped: false, processed: 0 };
+    }
+    let processed = 0;
+    for (const p of raw) {
+      if (p && Array.isArray(p.lots) && p.lots.length > 1) {
+        _refreshProductMirrors(p);
+        processed++;
+      }
+    }
+    localStorage.setItem('eatmefirst_products', JSON.stringify(raw));
+    localStorage.setItem(_QTY_MIRROR_REFRESH_FLAG, '1');
+    console.log('[qty mirror refresh] done: processed=' + processed);
+    return { skipped: false, processed: processed };
+  } catch (e) {
+    console.error('[qty mirror refresh] failed:', e);
+    return { skipped: false, error: String(e) };
+  }
+}
+
 // Migració one-shot al boot. Flag a localStorage garanteix execució
 // única per dispositiu. La transformació és idempotent — re-executar-la
 // sobre dades ja v2 dóna el mateix resultat — però el flag evita el
@@ -699,6 +813,123 @@ function runProductsV2Migration() {
     console.error('[v2 migration] failed:', e);
     return { skipped: false, error: String(e) };
   }
+}
+
+// =============================================================
+//   FUSIÓ EN CREACIÓ — Fase C
+//   Quan un nou producte coincideix amb un d'existent per
+//   (nom normalitzat + emoji + location), afegim un lot al
+//   producte existent enlloc de duplicar.
+// =============================================================
+
+// Cerca un producte v2 existent que coincideixi exactament per
+// (nom normalitzat, emoji, location). Retorna null si no n'hi ha.
+// La location comparada és la del producte (mirror) — equival al
+// lot més urgent.
+function _findGroupedProductForFusion(name, emoji, location) {
+  if (!Array.isArray(products)) return null;
+  const nameKey = _normForGrouping(name);
+  const emojiKey = emoji || '';
+  const locKey = location || '';
+  return products.find(p => {
+    if (!p || p.__v !== 2) return false;
+    if (_normForGrouping(p.name) !== nameKey) return false;
+    if ((p.emoji || '') !== emojiKey) return false;
+    if ((p.location || '') !== locKey) return false;
+    return true;
+  }) || null;
+}
+
+// Construeix un lot v2 des de les dades d'una compra/formulari nou.
+// Mateixa estructura que la migració però des de productData (plain
+// object amb els camps tal com avui es passarien a products.push).
+function _buildLotFromNewProduct(productData) {
+  const qtyStr = (productData && productData.qty) || '';
+  const qtyNum = (typeof parseQtyNumber === 'function') ? parseQtyNumber(qtyStr) : null;
+
+  const lot = {
+    id: 'lot-' + Date.now().toString() + '-' + Math.random().toString(36).slice(2, 6),
+    date: (productData && productData.date) || null,
+    noExpiry: !!(productData && productData.noExpiry),
+    location: (productData && productData.location) || 'pantry',
+    addedAt: (productData && productData.addedAt) || new Date().toISOString(),
+    frozenDate: (productData && productData.frozenDate) || null,
+    supermarket: (productData && productData.supermarket) || null
+  };
+  if (productData && typeof productData.price === 'number' && productData.price >= 0) lot.price = productData.price;
+  if (productData && productData.weight) lot.weight = productData.weight;
+
+  if (qtyNum !== null) {
+    lot.consumptionMode = 'quantity';
+    lot.qtyInitial = qtyNum;
+    lot.qtyRemaining = qtyNum;
+    lot.unit = 'units';
+    return lot;
+  }
+  const trimmed = qtyStr.trim();
+  const m = trimmed && trimmed.match(/^([\d.,]+)\s*(ml|l|g|kg)$/i);
+  if (m) {
+    const num = parseFloat(m[1].replace(',', '.'));
+    if (Number.isFinite(num)) {
+      lot.consumptionMode = 'quantity';
+      lot.qtyInitial = num;
+      lot.qtyRemaining = num;
+      lot.unit = m[2].toLowerCase();
+      return lot;
+    }
+  }
+  lot.consumptionMode = 'percent';
+  lot.percentRemaining = 100;
+  return lot;
+}
+
+// Crea un producte v2 amb un únic lot. Mateix esquema que
+// _migrateLegacyProduct però partint de productData + el lot ja
+// construït. Mirrors copiats del lot (date, location, etc.) i del
+// productData (qty, addedAt).
+function _createV2ProductWithLot(productData, lot) {
+  const product = {
+    id: (productData && productData.id) || (Date.now().toString() + Math.random().toString(36).slice(2, 6)),
+    popularId: (productData && productData.popularId) || null,
+    name: productData ? productData.name : '',
+    emoji: (productData && productData.emoji) || '🥫',
+    __v: 2,
+    lots: [lot],
+    date: lot.date,
+    noExpiry: !!lot.noExpiry,
+    location: lot.location,
+    qty: (productData && productData.qty) || '',
+    addedAt: lot.addedAt,
+    frozenDate: lot.frozenDate,
+    consumedPercent: 0
+  };
+  if (typeof lot.price === 'number') product.price = lot.price;
+  if (lot.weight) product.weight = lot.weight;
+  return product;
+}
+
+// Afegeix un lot a un producte existent i re-sincronitza els mirrors
+// al lot més urgent. Mutació in-place: NO desa NO renderitza (callers
+// agrupen).
+function _addLotToProduct(existingProduct, newLot) {
+  if (!existingProduct || !newLot) return;
+  if (!Array.isArray(existingProduct.lots)) existingProduct.lots = [];
+  existingProduct.lots.push(newLot);
+  _refreshProductMirrors(existingProduct);
+}
+
+// Treu un lot d'un producte existent per id. Si el producte queda
+// sense lots, retorna { productRemoved: true } perquè el caller
+// l'elimini de products[]. Altrament re-sincronitza mirrors i
+// retorna { productRemoved: false }.
+function _removeLotFromProduct(product, lotId) {
+  if (!product || !Array.isArray(product.lots)) return { productRemoved: false };
+  product.lots = product.lots.filter(l => l && l.id !== lotId);
+  if (product.lots.length === 0) {
+    return { productRemoved: true };
+  }
+  _refreshProductMirrors(product);
+  return { productRemoved: false };
 }
 
 // =============================================================
@@ -772,6 +1003,90 @@ function getLotsByLocation(product, location) {
   return getLots(product).filter(l => l && l.location === location);
 }
 
+// =============================================================
+//   RENDER de la secció "Lots" al detall del producte (Fase C+)
+//   Només lectura: cap interacció per lot (consumir/editar per lot
+//   es deixa per a Fase D). Es mostra només si lots.length > 1.
+// =============================================================
+
+function _renderLotsSection(product) {
+  const lots = getLots(product);
+  if (lots.length <= 1) return '';
+
+  // Ordenar lots: més urgent primer (mateix criteri que getPrimaryLot).
+  const sorted = lots.slice().sort((a, b) => {
+    if (a.noExpiry && b.noExpiry) return 0;
+    if (a.noExpiry) return 1;
+    if (b.noExpiry) return -1;
+    const da = a.date ? new Date(a.date).getTime() : Number.POSITIVE_INFINITY;
+    const db = b.date ? new Date(b.date).getTime() : Number.POSITIVE_INFINITY;
+    return da - db;
+  });
+
+  const rowsHtml = sorted.map(_renderLotRow).join('');
+  return '<div class="lots-section">'
+    + '<h3 class="lots-section-title">📦 Lots (' + lots.length + ')</h3>'
+    + '<div class="lots-list">' + rowsHtml + '</div>'
+    + '</div>';
+}
+
+function _renderLotRow(lot) {
+  if (!lot) return '';
+
+  // Quantitat formatejada (mateixa convenció que _computeAggregatedQty).
+  let qtyText = '';
+  if (lot.consumptionMode === 'quantity' && Number.isFinite(lot.qtyRemaining)) {
+    const u = lot.unit === 'units' ? '' : _displayUnit(lot.unit);
+    const v = Number.isInteger(lot.qtyRemaining)
+      ? String(lot.qtyRemaining)
+      : String(Math.round(lot.qtyRemaining * 100) / 100);
+    qtyText = v + u;
+  } else if (lot.consumptionMode === 'percent') {
+    qtyText = (typeof lot.percentRemaining === 'number' ? Math.round(lot.percentRemaining) : 100) + '%';
+  }
+
+  // Data
+  let dateText = '';
+  if (lot.noExpiry) {
+    dateText = 'No caduca';
+  } else if (lot.date) {
+    const d = new Date(lot.date);
+    if (!isNaN(d.getTime())) {
+      dateText = 'Caduca ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+  }
+
+  const superText = lot.supermarket || '';
+  const priceText = (typeof lot.price === 'number') ? lot.price.toFixed(2) + ' €' : '';
+
+  // Data d'alta relativa
+  let addedText = '';
+  if (lot.addedAt) {
+    const d = new Date(lot.addedAt);
+    if (!isNaN(d.getTime())) {
+      const now = new Date();
+      const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+      if (diffDays === 0) addedText = 'Comprat avui';
+      else if (diffDays === 1) addedText = 'Comprat ahir';
+      else addedText = 'Comprat fa ' + diffDays + ' dies';
+    }
+  }
+
+  const parts1 = [];
+  if (qtyText) parts1.push('<span class="lot-qty">' + escapeHtml(qtyText) + '</span>');
+  if (dateText) parts1.push('<span class="lot-date">' + escapeHtml(dateText) + '</span>');
+  if (superText) parts1.push('<span class="lot-supermarket">' + escapeHtml(superText) + '</span>');
+
+  const parts2 = [];
+  if (priceText) parts2.push('<span class="lot-price">' + escapeHtml(priceText) + '</span>');
+  if (addedText) parts2.push('<span class="lot-added">' + escapeHtml(addedText) + '</span>');
+
+  return '<div class="lot-row">'
+    + '<div class="lot-info">' + parts1.join(' <span class="lot-separator">·</span> ') + '</div>'
+    + (parts2.length > 0 ? '<div class="lot-meta">' + parts2.join(' <span class="lot-separator">·</span> ') + '</div>' : '')
+    + '</div>';
+}
+
 // API exposada per a altres mòduls. settings.js:onRemoteData fa servir
 // _transformProductsToV2 i _createMigrationBackup per processar dades
 // remotes abans d'aplicar-les localment. _refreshProductMirrors
@@ -785,12 +1100,25 @@ if (typeof window !== 'undefined') {
     getLotById: getLotById,
     getTotalQty: getTotalQty,
     getLotsByLocation: getLotsByLocation,
-    refreshMirrors: _refreshProductMirrors
+    refreshMirrors: _refreshProductMirrors,
+    findGroupedForFusion: _findGroupedProductForFusion,
+    buildLotFromNew: _buildLotFromNewProduct,
+    createV2Product: _createV2ProductWithLot,
+    addLotToProduct: _addLotToProduct,
+    removeLotFromProduct: _removeLotFromProduct,
+    computeAggregatedQty: _computeAggregatedQty,
+    renderLotsSection: _renderLotsSection
   };
   window.runProductsV2Migration = runProductsV2Migration;
+  window.runQtyMirrorRefresh = runQtyMirrorRefresh;
   window._transformProductsToV2 = _transformProductsToV2;
   window._createMigrationBackup = _createMigrationBackup;
   window._refreshProductMirrors = _refreshProductMirrors;
+  window._findGroupedProductForFusion = _findGroupedProductForFusion;
+  window._buildLotFromNewProduct = _buildLotFromNewProduct;
+  window._createV2ProductWithLot = _createV2ProductWithLot;
+  window._addLotToProduct = _addLotToProduct;
+  window._removeLotFromProduct = _removeLotFromProduct;
 }
 
 // DADES
@@ -802,6 +1130,7 @@ function saveData() {
 
 function loadData() {
   runProductsV2Migration();
+  runQtyMirrorRefresh();
   const p = localStorage.getItem('eatmefirst_products');
   const s = localStorage.getItem('eatmefirst_stats');
   if (p) { try { products = JSON.parse(p); } catch(e){ products = []; } }
@@ -1839,6 +2168,15 @@ function openProduct(id) {
   if (typeof window.refreshMoveProductBtn === 'function') {
     try { window.refreshMoveProductBtn(); } catch (e) {}
   }
+
+  // Secció "Lots" (Fase C+): només es mostra si el producte té >1
+  // lot. _renderLotsSection retorna '' altrament. Read-only —
+  // les accions per lot venen a Fase D.
+  const lotsContainer = document.getElementById('product-lots-section');
+  if (lotsContainer) {
+    lotsContainer.innerHTML = _renderLotsSection(p);
+  }
+
   showScreen('product');
 }
 
@@ -2492,7 +2830,11 @@ function saveNewProduct() {
     editingProductId = null;
   }
 
-  const newProduct = {
+  // Construïm productData (l'objecte "tal com seria" un push legacy)
+  // i provem de fusionar amb un producte existent abans de crear-ne
+  // un de nou. fusedInto != null indica fusió; els toasts finals
+  // s'adapten en conseqüència.
+  const productData = {
     id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
     name: name,
     emoji: selectedEmoji,
@@ -2502,17 +2844,29 @@ function saveNewProduct() {
     qty: qty,
     addedAt: new Date().toISOString()
   };
-  if (price !== null) newProduct.price = price;
-  if (weight) newProduct.weight = weight;
+  if (price !== null) productData.price = price;
+  if (weight) productData.weight = weight;
   // frozenDate: si el producte es crea directament al congelador,
   // registrem la data d'avui com a "data de congelació". Productes a
   // altres zones no en tenen — només es crea si la primera ubicació
   // (o una edició posterior) és el congelador.
   const newProductLoc = getLocationById(selectedLocation);
   if (newProductLoc && newProductLoc.category === 'freezer') {
-    newProduct.frozenDate = formatDateLocal(new Date());
+    productData.frozenDate = formatDateLocal(new Date());
   }
-  products.push(newProduct);
+
+  const newLot = _buildLotFromNewProduct(productData);
+  const existing = _findGroupedProductForFusion(productData.name, productData.emoji, productData.location);
+  let newProduct;
+  let fusedInto = null;
+  if (existing) {
+    _addLotToProduct(existing, newLot);
+    newProduct = existing;
+    fusedInto = existing;
+  } else {
+    newProduct = _createV2ProductWithLot(productData, newLot);
+    products.push(newProduct);
+  }
 
   saveData();
 
@@ -2564,18 +2918,30 @@ function saveNewProduct() {
       currentSupermarketId = fromShopping;
       renderShoppingItems();
       showScreen('supermarket');
-      showToast('✅ ' + selectedEmoji + ' ' + name + ' ' + t('addedFromShopping'));
+      if (fusedInto) {
+        showToast('✅ Lot afegit a ' + name + ' (' + fusedInto.lots.length + ' lots)');
+      } else {
+        showToast('✅ ' + selectedEmoji + ' ' + name + ' ' + t('addedFromShopping'));
+      }
       return;
     }
 
     pendingShoppingSupermarketId = null;
     renderHome();
     showScreen('home');
-    showToast('✅ ' + selectedEmoji + ' ' + name + ' ' + t('addedFromShopping'));
+    if (fusedInto) {
+      showToast('✅ Lot afegit a ' + name + ' (' + fusedInto.lots.length + ' lots)');
+    } else {
+      showToast('✅ ' + selectedEmoji + ' ' + name + ' ' + t('addedFromShopping'));
+    }
   } else {
     renderHome();
     showScreen('home');
-    showToast(selectedEmoji + ' ' + name + ' ' + t('added'));
+    if (fusedInto) {
+      showToast(selectedEmoji + ' Lot afegit a ' + name + ' (' + fusedInto.lots.length + ' lots)');
+    } else {
+      showToast(selectedEmoji + ' ' + name + ' ' + t('added'));
+    }
   }
 }
 

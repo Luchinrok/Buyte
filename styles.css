@@ -10174,3 +10174,69 @@ body.selection-mode-active #shops-slider .arrow-btn {
   font-family: inherit;
   font-size: 14px;
 }
+
+/* ============================================
+   Secció "Lots" al detall del producte (Fase C+)
+   Read-only — accions per lot venen a Fase D.
+   ============================================ */
+.lots-section {
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.lots-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--text);
+}
+.lots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lot-row {
+  padding: 10px;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.lot-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.lot-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted, #999);
+  margin-top: 4px;
+}
+.lot-separator {
+  color: var(--text-muted, #ccc);
+  font-weight: 400;
+}
+.lot-qty {
+  color: var(--primary);
+  font-weight: 700;
+}
+.lot-date {
+  color: var(--text);
+}
+.lot-supermarket {
+  color: var(--text-muted, #999);
+  font-weight: 400;
+}
+.lot-price {
+  font-weight: 600;
+  color: var(--primary);
+}

@@ -1561,8 +1561,8 @@ function tryQuickBuyShoppingItem(item) {
   const hasExpiry = typeof prefill.days === 'number' || !!prefill.noExpiry;
   if (!hasZone || !hasExpiry) return false;
 
-  const newProduct = _quickBuyCore(item, prefill);
-  if (!newProduct) return false;
+  const result = _quickBuyCore(item, prefill);
+  if (!result) return false;
 
   // Persistim, sincronitzem i re-renderitzem un sol cop per acció.
   if (typeof saveData === 'function') saveData();
@@ -1578,25 +1578,39 @@ function tryQuickBuyShoppingItem(item) {
   // Inline en lloc de t('quickBuyDone', ...) perquè és immune a caches
   // velles d'i18n.js: si l'usuari encara té el bundle antic, els claus nous
   // de traducció no existirien i el toast no arribaria a renderitzar.
-  const loc = (typeof getLocationById === 'function') ? getLocationById(newProduct.location) : null;
-  const locName = loc && typeof getLocationName === 'function' ? getLocationName(loc) : (newProduct.location || '');
-  const daysText = newProduct.noExpiry
-    ? 'sense caducitat'
-    : (prefill.days || 7) + ' dies';
-  const emojiPart = newProduct.emoji ? newProduct.emoji + ' ' : '';
+  // Si la compra ha fusionat amb un producte existent, el missatge ho
+  // reflecteix; l'undo treu només el lot afegit, no el producte sencer.
+  const product = result.product;
+  let message;
+  if (result.fused) {
+    message = '✅ Lot afegit a ' + product.name + ' (' + product.lots.length + ' lots)';
+  } else {
+    const loc = (typeof getLocationById === 'function') ? getLocationById(product.location) : null;
+    const locName = loc && typeof getLocationName === 'function' ? getLocationName(loc) : (product.location || '');
+    const daysText = product.noExpiry
+      ? 'sense caducitat'
+      : (prefill.days || 7) + ' dies';
+    const emojiPart = product.emoji ? product.emoji + ' ' : '';
+    message = '✅ ' + emojiPart + product.name + ' → ' + locName + ' (' + daysText + ')';
+  }
   showUndoableToast({
-    message: '✅ ' + emojiPart + newProduct.name + ' → ' + locName + ' (' + daysText + ')',
+    message: message,
     durationMs: 5000,
-    onUndo: () => undoQuickBuy(newProduct.id, item)
+    onUndo: () => undoQuickBuy({ productId: product.id, lotId: result.lotId, fused: result.fused }, item)
   });
 
   return true;
 }
 
-// Mutació pura sobre els arrays in-memory: afegeix el producte a `products`,
-// treu l'item de `shoppingItems`, registra a l'historial. NO desa, NO renderitza,
-// NO mostra toast — això es fa al caller per poder agrupar-ho en lots.
-// Retorna el newProduct (o null si no es pot construir).
+// Mutació pura sobre els arrays in-memory: afegeix un lot al producte
+// agrupat existent (fusió) o crea un producte v2 nou amb un únic lot.
+// Treu l'item de `shoppingItems`, registra a l'historial. NO desa,
+// NO renderitza, NO mostra toast — això es fa al caller per poder
+// agrupar-ho en lots.
+// Retorna { product, lotId, fused } (o null si no es pot construir).
+//   product: el producte agrupat (existent si fused, nou si no)
+//   lotId:   id del lot afegit (necessari per a l'undo)
+//   fused:   true si s'ha afegit a un producte existent, false si nou
 function _quickBuyCore(item, prefill) {
   if (!prefill || !prefill.location) return null;
 
@@ -1617,7 +1631,11 @@ function _quickBuyCore(item, prefill) {
     dateStr = (typeof formatDateLocal === 'function') ? formatDateLocal(expiry) : null;
   }
 
-  const newProduct = {
+  // Supermarket per al lot — l'extreiem de l'item original.
+  const _sm = (typeof getSupermarketById === 'function') ? getSupermarketById(item && item.supermarketId) : null;
+  const supermarket = (_sm && _sm.name) || null;
+
+  const productData = {
     id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
     name: prefill.name,
     emoji: prefill.emoji,
@@ -1625,35 +1643,63 @@ function _quickBuyCore(item, prefill) {
     noExpiry: !!prefill.noExpiry,
     location: prefill.location,
     qty: (item && item.qty) || prefill.qty || '',
-    addedAt: new Date().toISOString()
+    addedAt: new Date().toISOString(),
+    popularId: prefill.popularId || null,
+    supermarket: supermarket
   };
-  if (typeof prefill.price === 'number' && prefill.price >= 0) newProduct.price = prefill.price;
-  if (prefill.weight) newProduct.weight = prefill.weight;
+  if (typeof prefill.price === 'number' && prefill.price >= 0) productData.price = prefill.price;
+  if (prefill.weight) productData.weight = prefill.weight;
 
   // frozenDate si va al congelador (mateixa regla que saveNewProduct).
   const newProductLoc = (typeof getLocationById === 'function') ? getLocationById(prefill.location) : null;
   if (newProductLoc && newProductLoc.category === 'freezer' && typeof formatDateLocal === 'function') {
-    newProduct.frozenDate = formatDateLocal(today);
+    productData.frozenDate = formatDateLocal(today);
   }
 
   // Aprenentatge: registra a l'historial / popular (mateixa crida que saveNewProduct).
   if (typeof recordProductInHistory === 'function') {
     recordProductInHistory(prefill.name, prefill.emoji, prefill.location,
-      prefill.days, !!prefill.noExpiry, newProduct.price, newProduct.weight);
+      prefill.days, !!prefill.noExpiry, productData.price, productData.weight);
   }
 
   if (!Array.isArray(products)) products = [];
-  products.push(newProduct);
+
+  // Fusió: si ja existeix un producte v2 amb (nom, emoji, location)
+  // coincidents, afegim un lot enlloc de duplicar. Helpers definits
+  // a biteme.js (bloc FUSIÓ EN CREACIÓ).
+  const newLot = (typeof _buildLotFromNewProduct === 'function')
+    ? _buildLotFromNewProduct(productData)
+    : null;
+  const existing = (typeof _findGroupedProductForFusion === 'function' && newLot)
+    ? _findGroupedProductForFusion(productData.name, productData.emoji, productData.location)
+    : null;
+  let product;
+  let fused = false;
+  if (existing && newLot && typeof _addLotToProduct === 'function') {
+    _addLotToProduct(existing, newLot);
+    product = existing;
+    fused = true;
+  } else if (newLot && typeof _createV2ProductWithLot === 'function') {
+    product = _createV2ProductWithLot(productData, newLot);
+    products.push(product);
+  } else {
+    // Fallback defensiu si els helpers v2 no estan carregats: format
+    // legacy. La migració al boot el convertirà.
+    product = Object.assign({}, productData);
+    delete product.popularId;
+    delete product.supermarket;
+    products.push(product);
+  }
 
   // Registre al purchase history (vegeu js/purchase-history.js).
-  // No-op silenciós si el mòdul encara no està carregat. El
-  // supermarket s'extreu de l'item original — el prefill no en té.
-  // days_calc forçat a null quan noExpiry per coherència: prefill.days
-  // pot ser non-null en aquest cas (productHistory amb dades residuals
-  // o popular pre-migració v3) i no té sentit registrar dies de vida
+  // No-op silenciós si el mòdul encara no està carregat. days_calc
+  // forçat a null quan noExpiry per coherència: prefill.days pot ser
+  // non-null en aquest cas (productHistory amb dades residuals o
+  // popular pre-migració v3) i no té sentit registrar dies de vida
   // útil per a un producte que no caduca.
+  // productId apunta al producte AGRUPAT (mateix si fused). Fase F
+  // afegirà lotId per a traçabilitat fina.
   if (typeof recordPurchase === 'function') {
-    const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(item.supermarketId) : null;
     recordPurchase({
       popularId: prefill.popularId,
       name: prefill.name,
@@ -1661,8 +1707,8 @@ function _quickBuyCore(item, prefill) {
       weight: prefill.weight,
       days_calc: prefill.noExpiry ? null : prefill.days,
       days_real: null,
-      supermarket: (sm && sm.name) || null,
-      productId: newProduct.id
+      supermarket: supermarket,
+      productId: product.id
     });
   }
 
@@ -1670,13 +1716,33 @@ function _quickBuyCore(item, prefill) {
     shoppingItems = shoppingItems.filter(it => it.id !== item.id);
   }
 
-  return newProduct;
+  return { product: product, lotId: newLot ? newLot.id : null, fused: fused };
 }
 
 // Desfer una compra ràpida individual.
-function undoQuickBuy(newProductId, originalItem) {
+// payload: { productId, lotId, fused } | string (compat legacy).
+//   - Si fused=true: treu només el lot afegit; el producte segueix amb
+//     els lots anteriors.
+//   - Si fused=false (o payload és l'id legacy): treu el producte sencer.
+function undoQuickBuy(payload, originalItem) {
+  const productId = (payload && typeof payload === 'object') ? payload.productId : payload;
+  const lotId = (payload && typeof payload === 'object') ? payload.lotId : null;
+  const wasFused = !!(payload && typeof payload === 'object' && payload.fused);
   if (Array.isArray(products)) {
-    products = products.filter(p => p.id !== newProductId);
+    if (wasFused && lotId && typeof _removeLotFromProduct === 'function') {
+      const prod = products.find(p => p.id === productId);
+      if (prod) {
+        const res = _removeLotFromProduct(prod, lotId);
+        if (res.productRemoved) {
+          // Defensiu: no hauria de passar (fused=true implica que el
+          // producte tenia ≥ 1 lot abans d'afegir el nostre), però si
+          // arribem aquí netegem el producte.
+          products = products.filter(p => p.id !== productId);
+        }
+      }
+    } else {
+      products = products.filter(p => p.id !== productId);
+    }
     if (typeof saveData === 'function') saveData();
   }
   if (Array.isArray(shoppingItems) && originalItem) {
@@ -1711,9 +1777,9 @@ function quickBuyMultipleSelected() {
     const hasZone = !!prefill.location;
     const hasExpiry = !!prefill.days || !!prefill.noExpiry;
     if (hasZone && hasExpiry) {
-      const np = _quickBuyCore(item, prefill);
-      if (np) {
-        pairs.push({ newProductId: np.id, originalItem: item });
+      const res = _quickBuyCore(item, prefill);
+      if (res) {
+        pairs.push({ productId: res.product.id, lotId: res.lotId, fused: res.fused, originalItem: item });
         // Gamificació per cada producte (mateix tractament que saveNewProduct).
         if (typeof bumpProductsAddedCounter === 'function') bumpProductsAddedCounter();
         if (typeof addXp === 'function') addXp(2, 'eatme-add');
@@ -1753,9 +1819,25 @@ function quickBuyMultipleSelected() {
 
 function undoQuickBuyMultiple(pairs) {
   if (!Array.isArray(pairs) || pairs.length === 0) return;
-  const idsToRemove = new Set(pairs.map(p => p.newProductId));
   if (Array.isArray(products)) {
-    products = products.filter(p => !idsToRemove.has(p.id));
+    // Per cada pair: si va ser fusió, treu només el lot afegit; si va
+    // ser creació, treu el producte sencer. Compatible amb pairs antics
+    // que tinguin `newProductId` enlloc de `productId/lotId/fused`.
+    pairs.forEach(pair => {
+      const productId = pair && (pair.productId || pair.newProductId);
+      if (!productId) return;
+      if (pair.fused && pair.lotId && typeof _removeLotFromProduct === 'function') {
+        const prod = products.find(p => p.id === productId);
+        if (prod) {
+          const res = _removeLotFromProduct(prod, pair.lotId);
+          if (res.productRemoved) {
+            products = products.filter(p => p.id !== productId);
+          }
+        }
+      } else {
+        products = products.filter(p => p.id !== productId);
+      }
+    });
     if (typeof saveData === 'function') saveData();
   }
   if (Array.isArray(shoppingItems)) {
