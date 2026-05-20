@@ -1154,16 +1154,15 @@ function _bindLotActions(container, product) {
   return clone;
 }
 
-// Menú flotant ⋯. Per ara conté només "Esborrar lot". El botó
-// "Moure" (canviar location) entrarà aquí a Fase D2.
+// Menú flotant ⋯. Conté "Moure" (Fase D2) i "Esborrar lot" (Fase D v2).
 function _openLotMoreMenu(anchorBtn, product, lot) {
   document.querySelectorAll('.lot-more-menu').forEach(m => m.parentNode.removeChild(m));
 
   const menu = document.createElement('div');
   menu.className = 'lot-more-menu open';
   menu.innerHTML =
-      '<button type="button" class="lot-delete-btn" data-action="delete-lot">❌ Esborrar lot</button>';
-  // TODO Fase D2: afegir <button data-action="move-lot">🚚 Moure</button>
+      '<button type="button" data-action="move-lot">🚚 Moure</button>'
+    + '<button type="button" class="lot-delete-btn" data-action="delete-lot">❌ Esborrar lot</button>';
 
   document.body.appendChild(menu);
 
@@ -1183,6 +1182,10 @@ function _openLotMoreMenu(anchorBtn, product, lot) {
   }
   setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
 
+  menu.querySelector('[data-action="move-lot"]').addEventListener('click', () => {
+    closeMenu();
+    _openMoveLotModal(product, lot);
+  });
   menu.querySelector('[data-action="delete-lot"]').addEventListener('click', () => {
     closeMenu();
     _deleteLot(product, lot.id);
@@ -1734,6 +1737,374 @@ function _deleteLot(product, lotId) {
   }, { title: 'Esborrar lot', confirmLabel: 'Esborrar', cancelLabel: 'Cancel·lar', danger: true });
 }
 
+// =============================================================
+//   FASE D2 — Moure lot entre locations (mateix espai o un altre)
+// =============================================================
+
+// Cerca un producte v2 a una llista QUALSEVOL (no només el global
+// products[]) per (name normalitzat, emoji, location). Necessari
+// per a la fusió cross-space — la llista origen ve via FBSync.
+function _findProductForFusionInList(list, name, emoji, location) {
+  if (!Array.isArray(list)) return null;
+  const nameKey = _normForGrouping(name);
+  const emojiKey = emoji || '';
+  const locKey = location || '';
+  return list.find(p => {
+    if (!p || p.__v !== 2) return false;
+    if (_normForGrouping(p.name) !== nameKey) return false;
+    if ((p.emoji || '') !== emojiKey) return false;
+    if ((p.location || '') !== locKey) return false;
+    return true;
+  }) || null;
+}
+
+function _openMoveLotModal(product, lot) {
+  if (!product || !lot) return;
+  const SS = window.SpacesSystem;
+
+  // Llista d'espais al picker: actiu primer + tots els que tenen syncCode
+  const activeSpace = SS ? SS.getActiveSpace() : null;
+  const allSpaces = SS ? SS.getSpaces() : [];
+  const spaceOptions = [];
+  if (activeSpace) {
+    spaceOptions.push({
+      id: activeSpace.id,
+      icon: activeSpace.icon || '🏠',
+      label: activeSpace.name + ' (actual)'
+    });
+  }
+  allSpaces.forEach(s => {
+    if (activeSpace && s.id === activeSpace.id) return;
+    if (!s.syncCode) return;
+    spaceOptions.push({ id: s.id, icon: s.icon || '🏠', label: s.name });
+  });
+
+  if (spaceOptions.length === 0) {
+    showToast('No hi ha cap espai disponible');
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const lotQtyDisplay = lot.consumptionMode === 'quantity'
+    ? ((lot.qtyRemaining || 0) + (lot.unit && lot.unit !== 'units' ? _displayUnit(lot.unit) : ' u'))
+    : ((lot.percentRemaining || 100) + '%');
+  overlay.innerHTML = '<div class="modal-content move-lot-modal">'
+    + '<p class="modal-title">🚚 Moure lot</p>'
+    + '<p class="modal-sub">' + escapeHtml(lotQtyDisplay) + ' de '
+    + escapeHtml((product.emoji || '') + ' ' + (product.name || '')) + '</p>'
+    + '<div class="lot-edit-field"><label>Espai destí</label>'
+    + '<div class="category-picker-wrap">'
+    + '<button type="button" class="category-picker-btn" id="move-lot-space-picker-btn">'
+    + '<span class="picker-icon"></span><span class="picker-label"></span><span class="picker-arrow">▾</span>'
+    + '</button>'
+    + '<div class="category-picker-dropdown" id="move-lot-space-picker-dropdown" hidden></div>'
+    + '</div></div>'
+    + '<div class="lot-edit-field"><label>Ubicació destí</label>'
+    + '<div class="category-picker-wrap">'
+    + '<button type="button" class="category-picker-btn" id="move-lot-location-picker-btn" disabled>'
+    + '<span class="picker-icon">⏳</span><span class="picker-label">Carregant…</span><span class="picker-arrow">▾</span>'
+    + '</button>'
+    + '<div class="category-picker-dropdown" id="move-lot-location-picker-dropdown" hidden></div>'
+    + '</div></div>'
+    + '<p class="lot-edit-note">ℹ️ Si al destí ja existeix un producte amb el mateix nom i emoji, el lot s\'hi fusionarà automàticament.</p>'
+    + '<div class="modal-buttons">'
+    + '<button class="modal-cancel" id="move-lot-cancel">Cancel·lar</button>'
+    + '<button class="modal-confirm" id="move-lot-confirm" disabled>Moure</button>'
+    + '</div></div>';
+
+  document.body.appendChild(overlay);
+
+  let destroySpacePicker = function () {};
+  let destroyLocPicker = function () {};
+  let currentTargetSpaceId = (activeSpace && activeSpace.id) || null;
+  let currentTargetLocationId = null;
+
+  const confirmBtn = overlay.querySelector('#move-lot-confirm');
+  const refreshConfirm = () => {
+    if (!currentTargetSpaceId || !currentTargetLocationId) {
+      confirmBtn.disabled = true;
+      return;
+    }
+    const sameSpace = currentTargetSpaceId === (activeSpace && activeSpace.id);
+    if (sameSpace && currentTargetLocationId === lot.location) {
+      confirmBtn.disabled = true;
+      return;
+    }
+    confirmBtn.disabled = false;
+  };
+
+  const populateLocationPicker = async (spaceId) => {
+    destroyLocPicker();
+    let availableLocations = [];
+    const locBtn = overlay.querySelector('#move-lot-location-picker-btn');
+    if (locBtn) {
+      locBtn.disabled = true;
+      const iconEl = locBtn.querySelector('.picker-icon'); if (iconEl) iconEl.textContent = '⏳';
+      const lblEl = locBtn.querySelector('.picker-label'); if (lblEl) lblEl.textContent = 'Carregant…';
+    }
+
+    const sameSpace = spaceId === (activeSpace && activeSpace.id);
+    if (sameSpace) {
+      availableLocations = (typeof locations !== 'undefined' && Array.isArray(locations))
+        ? locations.slice() : [];
+    } else {
+      const target = SS ? SS.getSpaceById(spaceId) : null;
+      if (!target || !target.syncCode || !window.FBSync) {
+        availableLocations = [];
+      } else {
+        try {
+          const remote = await window.FBSync.readListData(target.syncCode, 'locations');
+          if (Array.isArray(remote) && remote.length > 0) {
+            availableLocations = remote;
+          } else if (typeof DEFAULT_LOCATIONS !== 'undefined') {
+            availableLocations = JSON.parse(JSON.stringify(DEFAULT_LOCATIONS));
+          }
+        } catch (e) {
+          console.warn('[MoveLot] error llegint locations destí:', e);
+          availableLocations = (typeof DEFAULT_LOCATIONS !== 'undefined')
+            ? JSON.parse(JSON.stringify(DEFAULT_LOCATIONS)) : [];
+        }
+      }
+    }
+
+    const locOptions = availableLocations.map(l => ({
+      id: l.id,
+      icon: l.emoji || '📦',
+      label: (typeof getLocationName === 'function')
+        ? getLocationName(l)
+        : (l.customName || (l.nameKey ? l.nameKey : l.id))
+    }));
+    if (locOptions.length === 0) {
+      if (locBtn) {
+        const iconEl = locBtn.querySelector('.picker-icon'); if (iconEl) iconEl.textContent = '⚠️';
+        const lblEl = locBtn.querySelector('.picker-label'); if (lblEl) lblEl.textContent = 'Cap ubicació disponible';
+      }
+      currentTargetLocationId = null;
+      refreshConfirm();
+      return;
+    }
+    // Selecció inicial: si same-space, evitar la location actual del lot
+    let initial = locOptions[0].id;
+    if (sameSpace && lot.location) {
+      const firstDifferent = locOptions.find(o => o.id !== lot.location);
+      if (firstDifferent) initial = firstDifferent.id;
+    }
+    currentTargetLocationId = initial;
+    if (locBtn) locBtn.disabled = false;
+    destroyLocPicker = _buildPickerDropdown(
+      'move-lot-location-picker-btn',
+      'move-lot-location-picker-dropdown',
+      locOptions,
+      initial,
+      (id) => {
+        currentTargetLocationId = id;
+        refreshConfirm();
+      }
+    );
+    refreshConfirm();
+  };
+
+  destroySpacePicker = _buildPickerDropdown(
+    'move-lot-space-picker-btn',
+    'move-lot-space-picker-dropdown',
+    spaceOptions,
+    currentTargetSpaceId,
+    (id) => {
+      currentTargetSpaceId = id;
+      populateLocationPicker(id);
+    }
+  );
+
+  populateLocationPicker(currentTargetSpaceId);
+
+  const close = () => {
+    destroySpacePicker();
+    destroyLocPicker();
+    if (overlay.parentNode) document.body.removeChild(overlay);
+  };
+  overlay.querySelector('#move-lot-cancel').addEventListener('click', close);
+  overlay.querySelector('#move-lot-confirm').addEventListener('click', () => {
+    const tSpace = currentTargetSpaceId;
+    const tLoc = currentTargetLocationId;
+    close();
+    _executeMoveLot(product, lot, tSpace, tLoc);
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+}
+
+async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
+  if (!product || !lot || !targetLocationId) return;
+  const SS = window.SpacesSystem;
+  const activeSpace = SS ? SS.getActiveSpace() : null;
+  const sameSpace = !targetSpaceId || (activeSpace && targetSpaceId === activeSpace.id);
+
+  // Re-busca referències vives (patró feedback-closure-vs-live-array)
+  const realProduct = products.find(p => p.id === product.id);
+  if (!realProduct) { console.warn('[_executeMoveLot] producte no trobat:', product.id); return; }
+  const realLot = realProduct.lots && realProduct.lots.find(l => l.id === lot.id);
+  if (!realLot) { console.warn('[_executeMoveLot] lot no trobat:', lot.id); return; }
+
+  if (sameSpace) {
+    // ----- CAS A: same-space → operació local -----
+    if (realLot.location === targetLocationId) {
+      showToast('El lot ja és en aquesta ubicació');
+      return;
+    }
+
+    realProduct.lots = realProduct.lots.filter(l => l.id !== realLot.id);
+    const movedLot = Object.assign({}, realLot, { location: targetLocationId });
+
+    const host = _findGroupedProductForFusion(realProduct.name, realProduct.emoji, targetLocationId);
+    if (host) {
+      _addLotToProduct(host, movedLot);
+    } else {
+      const newProduct = {
+        id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        popularId: realProduct.popularId || null,
+        name: realProduct.name,
+        emoji: realProduct.emoji,
+        __v: 2,
+        lots: [movedLot],
+        date: movedLot.date,
+        noExpiry: !!movedLot.noExpiry,
+        location: movedLot.location,
+        qty: '',
+        addedAt: movedLot.addedAt,
+        frozenDate: movedLot.frozenDate,
+        consumedPercent: 0
+      };
+      if (typeof movedLot.price === 'number') newProduct.price = movedLot.price;
+      if (movedLot.weight) newProduct.weight = movedLot.weight;
+      products.push(newProduct);
+      _refreshProductMirrors(newProduct);
+    }
+
+    const originRemoved = !realProduct.lots || realProduct.lots.length === 0;
+    if (originRemoved) {
+      products = products.filter(p => p.id !== realProduct.id);
+    } else {
+      _refreshProductMirrors(realProduct);
+    }
+
+    saveData();
+    showToast('✓ Lot mogut');
+    if (originRemoved) {
+      if (typeof renderHome === 'function') renderHome();
+      navigateAfterAction();
+      currentProduct = null;
+    } else {
+      openProduct(realProduct.id);
+    }
+    return;
+  }
+
+  // ----- CAS B: cross-space → FBSync read/write al destí -----
+  const target = SS ? SS.getSpaceById(targetSpaceId) : null;
+  if (!target || !target.syncCode || !window.FBSync) {
+    showToast('No s\'ha pogut connectar al destí');
+    return;
+  }
+
+  const progressOv = document.createElement('div');
+  progressOv.className = 'modal-overlay';
+  progressOv.innerHTML = '<div class="modal-content"><p class="modal-title">📦 Movent lot…</p>'
+    + '<p class="modal-sub">' + escapeHtml((target.icon || '') + ' ' + (target.name || '')) + '</p></div>';
+  document.body.appendChild(progressOv);
+
+  try {
+    const ok = await window.FBSync.init();
+    if (!ok) throw new Error('Firebase init failed');
+
+    const remote = await window.FBSync.readListData(target.syncCode, 'products');
+    const targetList = Array.isArray(remote) ? remote.slice() : [];
+
+    const movedLot = Object.assign({}, realLot, { location: targetLocationId });
+
+    const host = _findProductForFusionInList(targetList, realProduct.name, realProduct.emoji, targetLocationId);
+    if (host) {
+      if (!Array.isArray(host.lots)) host.lots = [];
+      host.lots.push(movedLot);
+      // Refresh mirrors sobre l'objecte al destí (no podem cridar
+      // _refreshProductMirrors perquè usa getPrimaryLot del MEU producte;
+      // re-implementem la lògica aquí sobre l'objecte plain del destí).
+      const sorted = host.lots.slice().sort((a, b) => {
+        if (a.noExpiry && b.noExpiry) return 0;
+        if (a.noExpiry) return 1; if (b.noExpiry) return -1;
+        const da = a.date ? new Date(a.date).getTime() : Number.POSITIVE_INFINITY;
+        const db = b.date ? new Date(b.date).getTime() : Number.POSITIVE_INFINITY;
+        return da - db;
+      });
+      const primary = sorted[0];
+      if (primary) {
+        host.date = primary.date;
+        host.noExpiry = !!primary.noExpiry;
+        host.location = primary.location;
+        host.frozenDate = primary.frozenDate;
+        if (typeof primary.price === 'number') host.price = primary.price; else delete host.price;
+        if (primary.weight) host.weight = primary.weight; else delete host.weight;
+        host.qty = _computeAggregatedQty(host.lots);
+      }
+    } else {
+      const newProduct = {
+        id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        popularId: realProduct.popularId || null,
+        name: realProduct.name,
+        emoji: realProduct.emoji,
+        __v: 2,
+        lots: [movedLot],
+        date: movedLot.date,
+        noExpiry: !!movedLot.noExpiry,
+        location: movedLot.location,
+        qty: _computeAggregatedQty([movedLot]),
+        addedAt: movedLot.addedAt,
+        frozenDate: movedLot.frozenDate,
+        consumedPercent: 0
+      };
+      if (typeof movedLot.price === 'number') newProduct.price = movedLot.price;
+      if (movedLot.weight) newProduct.weight = movedLot.weight;
+      targetList.push(newProduct);
+    }
+
+    await window.FBSync.writeListData(target.syncCode, 'products', targetList);
+
+    // Èxit remot: treure lot del cache local
+    realProduct.lots = realProduct.lots.filter(l => l.id !== realLot.id);
+    const originRemoved = !realProduct.lots || realProduct.lots.length === 0;
+    if (originRemoved) {
+      products = products.filter(p => p.id !== realProduct.id);
+    } else {
+      _refreshProductMirrors(realProduct);
+    }
+    saveData();
+
+    if (progressOv.parentNode) document.body.removeChild(progressOv);
+    showToast('✓ Lot mogut a ' + (target.icon || '') + ' ' + (target.name || ''));
+    if (originRemoved) {
+      if (typeof renderHome === 'function') renderHome();
+      navigateAfterAction();
+      currentProduct = null;
+    } else {
+      openProduct(realProduct.id);
+    }
+  } catch (e) {
+    console.error('[_executeMoveLot] error cross-space:', e);
+    if (progressOv.parentNode) document.body.removeChild(progressOv);
+    // Missatge més específic segons l'estat de xarxa i el tipus d'error.
+    let msg = 'Error movent el lot';
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      msg = 'Sense connexió — el lot no s\'ha mogut';
+    } else if (e && /init failed/i.test(String(e.message || e))) {
+      msg = 'No s\'ha pogut connectar a Firebase';
+    } else if (e && /permission/i.test(String(e.message || e))) {
+      msg = 'Sense permís per a l\'espai destí';
+    }
+    showToast(msg);
+  }
+}
+
 // API exposada per a altres mòduls. settings.js:onRemoteData fa servir
 // _transformProductsToV2 i _createMigrationBackup per processar dades
 // remotes abans d'aplicar-les localment. _refreshProductMirrors
@@ -1770,6 +2141,8 @@ if (typeof window !== 'undefined') {
   window.openLotConsumeModal = openLotConsumeModal;
   window.openLotEditModal = openLotEditModal;
   window.openProductEditModal = openProductEditModal;
+  // Fase D2 — moure lot entre locations / espais
+  window._openMoveLotModal = _openMoveLotModal;
 }
 
 // DADES

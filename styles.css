@@ -10426,3 +10426,19 @@ body.selection-mode-active #shops-slider .arrow-btn {
   line-height: 1.4;
 }
 
+/* ============================================
+   Fase D2 — modal "Moure lot"
+   ============================================ */
+.move-lot-modal .modal-sub {
+  font-size: 13px;
+  color: var(--text-soft);
+  text-align: center;
+  margin: 0 0 14px;
+}
+.move-lot-modal .lot-edit-field {
+  margin-bottom: 10px;
+}
+.modal-confirm[disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
