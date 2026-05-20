@@ -1416,13 +1416,15 @@ function openLotEditModal(product, lot) {
 
   const smList = (typeof supermarkets !== 'undefined' && Array.isArray(supermarkets)) ? supermarkets : [];
   const currentSmName = lot.supermarket || '';
-  const smOptionsHtml = '<option value="">(Cap)</option>'
-    + smList.map(sm => {
-        const selected = sm && sm.name === currentSmName ? ' selected' : '';
-        return '<option value="' + escapeHtml(sm.id) + '"' + selected + '>'
-          + (sm.emoji ? escapeHtml(sm.emoji) + ' ' : '')
-          + escapeHtml(sm.name) + '</option>';
-      }).join('');
+  // lot.supermarket desa el NAME (contracte actual); resolem l'id
+  // per a pre-seleccionar el picker.
+  let currentSmId = '';
+  if (currentSmName) {
+    const matched = smList.find(s => s && s.name === currentSmName);
+    if (matched) currentSmId = matched.id;
+  }
+  const smPickerOptions = [{ id: '', icon: '🚫', label: '(Cap)' }]
+    .concat(smList.map(sm => ({ id: sm.id, icon: sm.emoji || '🛒', label: sm.name })));
 
   const dateVal = lot.date || '';
   const noExpiry = !!lot.noExpiry;
@@ -1440,7 +1442,14 @@ function openLotEditModal(product, lot) {
     + '<div class="lot-edit-field"><label>Preu (€)</label>'
     + '<input type="text" id="lot-edit-price" inputmode="decimal" value="' + escapeHtml(priceVal) + '"></div>'
     + '<div class="lot-edit-field"><label>Supermercat</label>'
-    + '<select id="lot-edit-supermarket">' + smOptionsHtml + '</select></div>'
+    + '<div class="category-picker-wrap">'
+    + '<button type="button" class="category-picker-btn" id="lot-edit-supermarket-picker-btn">'
+    + '<span class="picker-icon"></span>'
+    + '<span class="picker-label"></span>'
+    + '<span class="picker-arrow">▾</span>'
+    + '</button>'
+    + '<div class="category-picker-dropdown" id="lot-edit-supermarket-picker-dropdown" hidden></div>'
+    + '</div></div>'
     + '<p class="lot-edit-note">📍 Per moure aquest lot a una altra ubicació, pendent per a la propera versió (Fase D2).</p>'
     + '<div class="modal-buttons">'
     + '<button class="modal-cancel" id="lot-edit-cancel">Cancel·lar</button>'
@@ -1467,22 +1476,36 @@ function openLotEditModal(product, lot) {
     dateEl.disabled = !!noExpiryEl.checked;
   });
 
+  // Picker supermarket (helper genèric, mateix patró que category-picker)
+  const destroySmPicker = _buildPickerDropdown(
+    'lot-edit-supermarket-picker-btn',
+    'lot-edit-supermarket-picker-dropdown',
+    smPickerOptions,
+    currentSmId
+  );
+
   overlay.querySelector('#lot-edit-cancel').addEventListener('click', () => {
+    destroySmPicker();
     document.body.removeChild(overlay);
   });
   overlay.querySelector('#lot-edit-confirm').addEventListener('click', () => {
+    const smBtn = overlay.querySelector('#lot-edit-supermarket-picker-btn');
     const values = {
       qtyRaw: overlay.querySelector('#lot-edit-qty').value,
       date: overlay.querySelector('#lot-edit-date').value || null,
       noExpiry: !!overlay.querySelector('#lot-edit-noexpiry').checked,
       priceRaw: overlay.querySelector('#lot-edit-price').value,
-      supermarketId: overlay.querySelector('#lot-edit-supermarket').value || ''
+      supermarketId: smBtn ? (smBtn.dataset.value || '') : ''
     };
+    destroySmPicker();
     document.body.removeChild(overlay);
     _confirmLotEdit(product, lot, values);
   });
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) document.body.removeChild(overlay);
+    if (e.target === overlay) {
+      destroySmPicker();
+      document.body.removeChild(overlay);
+    }
   });
 }
 
@@ -1552,17 +1575,20 @@ function _confirmLotEdit(product, lot, v) {
   showToast('✓ Lot actualitzat');
 }
 
-function openProductEditModal(product) {
+function openProductEditModal(product, restoreState) {
   if (!product) return;
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
 
+  const initialName = restoreState ? restoreState.name : (product.name || '');
+  const initialEmoji = restoreState ? restoreState.emoji : (product.emoji || '🥫');
+
   const catKey = product.popularId || product.id;
-  let currentCatId = 'cat_other';
+  let initialCatId = restoreState ? restoreState.categoryId : 'cat_other';
   let cats = [];
   if (window.CategoriesSystem) {
-    if (typeof window.CategoriesSystem.getItemCategory === 'function') {
-      currentCatId = window.CategoriesSystem.getItemCategory(catKey) || 'cat_other';
+    if (!restoreState && typeof window.CategoriesSystem.getItemCategory === 'function') {
+      initialCatId = window.CategoriesSystem.getItemCategory(catKey) || 'cat_other';
     }
     if (typeof window.CategoriesSystem.getCategories === 'function') {
       cats = window.CategoriesSystem.getCategories().slice().sort((a, b) =>
@@ -1570,20 +1596,31 @@ function openProductEditModal(product) {
       );
     }
   }
-  const catOptionsHtml = cats.map(c =>
-    '<option value="' + escapeHtml(c.id) + '"' + (c.id === currentCatId ? ' selected' : '') + '>'
-    + (c.icon ? escapeHtml(c.icon) + ' ' : '') + escapeHtml(c.name) + '</option>'
-  ).join('');
+  const catOptions = cats.map(c => ({ id: c.id, icon: c.icon || '📦', label: c.name || c.id }));
+
+  // Mateix patró visual que el botó d'emoji del formulari Afegir
+  // (#btn-pick-emoji). Reusa .emoji-button + .emoji-button-current.
+  const currentEmojiSelected = initialEmoji;
 
   overlay.innerHTML = '<div class="modal-content product-edit-modal">'
     + '<p class="modal-title">✏️ Editar producte</p>'
     + '<div class="lot-edit-field"><label>Nom</label>'
-    + '<input type="text" id="product-edit-name" value="' + escapeHtml(product.name || '') + '"></div>'
+    + '<input type="text" id="product-edit-name" value="' + escapeHtml(initialName) + '"></div>'
     + '<div class="lot-edit-field"><label>Emoji</label>'
-    + '<input type="text" id="product-edit-emoji" value="' + escapeHtml(product.emoji || '') + '" maxlength="4"></div>'
-    + (cats.length > 0
+    + '<button type="button" class="emoji-button" id="product-edit-emoji-btn">'
+    + '<span class="emoji-button-current" id="product-edit-emoji-display">' + escapeHtml(currentEmojiSelected) + '</span>'
+    + '</button>'
+    + '</div>'
+    + (catOptions.length > 0
         ? '<div class="lot-edit-field"><label>Categoria</label>'
-          + '<select id="product-edit-category">' + catOptionsHtml + '</select></div>'
+          + '<div class="category-picker-wrap">'
+          + '<button type="button" class="category-picker-btn" id="product-edit-category-picker-btn">'
+          + '<span class="picker-icon"></span>'
+          + '<span class="picker-label"></span>'
+          + '<span class="picker-arrow">▾</span>'
+          + '</button>'
+          + '<div class="category-picker-dropdown" id="product-edit-category-picker-dropdown" hidden></div>'
+          + '</div></div>'
         : '')
     + '<p class="lot-edit-note">ℹ️ Quantitat, preu, data i supermercat es gestionen per lot.</p>'
     + '<div class="modal-buttons">'
@@ -1593,25 +1630,58 @@ function openProductEditModal(product) {
 
   document.body.appendChild(overlay);
 
+  // Picker categoria (helper genèric)
+  let destroyCatPicker = function () {};
+  if (catOptions.length > 0) {
+    destroyCatPicker = _buildPickerDropdown(
+      'product-edit-category-picker-btn',
+      'product-edit-category-picker-dropdown',
+      catOptions,
+      initialCatId
+    );
+  }
+
+  // Botó emoji → desa estat + tanca modal + obre picker complet
+  // (mateix patró que #btn-pick-emoji del formulari Afegir).
+  overlay.querySelector('#product-edit-emoji-btn').addEventListener('click', () => {
+    const catBtn = overlay.querySelector('#product-edit-category-picker-btn');
+    _editProductModalState = {
+      productId: product.id,
+      name: overlay.querySelector('#product-edit-name').value,
+      emoji: currentEmojiSelected,
+      categoryId: catBtn ? (catBtn.dataset.value || initialCatId) : initialCatId
+    };
+    destroyCatPicker();
+    document.body.removeChild(overlay);
+    if (typeof openEmojiPicker === 'function') {
+      openEmojiPicker('product-edit-emoji', 'product');
+    }
+  });
+
   overlay.querySelector('#product-edit-cancel').addEventListener('click', () => {
+    destroyCatPicker();
     document.body.removeChild(overlay);
   });
   overlay.querySelector('#product-edit-confirm').addEventListener('click', () => {
-    const catEl = overlay.querySelector('#product-edit-category');
+    const catBtn = overlay.querySelector('#product-edit-category-picker-btn');
     const values = {
       name: overlay.querySelector('#product-edit-name').value.trim(),
-      emoji: overlay.querySelector('#product-edit-emoji').value.trim(),
-      categoryId: catEl ? catEl.value : null
+      emoji: currentEmojiSelected,
+      categoryId: catBtn ? (catBtn.dataset.value || null) : null
     };
     if (!values.name) {
       showToast('El nom és obligatori');
       return;
     }
+    destroyCatPicker();
     document.body.removeChild(overlay);
     _confirmProductEdit(product, values);
   });
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) document.body.removeChild(overlay);
+    if (e.target === overlay) {
+      destroyCatPicker();
+      document.body.removeChild(overlay);
+    }
   });
 }
 
@@ -3774,6 +3844,11 @@ function _emojiPickerCurrentEmoji(target) {
     }
     return '🥕';
   }
+  // FASE D polish: emoji actual al modal d'editar producte (mentre
+  // l'usuari navega cap al picker complet)
+  if (target === 'product-edit-emoji') {
+    return _editProductModalState ? _editProductModalState.emoji : '';
+  }
   return selectedEmoji;
 }
 
@@ -3803,6 +3878,22 @@ function _emojiPickerApply(target, e) {
         && editingRecipeData.ingredients[editingRecipeIngredientIdx]) {
       editingRecipeData.ingredients[editingRecipeIngredientIdx].emoji = e;
       if (typeof renderRecipeEditIngredients === 'function') renderRecipeEditIngredients();
+    }
+  } else if (target === 'product-edit-emoji') {
+    // FASE D polish: l'usuari ha aplicat un emoji. Neteja el back
+    // listener (ja no cal el fallback de cancel·lació) i re-obre
+    // el modal amb l'estat preservat + el nou emoji.
+    const backBtn = document.getElementById('emoji-picker-back-btn');
+    if (backBtn && _editProductModalBackListener) {
+      backBtn.removeEventListener('click', _editProductModalBackListener);
+      _editProductModalBackListener = null;
+    }
+    if (_editProductModalState) {
+      const state = _editProductModalState;
+      state.emoji = e;
+      _editProductModalState = null;
+      const product = products.find(p => p.id === state.productId);
+      if (product) openProductEditModal(product, state);
     }
   } else {
     selectedEmoji = e;
@@ -3868,6 +3959,80 @@ function _makeEmojiBtn(e, currentEmoji, target) {
   return btn;
 }
 
+// =============================================================
+//   FASE D polish — emoji grid inline + picker dropdown genèric
+// =============================================================
+
+// State temporal per a restaurar el modal d'editar producte quan
+// l'usuari torna del picker complet d'emojis (sigui aplicant o
+// cancel·lant). _editProductModalBackListener captura el cas
+// cancel·lació (back-btn del picker sense tria d'emoji).
+let _editProductModalState = null;
+let _editProductModalBackListener = null;
+
+// Helper genèric: lliga un picker dropdown (botó + opcions ocultes
+// amb scroll). Reusa el patró .category-picker-* ja existent
+// (vegeu _populatePopularCategorySelect a js/populars.js).
+// Retorna una funció destroy() per netejar el listener global de
+// click-fora quan el modal es tanca.
+function _buildPickerDropdown(btnId, dropdownId, options, currentId, onSelect) {
+  const btn = document.getElementById(btnId);
+  const dropdown = document.getElementById(dropdownId);
+  if (!btn || !dropdown) return function () {};
+
+  const applySelection = (id) => {
+    const sel = options.find(o => o.id === id) || options[0];
+    if (!sel) return;
+    const iconEl = btn.querySelector('.picker-icon');
+    const labelEl = btn.querySelector('.picker-label');
+    if (iconEl) iconEl.textContent = sel.icon || '';
+    if (labelEl) labelEl.textContent = sel.label || '';
+    btn.dataset.value = sel.id;
+  };
+  applySelection(currentId);
+
+  dropdown.innerHTML = options.map(o =>
+    '<button type="button" class="category-option" data-id="' + escapeHtml(o.id) + '">'
+    + '<span class="cat-option-icon">' + escapeHtml(o.icon || '') + '</span>'
+    + '<span class="cat-option-name">' + escapeHtml(o.label || '') + '</span>'
+    + '</button>'
+  ).join('');
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isHidden = dropdown.hasAttribute('hidden');
+    if (isHidden) {
+      dropdown.removeAttribute('hidden');
+      btn.classList.add('open');
+    } else {
+      dropdown.setAttribute('hidden', '');
+      btn.classList.remove('open');
+    }
+  });
+
+  dropdown.querySelectorAll('.category-option').forEach(opt => {
+    opt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      applySelection(opt.dataset.id);
+      dropdown.setAttribute('hidden', '');
+      btn.classList.remove('open');
+      if (typeof onSelect === 'function') onSelect(opt.dataset.id);
+    });
+  });
+
+  const onDocClick = (e) => {
+    if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.setAttribute('hidden', '');
+      btn.classList.remove('open');
+    }
+  };
+  document.addEventListener('click', onDocClick);
+
+  return function destroy() {
+    document.removeEventListener('click', onDocClick);
+  };
+}
+
 function renderEmojiCategoriesTabs() {
   const wrap = document.getElementById('emoji-categories');
   if (!wrap) return;
@@ -3902,6 +4067,32 @@ function openEmojiPicker(target, origin) {
   emojiPickerQuery = '';
   const backBtn = document.getElementById('emoji-picker-back-btn');
   if (backBtn) backBtn.dataset.back = origin;
+
+  // FASE D polish: si hi havia un listener pendent d'una sessió
+  // anterior del modal d'editar producte, netejar-lo abans
+  // d'instal·lar-ne un de nou (o cap, si el target ja no és el
+  // de l'edit producte).
+  if (backBtn && _editProductModalBackListener) {
+    backBtn.removeEventListener('click', _editProductModalBackListener);
+    _editProductModalBackListener = null;
+  }
+  if (backBtn && target === 'product-edit-emoji') {
+    _editProductModalBackListener = function () {
+      // L'usuari ha cancel·lat la tria. Re-obre el modal amb l'estat
+      // original. El handler genèric del back-btn ja ha fet
+      // showScreen('product') abans (ordre d'addEventListener).
+      const listener = _editProductModalBackListener;
+      _editProductModalBackListener = null;
+      if (listener && backBtn) backBtn.removeEventListener('click', listener);
+      if (_editProductModalState) {
+        const state = _editProductModalState;
+        _editProductModalState = null;
+        const product = products.find(p => p.id === state.productId);
+        if (product) setTimeout(() => openProductEditModal(product, state), 0);
+      }
+    };
+    backBtn.addEventListener('click', _editProductModalBackListener);
+  }
 
   const search = document.getElementById('emoji-search');
   if (search) {
