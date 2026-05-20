@@ -4375,6 +4375,19 @@ function _buildPickerDropdown(btnId, dropdownId, options, currentId, onSelect) {
     e.stopPropagation();
     const isHidden = dropdown.hasAttribute('hidden');
     if (isHidden) {
+      // Tancar tots els altres pickers oberts (modal o no). Convenció
+      // d'IDs: <prefix>-btn / <prefix>-dropdown perquè el lookup
+      // creuat funcioni.
+      document.querySelectorAll('.category-picker-dropdown').forEach(d => {
+        if (d === dropdown) return;
+        if (d.hasAttribute('hidden')) return;
+        d.setAttribute('hidden', '');
+        if (d.id) {
+          const otherBtnId = d.id.replace(/-dropdown$/, '-btn');
+          const otherBtn = document.getElementById(otherBtnId);
+          if (otherBtn) otherBtn.classList.remove('open');
+        }
+      });
       dropdown.removeAttribute('hidden');
       btn.classList.add('open');
     } else {
