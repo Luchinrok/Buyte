@@ -1011,7 +1011,7 @@ function getLotsByLocation(product, location) {
 
 function _renderLotsSection(product) {
   const lots = getLots(product);
-  if (lots.length <= 1) return '';
+  if (lots.length === 0) return '';
 
   // Ordenar lots: més urgent primer (mateix criteri que getPrimaryLot).
   const sorted = lots.slice().sort((a, b) => {
@@ -1023,9 +1023,12 @@ function _renderLotsSection(product) {
     return da - db;
   });
 
+  const title = lots.length === 1
+    ? '📦 Lot'
+    : '📦 Lots (' + lots.length + ')';
   const rowsHtml = sorted.map(_renderLotRow).join('');
   return '<div class="lots-section">'
-    + '<h3 class="lots-section-title">📦 Lots (' + lots.length + ')</h3>'
+    + '<h3 class="lots-section-title">' + title + '</h3>'
     + '<div class="lots-list">' + rowsHtml + '</div>'
     + '</div>';
 }
@@ -1081,10 +1084,584 @@ function _renderLotRow(lot) {
   if (priceText) parts2.push('<span class="lot-price">' + escapeHtml(priceText) + '</span>');
   if (addedText) parts2.push('<span class="lot-added">' + escapeHtml(addedText) + '</span>');
 
-  return '<div class="lot-row">'
+  const lotIdAttr = lot.id ? ' data-lot-id="' + escapeHtml(lot.id) + '"' : '';
+  const actionsHtml = lot.id
+    ? '<div class="lot-actions">'
+      + '<button class="lot-action-btn lot-eat-btn" data-lot-action="eat" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Menjar">✓</button>'
+      + '<button class="lot-action-btn lot-trash-btn" data-lot-action="trash" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Llençar">🗑️</button>'
+      + '<button class="lot-action-btn lot-edit-btn" data-lot-action="edit" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Editar">✏️</button>'
+      + '<button class="lot-action-btn lot-more-btn" data-lot-action="more" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Més accions">⋯</button>'
+      + '</div>'
+    : '';
+  return '<div class="lot-row"' + lotIdAttr + '>'
     + '<div class="lot-info">' + parts1.join(' <span class="lot-separator">·</span> ') + '</div>'
     + (parts2.length > 0 ? '<div class="lot-meta">' + parts2.join(' <span class="lot-separator">·</span> ') + '</div>' : '')
+    + actionsHtml
     + '</div>';
+}
+
+// =============================================================
+//   FASE D v2 — Accions per lot + modals + bind d'accions
+// =============================================================
+
+// Helper modal de confirmació genèric. Patró similar al modal
+// "Canvis sense desar" d'Editar compres recents (recent-purchases.js).
+function _confirmModal(message, onConfirm, options) {
+  const opts = options || {};
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const confirmLabel = opts.confirmLabel || 'Sí';
+  const cancelLabel = opts.cancelLabel || 'Cancel·lar';
+  const danger = opts.danger !== false;
+  overlay.innerHTML =
+    '<div class="modal-content">' +
+      '<p class="modal-title">' + escapeHtml(opts.title || 'Confirma') + '</p>' +
+      '<p class="modal-sub">' + escapeHtml(message) + '</p>' +
+      '<div class="modal-buttons">' +
+        '<button class="modal-cancel" id="cm-cancel">' + escapeHtml(cancelLabel) + '</button>' +
+        '<button class="modal-confirm' + (danger ? ' modal-confirm-danger' : '') + '" id="cm-confirm">' + escapeHtml(confirmLabel) + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#cm-cancel').addEventListener('click', close);
+  overlay.querySelector('#cm-confirm').addEventListener('click', () => {
+    close();
+    if (typeof onConfirm === 'function') onConfirm();
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
+// Delegació click per a la llista de lots. Re-bind cada cop que es
+// re-renderitza (clone+replace).
+function _bindLotActions(container, product) {
+  if (!container) return null;
+  const clone = container.cloneNode(true);
+  container.parentNode.replaceChild(clone, container);
+  clone.addEventListener('click', function(e) {
+    const btn = e.target && e.target.closest ? e.target.closest('.lot-action-btn') : null;
+    if (!btn) return;
+    const lotId = btn.getAttribute('data-lot-id');
+    const action = btn.getAttribute('data-lot-action');
+    if (!lotId || !action) return;
+    const lot = getLotById(product, lotId);
+    if (!lot) return;
+    if (action === 'eat')        openLotConsumeModal(product, lot, 'eat');
+    else if (action === 'trash') openLotConsumeModal(product, lot, 'trash');
+    else if (action === 'edit')  openLotEditModal(product, lot);
+    else if (action === 'more')  _openLotMoreMenu(btn, product, lot);
+  });
+  return clone;
+}
+
+// Menú flotant ⋯. Per ara conté només "Esborrar lot". El botó
+// "Moure" (canviar location) entrarà aquí a Fase D2.
+function _openLotMoreMenu(anchorBtn, product, lot) {
+  document.querySelectorAll('.lot-more-menu').forEach(m => m.parentNode.removeChild(m));
+
+  const menu = document.createElement('div');
+  menu.className = 'lot-more-menu open';
+  menu.innerHTML =
+      '<button type="button" class="lot-delete-btn" data-action="delete-lot">❌ Esborrar lot</button>';
+  // TODO Fase D2: afegir <button data-action="move-lot">🚚 Moure</button>
+
+  document.body.appendChild(menu);
+
+  const rect = anchorBtn.getBoundingClientRect();
+  menu.style.position = 'absolute';
+  menu.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  menu.style.left = Math.max(8, rect.right + window.scrollX - menu.offsetWidth) + 'px';
+
+  const closeMenu = () => {
+    if (menu.parentNode) menu.parentNode.removeChild(menu);
+    document.removeEventListener('click', onDocClick, true);
+  };
+  function onDocClick(ev) {
+    if (menu.contains(ev.target)) return;
+    if (ev.target === anchorBtn) return;
+    closeMenu();
+  }
+  setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
+
+  menu.querySelector('[data-action="delete-lot"]').addEventListener('click', () => {
+    closeMenu();
+    _deleteLot(product, lot.id);
+  });
+}
+
+function openLotConsumeModal(product, lot, action) {
+  if (!product || !lot) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+
+  const isEat = (action === 'eat');
+  const verbInf = isEat ? 'Menjar' : 'Llençar';
+  const verbPp  = isEat ? 'menjat' : 'llençat';
+  const icon    = isEat ? '✓' : '🗑️';
+
+  let bodyHtml;
+  if (lot.consumptionMode === 'quantity') {
+    const unit = lot.unit || 'units';
+    const unitDisplay = unit === 'units' ? '' : _displayUnit(unit);
+    const qtyRem = Number.isFinite(lot.qtyRemaining) ? lot.qtyRemaining : 0;
+    const qtyInit = Number.isFinite(lot.qtyInitial) ? lot.qtyInitial : qtyRem;
+    let step = '1';
+    if (unit === 'kg' || unit === 'l') step = '0.1';
+    else if (unit === 'g' || unit === 'ml') step = '50';
+    const fmtNum = n => Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+    const unitLbl = unitDisplay || 'unitats';
+    bodyHtml = '<p class="modal-sub">Lot: ' + escapeHtml(fmtNum(qtyInit) + (unitDisplay || ' u')) + ' inicial, queda ' + escapeHtml(fmtNum(qtyRem) + (unitDisplay || ' u')) + '</p>'
+      + '<div class="lot-consume-input">'
+      + '<label>Quants ' + escapeHtml(unitLbl) + ' has ' + verbPp + '?</label>'
+      + '<div class="lot-consume-input-row">'
+      + '<input type="number" id="lot-consume-amount" min="0" max="' + qtyRem + '" value="' + qtyRem + '" step="' + step + '" inputmode="decimal">'
+      + (unitDisplay ? '<span class="lot-consume-unit">' + escapeHtml(unitDisplay) + '</span>' : '')
+      + '</div></div>'
+      + '<p class="lot-consume-info">Quedaran: <span id="lot-remaining-after">0</span> ' + escapeHtml(unitLbl) + '</p>';
+  } else {
+    const pctRem = Number.isFinite(lot.percentRemaining) ? Math.round(lot.percentRemaining) : 100;
+    bodyHtml = '<p class="modal-sub">Lot: ' + pctRem + '% restant</p>'
+      + '<div class="lot-consume-chips">'
+      + '<button type="button" class="cook-chip" data-pct="25">25%</button>'
+      + '<button type="button" class="cook-chip" data-pct="50">50%</button>'
+      + '<button type="button" class="cook-chip" data-pct="75">75%</button>'
+      + '<button type="button" class="cook-chip active" data-pct="100">100%</button>'
+      + '</div>'
+      + '<p class="lot-consume-info">Quedarà: <span id="lot-remaining-after">0</span>%</p>';
+  }
+
+  overlay.innerHTML = '<div class="modal-content lot-consume-modal">'
+    + '<div class="modal-emoji-big">' + (product.emoji || '🥫') + '</div>'
+    + '<p class="modal-title">' + icon + ' ' + verbInf + ' ' + escapeHtml(product.name) + '</p>'
+    + bodyHtml
+    + '<div class="modal-buttons">'
+    + '<button class="modal-cancel" id="lot-consume-cancel">Cancel·lar</button>'
+    + '<button class="modal-confirm" id="lot-consume-confirm">Confirmar</button>'
+    + '</div></div>';
+
+  document.body.appendChild(overlay);
+
+  const remainingAfterEl = overlay.querySelector('#lot-remaining-after');
+  let selectedAmount;
+
+  if (lot.consumptionMode === 'quantity') {
+    const input = overlay.querySelector('#lot-consume-amount');
+    selectedAmount = parseFloat(input.value) || 0;
+    const update = () => {
+      const v = parseFloat(input.value);
+      selectedAmount = Number.isFinite(v) && v >= 0 ? v : 0;
+      const after = Math.max(0, (lot.qtyRemaining || 0) - selectedAmount);
+      remainingAfterEl.textContent = Number.isInteger(after) ? String(after) : String(Math.round(after * 100) / 100);
+    };
+    update();
+    input.addEventListener('input', update);
+  } else {
+    selectedAmount = 100;
+    const update = () => {
+      const after = Math.max(0, (lot.percentRemaining || 100) - selectedAmount);
+      remainingAfterEl.textContent = String(after);
+    };
+    update();
+    overlay.querySelectorAll('.cook-chip').forEach(c => {
+      c.addEventListener('click', () => {
+        overlay.querySelectorAll('.cook-chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        selectedAmount = parseInt(c.dataset.pct, 10) || 0;
+        update();
+      });
+    });
+  }
+
+  overlay.querySelector('#lot-consume-cancel').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  overlay.querySelector('#lot-consume-confirm').addEventListener('click', () => {
+    const amount = selectedAmount;
+    if (lot.consumptionMode === 'quantity') {
+      if (!Number.isFinite(amount) || amount <= 0) {
+        showToast('Quantitat invàlida');
+        return;
+      }
+      if (amount > (lot.qtyRemaining || 0) + 0.0001) {
+        showToast('Quantitat superior al disponible (' + lot.qtyRemaining + ')');
+        return;
+      }
+    } else {
+      if (!Number.isFinite(amount) || amount <= 0 || amount > 100) {
+        showToast('Percentatge invàlid');
+        return;
+      }
+    }
+    document.body.removeChild(overlay);
+    _confirmLotConsume(product, lot, action, amount);
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
+}
+
+function _confirmLotConsume(product, lot, action, amount) {
+  if (!product || !lot) return;
+
+  // Re-busca referències vives dins de products[]. openProduct
+  // reconstrueix currentProduct entre edicions successives → la
+  // closure pot capturar una referència obsoleta (vegeu fix Fase D v2).
+  const realProduct = products.find(p => p.id === product.id);
+  if (!realProduct) {
+    console.warn('[_confirmLotConsume] producte no trobat:', product.id);
+    return;
+  }
+  const realLot = realProduct.lots && realProduct.lots.find(l => l.id === lot.id);
+  if (!realLot) {
+    console.warn('[_confirmLotConsume] lot no trobat:', lot.id);
+    return;
+  }
+
+  let consumedPercent;
+  if (realLot.consumptionMode === 'quantity') {
+    const startQty = realLot.qtyRemaining;
+    const newQty = startQty - amount;
+    if (newQty <= 0.001) {
+      consumedPercent = 100;
+      _registerConsumption(realProduct, realLot, action, consumedPercent);
+      _removeLotFromProduct(realProduct, realLot.id);
+    } else {
+      consumedPercent = startQty > 0 ? Math.round((amount / startQty) * 100) : 100;
+      realLot.qtyRemaining = newQty;
+      _registerConsumption(realProduct, realLot, action, consumedPercent);
+      _refreshProductMirrors(realProduct);
+    }
+  } else {
+    const startPct = realLot.percentRemaining || 100;
+    const newPct = startPct - amount;
+    consumedPercent = amount;
+    if (newPct <= 0) {
+      _registerConsumption(realProduct, realLot, action, consumedPercent);
+      _removeLotFromProduct(realProduct, realLot.id);
+    } else {
+      realLot.percentRemaining = newPct;
+      _registerConsumption(realProduct, realLot, action, consumedPercent);
+      _refreshProductMirrors(realProduct);
+    }
+  }
+
+  if (action === 'eat') stats.consumed++;
+  else stats.trashed++;
+
+  if (typeof addXp === 'function' && action === 'eat') {
+    let xp = Math.round(10 * consumedPercent / 100);
+    const days = (typeof daysUntil === 'function' && realLot.date) ? daysUntil(realLot.date) : null;
+    if (typeof days === 'number' && isFinite(days) && days <= 1) xp += 5;
+    addXp(xp, 'consumed');
+  } else if (typeof checkBadges === 'function' && action === 'trash') {
+    checkBadges();
+  }
+
+  if (!Array.isArray(realProduct.lots) || realProduct.lots.length === 0) {
+    products = products.filter(p => p.id !== realProduct.id);
+    saveData();
+    if (typeof updateStatsSub === 'function') updateStatsSub();
+    showToast('✓ Producte consumit del tot');
+    if (typeof renderHome === 'function') renderHome();
+    navigateAfterAction();
+    currentProduct = null;
+    return;
+  }
+
+  saveData();
+  if (typeof updateStatsSub === 'function') updateStatsSub();
+  openProduct(realProduct.id);
+  showToast(action === 'eat' ? '✓ Lot consumit' : '🗑️ Lot llençat');
+}
+
+function _registerConsumption(product, lot, action, consumedPercent) {
+  if (typeof recordConsumption !== 'function') return;
+  const productForRecord = Object.assign({}, product, {
+    price: lot.price,
+    qty: ''
+  });
+  recordConsumption(productForRecord, action === 'eat' ? 'consumed' : 'trashed', consumedPercent);
+}
+
+function openLotEditModal(product, lot) {
+  if (!product || !lot) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+
+  let qtyFieldHtml;
+  if (lot.consumptionMode === 'quantity') {
+    const unit = lot.unit || 'units';
+    const unitDisplay = unit === 'units' ? '' : _displayUnit(unit);
+    let step = '1';
+    if (unit === 'kg' || unit === 'l') step = '0.1';
+    else if (unit === 'g' || unit === 'ml') step = '50';
+    const qtyRem = Number.isFinite(lot.qtyRemaining) ? lot.qtyRemaining : 0;
+    qtyFieldHtml = '<div class="lot-edit-field">'
+      + '<label>Quantitat actual</label>'
+      + '<div class="lot-consume-input-row">'
+      + '<input type="number" id="lot-edit-qty" min="0" step="' + step + '" value="' + qtyRem + '" inputmode="decimal">'
+      + (unitDisplay ? '<span class="lot-consume-unit">' + escapeHtml(unitDisplay) + '</span>' : '')
+      + '</div></div>';
+  } else {
+    const pct = Number.isFinite(lot.percentRemaining) ? Math.round(lot.percentRemaining) : 100;
+    qtyFieldHtml = '<div class="lot-edit-field"><label>Quantitat actual</label>'
+      + '<div class="lot-consume-chips" id="lot-edit-qty-chips">'
+      + [100, 75, 50, 25].map(v =>
+          '<button type="button" class="cook-chip' + (v === pct ? ' active' : '') + '" data-pct="' + v + '">' + v + '%</button>'
+        ).join('')
+      + '</div>'
+      + '<input type="hidden" id="lot-edit-qty" value="' + pct + '">'
+      + '</div>';
+  }
+
+  const smList = (typeof supermarkets !== 'undefined' && Array.isArray(supermarkets)) ? supermarkets : [];
+  const currentSmName = lot.supermarket || '';
+  const smOptionsHtml = '<option value="">(Cap)</option>'
+    + smList.map(sm => {
+        const selected = sm && sm.name === currentSmName ? ' selected' : '';
+        return '<option value="' + escapeHtml(sm.id) + '"' + selected + '>'
+          + (sm.emoji ? escapeHtml(sm.emoji) + ' ' : '')
+          + escapeHtml(sm.name) + '</option>';
+      }).join('');
+
+  const dateVal = lot.date || '';
+  const noExpiry = !!lot.noExpiry;
+  const priceVal = (typeof lot.price === 'number') ? String(lot.price) : '';
+
+  overlay.innerHTML = '<div class="modal-content lot-edit-modal">'
+    + '<p class="modal-title">✏️ Editar lot</p>'
+    + qtyFieldHtml
+    + '<div class="lot-edit-field">'
+    + '<label>Data de caducitat</label>'
+    + '<input type="date" id="lot-edit-date" value="' + escapeHtml(dateVal) + '"' + (noExpiry ? ' disabled' : '') + '>'
+    + '<label class="lot-noexpiry-toggle">'
+    + '<input type="checkbox" id="lot-edit-noexpiry"' + (noExpiry ? ' checked' : '') + '> No caduca'
+    + '</label></div>'
+    + '<div class="lot-edit-field"><label>Preu (€)</label>'
+    + '<input type="text" id="lot-edit-price" inputmode="decimal" value="' + escapeHtml(priceVal) + '"></div>'
+    + '<div class="lot-edit-field"><label>Supermercat</label>'
+    + '<select id="lot-edit-supermarket">' + smOptionsHtml + '</select></div>'
+    + '<p class="lot-edit-note">📍 Per moure aquest lot a una altra ubicació, pendent per a la propera versió (Fase D2).</p>'
+    + '<div class="modal-buttons">'
+    + '<button class="modal-cancel" id="lot-edit-cancel">Cancel·lar</button>'
+    + '<button class="modal-confirm" id="lot-edit-confirm">Desar canvis</button>'
+    + '</div></div>';
+
+  document.body.appendChild(overlay);
+
+  const chipsEl = overlay.querySelector('#lot-edit-qty-chips');
+  if (chipsEl) {
+    chipsEl.querySelectorAll('.cook-chip').forEach(c => {
+      c.addEventListener('click', () => {
+        chipsEl.querySelectorAll('.cook-chip').forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        const hidden = overlay.querySelector('#lot-edit-qty');
+        if (hidden) hidden.value = c.dataset.pct;
+      });
+    });
+  }
+
+  const noExpiryEl = overlay.querySelector('#lot-edit-noexpiry');
+  const dateEl = overlay.querySelector('#lot-edit-date');
+  noExpiryEl.addEventListener('change', () => {
+    dateEl.disabled = !!noExpiryEl.checked;
+  });
+
+  overlay.querySelector('#lot-edit-cancel').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  overlay.querySelector('#lot-edit-confirm').addEventListener('click', () => {
+    const values = {
+      qtyRaw: overlay.querySelector('#lot-edit-qty').value,
+      date: overlay.querySelector('#lot-edit-date').value || null,
+      noExpiry: !!overlay.querySelector('#lot-edit-noexpiry').checked,
+      priceRaw: overlay.querySelector('#lot-edit-price').value,
+      supermarketId: overlay.querySelector('#lot-edit-supermarket').value || ''
+    };
+    document.body.removeChild(overlay);
+    _confirmLotEdit(product, lot, values);
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
+}
+
+function _confirmLotEdit(product, lot, v) {
+  if (!product || !lot || !v) return;
+
+  // Re-busca referències vives dins de products[]. La closure pot
+  // haver capturat una referència obsoleta — openProduct reconstrueix
+  // currentProduct després de cada edició (fix Fase D v2).
+  const realProduct = products.find(p => p.id === product.id);
+  if (!realProduct) {
+    console.warn('[_confirmLotEdit] producte no trobat:', product.id);
+    return;
+  }
+  const realLot = realProduct.lots && realProduct.lots.find(l => l.id === lot.id);
+  if (!realLot) {
+    console.warn('[_confirmLotEdit] lot no trobat:', lot.id);
+    return;
+  }
+
+  const newQty = parseFloat(String(v.qtyRaw).replace(',', '.'));
+  if (realLot.consumptionMode === 'quantity') {
+    if (Number.isFinite(newQty) && newQty >= 0) realLot.qtyRemaining = newQty;
+  } else {
+    if (Number.isFinite(newQty) && newQty >= 0 && newQty <= 100) realLot.percentRemaining = newQty;
+  }
+
+  realLot.noExpiry = !!v.noExpiry;
+  realLot.date = v.noExpiry ? null : v.date;
+
+  if (v.priceRaw && String(v.priceRaw).trim()) {
+    const cleaned = String(v.priceRaw).replace(',', '.').trim();
+    const num = parseFloat(cleaned);
+    if (Number.isFinite(num) && num >= 0) realLot.price = num;
+    else delete realLot.price;
+  } else {
+    delete realLot.price;
+  }
+
+  if (v.supermarketId) {
+    const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(v.supermarketId) : null;
+    realLot.supermarket = sm ? sm.name : null;
+  } else {
+    realLot.supermarket = null;
+  }
+
+  if (realLot.consumptionMode === 'quantity' && realLot.qtyRemaining <= 0) {
+    _removeLotFromProduct(realProduct, realLot.id);
+  } else if (realLot.consumptionMode === 'percent' && realLot.percentRemaining <= 0) {
+    _removeLotFromProduct(realProduct, realLot.id);
+  } else {
+    _refreshProductMirrors(realProduct);
+  }
+
+  if (!Array.isArray(realProduct.lots) || realProduct.lots.length === 0) {
+    products = products.filter(p => p.id !== realProduct.id);
+    saveData();
+    showToast('Producte eliminat');
+    if (typeof renderHome === 'function') renderHome();
+    navigateAfterAction();
+    currentProduct = null;
+    return;
+  }
+
+  saveData();
+  openProduct(realProduct.id);
+  showToast('✓ Lot actualitzat');
+}
+
+function openProductEditModal(product) {
+  if (!product) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+
+  const catKey = product.popularId || product.id;
+  let currentCatId = 'cat_other';
+  let cats = [];
+  if (window.CategoriesSystem) {
+    if (typeof window.CategoriesSystem.getItemCategory === 'function') {
+      currentCatId = window.CategoriesSystem.getItemCategory(catKey) || 'cat_other';
+    }
+    if (typeof window.CategoriesSystem.getCategories === 'function') {
+      cats = window.CategoriesSystem.getCategories().slice().sort((a, b) =>
+        (a.order || 0) - (b.order || 0)
+      );
+    }
+  }
+  const catOptionsHtml = cats.map(c =>
+    '<option value="' + escapeHtml(c.id) + '"' + (c.id === currentCatId ? ' selected' : '') + '>'
+    + (c.icon ? escapeHtml(c.icon) + ' ' : '') + escapeHtml(c.name) + '</option>'
+  ).join('');
+
+  overlay.innerHTML = '<div class="modal-content product-edit-modal">'
+    + '<p class="modal-title">✏️ Editar producte</p>'
+    + '<div class="lot-edit-field"><label>Nom</label>'
+    + '<input type="text" id="product-edit-name" value="' + escapeHtml(product.name || '') + '"></div>'
+    + '<div class="lot-edit-field"><label>Emoji</label>'
+    + '<input type="text" id="product-edit-emoji" value="' + escapeHtml(product.emoji || '') + '" maxlength="4"></div>'
+    + (cats.length > 0
+        ? '<div class="lot-edit-field"><label>Categoria</label>'
+          + '<select id="product-edit-category">' + catOptionsHtml + '</select></div>'
+        : '')
+    + '<p class="lot-edit-note">ℹ️ Quantitat, preu, data i supermercat es gestionen per lot.</p>'
+    + '<div class="modal-buttons">'
+    + '<button class="modal-cancel" id="product-edit-cancel">Cancel·lar</button>'
+    + '<button class="modal-confirm" id="product-edit-confirm">Desar canvis</button>'
+    + '</div></div>';
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#product-edit-cancel').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+  overlay.querySelector('#product-edit-confirm').addEventListener('click', () => {
+    const catEl = overlay.querySelector('#product-edit-category');
+    const values = {
+      name: overlay.querySelector('#product-edit-name').value.trim(),
+      emoji: overlay.querySelector('#product-edit-emoji').value.trim(),
+      categoryId: catEl ? catEl.value : null
+    };
+    if (!values.name) {
+      showToast('El nom és obligatori');
+      return;
+    }
+    document.body.removeChild(overlay);
+    _confirmProductEdit(product, values);
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) document.body.removeChild(overlay);
+  });
+}
+
+function _confirmProductEdit(product, v) {
+  if (!product || !v) return;
+
+  // Re-busca referència viva (fix Fase D v2: closures poden tenir
+  // referències obsoletes després de successius openProduct).
+  const realProduct = products.find(p => p.id === product.id);
+  if (!realProduct) {
+    console.warn('[_confirmProductEdit] producte no trobat:', product.id);
+    return;
+  }
+
+  realProduct.name = v.name;
+  if (v.emoji) realProduct.emoji = v.emoji;
+
+  if (v.categoryId && window.CategoriesSystem && typeof window.CategoriesSystem.setItemCategory === 'function') {
+    const catKey = realProduct.popularId || realProduct.id;
+    window.CategoriesSystem.setItemCategory(catKey, v.categoryId);
+  }
+
+  saveData();
+  openProduct(realProduct.id);
+  showToast('✓ Producte actualitzat');
+}
+
+function _deleteLot(product, lotId) {
+  if (!product || !lotId) return;
+  _confirmModal('Esborrar aquest lot?', () => {
+    // Re-busca referència viva al moment de confirmar (fix Fase D v2).
+    const realProduct = products.find(p => p.id === product.id);
+    if (!realProduct) {
+      console.warn('[_deleteLot] producte no trobat:', product.id);
+      return;
+    }
+    _removeLotFromProduct(realProduct, lotId);
+    if (!Array.isArray(realProduct.lots) || realProduct.lots.length === 0) {
+      products = products.filter(p => p.id !== realProduct.id);
+      saveData();
+      showToast('Producte eliminat');
+      if (typeof renderHome === 'function') renderHome();
+      navigateAfterAction();
+      currentProduct = null;
+      return;
+    }
+    saveData();
+    openProduct(realProduct.id);
+    showToast('Lot eliminat');
+  }, { title: 'Esborrar lot', confirmLabel: 'Esborrar', cancelLabel: 'Cancel·lar', danger: true });
 }
 
 // API exposada per a altres mòduls. settings.js:onRemoteData fa servir
@@ -1119,6 +1696,10 @@ if (typeof window !== 'undefined') {
   window._createV2ProductWithLot = _createV2ProductWithLot;
   window._addLotToProduct = _addLotToProduct;
   window._removeLotFromProduct = _removeLotFromProduct;
+  // Fase D v2 — modals per lot + edició mínima de producte
+  window.openLotConsumeModal = openLotConsumeModal;
+  window.openLotEditModal = openLotEditModal;
+  window.openProductEditModal = openProductEditModal;
 }
 
 // DADES
@@ -2169,13 +2750,30 @@ function openProduct(id) {
     try { window.refreshMoveProductBtn(); } catch (e) {}
   }
 
-  // Secció "Lots" (Fase C+): només es mostra si el producte té >1
-  // lot. _renderLotsSection retorna '' altrament. Read-only —
-  // les accions per lot venen a Fase D.
+  // Secció "Lots" (Fase D v2): cada fila té botons interactius
+  // (✓ Menjar / 🗑️ Llençar / ✏️ Editar / ⋯ Més). _bindLotActions
+  // delega click sobre tots ells. Per a productes legacy (no __v:2)
+  // _renderLotsSection retorna '' (només es mostra si lots.length > 1).
   const lotsContainer = document.getElementById('product-lots-section');
   if (lotsContainer) {
     lotsContainer.innerHTML = _renderLotsSection(p);
+    _bindLotActions(lotsContainer, p);
   }
+
+  // Fase D v2: per a productes __v:2 amaguem els 3 botons centrals
+  // d'acció (✓/🗑/✕) i el label "Què vols fer?". Les accions de consum
+  // viuen per lot. Els botons add-to-buyme, recipes-from-product i
+  // move-product queden visibles per a tots els productes.
+  const isV2 = p.__v === 2 && Array.isArray(p.lots);
+  const actionsEl = document.querySelector('#screen-product .actions');
+  const whatToDoEl = document.querySelector('#screen-product .section-label[data-i18n="whatToDo"]');
+  if (actionsEl) actionsEl.style.display = isV2 ? 'none' : '';
+  if (whatToDoEl) whatToDoEl.style.display = isV2 ? 'none' : '';
+
+  // Fase D v2: el botó "Editar producte" central té un dataset que
+  // indica si és v2 o legacy. El handler a app.js fa la branca.
+  const editBtn = document.getElementById('btn-edit-product');
+  if (editBtn) editBtn.dataset.v2 = isV2 ? '1' : '0';
 
   showScreen('product');
 }

@@ -10240,3 +10240,188 @@ body.selection-mode-active #shops-slider .arrow-btn {
   font-weight: 600;
   color: var(--primary);
 }
+
+/* ============================================
+   Fase D v2 — accions per lot, menú "⋯ Més" i modals
+   ============================================ */
+.lot-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.lot-action-btn {
+  padding: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  flex: 1;
+  min-width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.lot-eat-btn { color: #2E7D32; border-color: #66BB6A; }
+.lot-eat-btn:active { background: #E8F5E9; }
+.lot-trash-btn { color: #C62828; border-color: #EF5350; }
+.lot-trash-btn:active { background: #FFEBEE; }
+.lot-edit-btn:active { background: var(--bg-card); }
+.lot-more-btn:active { background: var(--bg-card); }
+
+.lot-more-menu {
+  position: absolute;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: none;
+  min-width: 160px;
+}
+.lot-more-menu.open { display: block; }
+.lot-more-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.lot-more-menu button:active { background: var(--bg); }
+.lot-more-menu .lot-delete-btn { color: #C62828; }
+
+.lot-consume-modal .modal-sub {
+  font-size: 13px;
+  color: var(--text-soft);
+  text-align: center;
+  margin: 0 0 14px;
+}
+.lot-consume-input {
+  margin: 14px 0 6px;
+}
+.lot-consume-input label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-bottom: 6px;
+}
+.lot-consume-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lot-consume-input-row input[type="number"] {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+}
+.lot-consume-unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-soft);
+  min-width: 30px;
+}
+.lot-consume-info {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 12px 0 0;
+}
+.lot-consume-info span {
+  font-weight: 700;
+  color: var(--primary);
+}
+.lot-consume-chips {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.lot-consume-chips .cook-chip {
+  flex: 1;
+  min-width: 60px;
+  padding: 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.lot-consume-chips .cook-chip.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.lot-edit-modal .lot-edit-field,
+.product-edit-modal .lot-edit-field {
+  margin-bottom: 12px;
+}
+.lot-edit-modal .lot-edit-field > label,
+.product-edit-modal .lot-edit-field > label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.lot-edit-modal .lot-edit-field input[type="number"],
+.lot-edit-modal .lot-edit-field input[type="text"],
+.lot-edit-modal .lot-edit-field input[type="date"],
+.lot-edit-modal .lot-edit-field select,
+.product-edit-modal .lot-edit-field input[type="text"],
+.product-edit-modal .lot-edit-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.lot-noexpiry-toggle {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-soft);
+  margin-top: 6px;
+  font-weight: 400 !important;
+  cursor: pointer;
+}
+.lot-noexpiry-toggle input[type="checkbox"] {
+  margin: 0;
+}
+.lot-edit-note {
+  font-size: 12px;
+  color: var(--text-soft);
+  background: var(--bg);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin: 12px 0 0;
+  line-height: 1.4;
+}

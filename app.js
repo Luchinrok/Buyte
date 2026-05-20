@@ -160,11 +160,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof quickBuyMultipleSelected === 'function') quickBuyMultipleSelected();
   });
 
-  // Botó únic "Editar producte" — reutilitza screen-add en mode edició
+  // Botó únic "Editar producte". Fase D v2: per a productes __v:2
+  // obre un modal mínim (nom + emoji + categoria); per a legacy
+  // reusa el formulari complet de screen-add. La distinció es fa
+  // via dataset.v2 que assigna openProduct (js/biteme.js).
   const btnEditProduct = document.getElementById('btn-edit-product');
   if (btnEditProduct) btnEditProduct.addEventListener('click', () => {
     if (!currentProduct) return;
-    openEditProductForm(currentProduct);
+    const isV2 = btnEditProduct.dataset.v2 === '1';
+    if (isV2 && typeof openProductEditModal === 'function') {
+      openProductEditModal(currentProduct);
+    } else {
+      openEditProductForm(currentProduct);
+    }
   });
 
 
