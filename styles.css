@@ -10355,6 +10355,12 @@ body.selection-mode-active #shops-slider .arrow-btn {
   flex-wrap: wrap;
   justify-content: center;
 }
+.lot-consume-or {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 6px 0 4px;
+}
 .lot-consume-chips .cook-chip {
   flex: 1;
   min-width: 60px;

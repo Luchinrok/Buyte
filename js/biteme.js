@@ -661,6 +661,23 @@ function _displayUnit(unit) {
   return unit || '';
 }
 
+// Helper centralitzat per a mostrar la quantitat d'un lot. Retorna
+// "0.75 kg" / "125 g" / "0.187 L" / "4" (unitats) / "60%" segons
+// el mode. Arrodoneix a 3 decimals per a coherència amb el valor
+// desat a lot.qtyRemaining (vegeu _confirmLotConsume, _confirmLotEdit).
+function _formatLotQty(lot) {
+  if (!lot) return '';
+  if (lot.consumptionMode === 'quantity' && Number.isFinite(lot.qtyRemaining)) {
+    const val = Math.round(lot.qtyRemaining * 1000) / 1000;
+    const unit = (lot.unit && lot.unit !== 'units') ? _displayUnit(lot.unit) : '';
+    return val + unit;
+  }
+  if (lot.consumptionMode === 'percent' && Number.isFinite(lot.percentRemaining)) {
+    return lot.percentRemaining + '%';
+  }
+  return '';
+}
+
 // Genera el string qty agregat a partir dels lots. Estratègia:
 //   - Suma unitats COMPATIBLES (g+kg → grams interns; ml+L → ml interns)
 //     i tria la unitat de display segons el total:
@@ -1078,16 +1095,10 @@ function _renderLotsSection(product) {
 function _renderLotRow(lot) {
   if (!lot) return '';
 
-  // Quantitat formatejada (mateixa convenció que _computeAggregatedQty).
-  let qtyText = '';
-  if (lot.consumptionMode === 'quantity' && Number.isFinite(lot.qtyRemaining)) {
-    const u = lot.unit === 'units' ? '' : _displayUnit(lot.unit);
-    const v = Number.isInteger(lot.qtyRemaining)
-      ? String(lot.qtyRemaining)
-      : String(Math.round(lot.qtyRemaining * 100) / 100);
-    qtyText = v + u;
-  } else if (lot.consumptionMode === 'percent') {
-    qtyText = (typeof lot.percentRemaining === 'number' ? Math.round(lot.percentRemaining) : 100) + '%';
+  // Quantitat formatejada (helper centralitzat — vegeu _formatLotQty).
+  let qtyText = _formatLotQty(lot);
+  if (!qtyText && lot.consumptionMode === 'percent') {
+    qtyText = '100%';
   }
 
   // Data
@@ -1253,9 +1264,16 @@ function openLotConsumeModal(product, lot, action) {
     let step = '1';
     if (unit === 'kg' || unit === 'l') step = '0.1';
     else if (unit === 'g' || unit === 'ml') step = '50';
-    const fmtNum = n => Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+    const fmtNum = n => Number.isInteger(n) ? String(n) : String(Math.round(n * 1000) / 1000);
     const unitLbl = unitDisplay || 'unitats';
     bodyHtml = '<p class="modal-sub">Lot: ' + escapeHtml(fmtNum(qtyInit) + (unitDisplay || ' u')) + ' inicial, queda ' + escapeHtml(fmtNum(qtyRem) + (unitDisplay || ' u')) + '</p>'
+      + '<div class="lot-consume-chips">'
+      + '<button type="button" class="cook-chip" data-pct="25">25%</button>'
+      + '<button type="button" class="cook-chip" data-pct="50">50%</button>'
+      + '<button type="button" class="cook-chip" data-pct="75">75%</button>'
+      + '<button type="button" class="cook-chip active" data-pct="100">100%</button>'
+      + '</div>'
+      + '<p class="lot-consume-or">o</p>'
       + '<div class="lot-consume-input">'
       + '<label>Quants ' + escapeHtml(unitLbl) + ' has ' + verbPp + '?</label>'
       + '<div class="lot-consume-input-row">'
@@ -1292,13 +1310,55 @@ function openLotConsumeModal(product, lot, action) {
   if (lot.consumptionMode === 'quantity') {
     const input = overlay.querySelector('#lot-consume-amount');
     selectedAmount = parseFloat(input.value) || 0;
+    const chips = overlay.querySelectorAll('.lot-consume-chips .cook-chip');
+
+    const updateRemainingDisplay = () => {
+      const after = Math.max(0, (lot.qtyRemaining || 0) - selectedAmount);
+      remainingAfterEl.textContent = Number.isInteger(after) ? String(after) : String(Math.round(after * 1000) / 1000);
+    };
+
+    // Marca el chip que coincideix EXACTAMENT amb la qty triada.
+    // Cap si no n'hi ha (l'usuari ha posat un valor lliure).
+    const refreshChipState = () => {
+      const total = lot.qtyRemaining || 0;
+      if (!total) { chips.forEach(c => c.classList.remove('active')); return; }
+      const pct = (selectedAmount / total) * 100;
+      let matched = null;
+      chips.forEach(c => {
+        const cp = parseFloat(c.dataset.pct);
+        if (Math.abs(cp - pct) < 0.5) matched = c;
+      });
+      chips.forEach(c => c.classList.toggle('active', c === matched));
+    };
+
+    // Click chip → valor exacte (pct/100 del total), només arrodonit
+    // a 3 decimals per evitar imprecisions de floats. NO s'arrodoneix
+    // al step de l'input — el chip ha de retornar el valor exacte
+    // (25% de 1 kg = 0.25 kg, no 0.3 kg).
+    chips.forEach(c => {
+      c.addEventListener('click', () => {
+        const pct = parseInt(c.dataset.pct, 10) || 0;
+        const total = lot.qtyRemaining || 0;
+        // 100% mapeja directament a qtyRemaining per evitar drift
+        // d'arrodoniment quan qtyRemaining no és múltiple net.
+        let amt = pct === 100 ? total : Math.round((total * pct / 100) * 1000) / 1000;
+        amt = Math.max(0, Math.min(total, amt));
+        selectedAmount = amt;
+        input.value = Number.isInteger(amt) ? String(amt) : String(Math.round(amt * 1000) / 1000);
+        chips.forEach(x => x.classList.remove('active'));
+        c.classList.add('active');
+        updateRemainingDisplay();
+      });
+    });
+
     const update = () => {
       const v = parseFloat(input.value);
       selectedAmount = Number.isFinite(v) && v >= 0 ? v : 0;
-      const after = Math.max(0, (lot.qtyRemaining || 0) - selectedAmount);
-      remainingAfterEl.textContent = Number.isInteger(after) ? String(after) : String(Math.round(after * 100) / 100);
+      refreshChipState();
+      updateRemainingDisplay();
     };
-    update();
+    updateRemainingDisplay();
+    refreshChipState(); // 100% actiu per defecte (selectedAmount = qtyRemaining)
     input.addEventListener('input', update);
   } else {
     selectedAmount = 100;
@@ -1328,7 +1388,7 @@ function openLotConsumeModal(product, lot, action) {
         return;
       }
       if (amount > (lot.qtyRemaining || 0) + 0.0001) {
-        showToast('Quantitat superior al disponible (' + lot.qtyRemaining + ')');
+        showToast('Quantitat superior al disponible (' + _formatLotQty(lot) + ')');
         return;
       }
     } else {
@@ -1372,7 +1432,8 @@ function _confirmLotConsume(product, lot, action, amount) {
       _removeLotFromProduct(realProduct, realLot.id);
     } else {
       consumedPercent = startQty > 0 ? Math.round((amount / startQty) * 100) : 100;
-      realLot.qtyRemaining = newQty;
+      // Arrodoniment a 3 decimals per evitar drift de float (0.74999... → 0.75)
+      realLot.qtyRemaining = Math.round(newQty * 1000) / 1000;
       _registerConsumption(realProduct, realLot, action, consumedPercent);
       _refreshProductMirrors(realProduct);
     }
@@ -1573,7 +1634,8 @@ function _confirmLotEdit(product, lot, v) {
 
   const newQty = parseFloat(String(v.qtyRaw).replace(',', '.'));
   if (realLot.consumptionMode === 'quantity') {
-    if (Number.isFinite(newQty) && newQty >= 0) realLot.qtyRemaining = newQty;
+    // Arrodoniment a 3 decimals (mateix patró que _confirmLotConsume).
+    if (Number.isFinite(newQty) && newQty >= 0) realLot.qtyRemaining = Math.round(newQty * 1000) / 1000;
   } else {
     if (Number.isFinite(newQty) && newQty >= 0 && newQty <= 100) realLot.percentRemaining = newQty;
   }
@@ -1828,9 +1890,9 @@ function _openMoveLotModal(product, lot) {
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
-  const lotQtyDisplay = lot.consumptionMode === 'quantity'
-    ? ((lot.qtyRemaining || 0) + (lot.unit && lot.unit !== 'units' ? _displayUnit(lot.unit) : ' u'))
-    : ((lot.percentRemaining || 100) + '%');
+  // Display via helper centralitzat (3 decimals, mateix format que
+  // la fila del lot al detall).
+  const lotQtyDisplay = _formatLotQty(lot) || ((lot.percentRemaining || 100) + '%');
   overlay.innerHTML = '<div class="modal-content move-lot-modal">'
     + '<p class="modal-title">🚚 Moure lot</p>'
     + '<p class="modal-sub">' + escapeHtml(lotQtyDisplay) + ' de '
