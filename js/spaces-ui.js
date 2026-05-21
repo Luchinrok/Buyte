@@ -263,7 +263,7 @@ if (typeof document !== 'undefined') {
 // escrivim al Firebase del destí, i NOMÉS si això té èxit esborrem el
 // producte de l'origen. Si falla a meitat, l'usuari té el producte
 // als 2 llocs (un duplicat és preferible a perdre dades).
-function _refreshMoveProductBtn() {
+function _refreshMoveProductBtn(product) {
   const btn = document.getElementById('btn-move-product');
   if (!btn) return;
   const SS = window.SpacesSystem;
@@ -272,7 +272,15 @@ function _refreshMoveProductBtn() {
     : [];
   // Amaguem el botó si no hi ha cap destí. Així evitem mostrar una
   // acció que sempre seria un dead-end ("no hi ha cap espai").
-  btn.style.display = targets.length > 0 ? 'flex' : 'none';
+  let visible = targets.length > 0;
+  // Fase D2 final: per a productes multi-lot el botó central no té
+  // sentit (els lots poden tenir caducitats/preus diferents). L'usuari
+  // ha d'usar "🚚 Moure" del menú "⋯" de cada lot.
+  if (visible && product && product.__v === 2
+      && Array.isArray(product.lots) && product.lots.length > 1) {
+    visible = false;
+  }
+  btn.style.display = visible ? 'flex' : 'none';
 }
 window.refreshMoveProductBtn = _refreshMoveProductBtn;
 

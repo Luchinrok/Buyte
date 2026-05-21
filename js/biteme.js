@@ -3188,9 +3188,12 @@ function openProduct(id) {
   const backBtn = document.querySelector('#screen-product .back-btn');
   if (backBtn) backBtn.dataset.back = productDetailBack;
   // Visibilitat del botó "Moure a un altre Espai" — depèn de si hi
-  // ha algun altre Espai amb syncCode disponible (Fase A de Spaces).
+  // ha algun altre Espai amb syncCode disponible (Fase A de Spaces) i,
+  // per a productes v2 multi-lot, també queda amagat (Fase D2 final:
+  // moure tot el producte amb el botó central no té sentit; cal usar
+  // "🚚 Moure" del menú "⋯" de cada lot).
   if (typeof window.refreshMoveProductBtn === 'function') {
-    try { window.refreshMoveProductBtn(); } catch (e) {}
+    try { window.refreshMoveProductBtn(p); } catch (e) {}
   }
 
   // Secció "Lots" (Fase D v2): cada fila té botons interactius
