@@ -367,6 +367,13 @@
       <div style="width:40px"></div>
     </header>
 
+    <!-- Cercador (filtre per nom de producte). El valor es manté
+         entre canvis de mode del toolbar. Diacrítics i case s'ignoren. -->
+    <div class="view-all-search-bar">
+      <input type="search" id="view-all-search" class="view-all-search-input" autocomplete="off">
+      <button type="button" id="view-all-search-clear" class="view-all-search-clear" hidden aria-label="Clear">✕</button>
+    </div>
+
     <div class="view-all-toolbar">
       <button class="popular-tool-btn" id="btn-sort-by-expiry">
         ⏰ <span data-i18n="sortByExpiry"></span>

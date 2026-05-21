@@ -82,8 +82,45 @@ function _calendarStartOfDay(d) {
 }
 
 function openViewAll() {
+  // Placeholder traduït (mateix patró que openEmojiPicker amb
+  // searchEmojiPlaceholder).
+  const search = document.getElementById('view-all-search');
+  if (search) search.placeholder = t('searchProduct');
+  // Cerca neteja a cada entrada de la pantalla (decisió de l'usuari).
+  _resetViewAllSearch();
   renderViewAll();
   showScreen('view-all');
+}
+
+// Buidar el cercador i amagar el botó X. Cridat a cada entrada
+// (botó menú, smart-notifications, back-btn, navigateAfterAction).
+function _resetViewAllSearch() {
+  const search = document.getElementById('view-all-search');
+  const clearBtn = document.getElementById('view-all-search-clear');
+  if (search) search.value = '';
+  if (clearBtn) clearBtn.hidden = true;
+}
+
+// Helpers de cerca: cas-insensitive + diacrítics ignorats.
+function _normalizeForSearch(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function _getViewAllSearchQuery() {
+  const el = document.getElementById('view-all-search');
+  if (!el) return '';
+  return String(el.value || '').trim();
+}
+
+// Llista de productes filtrada per la query actual del cercador
+// view-all. Si la query és buida, retorna `products` tal qual.
+// Usat per renderViewAll (modes expiry/zone) i _productsForDate
+// (mode calendar) perquè el filtre s'aplica a TOTS els modes.
+function _getFilteredViewAllProducts() {
+  const q = _getViewAllSearchQuery();
+  if (!q) return products;
+  const nq = _normalizeForSearch(q);
+  return products.filter(p => _normalizeForSearch(p.name).includes(nq));
 }
 
 function renderViewAll() {
@@ -110,15 +147,18 @@ function renderViewAll() {
     return;
   }
 
-  if (products.length === 0) {
+  const filteredProducts = _getFilteredViewAllProducts();
+  const hasQuery = _getViewAllSearchQuery().length > 0;
+
+  if (filteredProducts.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'empty-state';
-    empty.textContent = t('noProducts');
+    empty.textContent = hasQuery ? 'Cap producte coincideix amb la cerca.' : t('noProducts');
     container.appendChild(empty);
     return;
   }
 
-  let sorted = [...products];
+  let sorted = [...filteredProducts];
   if (viewAllSortMode === 'expiry') {
     sorted.sort((a, b) => {
       const da = daysUntil(a.date);
@@ -289,9 +329,11 @@ function _calendarNavLabel() {
 }
 
 // Productes que caduquen exactament un dia donat (Date local).
+// Respecta el filtre de cerca de la pantalla "Tot" — així el
+// calendari també filtra per la query activa.
 function _productsForDate(date) {
   const target = formatDateLocal(date);
-  return products.filter(p => p.date === target);
+  return _getFilteredViewAllProducts().filter(p => p.date === target);
 }
 
 // Etiqueta "Avui" / "Demà" / nom del dia segons l'offset respecte avui.
@@ -3247,6 +3289,7 @@ function navigateAfterAction() {
       showScreen('alerts');
       return;
     case 'view-all':
+      if (typeof _resetViewAllSearch === 'function') _resetViewAllSearch();
       if (typeof renderViewAll === 'function') renderViewAll();
       showScreen('view-all');
       return;

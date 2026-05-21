@@ -288,7 +288,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // del detall del producte i hem editat qty, data, zona, etc.)
       if (target === 'shopping') renderSupermarkets();
       else if (target === 'supermarket') renderShoppingItems();
-      else if (target === 'view-all' && typeof renderViewAll === 'function') renderViewAll();
+      else if (target === 'view-all' && typeof renderViewAll === 'function') {
+        if (typeof _resetViewAllSearch === 'function') _resetViewAllSearch();
+        renderViewAll();
+      }
       else if (target === 'what-i-have' && typeof renderWhatIHave === 'function') renderWhatIHave();
       else if (target === 'home' && typeof renderHome === 'function') renderHome();
       else if (target === 'alerts' && typeof renderAlerts === 'function') renderAlerts();
@@ -583,6 +586,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof resetCalendarState === 'function') resetCalendarState();
     renderViewAll();
   });
+
+  // Cercador a la pantalla "Tot". El valor es manté entre canvis
+  // de mode del toolbar (caducitat / zona / calendari).
+  const viewAllSearch = document.getElementById('view-all-search');
+  const viewAllSearchClear = document.getElementById('view-all-search-clear');
+  if (viewAllSearch && viewAllSearchClear) {
+    viewAllSearch.addEventListener('input', () => {
+      viewAllSearchClear.hidden = !viewAllSearch.value;
+      if (typeof renderViewAll === 'function') renderViewAll();
+    });
+    viewAllSearchClear.addEventListener('click', () => {
+      viewAllSearch.value = '';
+      viewAllSearchClear.hidden = true;
+      if (typeof renderViewAll === 'function') renderViewAll();
+      viewAllSearch.focus();
+    });
+  }
 
   // (Notificacions des de Configuració es despatxa via data-action des del
   // delegate de #settings-content.)

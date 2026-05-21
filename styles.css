@@ -10442,3 +10442,48 @@ body.selection-mode-active #shops-slider .arrow-btn {
   opacity: 0.5;
   pointer-events: none;
 }
+
+/* ============================================
+   Cercador a la pantalla "Tot" del EatMe
+   ============================================ */
+.view-all-search-bar {
+  position: relative;
+  padding: 8px 12px 4px;
+}
+.view-all-search-input {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 36px 10px 14px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: inherit;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.view-all-search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.view-all-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.view-all-search-clear {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-soft);
+  padding: 6px 8px;
+  line-height: 1;
+}
+.view-all-search-clear:active {
+  color: var(--text);
+}
