@@ -1527,6 +1527,11 @@ function _confirmLotConsume(product, lot, action, amount) {
     if (typeof renderHome === 'function') renderHome();
     navigateAfterAction();
     currentProduct = null;
+    // Oferir afegir al BuyMe (mateix patró que finalizeConsumption del
+    // camí legacy). Skip si ja és al BuyMe.
+    if (!_isProductInBuyMe(realProduct.name) && typeof askAddToShoppingList === 'function') {
+      setTimeout(() => askAddToShoppingList(realProduct), 600);
+    }
     return;
   }
 
@@ -1534,6 +1539,15 @@ function _confirmLotConsume(product, lot, action, amount) {
   if (typeof updateStatsSub === 'function') updateStatsSub();
   openProduct(realProduct.id);
   showToast(action === 'eat' ? '✓ Lot consumit' : '🗑️ Lot llençat');
+}
+
+// Comprovació "ja és al BuyMe" per evitar oferir afegir-lo dues vegades
+// quan consumes l'últim lot. Match case-insensitive per nom — coherent
+// amb la resta de matches de l'app.
+function _isProductInBuyMe(name) {
+  if (!name || typeof shoppingItems === 'undefined' || !Array.isArray(shoppingItems)) return false;
+  const key = String(name).toLowerCase().trim();
+  return shoppingItems.some(it => it && it.name && String(it.name).toLowerCase().trim() === key);
 }
 
 function _registerConsumption(product, lot, action, consumedPercent) {
