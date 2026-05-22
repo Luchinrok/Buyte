@@ -1605,6 +1605,7 @@ function openLotEditModal(product, lot) {
   const dateVal = lot.date || '';
   const noExpiry = !!lot.noExpiry;
   const priceVal = (typeof lot.price === 'number') ? String(lot.price) : '';
+  const weightVal = lot.weight ? String(lot.weight) : '';
 
   overlay.innerHTML = '<div class="modal-content lot-edit-modal">'
     + '<p class="modal-title">✏️ Editar lot</p>'
@@ -1617,6 +1618,8 @@ function openLotEditModal(product, lot) {
     + '</label></div>'
     + '<div class="lot-edit-field"><label>Preu (€)</label>'
     + '<input type="text" id="lot-edit-price" inputmode="decimal" value="' + escapeHtml(priceVal) + '"></div>'
+    + '<div class="lot-edit-field"><label>Contingut per envàs (opcional)</label>'
+    + '<input type="text" id="lot-edit-weight" placeholder="500g, 1L, 1kg..." maxlength="15" value="' + escapeHtml(weightVal) + '"></div>'
     + '<div class="lot-edit-field"><label>Supermercat</label>'
     + '<div class="category-picker-wrap">'
     + '<button type="button" class="category-picker-btn" id="lot-edit-supermarket-picker-btn">'
@@ -1671,6 +1674,7 @@ function openLotEditModal(product, lot) {
       date: overlay.querySelector('#lot-edit-date').value || null,
       noExpiry: !!overlay.querySelector('#lot-edit-noexpiry').checked,
       priceRaw: overlay.querySelector('#lot-edit-price').value,
+      weightRaw: overlay.querySelector('#lot-edit-weight').value,
       supermarketId: smBtn ? (smBtn.dataset.value || '') : ''
     };
     destroySmPicker();
@@ -1728,6 +1732,12 @@ function _confirmLotEdit(product, lot, v) {
   } else {
     realLot.supermarket = null;
   }
+
+  // Weight (text lliure: "500g", "1L", "12u"...). Buit → eliminem el
+  // camp. _computeAggregatedQty és tolerant amb formats no parsejables.
+  const weightTrimmed = (typeof v.weightRaw === 'string') ? v.weightRaw.trim() : '';
+  if (weightTrimmed) realLot.weight = weightTrimmed;
+  else delete realLot.weight;
 
   if (realLot.consumptionMode === 'quantity' && realLot.qtyRemaining <= 0) {
     _removeLotFromProduct(realProduct, realLot.id);
