@@ -1044,20 +1044,37 @@
     </div>
 
     <div class="form-group">
+      <label data-i18n="quantity" for="input-qty"></label>
+      <input type="text" id="input-qty" placeholder="1, 2, 6..." maxlength="20" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label data-i18n="weightLabel" for="input-weight"></label>
+      <input type="text" id="input-weight" placeholder="500g, 1L, 1kg..." maxlength="15" autocomplete="off">
+      <p class="form-hint" data-i18n="weightHint"></p>
+    </div>
+
+    <div class="form-group">
       <label data-i18n="priceLabel" for="input-price"></label>
       <!-- type="text" — vegeu el comentari paral·lel a #input-shopping-price. -->
       <input type="text" id="input-price" inputmode="decimal" placeholder="2.50" autocomplete="off" maxlength="10">
     </div>
 
-    <div class="form-group">
-      <label data-i18n="weightLabel" for="input-weight"></label>
-      <input type="text" id="input-weight" placeholder="500g, 1kg, 1L..." maxlength="15" autocomplete="off">
-      <p class="form-hint" data-i18n="weightHint"></p>
+    <!-- Toggle multi-lot. Marcat = saveNewProduct crea N lots separats
+         (1 per envàs físic). Desmarcat = 1 sol lot amb qty=N unitats. -->
+    <div class="form-group form-toggle-group">
+      <label class="form-toggle-label">
+        <input type="checkbox" id="input-multi-lots">
+        <span>Crear envasos separats (lots independents)</span>
+      </label>
+      <p class="form-hint">Marca aquesta opció si compres més d'un envàs físic independent (ex: 4 paquets de formatge). Si compres un pack sencer (ex: pack de 4 iogurts), deixa-ho desmarcat.</p>
     </div>
 
-    <div class="form-group">
-      <label data-i18n="quantity" for="input-qty"></label>
-      <input type="text" id="input-qty" placeholder="1L, 500g, 6..." maxlength="20" autocomplete="off">
+    <!-- Preview dinàmic: mostra què es crearà segons qty + weight + toggle.
+         Vegeu _updateAddProductPreview a js/biteme.js. -->
+    <div id="add-product-preview" class="form-preview">
+      <span class="form-preview-icon">ℹ️</span>
+      <span id="add-product-preview-text" data-i18n="addProductPreviewEmpty"></span>
     </div>
 
     <div class="form-group">

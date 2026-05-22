@@ -716,8 +716,28 @@ function _computeAggregatedQty(lots) {
         mlTotal += lot.qtyRemaining;
         hasMl = true;
       } else {
-        unitsTotal += lot.qtyRemaining;
-        hasUnits = true;
+        // unit='units' o desconegut. Si té weight parsejable
+        // ('500g', '1L', etc.), agregem qtyRemaining × weight a
+        // la suma de kg/L corresponent. Si no, queda com a unitats.
+        let derived = false;
+        if (lot.weight) {
+          const wMatch = String(lot.weight).trim().match(/^([\d.,]+)\s*(ml|l|g|kg)$/i);
+          if (wMatch) {
+            const wNum = parseFloat(wMatch[1].replace(',', '.'));
+            const wUnit = wMatch[2].toLowerCase();
+            if (Number.isFinite(wNum)) {
+              const totalPerUnit = lot.qtyRemaining * wNum;
+              if (wUnit === 'kg') { gramsTotal += totalPerUnit * 1000; hasGrams = true; derived = true; }
+              else if (wUnit === 'g') { gramsTotal += totalPerUnit; hasGrams = true; derived = true; }
+              else if (wUnit === 'l') { mlTotal += totalPerUnit * 1000; hasMl = true; derived = true; }
+              else if (wUnit === 'ml') { mlTotal += totalPerUnit; hasMl = true; derived = true; }
+            }
+          }
+        }
+        if (!derived) {
+          unitsTotal += lot.qtyRemaining;
+          hasUnits = true;
+        }
       }
     } else if (lot.consumptionMode === 'percent') {
       percentCount++;
@@ -848,6 +868,42 @@ function runQtyMirrorRefresh() {
     return { skipped: false, processed: processed };
   } catch (e) {
     console.error('[qty mirror refresh] failed:', e);
+    return { skipped: false, error: String(e) };
+  }
+}
+
+// One-shot 2026-05-22: re-agregació de qty per a lots units+weight.
+// El fix a _computeAggregatedQty multiplica qtyRemaining × weight
+// quan el lot és unit='units' amb weight parsejable ("500g", "1L"...).
+// Sense aquest one-shot, els productes ja existents conserven el
+// product.qty agregat antic fins al pròxim refreshProductMirrors
+// (consum, edició, etc.). Aquest one-shot força el refresc per a
+// TOTS els productes v2 (1 o N lots — el cas amb 1 lot també hi cap
+// quan és pack contable amb weight). Idempotent via flag propi.
+const _QTY_AGG_UNITS_WEIGHT_FLAG = 'eatmefirst_qty_agg_units_weight_20260522_done';
+function runQtyAggregateUnitsWeightRefresh() {
+  try {
+    if (localStorage.getItem(_QTY_AGG_UNITS_WEIGHT_FLAG) === '1') {
+      return { skipped: true };
+    }
+    const raw = JSON.parse(localStorage.getItem('eatmefirst_products') || '[]');
+    if (!Array.isArray(raw)) {
+      localStorage.setItem(_QTY_AGG_UNITS_WEIGHT_FLAG, '1');
+      return { skipped: false, processed: 0 };
+    }
+    let processed = 0;
+    for (const p of raw) {
+      if (p && p.__v === 2 && Array.isArray(p.lots) && p.lots.length > 0) {
+        _refreshProductMirrors(p);
+        processed++;
+      }
+    }
+    localStorage.setItem('eatmefirst_products', JSON.stringify(raw));
+    localStorage.setItem(_QTY_AGG_UNITS_WEIGHT_FLAG, '1');
+    console.log('[qty agg units+weight refresh] done: processed=' + processed);
+    return { skipped: false, processed: processed };
+  } catch (e) {
+    console.error('[qty agg units+weight refresh] failed:', e);
     return { skipped: false, error: String(e) };
   }
 }
@@ -2233,6 +2289,7 @@ if (typeof window !== 'undefined') {
   };
   window.runProductsV2Migration = runProductsV2Migration;
   window.runQtyMirrorRefresh = runQtyMirrorRefresh;
+  window.runQtyAggregateUnitsWeightRefresh = runQtyAggregateUnitsWeightRefresh;
   window._transformProductsToV2 = _transformProductsToV2;
   window._createMigrationBackup = _createMigrationBackup;
   window._refreshProductMirrors = _refreshProductMirrors;
@@ -2259,6 +2316,7 @@ function saveData() {
 function loadData() {
   runProductsV2Migration();
   runQtyMirrorRefresh();
+  runQtyAggregateUnitsWeightRefresh();
   const p = localStorage.getItem('eatmefirst_products');
   const s = localStorage.getItem('eatmefirst_stats');
   if (p) { try { products = JSON.parse(p); } catch(e){ products = []; } }
@@ -3602,9 +3660,16 @@ function openAddForm(prefill) {
   nameInput.value = productName;
   nameInput.placeholder = t('productNamePlaceholder');
 
-  // Quantitat (si ve de la llista)
+  // Quantitat (envasos). Default = 1 si no hi ha prefill — refactor
+  // formulari: l'app crearà N lots separats si el toggle multi-lots
+  // està marcat i qty > 1.
   const qtyInput = document.getElementById('input-qty');
-  if (qtyInput) qtyInput.value = (prefill && prefill.qty) ? prefill.qty : '';
+  if (qtyInput) qtyInput.value = (prefill && prefill.qty) ? String(prefill.qty) : '1';
+
+  // Toggle multi-lots: sempre desmarcat al obrir (l'usuari decideix
+  // explícitament cada vegada).
+  const multiLotsEl = document.getElementById('input-multi-lots');
+  if (multiLotsEl) multiLotsEl.checked = false;
 
   // Preu (opcional): si ve d'un popular/historial amb preu, el pre-fillem
   const priceInput = document.getElementById('input-price');
@@ -3620,6 +3685,7 @@ function openAddForm(prefill) {
   if (weightInput) {
     weightInput.value = (prefill && prefill.weight) ? String(prefill.weight) : '';
   }
+
 
   // Reset checkbox "sense data" — restaurat si el prefill ho indica (popular/historial)
   const noExpiry = document.getElementById('input-no-expiry');
@@ -3681,6 +3747,51 @@ function openAddForm(prefill) {
   if (!prefill || !prefill.name) {
     setTimeout(() => nameInput.focus(), 250);
   }
+  // Refresc del preview dinàmic amb l'estat inicial dels camps.
+  _updateAddProductPreview();
+}
+
+// Preview dinàmic sota els camps qty + weight + toggle (refactor formulari).
+// Decideix segons el checkbox #input-multi-lots: marcat = N lots
+// separats, desmarcat = 1 lot amb qty unitats.
+function _updateAddProductPreview() {
+  const previewEl = document.getElementById('add-product-preview-text');
+  if (!previewEl) return;
+  const qtyInput = document.getElementById('input-qty');
+  const weightInput = document.getElementById('input-weight');
+  const multiLotsEl = document.getElementById('input-multi-lots');
+  const qty = qtyInput ? qtyInput.value.trim() : '';
+  const weight = weightInput ? weightInput.value.trim() : '';
+  const multiLots = !!(multiLotsEl && multiLotsEl.checked);
+
+  if (!qty) {
+    previewEl.textContent = t('addProductPreviewEmpty');
+    return;
+  }
+
+  const qtyAsInt = parseInt(qty, 10);
+  if (!Number.isFinite(qtyAsInt) || qtyAsInt < 0) {
+    previewEl.textContent = 'Quantitat no vàlida';
+    return;
+  }
+
+  if (multiLots && qtyAsInt > 1) {
+    if (weight) {
+      previewEl.textContent = 'Es crearan ' + qtyAsInt + ' lots de ' + weight + ' cadascun';
+    } else {
+      previewEl.textContent = 'Es crearan ' + qtyAsInt + ' lots independents';
+    }
+    return;
+  }
+
+  // Mode comptador (1 lot amb N unitats) — cas per defecte
+  if (qtyAsInt > 1) {
+    previewEl.textContent = 'Es crearà 1 lot amb ' + qtyAsInt + ' unitats'
+      + (weight ? ' de ' + weight + ' cadascuna' : '');
+  } else {
+    // 1 unitat o 0
+    previewEl.textContent = weight ? 'Es crearà 1 lot de ' + weight : 'Es crearà 1 lot';
+  }
 }
 
 // Configura l'input de nom amb suggeriments de l'historial
@@ -3697,6 +3808,15 @@ function setupNameAutocomplete() {
   if (shopInput && shopSuggBox) {
     setupAutocompleteFor(shopInput, shopSuggBox, 'shopping');
   }
+
+  // Refactor formulari: preview dinàmic oninput de qty + weight,
+  // i onchange del toggle multi-lots.
+  const qtyInput = document.getElementById('input-qty');
+  const weightInput = document.getElementById('input-weight');
+  const multiLotsEl = document.getElementById('input-multi-lots');
+  if (qtyInput) qtyInput.addEventListener('input', _updateAddProductPreview);
+  if (weightInput) weightInput.addEventListener('input', _updateAddProductPreview);
+  if (multiLotsEl) multiLotsEl.addEventListener('change', _updateAddProductPreview);
 }
 
 // Cerca un nom (case-insensitive) als populars i a l'historial. Retorna
@@ -3777,10 +3897,35 @@ function applyKnownProductToForm(m) {
     priceInput.value = String(m.price);
   }
 
+  // Weight i Qty: cas especial "Xu" (X dígits + "u") al weight del
+  // popular vol dir "X unitats" (ex: Ous "12u"). L'interpretem com a
+  // qty=X amb pes buit, perquè és un comptador d'unitats (no un pes
+  // per envàs). Protecció habitual: només omplim camps si l'usuari
+  // no els ha modificat.
   const weightInput = document.getElementById('input-weight');
-  if (weightInput && !weightInput.value.trim() && m.weight) {
-    weightInput.value = String(m.weight);
+  const qtyInput = document.getElementById('input-qty');
+  const weightVal = m.weight ? String(m.weight) : '';
+  const matchUnits = weightVal.match(/^(\d+)u$/i);
+
+  if (matchUnits) {
+    if (qtyInput && (!qtyInput.value.trim() || qtyInput.value.trim() === '1')) {
+      qtyInput.value = matchUnits[1];
+    }
+    // Weight queda buit (l'usuari ja sap que són X unitats via qty)
+    if (weightInput && !weightInput.value.trim()) {
+      weightInput.value = '';
+    }
+  } else {
+    if (weightInput && !weightInput.value.trim() && weightVal) {
+      weightInput.value = weightVal;
+    }
+    if (qtyInput && !qtyInput.value.trim()) {
+      qtyInput.value = '1';
+    }
   }
+
+  // Refresc del preview dinàmic després d'omplir camps.
+  if (typeof _updateAddProductPreview === 'function') _updateAddProductPreview();
 }
 
 function setupAutocompleteFor(input, suggBox, mode) {
@@ -4004,17 +4149,44 @@ function saveNewProduct() {
     productData.frozenDate = formatDateLocal(new Date());
   }
 
-  const newLot = _buildLotFromNewProduct(productData);
+  // Lògica multiplicadora EXPLÍCITA: la decideix l'usuari amb el
+  // checkbox #input-multi-lots (replantejament: l'auto-detecció
+  // ambigua confonia packs vs envasos separats).
+  // Marcat = N envasos físics separats (1 lot per envàs amb el seu
+  // pes i preu). Desmarcat = 1 sol lot amb qty=N unitats.
+  const multiLotsEl = document.getElementById('input-multi-lots');
+  const isMultiLotsChecked = !!(multiLotsEl && multiLotsEl.checked);
+  const qtyAsInt = parseInt(qty, 10);
+  const isMultiplier = isMultiLotsChecked && Number.isFinite(qtyAsInt) && qtyAsInt > 1;
+
+  const lotsToCreate = [];
+  if (isMultiplier) {
+    // N envasos separats: cada lot té qty=weight (per ex. "500g") si
+    // l'usuari ha posat pes amb unitat; altrament cada lot serà mode
+    // percent (cas defensiu — checkbox marcat sense pes amb unitat).
+    const perPackageData = Object.assign({}, productData, {
+      qty: (weight && /^[\d.,]+\s*(ml|l|g|kg)$/i.test(weight)) ? weight : ''
+    });
+    for (let i = 0; i < qtyAsInt; i++) {
+      lotsToCreate.push(_buildLotFromNewProduct(perPackageData));
+    }
+  } else {
+    lotsToCreate.push(_buildLotFromNewProduct(productData));
+  }
+
   const existing = _findGroupedProductForFusion(productData.name, productData.emoji, productData.location);
   let newProduct;
   let fusedInto = null;
   if (existing) {
-    _addLotToProduct(existing, newLot);
+    lotsToCreate.forEach(l => _addLotToProduct(existing, l));
     newProduct = existing;
     fusedInto = existing;
   } else {
-    newProduct = _createV2ProductWithLot(productData, newLot);
+    newProduct = _createV2ProductWithLot(productData, lotsToCreate[0]);
     products.push(newProduct);
+    for (let i = 1; i < lotsToCreate.length; i++) {
+      _addLotToProduct(newProduct, lotsToCreate[i]);
+    }
   }
 
   saveData();
@@ -4049,16 +4221,21 @@ function saveNewProduct() {
         if (Number.isFinite(d)) _daysCalc = d;
       }
       const _sm = (typeof getSupermarketById === 'function') ? getSupermarketById(fromShopping) : null;
-      recordPurchase({
-        popularId: _matched ? _matched.id : null,
-        name: newProduct.name,
-        price: (typeof newProduct.price === 'number') ? newProduct.price : undefined,
-        weight: newProduct.weight || undefined,
-        days_calc: _daysCalc,
-        days_real: null,
-        supermarket: (_sm && _sm.name) || null,
-        productId: newProduct.id
-      });
+      // N crides — 1 per cada lot creat (lots multiplicador són envasos
+      // independents, cada un = una compra). Per a 1 sol lot, 1 crida.
+      const _purchaseCount = lotsToCreate.length || 1;
+      for (let _i = 0; _i < _purchaseCount; _i++) {
+        recordPurchase({
+          popularId: _matched ? _matched.id : null,
+          name: newProduct.name,
+          price: (typeof price === 'number') ? price : (typeof newProduct.price === 'number' ? newProduct.price : undefined),
+          weight: (isMultiplier ? weight : newProduct.weight) || undefined,
+          days_calc: _daysCalc,
+          days_real: null,
+          supermarket: (_sm && _sm.name) || null,
+          productId: newProduct.id
+        });
+      }
     }
 
     // Si estem en mode de compra guiada, continuem comprant
@@ -4067,31 +4244,33 @@ function saveNewProduct() {
       currentSupermarketId = fromShopping;
       renderShoppingItems();
       showScreen('supermarket');
-      if (fusedInto) {
-        showToast('✅ Lot afegit a ' + name + ' (' + fusedInto.lots.length + ' lots)');
-      } else {
-        showToast('✅ ' + selectedEmoji + ' ' + name + ' ' + t('addedFromShopping'));
-      }
+      showToast(_buildAddToast(name, selectedEmoji, isMultiplier, qtyAsInt, weight, fusedInto, t('addedFromShopping')));
       return;
     }
 
     pendingShoppingSupermarketId = null;
     renderHome();
     showScreen('home');
-    if (fusedInto) {
-      showToast('✅ Lot afegit a ' + name + ' (' + fusedInto.lots.length + ' lots)');
-    } else {
-      showToast('✅ ' + selectedEmoji + ' ' + name + ' ' + t('addedFromShopping'));
-    }
+    showToast(_buildAddToast(name, selectedEmoji, isMultiplier, qtyAsInt, weight, fusedInto, t('addedFromShopping')));
   } else {
     renderHome();
     showScreen('home');
-    if (fusedInto) {
-      showToast(selectedEmoji + ' Lot afegit a ' + name + ' (' + fusedInto.lots.length + ' lots)');
-    } else {
-      showToast(selectedEmoji + ' ' + name + ' ' + t('added'));
-    }
+    showToast(_buildAddToast(name, selectedEmoji, isMultiplier, qtyAsInt, weight, fusedInto, t('added')));
   }
+}
+
+// Toast diferenciat segons N lots i si hi ha fusió (Fase refactor formulari).
+function _buildAddToast(name, emoji, isMultiplier, qtyAsInt, weight, fusedInto, defaultSuffix) {
+  if (isMultiplier && qtyAsInt > 1) {
+    if (fusedInto) {
+      return '✅ ' + qtyAsInt + ' lots afegits a ' + name + ' (' + fusedInto.lots.length + ' lots en total)';
+    }
+    return '✅ ' + qtyAsInt + ' lots de ' + weight + ' afegits a ' + name;
+  }
+  if (fusedInto) {
+    return '✅ Lot afegit a ' + name + ' (' + fusedInto.lots.length + ' lots)';
+  }
+  return '✅ ' + (emoji || '') + ' ' + name + ' ' + defaultSuffix;
 }
 
 // Historial de productes ja escrits/comprats per recuperar com a suggeriments
