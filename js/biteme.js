@@ -908,6 +908,41 @@ function runQtyAggregateUnitsWeightRefresh() {
   }
 }
 
+// One-shot 2026-05-23: refresh complet de mirrors per a tots els
+// productes v2. Bug: saveNewProduct cas 1-lot no cridava
+// _refreshProductMirrors després de _createV2ProductWithLot, deixant
+// product.qty al text literal del formulari (ex: "4") en lloc del
+// càlcul agregat (ex: "2 kg" per a units × weight). Aquest one-shot
+// rescata productes creats abans del fix amb mirror stale.
+// Idempotent via flag propi.
+const _MIRROR_REFRESH_ALL_FLAG = 'eatmefirst_mirror_refresh_all_products_20260523_done';
+function runMirrorRefreshAllProductsRefresh() {
+  try {
+    if (localStorage.getItem(_MIRROR_REFRESH_ALL_FLAG) === '1') {
+      return { skipped: true };
+    }
+    const raw = JSON.parse(localStorage.getItem('eatmefirst_products') || '[]');
+    if (!Array.isArray(raw)) {
+      localStorage.setItem(_MIRROR_REFRESH_ALL_FLAG, '1');
+      return { skipped: false, processed: 0 };
+    }
+    let processed = 0;
+    for (const p of raw) {
+      if (p && p.__v === 2 && Array.isArray(p.lots) && p.lots.length > 0) {
+        _refreshProductMirrors(p);
+        processed++;
+      }
+    }
+    localStorage.setItem('eatmefirst_products', JSON.stringify(raw));
+    localStorage.setItem(_MIRROR_REFRESH_ALL_FLAG, '1');
+    console.log('[mirror refresh all products] done: processed=' + processed);
+    return { skipped: false, processed: processed };
+  } catch (e) {
+    console.error('[mirror refresh all products] failed:', e);
+    return { skipped: false, error: String(e) };
+  }
+}
+
 // Migració one-shot al boot. Flag a localStorage garanteix execució
 // única per dispositiu. La transformació és idempotent — re-executar-la
 // sobre dades ja v2 dóna el mateix resultat — però el flag evita el
@@ -2323,6 +2358,7 @@ if (typeof window !== 'undefined') {
   window.runProductsV2Migration = runProductsV2Migration;
   window.runQtyMirrorRefresh = runQtyMirrorRefresh;
   window.runQtyAggregateUnitsWeightRefresh = runQtyAggregateUnitsWeightRefresh;
+  window.runMirrorRefreshAllProductsRefresh = runMirrorRefreshAllProductsRefresh;
   window._transformProductsToV2 = _transformProductsToV2;
   window._createMigrationBackup = _createMigrationBackup;
   window._refreshProductMirrors = _refreshProductMirrors;
@@ -2350,6 +2386,7 @@ function loadData() {
   runProductsV2Migration();
   runQtyMirrorRefresh();
   runQtyAggregateUnitsWeightRefresh();
+  runMirrorRefreshAllProductsRefresh();
   const p = localStorage.getItem('eatmefirst_products');
   const s = localStorage.getItem('eatmefirst_stats');
   if (p) { try { products = JSON.parse(p); } catch(e){ products = []; } }
@@ -4220,6 +4257,11 @@ function saveNewProduct() {
     for (let i = 1; i < lotsToCreate.length; i++) {
       _addLotToProduct(newProduct, lotsToCreate[i]);
     }
+    // _createV2ProductWithLot setja product.qty al text literal del
+    // formulari ("4"); cal refresh per recalcular l'agregat (cas
+    // units × weight: "4 × 500g" → "2 kg"). _addLotToProduct ja
+    // refresca per als lots i>=1, però per al cas 1-lot mai s'invoca.
+    _refreshProductMirrors(newProduct);
   }
 
   saveData();
