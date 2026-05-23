@@ -59,7 +59,7 @@ function buildWhatIHaveRow(p) {
     <span class="view-all-emoji">${p.emoji}</span>
     <div class="view-all-info">
       <p class="view-all-name">${formatProductLine(p.name, p.qty)}</p>
-      <p class="view-all-meta">${locLabel}${locLabel ? ' · ' : ''}<span class="${daysClass}">${daysText(days)}</span></p>
+      <p class="view-all-meta">${locLabel}${locLabel ? ' ' : ''}<span class="${daysClass}">${daysText(days)}</span></p>
     </div>
     <span class="view-all-arrow">›</span>
   `;

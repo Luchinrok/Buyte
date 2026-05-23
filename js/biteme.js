@@ -502,7 +502,7 @@ function _buildCalendarProductRow(p, size) {
     '<span class="calendar-product-emoji">' + (p.emoji || '🍽️') + '</span>' +
     '<div class="calendar-product-info">' +
       '<strong class="calendar-product-name">' + escapeHtml(p.name || '') + (p.qty ? ' <span class="calendar-product-qty">(' + escapeHtml(p.qty) + ')</span>' : '') + '</strong>' +
-      '<small class="calendar-product-meta">' + escapeHtml(locText) + ' · ' + escapeHtml(daysText(days)) + '</small>' +
+      '<small class="calendar-product-meta">' + escapeHtml(locText) + ' ' + escapeHtml(daysText(days)) + '</small>' +
     '</div>' +
     '<span class="calendar-product-arrow">›</span>';
   row.addEventListener('click', () => openProductDetail(p));
@@ -1219,7 +1219,7 @@ function _renderLotRow(lot) {
     }
   }
 
-  // Weight visible només si difereix del qtyText (evita "500g · 500g"
+  // Weight visible només si difereix del qtyText (evita "500g × 500g"
   // en lots legacy on lot.weight duplica el qty parsejat). Normalitzem
   // espais perquè "500g" i "500 g" comptin com a iguals. Text lliure
   // no parsejable (ex: "mig kg") es pinta tal qual.
@@ -1227,9 +1227,16 @@ function _renderLotRow(lot) {
   const _normWQ = s => String(s || '').trim().toLowerCase().replace(/\s+/g, '');
   const weightDiffersFromQty = !!weightText && _normWQ(weightText) !== _normWQ(qtyText);
 
+  // qty i weight es combinen amb "×" (multiplicació semàntica) en un sol
+  // segment "lot-qty". La resta de segments (data, supermercat) viuen en
+  // segments propis separats per `gap` CSS — sense punt mig "·".
+  const qtyWeightParts = [];
+  if (qtyText) qtyWeightParts.push(qtyText);
+  if (weightDiffersFromQty) qtyWeightParts.push(weightText);
+  const qtyWeightCombined = qtyWeightParts.join(' × ');
+
   const parts1 = [];
-  if (qtyText) parts1.push('<span class="lot-qty">' + escapeHtml(qtyText) + '</span>');
-  if (weightDiffersFromQty) parts1.push('<span class="lot-weight">' + escapeHtml(weightText) + '</span>');
+  if (qtyWeightCombined) parts1.push('<span class="lot-qty">' + escapeHtml(qtyWeightCombined) + '</span>');
   if (dateText) parts1.push('<span class="lot-date">' + escapeHtml(dateText) + '</span>');
   if (superText) parts1.push('<span class="lot-supermarket">' + escapeHtml(superText) + '</span>');
 
@@ -1247,8 +1254,8 @@ function _renderLotRow(lot) {
       + '</div>'
     : '';
   return '<div class="lot-row"' + lotIdAttr + '>'
-    + '<div class="lot-info">' + parts1.join(' <span class="lot-separator">·</span> ') + '</div>'
-    + (parts2.length > 0 ? '<div class="lot-meta">' + parts2.join(' <span class="lot-separator">·</span> ') + '</div>' : '')
+    + '<div class="lot-info">' + parts1.join('') + '</div>'
+    + (parts2.length > 0 ? '<div class="lot-meta">' + parts2.join('') + '</div>' : '')
     + actionsHtml
     + '</div>';
 }
@@ -2942,7 +2949,7 @@ function renderAlerts() {
   alertProducts.forEach(p => {
     const item = document.createElement('div');
     item.className = 'product-item product-item-alert product-item-' + p.level;
-    const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' · ' : '';
+    const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' ' : '';
     item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div></div><span class="product-item-arrow">›</span>';
     item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, p.qty);
     item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
@@ -3006,7 +3013,7 @@ function _renderShelfProducts(slide, level, cat) {
       // un producte d'un slide-clone es perdria. La delegation captura el
       // click al pare i deriva el producte del data-attribute.
       item.dataset.productId = p.id;
-      const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' · ' : '';
+      const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' ' : '';
       // Subtítol addicional amb la data de congelació quan el producte
       // és al congelador (NOMÉS al congelador — a la resta no aporta
       // res, el frozenDate pot existir d'una sessió anterior).
@@ -3380,7 +3387,7 @@ function openProduct(id) {
   const loc = getLocationById(p.location || 'fridge');
   document.getElementById('product-emoji').textContent = p.emoji;
   document.getElementById('product-name').innerHTML = formatProductLine(p.name, p.qty);
-  const locStr = loc ? loc.emoji + ' ' + getLocationName(loc) + ' · ' : '';
+  const locStr = loc ? loc.emoji + ' ' + getLocationName(loc) + ' ' : '';
   document.getElementById('product-days').textContent = locStr + daysText(days);
 
   // Línia frozenDate: només si el producte té data de congelació guardada
