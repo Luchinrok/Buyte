@@ -1184,8 +1184,17 @@ function _renderLotRow(lot) {
     }
   }
 
+  // Weight visible només si difereix del qtyText (evita "500g · 500g"
+  // en lots legacy on lot.weight duplica el qty parsejat). Normalitzem
+  // espais perquè "500g" i "500 g" comptin com a iguals. Text lliure
+  // no parsejable (ex: "mig kg") es pinta tal qual.
+  const weightText = lot.weight ? String(lot.weight) : '';
+  const _normWQ = s => String(s || '').trim().toLowerCase().replace(/\s+/g, '');
+  const weightDiffersFromQty = !!weightText && _normWQ(weightText) !== _normWQ(qtyText);
+
   const parts1 = [];
   if (qtyText) parts1.push('<span class="lot-qty">' + escapeHtml(qtyText) + '</span>');
+  if (weightDiffersFromQty) parts1.push('<span class="lot-weight">' + escapeHtml(weightText) + '</span>');
   if (dateText) parts1.push('<span class="lot-date">' + escapeHtml(dateText) + '</span>');
   if (superText) parts1.push('<span class="lot-supermarket">' + escapeHtml(superText) + '</span>');
 
