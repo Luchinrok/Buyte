@@ -972,6 +972,25 @@ function runProductsV2Migration() {
 //   producte existent enlloc de duplicar.
 // =============================================================
 
+// Normalitza un string de pes/volum al format canònic del catàleg
+// POPULAR_PRODUCTS: sense espai entre número i unitat, decimal punt,
+// "L" majúscula (convenció SI), resta lowercase. Si la cadena no
+// encaixa amb el patró pes/volum, retorna el text trim-ed sense
+// modificar — preserva "mig kg", "12u", "6x33cl", text lliure.
+function _normalizeWeightString(s) {
+  if (typeof s !== 'string') return s;
+  const trimmed = s.trim();
+  if (!trimmed) return trimmed;
+  const m = trimmed.match(/^([\d.,]+)\s*(ml|l|g|kg)$/i);
+  if (!m) return trimmed;
+  const num = parseFloat(m[1].replace(',', '.'));
+  if (!Number.isFinite(num) || num < 0) return trimmed;
+  const numStr = String(num);
+  const unitLower = m[2].toLowerCase();
+  const unitCanon = (unitLower === 'l') ? 'L' : unitLower;
+  return numStr + unitCanon;
+}
+
 // Cerca un producte v2 existent que coincideixi exactament per
 // (nom normalitzat, emoji, location). Retorna null si no n'hi ha.
 // La location comparada és la del producte (mirror) — equival al
@@ -1007,7 +1026,7 @@ function _buildLotFromNewProduct(productData) {
     supermarket: (productData && productData.supermarket) || null
   };
   if (productData && typeof productData.price === 'number' && productData.price >= 0) lot.price = productData.price;
-  if (productData && productData.weight) lot.weight = productData.weight;
+  if (productData && productData.weight) lot.weight = _normalizeWeightString(productData.weight);
 
   if (qtyNum !== null) {
     lot.consumptionMode = 'quantity';
@@ -1785,9 +1804,10 @@ function _confirmLotEdit(product, lot, v) {
   }
 
   // Weight (text lliure: "500g", "1L", "12u"...). Buit → eliminem el
-  // camp. _computeAggregatedQty és tolerant amb formats no parsejables.
+  // camp. Normalitzem al format canònic ("1l" → "1L", "500 g" → "500g").
+  // Text lliure no parsejable es manté tal qual.
   const weightTrimmed = (typeof v.weightRaw === 'string') ? v.weightRaw.trim() : '';
-  if (weightTrimmed) realLot.weight = weightTrimmed;
+  if (weightTrimmed) realLot.weight = _normalizeWeightString(weightTrimmed);
   else delete realLot.weight;
 
   if (realLot.consumptionMode === 'quantity' && realLot.qtyRemaining <= 0) {
@@ -4106,7 +4126,10 @@ function saveNewProduct() {
   const noExpiry = document.getElementById('input-no-expiry');
   const noExpiryChecked = noExpiry && noExpiry.checked;
   const qtyInput = document.getElementById('input-qty');
-  const qty = qtyInput ? qtyInput.value.trim() : '';
+  // Normalització: si qty és parsejable com a pes/volum ("500 g", "1l"),
+  // s'aplica el format canònic. Si és pur numèric o text lliure, queda
+  // tal qual (només trim).
+  const qty = qtyInput ? _normalizeWeightString(qtyInput.value.trim()) : '';
 
   // Preu (opcional). Només el guardem si l'usuari l'ha informat. Acceptem
   // tant punt com coma com a separador decimal: en alguns inputs type=number
@@ -4131,10 +4154,11 @@ function saveNewProduct() {
     if (approxDays === Infinity) approxDays = null;
   }
 
-  // Pes (opcional). Guardem el text tal qual l'ha escrit l'usuari
-  // ("500g", "1kg"...), parseQuantityToKg el sap interpretar.
+  // Pes (opcional). Normalitzem al format canònic del catàleg:
+  // "1l"/"1 l"/"1L" → "1L", "500 g" → "500g", "1,5L" → "1.5L".
+  // Text lliure no parsejable ("mig kg") queda tal qual.
   const weightInput = document.getElementById('input-weight');
-  const weight = weightInput ? String(weightInput.value || '').trim() : '';
+  const weight = weightInput ? _normalizeWeightString(String(weightInput.value || '')) : '';
 
   // Aprenentatge: registra historial i propaga al catàleg de populars
   // (creant entrada nova o actualitzant la existent amb les dades fresques).
