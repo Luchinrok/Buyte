@@ -1279,6 +1279,56 @@ function deleteSupermarket() {
 }
 
 // Afegir/editar item
+// Autoomple els camps de la pantalla d'edició/creació de shopping
+// item amb les dades del popular catalogat per nom. Només omple
+// camps BUITS — preserva el que l'usuari hagi tocat manualment.
+// Supermarket i notes mai s'autoomplen (specific per compra).
+//
+// Cridat des de setupAutocompleteFor (blur + click suggestion).
+function _autofillShoppingFromPopular(name) {
+  if (!name) return;
+  if (typeof getPopularProducts !== 'function') return;
+  const populars = getPopularProducts() || [];
+  const key = String(name).toLowerCase().trim();
+  const popular = populars.find(p => p && p.name && p.name.toLowerCase().trim() === key);
+  if (!popular) return;
+
+  // Emoji (sempre — el default '🥛' és un placeholder substituïble)
+  if (popular.emoji) {
+    selectedShoppingEmoji = popular.emoji;
+    if (typeof renderShoppingEmojiPickerBtn === 'function') renderShoppingEmojiPickerBtn();
+  }
+
+  // Weight (només si buit)
+  const weightInput = document.getElementById('input-shopping-weight');
+  if (weightInput && !weightInput.value.trim() && popular.weight) {
+    weightInput.value = String(popular.weight);
+  }
+
+  // Price (només si buit)
+  const priceInput = document.getElementById('input-shopping-price');
+  if (priceInput && !priceInput.value.trim() && typeof popular.price === 'number' && popular.price >= 0) {
+    priceInput.value = String(popular.price);
+  }
+
+  // Data / noExpiry — només si l'usuari no els ha tocat
+  const noExpInput = document.getElementById('input-shopping-no-expiry');
+  const dateInput = document.getElementById('input-shopping-date');
+  if (popular.noExpiry) {
+    if (noExpInput && !noExpInput.checked) {
+      noExpInput.checked = true;
+      if (dateInput) dateInput.value = '';
+    }
+  } else if (popular.days && dateInput && !dateInput.value && (!noExpInput || !noExpInput.checked)) {
+    // Respectem el cas: usuari ha marcat "no caduca" manualment → no omplim data
+    const d = new Date();
+    d.setDate(d.getDate() + popular.days);
+    if (typeof formatDateForInput === 'function') {
+      dateInput.value = formatDateForInput(d);
+    }
+  }
+}
+
 function openShoppingItemEdit(item) {
   editingShoppingItem = item;
   const isNew = !item;

@@ -4046,21 +4046,11 @@ function setupAutocompleteFor(input, suggBox, mode) {
       item.addEventListener('click', () => {
         input.value = m.name;
         if (mode === 'shopping') {
-          selectedShoppingEmoji = m.emoji;
-          renderShoppingEmojiPickerBtn();
-          // Recupera el flag "no caduca" i la data si la sabem
-          const shopNoExp = document.getElementById('input-shopping-no-expiry');
-          const shopDate = document.getElementById('input-shopping-date');
-          if (m.noExpiry) {
-            if (shopNoExp) shopNoExp.checked = true;
-            if (shopDate) shopDate.value = '';
-          } else {
-            if (shopNoExp) shopNoExp.checked = false;
-            if (m.days && shopDate) {
-              const d = new Date();
-              d.setDate(d.getDate() + m.days);
-              shopDate.value = formatDateForInput(d);
-            }
+          // Autoomplert centralitzat: emoji + weight + price +
+          // date/noExpiry. Helper a js/buyme.js que respecta camps
+          // ja tocats per l'usuari.
+          if (typeof _autofillShoppingFromPopular === 'function') {
+            _autofillShoppingFromPopular(m.name);
           }
         } else {
           // Cerquem el match exacte als populars/historial per agafar tot
@@ -4087,6 +4077,12 @@ function setupAutocompleteFor(input, suggBox, mode) {
   } else {
     input.addEventListener('blur', () => {
       setTimeout(() => { suggBox.innerHTML = ''; }, 200);
+      // Si el nom coincideix amb un popular, autoomplim els camps
+      // buits del formulari (mateix patró que el mode 'product').
+      const name = input.value.trim();
+      if (name && typeof _autofillShoppingFromPopular === 'function') {
+        _autofillShoppingFromPopular(name);
+      }
     });
   }
 }
