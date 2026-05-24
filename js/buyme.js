@@ -659,6 +659,24 @@ function _resolveShoppingItemCategory(item, popularByName, itemCats) {
 // per delegació a _initShopsActionsDelegate (vegeu el comentari extens
 // allà sobre per què: amb loop:true Swiper clona slides i els
 // listeners directes es perden).
+// Format del nom amb qty + weight al BuyMe. Patró coherent amb
+// _renderLotRow al BiteMe: "qty × weight" si tots dos hi són amb
+// formats diferents (dedup case + spaces). Si només qty o només
+// weight, mostra el segment sol. Si cap, només el nom.
+function _formatShoppingNameWithWeight(name, qty, weight) {
+  const safeName = escapeHtml(name || '');
+  const qtyTrim = (qty == null) ? '' : String(qty).trim();
+  const weightTrim = weight ? String(weight).trim() : '';
+  const norm = s => String(s || '').toLowerCase().replace(/\s+/g, '');
+  const showWeight = !!weightTrim && norm(weightTrim) !== norm(qtyTrim);
+  let combo = '';
+  if (qtyTrim && showWeight) combo = qtyTrim + ' × ' + weightTrim;
+  else if (qtyTrim) combo = qtyTrim;
+  else if (showWeight) combo = weightTrim;
+  if (!combo) return safeName;
+  return safeName + '<span class="prod-qty">' + escapeHtml(combo) + '</span>';
+}
+
 function _buildShoppingItemRow(item, opts) {
   const o = opts || {};
   const mode = o.mode || 'view';
@@ -666,6 +684,20 @@ function _buildShoppingItemRow(item, opts) {
   const isFirst = !!o.isFirst;
   const isLast = !!o.isLast;
   const cost = (typeof o.cost === 'number' && isFinite(o.cost) && o.cost > 0) ? o.cost : null;
+
+  // Resol el weight a mostrar: prioritza item.weight (override per item)
+  // i, si no n'hi ha, cau al popular catalogat per nom. Render coherent
+  // amb _renderLotRow del BiteMe ("qty × weight" si tots dos hi són).
+  let weightText = item.weight ? String(item.weight) : '';
+  if (!weightText) {
+    const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
+    if (Array.isArray(populars)) {
+      const key = String(item.name || '').toLowerCase().trim();
+      const popular = populars.find(p => p && p.name && p.name.toLowerCase().trim() === key);
+      if (popular && popular.weight) weightText = String(popular.weight);
+    }
+  }
+  const nameLine = _formatShoppingNameWithWeight(item.name, item.qty, weightText);
 
   const div = document.createElement('div');
   div.className = 'shopping-item' + (mode === 'edit' ? ' shopping-item-edit-mode' : '');
@@ -684,7 +716,7 @@ function _buildShoppingItemRow(item, opts) {
     div.innerHTML = `
         <div class="shopping-item-emoji">${item.emoji}</div>
         <div class="shopping-item-info">
-          <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
+          <p class="shopping-item-name">${nameLine}</p>
           ${meta}
           ${costHtml}
         </div>${arrowsHtml}
@@ -694,7 +726,7 @@ function _buildShoppingItemRow(item, opts) {
     div.innerHTML = `
         <div class="shopping-item-emoji">${item.emoji}</div>
         <div class="shopping-item-info">
-          <p class="shopping-item-name">${formatProductLine(item.name, item.qty)}</p>
+          <p class="shopping-item-name">${nameLine}</p>
           ${meta}
           ${costHtml}
         </div>
@@ -1266,6 +1298,11 @@ function openShoppingItemEdit(item) {
   const weightInput = document.getElementById('input-shopping-weight');
   if (priceInput) priceInput.value = '';
   if (weightInput) weightInput.value = '';
+  // Prioritzar override item.weight (definit per l'usuari) per damunt
+  // del popular catalogat. Si l'usuari no l'ha tocat mai, cau al popular.
+  if (weightInput && !isNew && item && item.weight) {
+    weightInput.value = String(item.weight);
+  }
   if (!isNew && item && item.name && typeof getPopularProducts === 'function') {
     const populars = getPopularProducts() || [];
     const key = String(item.name).toLowerCase().trim();
@@ -1274,7 +1311,8 @@ function openShoppingItemEdit(item) {
       if (priceInput && typeof popular.price === 'number' && popular.price >= 0) {
         priceInput.value = String(popular.price);
       }
-      if (weightInput && popular.weight) {
+      // Fallback al popular SI el camp segueix buit (no s'ha aplicat override)
+      if (weightInput && !weightInput.value && popular.weight) {
         weightInput.value = String(popular.weight);
       }
     }
@@ -1376,9 +1414,13 @@ function saveShoppingItem() {
     }
   }
   const weightInput = document.getElementById('input-shopping-weight');
-  const weight = weightInput ? String(weightInput.value || '').trim() : '';
+  const weightRaw = weightInput ? String(weightInput.value || '').trim() : '';
+  // Normalitzem al format canònic per coherència amb el BiteMe
+  // ("1l" → "1L", "500 g" → "500g"). Si no és parsejable, queda tal qual.
+  const weightNormalized = (typeof _normalizeWeightString === 'function')
+    ? _normalizeWeightString(weightRaw) : weightRaw;
   const hasPrice = price !== null;
-  const hasWeight = weight !== '';
+  const hasWeight = weightNormalized !== '';
 
   // Aprenentatge: desem al catàleg de populars perquè la propera vegada
   // (i el càlcul de cost al BuyMe) tinguin emoji+dies+price+weight. El
@@ -1392,7 +1434,7 @@ function saveShoppingItem() {
       if (Number.isFinite(diff) && diff > 0) days = diff;
     }
     if (noExpiry || days || hasPrice || hasWeight) {
-      addToCustomPopular(name, selectedShoppingEmoji, days, null, noExpiry, price, weight);
+      addToCustomPopular(name, selectedShoppingEmoji, days, null, noExpiry, price, weightNormalized);
     }
   };
 
@@ -1404,6 +1446,10 @@ function saveShoppingItem() {
     editingShoppingItem.notes = notes;
     editingShoppingItem.date = noExpiry ? null : (date || null);
     editingShoppingItem.noExpiry = noExpiry;
+    // Override per item: persisteix el weight si l'usuari l'ha posat.
+    // Buit → eliminem l'override (fallback al popular al render).
+    if (weightNormalized) editingShoppingItem.weight = weightNormalized;
+    else delete editingShoppingItem.weight;
     // Aplicar canvi de botiga si l'usuari l'ha canviada
     const shopSelect = document.getElementById('input-shopping-shop');
     if (shopSelect && shopSelect.value) {
@@ -1425,12 +1471,14 @@ function saveShoppingItem() {
   if (existingAtHome.length > 0) {
     showAlreadyHaveModal(name, existingAtHome, () => {
       const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-      shoppingItems.push({
+      const newItem = {
         id, supermarketId: currentSupermarketId, name, emoji: selectedShoppingEmoji,
         qty, notes, addedAt: Date.now(),
         date: noExpiry ? null : (date || null),
         noExpiry
-      });
+      };
+      if (weightNormalized) newItem.weight = weightNormalized;
+      shoppingItems.push(newItem);
       saveShoppingData();
       learnPopular();
       showToast(t('saved'));
@@ -1440,12 +1488,14 @@ function saveShoppingItem() {
   }
 
   const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-  shoppingItems.push({
+  const newItem = {
     id, supermarketId: currentSupermarketId, name, emoji: selectedShoppingEmoji,
     qty, notes, addedAt: Date.now(),
     date: noExpiry ? null : (date || null),
     noExpiry
-  });
+  };
+  if (weightNormalized) newItem.weight = weightNormalized;
+  shoppingItems.push(newItem);
   saveShoppingData();
   learnPopular();
   showToast(t('saved'));
