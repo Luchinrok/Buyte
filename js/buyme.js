@@ -1456,7 +1456,9 @@ function saveShoppingItem() {
       editingShoppingItem.supermarketId = shopSelect.value;
     }
     saveShoppingData();
-    learnPopular();
+    // NO cridem learnPopular() al cas edició: l'override de weight/price
+    // per ítem no s'ha de propagar al popular catalogat (el popular és la
+    // veritat canònica, no la mitjana de variacions per ítem).
     showToast(t('saved'));
     // Tornem al super ORIGINAL (no al nou) preservant el mode
     openSupermarket(originalSupermarketId, { preserveMode: true });

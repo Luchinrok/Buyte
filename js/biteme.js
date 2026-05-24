@@ -4447,8 +4447,12 @@ function addToCustomPopular(name, emoji, days, location, noExpiry, price, weight
       existing.days = safeDays;
       existing.location = safeLoc;
       existing.noExpiry = noExp;
-      if (hasPrice) existing.price = price;
-      if (hasWeight) existing.weight = weight;
+      // Weight i price del popular són la "veritat canònica" del catàleg.
+      // No els sobreescrivim amb cada compra concreta — només omplim si
+      // estan buits (cas legítim d'aprenentatge inicial). Si l'usuari vol
+      // canviar el popular, ho fa explícitament a Configuració → Populars.
+      if (typeof existing.price !== 'number' && hasPrice) existing.price = price;
+      if (!existing.weight && hasWeight) existing.weight = weight;
     }
   } else {
     const entry = {
