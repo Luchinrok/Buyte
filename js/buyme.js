@@ -581,17 +581,57 @@ function setBuyMeViewMode(supermarketId, mode) {
 // d'altra manera getProductPrice cauria al fallback per categoria
 // (P2) i inventaria preus que no representen res que l'usuari hagi
 // confirmat. La política aquí és "sense preu = no es mostra".
+// Parseja un string de pes/volum i retorna {value, unit} on unit és
+// la unitat base 'g' o 'ml'. Si no parseja, retorna null.
+// "1kg" → {value:1000, unit:'g'}, "1L" → {value:1000, unit:'ml'}.
+function _parseWeightToBase(s) {
+  if (typeof s !== 'string') return null;
+  const m = s.trim().match(/^([\d.,]+)\s*(ml|l|g|kg)$/i);
+  if (!m) return null;
+  const num = parseFloat(m[1].replace(',', '.'));
+  if (!Number.isFinite(num) || num < 0) return null;
+  const u = m[2].toLowerCase();
+  if (u === 'kg') return { value: num * 1000, unit: 'g' };
+  if (u === 'g')  return { value: num, unit: 'g' };
+  if (u === 'l')  return { value: num * 1000, unit: 'ml' };
+  if (u === 'ml') return { value: num, unit: 'ml' };
+  return null;
+}
+
 function getEstimatedItemCost(item, popularByName) {
   if (!item || typeof getProductPrice !== 'function') return null;
   const key = String(item.name || '').toLowerCase().trim();
   const popular = (key && popularByName) ? popularByName[key] : null;
 
-  // Override per item té prioritat per damunt del popular canònic.
-  // Permet calcular cost també per a items sense popular si item.price
-  // està definit (cas: producte manual amb preu posat per l'usuari).
-  const effectivePrice = (typeof item.price === 'number' && item.price >= 0)
-    ? item.price
-    : (popular && typeof popular.price === 'number' && popular.price > 0 ? popular.price : null);
+  const itemHasOverridePrice = (typeof item.price === 'number' && item.price >= 0);
+  const popPrice = (popular && typeof popular.price === 'number' && popular.price > 0)
+    ? popular.price : null;
+
+  // Cas PROPORCIONAL: sense override de price + popular té price +
+  // ambdós weights parsegen a la mateixa unitat base.
+  // Cost = popular.price × (item_weight / popular_weight) × qty_multiplier.
+  // Si l'usuari té un override de price, el seu valor mana sense proporció
+  // (cas "preu fix definit per l'usuari", paral·lel al item.weight override).
+  if (!itemHasOverridePrice && popPrice !== null && item.weight) {
+    const popularBase = popular.weight ? _parseWeightToBase(popular.weight) : null;
+    const itemBase = _parseWeightToBase(item.weight);
+    if (popularBase && itemBase
+        && popularBase.unit === itemBase.unit
+        && popularBase.value > 0) {
+      const ratio = itemBase.value / popularBase.value;
+      const qtyNum = (typeof parseQtyNumber === 'function') ? parseQtyNumber(item.qty) : null;
+      const qtyMultiplier = (qtyNum !== null && qtyNum > 1) ? qtyNum : 1;
+      const cost = popPrice * ratio * qtyMultiplier;
+      if (typeof cost !== 'number' || !isFinite(cost) || cost <= 0) return null;
+      return Math.round(cost * 100) / 100;
+    }
+  }
+
+  // Fallback al càlcul existent (synth + getProductPrice):
+  // - override item.price (s'aplica sense proporció)
+  // - sense item.weight (no es pot calcular ratio)
+  // - weights incompatibles (pes vs volum) o no parsejables
+  const effectivePrice = itemHasOverridePrice ? item.price : popPrice;
   if (effectivePrice === null || effectivePrice <= 0) return null;
 
   const effectiveWeight = item.weight || (popular ? popular.weight : null);
