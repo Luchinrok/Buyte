@@ -1301,45 +1301,97 @@ function _autofillShoppingFromPopular(name) {
   const popular = populars.find(p => p && p.name && p.name.toLowerCase().trim() === key);
   if (!popular) return;
 
-  // Emoji (sempre — el default '🥛' és un placeholder substituïble)
-  if (popular.emoji) {
+  const snap = _lastAutofillSnapshot;
+
+  // Decideix si un camp es pot sobreescriure: ho és si està buit, o
+  // si el valor actual coincideix amb el que el popular ANTERIOR hi
+  // havia posat (= no l'ha tocat l'usuari manualment).
+  const canReplace = (currentValue, snapshotValue) => {
+    if (currentValue === '' || currentValue === null || currentValue === undefined) return true;
+    if (snap === null) return false; // primer autoomplert + camp ple = manual
+    return currentValue === snapshotValue;
+  };
+
+  // Emoji — reemplaçable si snap==null (primer cop) o coincideix amb el snapshot
+  if (popular.emoji && (snap === null || selectedShoppingEmoji === snap.emoji || !selectedShoppingEmoji)) {
     selectedShoppingEmoji = popular.emoji;
     if (typeof renderShoppingEmojiPickerBtn === 'function') renderShoppingEmojiPickerBtn();
   }
 
-  // Weight (només si buit)
+  // Weight
   const weightInput = document.getElementById('input-shopping-weight');
-  if (weightInput && !weightInput.value.trim() && popular.weight) {
+  if (weightInput && popular.weight && canReplace(weightInput.value.trim(), snap && snap.weight)) {
     weightInput.value = String(popular.weight);
   }
 
-  // Price (només si buit)
+  // Price (comparació numèrica per tolerar "1.2" vs "1.20")
   const priceInput = document.getElementById('input-shopping-price');
-  if (priceInput && !priceInput.value.trim() && typeof popular.price === 'number' && popular.price >= 0) {
-    priceInput.value = String(popular.price);
+  if (priceInput && typeof popular.price === 'number' && popular.price >= 0) {
+    const currentRaw = priceInput.value.trim();
+    const currentNum = currentRaw === '' ? null : parseFloat(currentRaw.replace(',', '.'));
+    const snapPrice = snap ? snap.price : undefined;
+    const isReplaceable = currentRaw === '' ||
+      (snap !== null && typeof snapPrice === 'number' && currentNum === snapPrice);
+    if (isReplaceable) priceInput.value = String(popular.price);
   }
 
-  // Data / noExpiry — només si l'usuari no els ha tocat
+  // Data / noExpiry
   const noExpInput = document.getElementById('input-shopping-no-expiry');
   const dateInput = document.getElementById('input-shopping-date');
+
+  // Pre-calcular dateStr que el popular actual aplicaria (cas no noExpiry)
+  let nextDateStr = '';
+  if (!popular.noExpiry && popular.days && typeof formatDateForInput === 'function') {
+    const d = new Date();
+    d.setDate(d.getDate() + popular.days);
+    nextDateStr = formatDateForInput(d);
+  }
+
   if (popular.noExpiry) {
-    if (noExpInput && !noExpInput.checked) {
+    // Reemplaçable si: actualment desmarcat, o snapshot diu que ja era marcat (cap canvi manual)
+    const noExpCheckable = noExpInput && (
+      !noExpInput.checked ||
+      (snap !== null && snap.noExpiry === noExpInput.checked)
+    );
+    if (noExpCheckable) {
       noExpInput.checked = true;
       if (dateInput) dateInput.value = '';
     }
-  } else if (popular.days && dateInput && !dateInput.value && (!noExpInput || !noExpInput.checked)) {
-    // Respectem el cas: usuari ha marcat "no caduca" manualment → no omplim data
-    const d = new Date();
-    d.setDate(d.getDate() + popular.days);
-    if (typeof formatDateForInput === 'function') {
-      dateInput.value = formatDateForInput(d);
+  } else if (popular.days && dateInput) {
+    // Manual si: ara està marcat I (no hi ha snapshot O el snapshot deia
+    // false — l'usuari l'ha marcat ell mateix). Si el snapshot deia true,
+    // el checkbox ve d'un autoomplert anterior i per tant és reemplaçable.
+    const noExpManual = noExpInput && noExpInput.checked && (
+      snap === null || snap.noExpiry === false
+    );
+    if (!noExpManual) {
+      // Si el checkbox està marcat per autoomplert anterior (no manual),
+      // el desmarquem perquè el nou popular no és sense data.
+      if (noExpInput && noExpInput.checked) {
+        noExpInput.checked = false;
+      }
+      if (canReplace(dateInput.value, snap && snap.dateStr)) {
+        dateInput.value = nextDateStr;
+      }
     }
   }
+
+  // Actualitzem el snapshot amb el popular que acabem d'aplicar.
+  _lastAutofillSnapshot = {
+    emoji: popular.emoji || '',
+    weight: popular.weight ? String(popular.weight) : '',
+    price: (typeof popular.price === 'number') ? popular.price : undefined,
+    dateStr: nextDateStr,
+    noExpiry: !!popular.noExpiry
+  };
 }
 
 function openShoppingItemEdit(item) {
   editingShoppingItem = item;
   const isNew = !item;
+  // Reset del snapshot d'autoomplert: qualsevol obertura de la pantalla
+  // comença net (no recordem el popular aplicat a una sessió anterior).
+  _lastAutofillSnapshot = null;
   document.getElementById('shopping-item-edit-title').textContent =
     isNew ? t('newShoppingItem') : t('editShoppingItem');
   document.getElementById('input-shopping-name').value = isNew ? '' : item.name;
@@ -2219,6 +2271,11 @@ function showManualAddToBuyMeModal(product) {
 
 
 let shoppingItems = []; // Array de {id, supermarketId, name, emoji, qty, notes, addedAt}
+
+// Snapshot del darrer popular aplicat per _autofillShoppingFromPopular.
+// Permet detectar quins camps van ser autoomplerts (vs tocats per l'usuari)
+// per poder-los sobreescriure quan canvia el nom a un altre popular.
+let _lastAutofillSnapshot = null;
 
 let editingShoppingItem = null;
 
