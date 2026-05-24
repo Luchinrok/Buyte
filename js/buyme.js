@@ -584,15 +584,23 @@ function setBuyMeViewMode(supermarketId, mode) {
 function getEstimatedItemCost(item, popularByName) {
   if (!item || typeof getProductPrice !== 'function') return null;
   const key = String(item.name || '').toLowerCase().trim();
-  if (!key || !popularByName) return null;
-  const popular = popularByName[key];
-  if (!popular || typeof popular.price !== 'number' || popular.price <= 0) return null;
+  const popular = (key && popularByName) ? popularByName[key] : null;
+
+  // Override per item té prioritat per damunt del popular canònic.
+  // Permet calcular cost també per a items sense popular si item.price
+  // està definit (cas: producte manual amb preu posat per l'usuari).
+  const effectivePrice = (typeof item.price === 'number' && item.price >= 0)
+    ? item.price
+    : (popular && typeof popular.price === 'number' && popular.price > 0 ? popular.price : null);
+  if (effectivePrice === null || effectivePrice <= 0) return null;
+
+  const effectiveWeight = item.weight || (popular ? popular.weight : null);
 
   const synth = {
-    emoji: item.emoji || popular.emoji,
+    emoji: item.emoji || (popular ? popular.emoji : null),
     qty: item.qty,
-    weight: popular.weight,
-    price: popular.price
+    weight: effectiveWeight,
+    price: effectivePrice
   };
   const cost = getProductPrice(synth);
   if (typeof cost !== 'number' || !isFinite(cost) || cost <= 0) return null;
@@ -1348,8 +1356,11 @@ function openShoppingItemEdit(item) {
   const weightInput = document.getElementById('input-shopping-weight');
   if (priceInput) priceInput.value = '';
   if (weightInput) weightInput.value = '';
-  // Prioritzar override item.weight (definit per l'usuari) per damunt
-  // del popular catalogat. Si l'usuari no l'ha tocat mai, cau al popular.
+  // Prioritzar overrides per item (definits per l'usuari) per damunt
+  // del popular catalogat. Si l'usuari no els ha tocat mai, cauen al popular.
+  if (priceInput && !isNew && item && typeof item.price === 'number' && item.price >= 0) {
+    priceInput.value = String(item.price);
+  }
   if (weightInput && !isNew && item && item.weight) {
     weightInput.value = String(item.weight);
   }
@@ -1358,10 +1369,10 @@ function openShoppingItemEdit(item) {
     const key = String(item.name).toLowerCase().trim();
     const popular = populars.find(p => p.name && p.name.toLowerCase().trim() === key);
     if (popular) {
-      if (priceInput && typeof popular.price === 'number' && popular.price >= 0) {
+      // Fallback al popular SI el camp segueix buit (no s'ha aplicat override)
+      if (priceInput && !priceInput.value && typeof popular.price === 'number' && popular.price >= 0) {
         priceInput.value = String(popular.price);
       }
-      // Fallback al popular SI el camp segueix buit (no s'ha aplicat override)
       if (weightInput && !weightInput.value && popular.weight) {
         weightInput.value = String(popular.weight);
       }
@@ -1500,6 +1511,10 @@ function saveShoppingItem() {
     // Buit → eliminem l'override (fallback al popular al render).
     if (weightNormalized) editingShoppingItem.weight = weightNormalized;
     else delete editingShoppingItem.weight;
+    // Mateix patró per al price: override per item té prioritat per
+    // damunt del popular catalogat al càlcul de cost.
+    if (price !== null) editingShoppingItem.price = price;
+    else delete editingShoppingItem.price;
     // Aplicar canvi de botiga si l'usuari l'ha canviada
     const shopSelect = document.getElementById('input-shopping-shop');
     if (shopSelect && shopSelect.value) {
@@ -1530,6 +1545,7 @@ function saveShoppingItem() {
         noExpiry
       };
       if (weightNormalized) newItem.weight = weightNormalized;
+      if (price !== null) newItem.price = price;
       shoppingItems.push(newItem);
       saveShoppingData();
       learnPopular();
@@ -1547,6 +1563,7 @@ function saveShoppingItem() {
     noExpiry
   };
   if (weightNormalized) newItem.weight = weightNormalized;
+  if (price !== null) newItem.price = price;
   shoppingItems.push(newItem);
   saveShoppingData();
   learnPopular();
