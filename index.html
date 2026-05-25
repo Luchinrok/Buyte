@@ -1757,6 +1757,19 @@
         <input type="text" id="input-shopping-qty" placeholder="2, 1L, 500g..." maxlength="20">
       </div>
 
+      <div class="form-group">
+        <label data-i18n="itemNotes" for="input-shopping-notes"></label>
+        <input type="text" id="input-shopping-notes" placeholder="" maxlength="60">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label data-i18n="weightLabel" for="input-shopping-weight"></label>
+        <input type="text" id="input-shopping-weight" placeholder="500g, 1kg, 1L..." maxlength="15" autocomplete="off">
+        <p class="form-hint" data-i18n="weightHint"></p>
+      </div>
+
       <!-- Preu i pes opcionals: paral·lels als de #screen-add i
            #screen-popular-edit. Es propaguen al popular catalogat via
            addToCustomPopular dins saveShoppingItem perquè la propera
@@ -1771,19 +1784,6 @@
              handler de Save llegeixi el valor. saveShoppingItem ja parsa
              text amb .replace(',','.') + parseFloat. -->
         <input type="text" id="input-shopping-price" inputmode="decimal" placeholder="2.50" autocomplete="off" maxlength="10">
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label data-i18n="weightLabel" for="input-shopping-weight"></label>
-        <input type="text" id="input-shopping-weight" placeholder="500g, 1kg, 1L..." maxlength="15" autocomplete="off">
-        <p class="form-hint" data-i18n="weightHint"></p>
-      </div>
-
-      <div class="form-group">
-        <label data-i18n="itemNotes" for="input-shopping-notes"></label>
-        <input type="text" id="input-shopping-notes" placeholder="" maxlength="60">
       </div>
     </div>
 
