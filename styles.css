@@ -10698,3 +10698,80 @@ body.selection-mode-active #shops-slider .arrow-btn {
   margin-top: 8px;
 }
 
+/* ============================================================
+   PAS 2 v2 — layout horitzontal a #screen-add (BiteMe)
+   Replica el patró del PAS 1 v2 (commit d26e82e, BuyMe) amb
+   adaptacions per als camps específics del BiteMe.
+
+   Específic d'aquest screen:
+   - Contingut full width (no té parell — el BiteMe no té Notes)
+   - Toggle multi-lots + preview banner + location-picker NO toquen
+   - .form-hint del Contingut amagat via :not(.form-toggle-group)
+     per no afectar la hint del toggle multi-lots (que volem mantenir)
+   ============================================================ */
+
+/* Popular CTA compactat */
+#screen-add .popular-btn {
+  padding: 10px 16px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+#screen-add .popular-btn > span:first-child {
+  font-size: 18px;
+}
+
+/* Fila Nom + Emoji */
+#screen-add .name-emoji-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+#screen-add .name-emoji-row input[type="text"] {
+  flex: 1 1 0;
+  min-width: 0;
+}
+#screen-add .name-emoji-row .emoji-button {
+  flex: 0 0 52px;
+  width: 52px;
+  padding: 6px;
+  justify-content: center;
+  gap: 0;
+}
+#screen-add .name-emoji-row .emoji-button-current {
+  font-size: 30px;
+}
+
+/* Fila horitzontal 50/50 (Qty + Preu) */
+#screen-add .form-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+#screen-add .form-row .form-group {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* Form-hint amagada al camp Contingut.
+   :not(.form-toggle-group) preserva la hint del toggle multi-lots
+   (que té el seu propi estil i ha de seguir visible). */
+#screen-add .form-group:not(.form-toggle-group) .form-hint {
+  display: none;
+}
+
+/* Fila Data + No caduca side-by-side */
+#screen-add .date-no-expiry-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+#screen-add .date-no-expiry-row input[type="date"] {
+  flex: 1 1 0;
+  min-width: 0;
+}
+#screen-add .date-no-expiry-row .no-expiry-label {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+

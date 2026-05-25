@@ -1039,25 +1039,32 @@
 
     <div class="form-group">
       <label data-i18n="productName" for="input-name"></label>
-      <input type="text" id="input-name" autocomplete="off">
+      <div class="name-emoji-row">
+        <input type="text" id="input-name" autocomplete="off">
+        <button type="button" class="emoji-button" id="btn-pick-emoji" aria-label="Triar emoji">
+          <span class="emoji-button-current" id="emoji-button-current">🥛</span>
+        </button>
+      </div>
       <div class="autocomplete-suggestions" id="name-suggestions"></div>
     </div>
 
-    <div class="form-group">
-      <label data-i18n="quantity" for="input-qty"></label>
-      <input type="text" id="input-qty" placeholder="1, 2, 6..." maxlength="20" autocomplete="off">
+    <div class="form-row">
+      <div class="form-group">
+        <label data-i18n="quantity" for="input-qty"></label>
+        <input type="text" id="input-qty" placeholder="1, 2, 6..." maxlength="20" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label data-i18n="priceLabel" for="input-price"></label>
+        <!-- type="text" — vegeu el comentari paral·lel a #input-shopping-price. -->
+        <input type="text" id="input-price" inputmode="decimal" placeholder="2.50" autocomplete="off" maxlength="10">
+      </div>
     </div>
 
     <div class="form-group">
       <label data-i18n="weightLabel" for="input-weight"></label>
       <input type="text" id="input-weight" placeholder="500g, 1L, 1kg..." maxlength="15" autocomplete="off">
       <p class="form-hint" data-i18n="weightHint"></p>
-    </div>
-
-    <div class="form-group">
-      <label data-i18n="priceLabel" for="input-price"></label>
-      <!-- type="text" — vegeu el comentari paral·lel a #input-shopping-price. -->
-      <input type="text" id="input-price" inputmode="decimal" placeholder="2.50" autocomplete="off" maxlength="10">
     </div>
 
     <!-- Toggle multi-lot. Marcat = saveNewProduct crea N lots separats
@@ -1083,26 +1090,20 @@
     </div>
 
     <div class="form-group">
-      <label data-i18n="emoji"></label>
-      <button type="button" class="emoji-button" id="btn-pick-emoji">
-        <span class="emoji-button-current" id="emoji-button-current">🥛</span>
-        <span class="emoji-button-text" data-i18n="changeEmoji"></span>
-      </button>
-    </div>
-
-    <div class="form-group">
       <label data-i18n="expiryDate" for="input-date"></label>
-      <input type="date" id="input-date">
+      <div class="date-no-expiry-row">
+        <input type="date" id="input-date">
+        <label class="no-expiry-label">
+          <input type="checkbox" id="input-no-expiry">
+          <span class="no-expiry-text" data-i18n="noExpiry"></span>
+        </label>
+      </div>
       <div class="quick-dates">
         <button class="quick-date" data-days="3">+3</button>
         <button class="quick-date" data-days="7">+7</button>
         <button class="quick-date" data-days="14">+14</button>
         <button class="quick-date" data-days="30">+30</button>
       </div>
-      <label class="no-expiry-label">
-        <input type="checkbox" id="input-no-expiry">
-        <span class="no-expiry-text" data-i18n="noExpiry"></span>
-      </label>
     </div>
 
     <!-- Info de congelació, només mode edició + producte al congelador
