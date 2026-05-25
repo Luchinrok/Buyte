@@ -10665,3 +10665,36 @@ body.selection-mode-active #shops-slider .arrow-btn {
   margin-top: 0;
 }
 
+/* ============================================================
+   PAS 2 (parcial) — compactació de marges a #screen-add (BiteMe)
+   Replica el patró del PAS 1 v1 del BuyMe (commit 9cf6162) al
+   #screen-add: marges entre form-groups, padding d'inputs i
+   marges de quick-dates / no-expiry-label / form-hint.
+
+   NO replica el layout horitzontal del PAS 1 v2 — el #screen-add
+   té camps específics (location-picker, category-picker, frozenDate,
+   toggle multi-lots) que requereixen decisions de layout pròpies.
+   ============================================================ */
+
+#screen-add .form-group {
+  margin-bottom: 12px;
+}
+
+#screen-add .form-group input[type="text"],
+#screen-add .form-group input[type="date"] {
+  padding: 10px 14px;
+  /* font-size 16px mantingut (anti-zoom iOS Safari) */
+}
+
+#screen-add .form-hint {
+  margin-top: 6px;
+}
+
+#screen-add .quick-dates {
+  margin-top: 8px;
+}
+
+#screen-add .no-expiry-label {
+  margin-top: 8px;
+}
+
