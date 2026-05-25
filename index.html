@@ -1736,69 +1736,72 @@
     </header>
 
     <button id="shopping-popular-btn" class="popular-btn">
-      <span style="font-size:22px">⭐</span>
+      <span>⭐</span>
       <span data-i18n="popularProducts"></span>
     </button>
 
     <div class="form-group">
       <label data-i18n="itemName" for="input-shopping-name"></label>
-      <input type="text" id="input-shopping-name" placeholder="Iogurts, llet...">
+      <div class="name-emoji-row">
+        <input type="text" id="input-shopping-name" placeholder="Iogurts, llet...">
+        <button type="button" class="emoji-button" id="btn-pick-shopping-emoji" aria-label="Triar icona">
+          <span class="emoji-button-current" id="shopping-emoji-current">🥛</span>
+        </button>
+      </div>
       <div class="autocomplete-suggestions" id="shopping-name-suggestions"></div>
     </div>
 
-    <div class="form-group">
-      <label data-i18n="itemEmoji"></label>
-      <button type="button" class="emoji-button" id="btn-pick-shopping-emoji">
-        <span class="emoji-button-current" id="shopping-emoji-current">🥛</span>
-        <span class="emoji-button-text" data-i18n="changeEmoji"></span>
-      </button>
+    <div class="form-row">
+      <div class="form-group">
+        <label data-i18n="itemQuantity" for="input-shopping-qty"></label>
+        <input type="text" id="input-shopping-qty" placeholder="2, 1L, 500g..." maxlength="20">
+      </div>
+
+      <!-- Preu i pes opcionals: paral·lels als de #screen-add i
+           #screen-popular-edit. Es propaguen al popular catalogat via
+           addToCustomPopular dins saveShoppingItem perquè la propera
+           vegada (i el càlcul de cost al BuyMe) ja els tinguin. El
+           shopping item NO els persisteix — la font de veritat és el
+           popular (vegeu getEstimatedItemCost a js/buyme.js). -->
+      <div class="form-group">
+        <label data-i18n="priceLabel" for="input-shopping-price"></label>
+        <!-- type="text" + inputmode="decimal" enlloc de type="number":
+             type="number" amb step pot reformatar el value en blur (ex:
+             "3" → "2.99" en certs locales de Chrome) just abans que el
+             handler de Save llegeixi el valor. saveShoppingItem ja parsa
+             text amb .replace(',','.') + parseFloat. -->
+        <input type="text" id="input-shopping-price" inputmode="decimal" placeholder="2.50" autocomplete="off" maxlength="10">
+      </div>
     </div>
 
-    <div class="form-group">
-      <label data-i18n="itemQuantity" for="input-shopping-qty"></label>
-      <input type="text" id="input-shopping-qty" placeholder="2, 1L, 500g..." maxlength="20">
-    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label data-i18n="weightLabel" for="input-shopping-weight"></label>
+        <input type="text" id="input-shopping-weight" placeholder="500g, 1kg, 1L..." maxlength="15" autocomplete="off">
+        <p class="form-hint" data-i18n="weightHint"></p>
+      </div>
 
-    <!-- Preu i pes opcionals: paral·lels als de #screen-add i
-         #screen-popular-edit. Es propaguen al popular catalogat via
-         addToCustomPopular dins saveShoppingItem perquè la propera
-         vegada (i el càlcul de cost al BuyMe) ja els tinguin. El
-         shopping item NO els persisteix — la font de veritat és el
-         popular (vegeu getEstimatedItemCost a js/buyme.js). -->
-    <div class="form-group">
-      <label data-i18n="priceLabel" for="input-shopping-price"></label>
-      <!-- type="text" + inputmode="decimal" enlloc de type="number":
-           type="number" amb step pot reformatar el value en blur (ex:
-           "3" → "2.99" en certs locales de Chrome) just abans que el
-           handler de Save llegeixi el valor. saveShoppingItem ja parsa
-           text amb .replace(',','.') + parseFloat. -->
-      <input type="text" id="input-shopping-price" inputmode="decimal" placeholder="2.50" autocomplete="off" maxlength="10">
-    </div>
-
-    <div class="form-group">
-      <label data-i18n="weightLabel" for="input-shopping-weight"></label>
-      <input type="text" id="input-shopping-weight" placeholder="500g, 1kg, 1L..." maxlength="15" autocomplete="off">
-      <p class="form-hint" data-i18n="weightHint"></p>
-    </div>
-
-    <div class="form-group">
-      <label data-i18n="itemNotes" for="input-shopping-notes"></label>
-      <input type="text" id="input-shopping-notes" placeholder="" maxlength="60">
+      <div class="form-group">
+        <label data-i18n="itemNotes" for="input-shopping-notes"></label>
+        <input type="text" id="input-shopping-notes" placeholder="" maxlength="60">
+      </div>
     </div>
 
     <div class="form-group">
       <label data-i18n="expiryDate" for="input-shopping-date"></label>
-      <input type="date" id="input-shopping-date">
+      <div class="date-no-expiry-row">
+        <input type="date" id="input-shopping-date">
+        <label class="no-expiry-label">
+          <input type="checkbox" id="input-shopping-no-expiry">
+          <span class="no-expiry-text" data-i18n="noExpiry"></span>
+        </label>
+      </div>
       <div class="quick-dates">
         <button type="button" class="quick-date shopping-quick-date" data-days="3">+3</button>
         <button type="button" class="quick-date shopping-quick-date" data-days="7">+7</button>
         <button type="button" class="quick-date shopping-quick-date" data-days="14">+14</button>
         <button type="button" class="quick-date shopping-quick-date" data-days="30">+30</button>
       </div>
-      <label class="no-expiry-label">
-        <input type="checkbox" id="input-shopping-no-expiry">
-        <span class="no-expiry-text" data-i18n="noExpiry"></span>
-      </label>
     </div>
 
     <div class="form-group" id="shop-selector-group" style="display:none">

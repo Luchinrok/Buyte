@@ -10591,3 +10591,77 @@ body.selection-mode-active #shops-slider .arrow-btn {
   margin-top: 8px;
 }
 
+/* ============================================================
+   PAS 1 v2 — layout horitzontal a #screen-shopping-item-edit
+   - Integració emoji a la fila del Nom (sense label "ICONA")
+   - 2 .form-row de 50/50: Qty+Preu i Contingut+Notes
+   - Data + No caduca a la mateixa fila; quick-dates full width sota
+   - Compactació .popular-btn (padding, font, margin, mida d'icona)
+   - .form-hint del camp Contingut ocult (label ja diu "opcional")
+   ============================================================ */
+
+/* Popular CTA compactat */
+#screen-shopping-item-edit .popular-btn {
+  padding: 10px 16px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+#screen-shopping-item-edit .popular-btn > span:first-child {
+  font-size: 18px;
+}
+
+/* Fila Nom + Emoji */
+#screen-shopping-item-edit .name-emoji-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+#screen-shopping-item-edit .name-emoji-row input[type="text"] {
+  flex: 1 1 0;
+  min-width: 0;
+}
+#screen-shopping-item-edit .name-emoji-row .emoji-button {
+  flex: 0 0 52px;
+  width: 52px;
+  padding: 6px;
+  justify-content: center;
+  gap: 0;
+}
+#screen-shopping-item-edit .name-emoji-row .emoji-button-current {
+  font-size: 30px;
+}
+
+/* Files horitzontals 50/50 */
+#screen-shopping-item-edit .form-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+#screen-shopping-item-edit .form-row .form-group {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* Form-hint del camp Contingut: ocult només en aquesta screen.
+   El label ja diu "Contingut per envàs (opcional)" i el placeholder
+   mostra el format — la guia pedagògica és redundant aquí. */
+#screen-shopping-item-edit .form-hint {
+  display: none;
+}
+
+/* Fila Data + No caduca side-by-side */
+#screen-shopping-item-edit .date-no-expiry-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+#screen-shopping-item-edit .date-no-expiry-row input[type="date"] {
+  flex: 1 1 0;
+  min-width: 0;
+}
+#screen-shopping-item-edit .date-no-expiry-row .no-expiry-label {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
