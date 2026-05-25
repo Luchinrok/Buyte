@@ -1475,9 +1475,15 @@ function openShoppingItemEdit(item) {
   const noExpInput = document.getElementById('input-shopping-no-expiry');
   if (dateInput && noExpInput) {
     if (isNew) {
-      const d = new Date();
-      d.setDate(d.getDate() + 7);
-      dateInput.value = formatDateForInput(d);
+      // Camp buit en mode nou: el default avui+7 bloquejava
+      // _autofillShoppingFromPopular perquè canReplace(currentValue ple,
+      // snap=null) retorna false (camp ple + sense snapshot = considerat
+      // manual). Amb el camp buit, l'autoomplert pot aplicar la data
+      // del popular detectat. Si l'usuari escriu un nom no catalogat,
+      // el camp queda buit i pot clicar un chip (+3/+7/+14/+30) o
+      // escriure data manual; si no fa res, l'item es desa amb
+      // date:null (saveShoppingItem ja gestiona `date || null`).
+      dateInput.value = '';
       noExpInput.checked = false;
     } else {
       noExpInput.checked = !!item.noExpiry;
