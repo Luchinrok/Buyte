@@ -1699,7 +1699,6 @@ function openLotEditModal(product, lot) {
     + '</button>'
     + '<div class="category-picker-dropdown" id="lot-edit-supermarket-picker-dropdown" hidden></div>'
     + '</div></div>'
-    + '<p class="lot-edit-note">📍 Per moure aquest lot a una altra ubicació, pendent per a la propera versió (Fase D2).</p>'
     + '<div class="modal-buttons">'
     + '<button class="modal-cancel" id="lot-edit-cancel">Cancel·lar</button>'
     + '<button class="modal-confirm" id="lot-edit-confirm">Desar canvis</button>'
