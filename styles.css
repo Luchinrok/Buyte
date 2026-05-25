@@ -10556,3 +10556,38 @@ body.selection-mode-active #shops-slider .arrow-btn {
   line-height: 1.4;
 }
 
+/* ============================================================
+   Sessió polish 2026-05-25 — densificació formularis
+   PAS 1: només #screen-shopping-item-edit. Si el resultat
+   funciona a iOS real, estendre a #screen-add i
+   #screen-popular-edit en un commit posterior.
+
+   Patró: el screen manté .form-group, però sobreescrivim
+   marges i padding via selector ancestor — 0 canvis a HTML/JS.
+   Mantenim font-size 16px a l'input per evitar zoom iOS.
+   Mantenim label uppercase per consistència amb la resta de
+   pantalles del projecte.
+   ============================================================ */
+
+#screen-shopping-item-edit .form-group {
+  margin-bottom: 12px;
+}
+
+#screen-shopping-item-edit .form-group input[type="text"],
+#screen-shopping-item-edit .form-group input[type="date"] {
+  padding: 10px 14px;
+  /* font-size 16px mantingut (anti-zoom iOS Safari) */
+}
+
+#screen-shopping-item-edit .form-hint {
+  margin-top: 6px;
+}
+
+#screen-shopping-item-edit .quick-dates {
+  margin-top: 8px;
+}
+
+#screen-shopping-item-edit .no-expiry-label {
+  margin-top: 8px;
+}
+
