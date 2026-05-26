@@ -1026,6 +1026,10 @@ function deleteLocation(index) {
       saveLocations();
       saveData();
       renderLocationsList();
+      // Navegació al list dins del callback per evitar que el showScreen
+      // dispari abans que l'usuari confirmi (era el bug del handler de
+      // #loc-edit-delete a app.js abans del fix).
+      showScreen('locations');
       showToast(t('deleted'));
     }
   );

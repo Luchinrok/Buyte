@@ -868,8 +868,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const delLocBtn = document.getElementById('loc-edit-delete');
   if (delLocBtn) delLocBtn.addEventListener('click', () => {
     if (editingLocationIndex >= 0) {
+      // La navegació al list la fa deleteLocation DINS del callback de
+      // confirm. Si l'usuari cancel·la el modal, es queda a l'editor.
+      // (Abans del fix de confirm() → modal asíncron, aquest handler
+      // cridava showScreen('locations') síncronament — bug: amb el modal
+      // asíncron, el showScreen disparava abans que l'usuari confirmés.)
       deleteLocation(editingLocationIndex);
-      showScreen('locations');
     }
   });
 });
