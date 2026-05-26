@@ -1380,7 +1380,7 @@ h1 {
   font-size: 13.5px;
   color: var(--text);
   line-height: 1.55;
-  margin: 8px 0;
+  margin: 12px 0;
   white-space: pre-line;
 }
 
@@ -10562,7 +10562,7 @@ body.selection-mode-active #shops-slider .arrow-btn {
 }
 .form-toggle-label {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   cursor: pointer;
   font-size: 13px;

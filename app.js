@@ -377,8 +377,8 @@ document.addEventListener('DOMContentLoaded', () => {
     multiLotsInfoBtn.addEventListener('click', () => {
       if (typeof _showInfoModal !== 'function') return;
       _showInfoModal('📦', 'Crear envasos separats', [
-        'Marcat: cada envàs és un lot independent, amb la seva pròpia caducitat. Exemple: compres 4 paquets de formatge → es creen 4 lots separats.',
-        'Desmarcat: tots els envasos formen part del mateix lot. Exemple: compres un pack de 4 iogurts → 1 lot amb qty=4.'
+        '**Marcat:** cada envàs és un lot independent, amb la seva pròpia caducitat. Exemple: compres 4 paquets de formatge → es creen 4 lots separats.',
+        '**Desmarcat:** tots els envasos formen part del mateix lot. Exemple: compres un pack de 4 iogurts → 1 lot amb qty=4.'
       ]);
     });
   }

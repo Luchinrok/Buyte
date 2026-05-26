@@ -1762,8 +1762,13 @@ function _confirmRestoreBackup(timestamp) {
 function _showInfoModal(emoji, title, paragraphs) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
+  // Suport markdown-lite per a negretes: **text** → <strong>text</strong>.
+  // S'aplica DESPRÉS de escapeHtml perquè els asteriscs no són HTML.
+  // Retrocompatible (cap i18n string ni caller existent conté **).
   const paraHtml = (paragraphs || []).map(p =>
-    '<p class="info-modal-paragraph">' + escapeHtml(p) + '</p>'
+    '<p class="info-modal-paragraph">' +
+      escapeHtml(p).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>') +
+    '</p>'
   ).join('');
   overlay.innerHTML =
     '<div class="modal-content info-modal-content">' +
