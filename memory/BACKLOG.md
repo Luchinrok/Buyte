@@ -18,7 +18,7 @@ Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté í
 
 ## Sessió 26/05/26 — Commits
 
-Polish formularis (PAS 3 popular-edit) + bug fixes derivats + migracions UX (confirm/prompt):
+26 commits en aquesta sessió. Polish formularis (PAS 3 popular-edit + refinaments) + migracions UX (confirm/prompt → modals integrats) + accent-insensitive search + persistència del backlog + botó info al toggle multi-lots:
 
 | Hash | Una línia |
 |---|---|
@@ -26,16 +26,32 @@ Polish formularis (PAS 3 popular-edit) + bug fixes derivats + migracions UX (con
 | `70978ff` | Refinament PAS 3 — labels centrats horitzontalment |
 | `ade029f` | Fix alineació vertical d'inputs als form-row 50/50 quan labels fan wrap |
 | `7fd7712` | Fix inputs type=number rebien estil natiu del navegador |
-| `47ee2bc` | Fix alinear chip 'No caduca' amb la caixa de l'input dies |
-| `f9c11af` | Fix igualar alçada del chip 'No caduca' a la de l'input dies (intent 1) |
-| `4a2f387` | Fix alinear chip 'No caduca' amb input dies per baseline del text (intent 2, definitiu) |
+| `47ee2bc` | Fix alinear chip 'No caduca' amb la caixa de l'input dies (intent 1) |
+| `f9c11af` | Fix igualar alçada del chip 'No caduca' a la de l'input dies (intent 2) |
+| `4a2f387` | Fix alinear chip 'No caduca' amb input dies per baseline del text (intent 3, definitiu) |
 | `a0171f3` | Fix placeholder dd/mm/aaaa dels inputs date en color gris (via `:placeholder-shown`) |
 | `2f68eec` | Fix placeholder dd/mm/aaaa via JS toggle class `.is-empty` (Opció C, iOS Safari no suporta `:placeholder-shown` amb type=date) |
 | `fe9dfaf` | Fix cercador de populars insensible a accents i majúscules |
-| `b300f78` | Fix normalitzar accents i majúscules a tots els cercadors user-facing |
+| `b300f78` | Fix normalitzar accents i majúscules a tots els cercadors user-facing (helper `normalizeForSearch` + canonicalització) |
 | `5fe5fb8` | Refactor substituir `confirm()` nadiu per `showConfirmDangerModal` a tots els llocs (7 migracions + 6 cleanup) |
 | `379ef78` | Fix navegació post-delete de zones es disparava abans del confirm |
-| `555f35e` | Feat nou modal d'input integrat + migració del `prompt()` de nova llista |
+| `555f35e` | Feat nou modal d'input integrat (`showInputModal`) + migració del `prompt()` de nova llista |
+| `d340704` | Docs centralitzar el backlog al repo (`memory/BACKLOG.md`) |
+| `5d9ac82` | Feat substituir hint llarg del toggle multi-lots per botó ℹ️ + modal info |
+| `f6b9ed7` | Docs decisió de disseny multi-lots viu només al BiteMe |
+| `d8b5acb` | Polish refinaments al toggle multi-lots + modal info (eliminat ℹ️ duplicat del banner, markdown-lite bold, separació paràgrafs) |
+| `b4a6e51` | (intent fallit centrat checkbox 1) |
+| `88e58dd` | (intent fallit centrat checkbox 2) |
+| `0f75896` | Docs pendent — estendre polish formularis a pantalles secundàries |
+| `2452ddc` | (intent fallit centrat checkbox 3) |
+| `aa39f6f` | (intent fallit centrat checkbox 4 — revert) |
+| `61b1e3d` | (intent fallit centrat checkbox 5) |
+| `34af737` | Fix toggle multi-lots layout 3 columnes (text flex-grow + min-width:0 al span) |
+| `67cf5e7` | (intent fallit centrat checkbox 6 — vertical-align middle, no resol) |
+
+**Treballs completats**: PAS 3 polish popular-edit · 5 bugs visuals (form-row alignment, type=number, chip alineació en 3 intents) · placeholder data en 2 intents (CSS + JS Opció C) · cercadors accent-insensitive globals · 7 migracions `confirm()` + neteja 6 fallbacks · `showInputModal` nou + migració prompt new llista · persistència backlog al repo · toggle multi-lots polish (botó info + modal) · refinaments del modal info · decisió de disseny apuntada.
+
+**Treballs no resolts**: 8 intents al centrat vertical del checkbox del toggle multi-lots sense èxit (vegeu Pendents — Avui).
 
 ---
 
@@ -43,7 +59,20 @@ Polish formularis (PAS 3 popular-edit) + bug fixes derivats + migracions UX (con
 
 Detectats durant la sessió però no completats:
 
-- **Botó "i" + modal informatiu al toggle de lots del BiteMe**. El toggle "Crear envasos separats (lots independents)" al `#screen-add` té un `.form-hint` extens explicant quan fer-lo servir. Substituir per un botó d'info ("i") al costat del toggle que obri un modal amb la explicació. Beneficis: (1) compacta visualment el formulari (form-hint actual ~30-40px); (2) la info segueix accessible per usuaris que la necessitin; (3) coherent amb patrons d'altres apps. Decidir: emoji ℹ️ o icona SVG? Posició: dreta del label del toggle. Sessió pròpia (~30 min).
+- **Bug visual residual al checkbox del toggle multi-lots**. El checkbox de "CREAR ENVASOS SEPARATS" no queda centrat al centre vertical del bloc de text quan el text fa wrap a 2-3 línies. L'usuari va aclarir amb captura "abans/després" que vol els 3 elements (checkbox, text, emoji ℹ️) tots al centre vertical del bloc complet, no alineats amb la primera línia.
+
+  Intents fets el 26/05/26 (8 commits sense resoldre):
+  - `b4a6e51` — `align-items: flex-start` + `margin-top: 3px` (encara desalineat)
+  - `88e58dd` — `align-items: baseline` (no funciona perquè input no té baseline real)
+  - `2452ddc` — `flex-start` + `margin-top: 2px` (empíric, encara desalineat)
+  - `aa39f6f` — `align-items: center` pur (cas 1 línia OK, 2+ línies amb checkbox a la primera línia)
+  - `61b1e3d` — `margin-top: 4px` empíric (resol parcialment a 1 línia, no a 2+)
+  - `34af737` — `flex: 1 1 auto + min-width: 0` al span (text feia 5 línies, ara fa 3 — millora però no resol centrat)
+  - `67cf5e7` — `vertical-align: middle` al checkbox (probablement no aplica en context flex amb iOS Safari)
+  
+  **Hipòtesi pendent**: el problema requereix canvi estructural HTML (wrapper del checkbox amb display:flex i centrat propi) en lloc de només CSS al control nadiu. Solució fragil amb només CSS perquè `<input type=checkbox>` té comportament default difícil de sobreescriure consistentment a iOS Safari.
+  
+  **Sessió futura**: atacar amb DevTools obert al PC, mesures de píxels reals, i si cal, canvi HTML — Backup 2 proposat: wrapping del checkbox en un `<span class="checkbox-wrap">` amb `display: flex; align-items: center; height: 100%` per centrat absolut dins el label. Estimat ~30-45 min amb cap fresc.
 
 - **Bug autoomplir des de botó "Productes populars"** (`#popular-btn`/`#shopping-popular-btn`). Quan l'usuari obre el catàleg via el botó ⭐ i selecciona un popular, l'autoomplir dels camps del formulari no s'aplica de la mateixa manera que via blur del nom. Verificar quina funció gestiona aquest flow (probable `selectPopular` a populars.js o equivalent), comparar amb el flow de `_autofillShoppingFromPopular` (BuyMe) i `applyKnownProductToForm` (BiteMe), i unificar comportament. Possible que el snapshot `_lastAutofillSnapshot` (commit `c450d22`) no es respecti en aquest camí. Detectat avui durant tests del PAS 3.
 
@@ -52,7 +81,7 @@ Detectats durant la sessió però no completats:
   - `#screen-supermarket-edit` (afegir/editar supermercat)
   - `#screen-location-edit` (editar ubicació) — ja apuntat per separat amb la nota del picker d'emojis obert per defecte
   
-  Pendent: revisar cadascuna i decidir si aplicar el mateix patró del polish (layout horitzontal, compactació marges, etc.) o si tenen necessitats específiques. Detectat 26/05/26 mentre treballàvem amb el toggle multi-lots i discutíem si afegir-lo al BuyMe (decisió: NO, vegeu "Decisions de disseny preses").
+  Pendent: revisar cadascuna i decidir si aplicar el mateix patró del polish (layout horitzontal, compactació marges, etc.) o si tenen necessitats específiques.
 
 - **Polish UI Editar ubicació — picker d'emojis obert per defecte**. Al `#screen-location-edit`, el picker d'emojis es mostra completament expandit per defecte (6 columnes × N files) en lloc d'estar plegat amb un botó "Triar emoji" com a la resta de formularis del projecte (popular-edit, screen-add, shopping-item-edit). Cal homogeneïtzar: substituir `.emoji-picker` inline per `.emoji-button` que obri el picker complet com a separate screen (mateix patró). Cal modificar HTML (`#screen-location-edit`) + JS (`renderLocationEmojiPicker` a settings.js) + ajustar `openEmojiPicker(target, origin)` per acceptar el nou target. Sessió pròpia (~45 min).
 
@@ -120,7 +149,8 @@ Decisions arquitecturals / d'UX preses després de valorar alternatives. Documen
 Si necessites entendre el "per què" d'una decisió arquitectural, el commit referenciat conté el detall complet al missatge. Aquí només l'ancora ràpida:
 
 - **Refactor de lots Fases A-D2** (abril–maig 2026): el producte va passar de "1 producte = 1 instància" a "1 producte = N lots independents amb fusió/move entre locations i espais". Vegeu `git log` entre `b41a8b4` (fase A inicial) i `6c91169` (Fase D v2 viva). El primer intent (Fase D1) es va descartar — vegeu memòria `project-phase-d-discarded`.
-- **Polish formularis 23-26/05** (sessió actual + previs): PAS 1 v1+v2 al `#screen-shopping-item-edit` (`9cf6162`, `d26e82e`), PAS 2 v2 al `#screen-add` (`ab47006`, `f50cbde`), PAS 3 al `#screen-popular-edit` (`5be8f40` + refinaments).
-- **Migració UX confirm/prompt 26/05** (sessió actual): 7 `confirm()` → `showConfirmDangerModal` (`5fe5fb8`), bug navegació zones (`379ef78`), nou `showInputModal` + migració prompt `addCustomSpecialList` (`555f35e`).
-- **Cercadors accent-insensitive** (`fe9dfaf`, `b300f78`): helper `normalizeForSearch` exposat a window, aplicat a 5 cercadors user-facing.
+- **Polish formularis 23-26/05** (sessió 26/05 ara tancada): PAS 1 v1+v2 al `#screen-shopping-item-edit` (`9cf6162`, `d26e82e`), PAS 2 v2 al `#screen-add` (`ab47006`, `f50cbde`), PAS 3 al `#screen-popular-edit` (`5be8f40` + refinaments `70978ff`, `ade029f`, `7fd7712`, `47ee2bc`, `f9c11af`, `4a2f387`).
+- **Migració UX confirm/prompt 26/05** (sessió 26/05): 7 `confirm()` → `showConfirmDangerModal` (`5fe5fb8`), bug navegació zones (`379ef78`), nou `showInputModal` + migració prompt `addCustomSpecialList` (`555f35e`).
+- **Cercadors accent-insensitive 26/05** (`fe9dfaf`, `b300f78`): helper `normalizeForSearch` exposat a window, aplicat a 5 cercadors user-facing.
+- **Toggle multi-lots: hint → modal info 26/05** (`5d9ac82` + refinaments `d8b5acb`, `34af737`): substitució del `.form-hint` llarg pel botó ℹ️ + modal `_showInfoModal` amb markdown-lite suport per a negretes. Centrat del checkbox del toggle queda PENDENT (vegeu Pendents — Avui).
 - **Italy trip / Espais (FASE A–B)**: implementació de Spaces (Casa/Beach/Work...) amb sync independent per espai. Vegeu commits de la primera meitat de maig.
