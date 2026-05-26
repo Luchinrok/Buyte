@@ -10829,11 +10829,16 @@ body.selection-mode-active #shops-slider .arrow-btn {
 
 /* Fila Dies + No caduca side-by-side.
    Quan no-expiry marcat, _wirePopularNoExpiryToggle amaga
-   #popular-days-row (display:none) i el chip queda sol al row. */
+   #popular-days-row (display:none) i el chip queda sol al row.
+
+   align-items: flex-end perquè el chip s'alineï amb la BASE del row
+   (l'alçada de la caixa de l'input dies), no amb el centre vertical
+   del #popular-days-row sencer (label + input apilats fan ~96px,
+   centrar deixaria el chip al nivell del label). */
 #screen-popular-edit .days-no-expiry-row {
   display: flex;
   gap: 10px;
-  align-items: center;
+  align-items: flex-end;
 }
 #screen-popular-edit .days-no-expiry-row #popular-days-row {
   flex: 1 1 0;
