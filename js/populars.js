@@ -606,15 +606,15 @@ function renderPopularList() {
   container.innerHTML = '';
   const allItems = getPopularProducts();
   // Cerca insensible a accents + majúscules + espais (reutilitza el
-  // mateix helper que el cercador view-all del BiteMe a biteme.js:105).
-  // Cobreix accents agudes/greus/dièresi via NFD + regex de combining
-  // diacritical marks; també ç → c (decomposició NFD a c + cedilla).
-  const q = _normalizeForSearch(popularSearchQuery).trim();
+  // helper compartit normalizeForSearch definit a biteme.js i exposat
+  // a window). Cobreix accents agudes/greus/dièresi via NFD + regex de
+  // combining diacritical marks; també ç → c (NFD ç = c + cedilla).
+  const q = normalizeForSearch(popularSearchQuery);
   const catFilter = popularCategoryFilter || 'all';
   const isCatFiltering = (catFilter && catFilter !== 'all');
 
   // Filtrat combinat: text + categoria. Apliquem-los seqüencialment.
-  let items = q ? allItems.filter(p => _normalizeForSearch(p.name).includes(q)) : allItems.slice();
+  let items = q ? allItems.filter(p => normalizeForSearch(p.name).includes(q)) : allItems.slice();
   if (isCatFiltering && window.CategoriesSystem) {
     const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
       ? window.CategoriesSystem.getItemCategories() : {};

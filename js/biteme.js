@@ -101,10 +101,14 @@ function _resetViewAllSearch() {
   if (clearBtn) clearBtn.hidden = true;
 }
 
-// Helpers de cerca: cas-insensitive + diacrítics ignorats.
-function _normalizeForSearch(s) {
-  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+// Helpers de cerca: cas-insensitive + diacrítics ignorats + trim.
+// Exposat globalment a window perquè tots els mòduls (populars.js,
+// buyme.js, core.js, ...) puguin reutilitzar-lo sense duplicar lògica.
+// Inclou .trim() perquè els callers no hagin de recordar-ho.
+function normalizeForSearch(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 }
+window.normalizeForSearch = normalizeForSearch;
 
 function _getViewAllSearchQuery() {
   const el = document.getElementById('view-all-search');
@@ -119,8 +123,8 @@ function _getViewAllSearchQuery() {
 function _getFilteredViewAllProducts() {
   const q = _getViewAllSearchQuery();
   if (!q) return products;
-  const nq = _normalizeForSearch(q);
-  return products.filter(p => _normalizeForSearch(p.name).includes(nq));
+  const nq = normalizeForSearch(q);
+  return products.filter(p => normalizeForSearch(p.name).includes(nq));
 }
 
 function renderViewAll() {
@@ -3921,10 +3925,10 @@ function setupNameAutocomplete() {
 // noExpiry). Els populars tenen prioritat perquè estan curats.
 function findKnownProductByName(name) {
   if (!name) return null;
-  const q = name.toLowerCase().trim();
+  const q = normalizeForSearch(name);
   if (!q) return null;
   const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
-  const fromPopular = populars.find(p => p.name.toLowerCase().trim() === q);
+  const fromPopular = populars.find(p => p && p.name && normalizeForSearch(p.name) === q);
   if (fromPopular) {
     return {
       name: fromPopular.name,
@@ -3938,7 +3942,7 @@ function findKnownProductByName(name) {
     };
   }
   const fromHistory = (typeof productHistory !== 'undefined' ? productHistory : [])
-    .find(p => p.name.toLowerCase().trim() === q);
+    .find(p => p && p.name && normalizeForSearch(p.name) === q);
   if (fromHistory) {
     return {
       name: fromHistory.name,
@@ -4066,14 +4070,20 @@ function setupAutocompleteFor(input, suggBox, mode) {
   });
 
   // Quan l'usuari acaba d'escriure (blur), si el nom coincideix exactament
-  // amb un popular o un producte de l'historial, prefillem la resta de camps.
+  // amb un popular o un producte de l'historial (comparació insensible a
+  // accents/majúscules), prefillem la resta de camps. Canonicalitzem
+  // l'input al nom catalogat (ex: "sindria" → "Síndria") perquè el save
+  // no creï un registre amb spelling diferent del catàleg.
   if (mode !== 'shopping') {
     input.addEventListener('blur', () => {
       setTimeout(() => { suggBox.innerHTML = ''; }, 200);
       const name = input.value.trim();
       if (!name) return;
       const known = findKnownProductByName(name);
-      if (known) applyKnownProductToForm(known);
+      if (known) {
+        if (input.value.trim() !== known.name) input.value = known.name;
+        applyKnownProductToForm(known);
+      }
     });
   } else {
     input.addEventListener('blur', () => {
@@ -4534,18 +4544,19 @@ function guessLocationFromName(name) {
 
 function searchProductHistory(query) {
   if (!query || query.length < 1) return [];
-  const q = query.toLowerCase().trim();
+  const q = normalizeForSearch(query);
+  if (!q) return [];
 
-  // Combina historial + productes populars
-  const fromHistory = productHistory.filter(p => p.name.toLowerCase().includes(q));
+  // Combina historial + productes populars (cerca insensible a accents/majúscules)
+  const fromHistory = productHistory.filter(p => p && p.name && normalizeForSearch(p.name).includes(q));
   const fromPopular = getPopularProducts()
-    .filter(p => p.name.toLowerCase().includes(q))
+    .filter(p => p && p.name && normalizeForSearch(p.name).includes(q))
     .map(p => ({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, isPopular: true }));
 
-  // Combinem sense duplicats (mateix nom)
+  // Combinem sense duplicats (mateix nom normalitzat — síndria == Síndria == sindria)
   const result = [...fromHistory];
   fromPopular.forEach(pop => {
-    if (!result.find(r => r.name.toLowerCase() === pop.name.toLowerCase())) {
+    if (!result.find(r => normalizeForSearch(r.name) === normalizeForSearch(pop.name))) {
       result.push(pop);
     }
   });

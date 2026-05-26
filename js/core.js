@@ -213,13 +213,19 @@ const EMOJI_NAMES_CA = {
 
 // Cerca emojis pel nom (substring case-insensitive). Retorna array d'emojis.
 function searchEmojiByName(query) {
-  const q = (query || '').toLowerCase().trim();
+  // Cerca insensible a accents/majúscules via helper compartit
+  // (window.normalizeForSearch a biteme.js). Fallback defensiu per
+  // si core.js es carregués abans de biteme.js en algun escenari.
+  const norm = (typeof window.normalizeForSearch === 'function')
+    ? window.normalizeForSearch
+    : (s => String(s || '').toLowerCase().trim());
+  const q = norm(query);
   if (!q) return EMOJIS.slice();
   const out = [];
   EMOJIS.forEach(e => {
     const names = EMOJI_NAMES_CA[e];
     if (!names) return;
-    if (names.some(n => n.toLowerCase().includes(q))) out.push(e);
+    if (names.some(n => norm(n).includes(q))) out.push(e);
   });
   return out;
 }

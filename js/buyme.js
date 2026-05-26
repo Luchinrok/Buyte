@@ -1337,9 +1337,25 @@ function _autofillShoppingFromPopular(name) {
   if (!name) return;
   if (typeof getPopularProducts !== 'function') return;
   const populars = getPopularProducts() || [];
-  const key = String(name).toLowerCase().trim();
-  const popular = populars.find(p => p && p.name && p.name.toLowerCase().trim() === key);
+  // Comparació insensible a accents/majúscules (commit fix-search).
+  // window.normalizeForSearch viu a biteme.js (carregat abans).
+  const norm = (typeof window.normalizeForSearch === 'function')
+    ? window.normalizeForSearch
+    : (s => String(s || '').toLowerCase().trim());
+  const key = norm(name);
+  const popular = populars.find(p => p && p.name && norm(p.name) === key);
   if (!popular) return;
+
+  // Canonicalització: si l'usuari ha escrit 'sindria' i el popular és
+  // 'Síndria', actualitzem el nameInput al nom catalogat perquè el save
+  // no creï un registre amb spelling diferent. Atenció: el snapshot
+  // _lastAutofillSnapshot NO inclou 'name', només emoji/weight/price/
+  // dateStr/noExpiry — aquest canvi a nameInput.value NO afecta la
+  // lògica canReplace ni el flow de re-autofill al canviar nom.
+  const nameInput = document.getElementById('input-shopping-name');
+  if (nameInput && nameInput.value.trim() !== popular.name) {
+    nameInput.value = popular.name;
+  }
 
   const snap = _lastAutofillSnapshot;
 
