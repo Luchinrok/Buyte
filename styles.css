@@ -10831,14 +10831,22 @@ body.selection-mode-active #shops-slider .arrow-btn {
    Quan no-expiry marcat, _wirePopularNoExpiryToggle amaga
    #popular-days-row (display:none) i el chip queda sol al row.
 
-   align-items: flex-end perquè el chip s'alineï amb la BASE del row
-   (l'alçada de la caixa de l'input dies), no amb el centre vertical
-   del #popular-days-row sencer (label + input apilats fan ~96px,
-   centrar deixaria el chip al nivell del label). */
+   align-items: last baseline → el navegador alinea per la baseline
+   del darrer text de cada flex item. Per #popular-days-row (block amb
+   label + input), el darrer text és el "365" dins l'input. Per
+   .no-expiry-label (chip flex amb checkbox + text), el darrer text és
+   "No caduca". Resultat: els dos textos queden alineats per les seves
+   mètriques reals (cap-height, descender, etc.), no per box geometry —
+   això és el que l'ull humà percep com "centrat verticalment". Resol
+   alhora la diferència d'alçada entre boxes i les asimetries de font
+   metrics que el min-height: 46 + box-sizing: border-box anterior
+   no podien resoldre.
+
+   Suport: iOS Safari ≥13.1, Chrome ≥99, Firefox ≥102. */
 #screen-popular-edit .days-no-expiry-row {
   display: flex;
   gap: 10px;
-  align-items: flex-end;
+  align-items: last baseline;
 }
 #screen-popular-edit .days-no-expiry-row #popular-days-row {
   flex: 1 1 0;
@@ -10846,14 +10854,6 @@ body.selection-mode-active #shops-slider .arrow-btn {
 }
 #screen-popular-edit .days-no-expiry-row .no-expiry-label {
   flex: 0 0 auto;
-  /* Match input box height per a centratge net amb la caixa del input.
-     Input height ≈ 46px (padding 10×14 PAS 3 + font 16 + border 2×2).
-     Chip intrinsic ≈ 40px és lleugerament més baix, causant un offset
-     visual subtil tot i align-items: flex-end al row pare. min-height
-     iguala les caixes de manera que input i chip comparteixen
-     identicament top/center/bottom. */
-  min-height: 46px;
-  box-sizing: border-box;
 }
 
 /* Fila Preu + Pes 50/50 */
