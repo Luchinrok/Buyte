@@ -10562,10 +10562,7 @@ body.selection-mode-active #shops-slider .arrow-btn {
 }
 .form-toggle-label {
   display: flex;
-  /* baseline no funciona amb <input type="checkbox"> (no té baseline
-     real del text als navegadors). Tornem a flex-start + margin-top
-     empíric al checkbox per centrar amb la primera línia del text. */
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   cursor: pointer;
   font-size: 13px;
@@ -10576,7 +10573,6 @@ body.selection-mode-active #shops-slider .arrow-btn {
   height: 18px;
   cursor: pointer;
   flex-shrink: 0;
-  margin-top: 2px;
 }
 #screen-add .form-toggle-group .form-hint {
   font-size: 11px;
