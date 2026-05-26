@@ -605,12 +605,16 @@ function renderPopularList() {
   const container = document.getElementById('popular-list');
   container.innerHTML = '';
   const allItems = getPopularProducts();
-  const q = popularSearchQuery.toLowerCase().trim();
+  // Cerca insensible a accents + majúscules + espais (reutilitza el
+  // mateix helper que el cercador view-all del BiteMe a biteme.js:105).
+  // Cobreix accents agudes/greus/dièresi via NFD + regex de combining
+  // diacritical marks; també ç → c (decomposició NFD a c + cedilla).
+  const q = _normalizeForSearch(popularSearchQuery).trim();
   const catFilter = popularCategoryFilter || 'all';
   const isCatFiltering = (catFilter && catFilter !== 'all');
 
   // Filtrat combinat: text + categoria. Apliquem-los seqüencialment.
-  let items = q ? allItems.filter(p => p.name.toLowerCase().includes(q)) : allItems.slice();
+  let items = q ? allItems.filter(p => _normalizeForSearch(p.name).includes(q)) : allItems.slice();
   if (isCatFiltering && window.CategoriesSystem) {
     const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
       ? window.CategoriesSystem.getItemCategories() : {};
