@@ -10775,3 +10775,82 @@ body.selection-mode-active #shops-slider .arrow-btn {
   margin-top: 0;
 }
 
+/* ============================================================
+   PAS 3 — compactació + layout horitzontal a #screen-popular-edit
+   Aplica simultàniament:
+   - Equivalent PAS 1 v1 (compactació marges + padding inputs)
+   - Equivalent PAS 1 v2 / PAS 2 v2 (layout horitzontal)
+
+   Específic d'aquest screen:
+   - Dies (input number) + No caduca side-by-side
+   - Preu + Pes en form-row 50/50
+   - Categoria + Ubicació full width (NO toquen — pickers complexos)
+   - NO hi ha .popular-btn aquí (és la pantalla de populars)
+   - NO hi ha .form-toggle-group → selector genèric per amagar form-hint
+   ============================================================ */
+
+/* Compactació marges (equivalent PAS 1 v1) */
+#screen-popular-edit .form-group {
+  margin-bottom: 12px;
+}
+#screen-popular-edit .form-group input[type="text"],
+#screen-popular-edit .form-group input[type="number"] {
+  padding: 10px 14px;
+  /* font-size 16px mantingut (anti-zoom iOS Safari) */
+}
+#screen-popular-edit .form-hint {
+  display: none;
+}
+#screen-popular-edit .no-expiry-label {
+  margin-top: 0;
+}
+
+/* Fila Nom + Emoji */
+#screen-popular-edit .name-emoji-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+#screen-popular-edit .name-emoji-row input[type="text"] {
+  flex: 1 1 0;
+  min-width: 0;
+}
+#screen-popular-edit .name-emoji-row .emoji-button {
+  flex: 0 0 52px;
+  width: 52px;
+  padding: 6px;
+  justify-content: center;
+  gap: 0;
+}
+#screen-popular-edit .name-emoji-row .emoji-button-current {
+  font-size: 30px;
+}
+
+/* Fila Dies + No caduca side-by-side.
+   Quan no-expiry marcat, _wirePopularNoExpiryToggle amaga
+   #popular-days-row (display:none) i el chip queda sol al row. */
+#screen-popular-edit .days-no-expiry-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+#screen-popular-edit .days-no-expiry-row #popular-days-row {
+  flex: 1 1 0;
+  min-width: 0;
+}
+#screen-popular-edit .days-no-expiry-row .no-expiry-label {
+  flex: 0 0 auto;
+}
+
+/* Fila Preu + Pes 50/50 */
+#screen-popular-edit .form-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+#screen-popular-edit .form-row .form-group {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
