@@ -158,11 +158,7 @@ function confirmResetRecipeUsage() {
     resetRecipeUsage();
     showToast(t('doneReset'));
   };
-  if (typeof showConfirmDangerModal === 'function') {
-    showConfirmDangerModal('🍳', t('resetRecipeUsageTitle'), t('resetRecipeUsageConfirm'), onYes);
-  } else if (window.confirm(t('resetRecipeUsageConfirm'))) {
-    onYes();
-  }
+  showConfirmDangerModal('🍳', t('resetRecipeUsageTitle'), t('resetRecipeUsageConfirm'), onYes);
 }
 // Cerca lliure dins la pestanya activa
 let cookmeSearch = '';
@@ -629,11 +625,7 @@ function restoreCatalogRecipe(id) {
     showToast(t('restoredOriginal'));
     renderCookMe();
   };
-  if (typeof showConfirmDangerModal === 'function') {
-    showConfirmDangerModal('🔄', recipe ? recipe.name : t('restoreOriginalRecipe'), t('restoreOriginalConfirm'), onYes);
-  } else if (window.confirm(t('restoreOriginalConfirm'))) {
-    onYes();
-  }
+  showConfirmDangerModal('🔄', recipe ? recipe.name : t('restoreOriginalRecipe'), t('restoreOriginalConfirm'), onYes);
 }
 
 // ============================================
@@ -1390,11 +1382,7 @@ function restoreOriginalRecipe() {
     renderRecipeDetail();
     showScreen('recipe-detail');
   };
-  if (typeof showConfirmDangerModal === 'function') {
-    showConfirmDangerModal('🔄', t('restoreOriginalRecipe'), t('restoreOriginalConfirm'), onYes);
-  } else if (window.confirm(t('restoreOriginalConfirm'))) {
-    onYes();
-  }
+  showConfirmDangerModal('🔄', t('restoreOriginalRecipe'), t('restoreOriginalConfirm'), onYes);
 }
 
 // Esborra una recepta custom (només si isCustom). Demana confirmació.
@@ -1412,11 +1400,7 @@ function deleteCustomRecipe(id) {
     renderCookMe();
     showScreen('cookme');
   };
-  if (typeof showConfirmDangerModal === 'function') {
-    showConfirmDangerModal('🗑️', recipe.name || t('delete'), t('deleteRecipeConfirm'), onYes);
-  } else if (window.confirm(t('deleteRecipeConfirm'))) {
-    onYes();
-  }
+  showConfirmDangerModal('🗑️', recipe.name || t('delete'), t('deleteRecipeConfirm'), onYes);
 }
 
 // Surt del formulari sense desar canvis. Si veníem d'un detall, hi tornem;

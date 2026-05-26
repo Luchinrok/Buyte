@@ -848,9 +848,5 @@ function confirmResetGamificationProgress() {
     if (typeof renderImpactLevelBanner === 'function') renderImpactLevelBanner();
     if (typeof renderAchievements === 'function') renderAchievements();
   };
-  if (typeof showConfirmDangerModal === 'function') {
-    showConfirmDangerModal('🏆', t('resetGamificationTitle'), t('resetGamificationConfirm'), onYes);
-  } else if (window.confirm(t('resetGamificationConfirm'))) {
-    onYes();
-  }
+  showConfirmDangerModal('🏆', t('resetGamificationTitle'), t('resetGamificationConfirm'), onYes);
 }

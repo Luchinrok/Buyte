@@ -1006,17 +1006,29 @@ function deleteLocation(index) {
     showToast(t('needOneLocation'));
     return;
   }
-  if (!confirm(t('confirmDeleteLocation'))) return;
-  const removed = locations[index];
-  locations.splice(index, 1);
-  // Si algun producte usava aquesta ubicació, l'assignem a la primera disponible
-  products.forEach(p => {
-    if (p.location === removed.id) p.location = locations[0].id;
-  });
-  saveLocations();
-  saveData();
-  renderLocationsList();
-  showToast(t('deleted'));
+  // Capturem la referència al moment del click (modal asíncron). Si la
+  // llista canvia entre el click i el confirm, el splice per index podria
+  // afectar la ubicació equivocada — re-busquem per id dins del callback.
+  const target = locations[index];
+  if (!target) return;
+  showConfirmDangerModal(
+    target.emoji || '📍',
+    target.name || 'Ubicació',
+    t('confirmDeleteLocation'),
+    () => {
+      const realIdx = locations.findIndex(l => l.id === target.id);
+      if (realIdx < 0) return;
+      locations.splice(realIdx, 1);
+      // Si algun producte usava aquesta ubicació, l'assignem a la primera disponible
+      products.forEach(p => {
+        if (p.location === target.id) p.location = locations[0].id;
+      });
+      saveLocations();
+      saveData();
+      renderLocationsList();
+      showToast(t('deleted'));
+    }
+  );
 }
 
 function recalcDateByLocation() {

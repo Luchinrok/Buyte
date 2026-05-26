@@ -205,10 +205,20 @@ function moveSpecialList(idx, dir) {
 }
 
 function deleteSpecialList(idx) {
-  if (!confirm(t('confirmDeleteList') || 'Esborrar?')) return;
-  specialListsData.splice(idx, 1);
-  saveSpecialLists();
-  renderSpecialLists();
+  const target = specialListsData[idx];
+  if (!target) return;
+  showConfirmDangerModal(
+    target.emoji || '📋',
+    target.name || 'Llista',
+    t('confirmDeleteList') || 'Esborrar?',
+    () => {
+      const realIdx = specialListsData.findIndex(l => l.id === target.id);
+      if (realIdx < 0) return;
+      specialListsData.splice(realIdx, 1);
+      saveSpecialLists();
+      renderSpecialLists();
+    }
+  );
 }
 
 function addCustomSpecialList() {

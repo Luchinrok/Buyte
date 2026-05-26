@@ -1314,16 +1314,26 @@ function saveSupermarket() {
 
 function deleteSupermarket() {
   if (!editingSupermarket) return;
-  const itemsCount = getShoppingItemsBySupermarket(editingSupermarket.id).length;
+  // Capturem la referència al moment del click (asíncron — el modal es
+  // mostra abans del callback). El missatge dinàmic es construeix amb
+  // el comptador d'items afectats actual.
+  const target = editingSupermarket;
+  const itemsCount = getShoppingItemsBySupermarket(target.id).length;
   const msg = itemsCount > 0 ? t('confirmDeleteSupermarketWithItems', itemsCount) : t('confirmDeleteSupermarket');
-  if (!confirm(msg)) return;
-  // Esborra items associats
-  shoppingItems = shoppingItems.filter(it => it.supermarketId !== editingSupermarket.id);
-  // Esborra supermercat
-  supermarkets = supermarkets.filter(s => s.id !== editingSupermarket.id);
-  saveShoppingData();
-  showToast(t('deleted'));
-  openShoppingList();
+  showConfirmDangerModal(
+    target.emoji || '🛒',
+    target.name || 'Supermercat',
+    msg,
+    () => {
+      // Esborra items associats
+      shoppingItems = shoppingItems.filter(it => it.supermarketId !== target.id);
+      // Esborra supermercat
+      supermarkets = supermarkets.filter(s => s.id !== target.id);
+      saveShoppingData();
+      showToast(t('deleted'));
+      openShoppingList();
+    }
+  );
 }
 
 // Afegir/editar item
@@ -1723,11 +1733,20 @@ function showAlreadyHaveModal(itemName, existingProducts, onConfirm) {
 
 function deleteShoppingItem() {
   if (!editingShoppingItem) return;
-  if (!confirm(t('confirmDeleteShoppingItem'))) return;
-  shoppingItems = shoppingItems.filter(it => it.id !== editingShoppingItem.id);
-  saveShoppingData();
-  showToast(t('deleted'));
-  openSupermarket(currentSupermarketId, { preserveMode: true });
+  // Capturem la referència al moment del click (modal asíncron).
+  const target = editingShoppingItem;
+  const supermarketAtClick = currentSupermarketId;
+  showConfirmDangerModal(
+    target.emoji || '🗑️',
+    target.name || 'Producte',
+    t('confirmDeleteShoppingItem'),
+    () => {
+      shoppingItems = shoppingItems.filter(it => it.id !== target.id);
+      saveShoppingData();
+      showToast(t('deleted'));
+      openSupermarket(supermarketAtClick, { preserveMode: true });
+    }
+  );
 }
 
 // Quan l'usuari prem "Comprat" → si tenim prou dades (zona + caducitat),

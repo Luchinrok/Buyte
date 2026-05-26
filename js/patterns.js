@@ -144,11 +144,7 @@ function confirmResetPatternData() {
       if (area && typeof renderPatternsSubTab === 'function') renderPatternsSubTab(area);
     }
   };
-  if (typeof showConfirmDangerModal === 'function') {
-    showConfirmDangerModal('🧠', t('resetPatternsTitle'), t('resetPatternsConfirm'), onYes);
-  } else if (window.confirm(t('resetPatternsConfirm'))) {
-    onYes();
-  }
+  showConfirmDangerModal('🧠', t('resetPatternsTitle'), t('resetPatternsConfirm'), onYes);
 }
 
 // ---------- Activity tracking ----------

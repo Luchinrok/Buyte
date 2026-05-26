@@ -154,10 +154,20 @@ function movePopularItem(idx, direction) {
 
 function deletePopularItem(idx) {
   const list = getPopularProducts();
-  if (!confirm(t('confirmDeletePopular'))) return;
-  list.splice(idx, 1);
-  savePopularProducts(list);
-  renderPopularList();
+  const item = list[idx];
+  if (!item) return;
+  showConfirmDangerModal(
+    item.emoji || '🗑️',
+    item.name || 'Producte popular',
+    t('confirmDeletePopular'),
+    () => {
+      // Re-llegim per si la llista ha canviat entre el click i el confirm.
+      const fresh = getPopularProducts();
+      fresh.splice(idx, 1);
+      savePopularProducts(fresh);
+      renderPopularList();
+    }
+  );
 }
 
 function addCustomPopular() {
@@ -472,11 +482,24 @@ function savePopularEdit() {
 
 function deletePopularEdit() {
   if (editingPopularIdx === null) return;
-  if (!confirm(t('confirmDeletePopular'))) return;
+  // Capturem l'index al moment del click (el modal és asíncron — si
+  // editingPopularIdx canviés durant el modal, faríem servir el valor
+  // antic). El item.emoji/name del modal els llegim ara mateix.
+  const idxAtClick = editingPopularIdx;
   const list = getPopularProducts();
-  list.splice(editingPopularIdx, 1);
-  savePopularProducts(list);
-  _returnFromPopularEdit();
+  const item = list[idxAtClick];
+  if (!item) return;
+  showConfirmDangerModal(
+    item.emoji || '🗑️',
+    item.name || 'Producte popular',
+    t('confirmDeletePopular'),
+    () => {
+      const fresh = getPopularProducts();
+      fresh.splice(idxAtClick, 1);
+      savePopularProducts(fresh);
+      _returnFromPopularEdit();
+    }
+  );
 }
 
 // Després de guardar / esborrar des de popular-edit, tornem a la
@@ -1013,41 +1036,46 @@ function deleteCategoryFromList(catId) {
   _confirmDeleteCategory(cat, null);
 }
 
-// Confirma l'eliminació amb confirm() natiu (mateix patró que la resta de
-// l'app — vegeu deletePopularItem). Si l'usuari accepta, elimina la
-// categoria, repinta llistes i pestanyes, i opcionalment crida onAfter
-// (útil quan venim del formulari d'edició per tornar a la llista).
+// Confirma l'eliminació amb showConfirmDangerModal (UX coherent amb la
+// resta de l'app). Si l'usuari accepta, elimina la categoria, repinta
+// llistes i pestanyes, i opcionalment crida onAfter (útil quan venim
+// del formulari d'edició per tornar a la llista).
 function _confirmDeleteCategory(cat, onAfter) {
   const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
     ? window.CategoriesSystem.getItemCategories() : {};
   const affected = Object.values(itemCats).filter(cid => cid === cat.id).length;
   const tail = affected > 0
-    ? '\n\n' + affected + ' producte' + (affected === 1 ? '' : 's') + ' passar' + (affected === 1 ? 'à' : 'an') + ' a "Altres".'
+    ? ' ' + affected + ' producte' + (affected === 1 ? '' : 's') + ' passar' + (affected === 1 ? 'à' : 'an') + ' a "Altres".'
     : '';
-  const msg = 'Eliminar la categoria "' + cat.name + '"?' + tail + '\n\nAquesta acció no es pot desfer.';
-  if (!confirm(msg)) return;
-
-  try {
-    window.CategoriesSystem.deleteCategory(cat.id);
-  } catch (err) {
-    showToast(err && err.message ? err.message : 'Error eliminant la categoria');
-    return;
-  }
-  showToast('Categoria "' + cat.name + '" eliminada');
-  // Si la categoria eliminada era el filtre actiu de pestanyes, tornem a "Tots".
-  if (typeof popularCategoryFilter !== 'undefined' && popularCategoryFilter === cat.id) {
-    popularCategoryFilter = 'all';
-  }
-  renderCategoriesList();
-  if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
-  if (typeof renderPopularList === 'function') {
-    // Si l'usuari està a la pantalla de populars en aquest moment (cas
-    // probable: ha vingut via ⚙️ Gestionar) els seus productes filtrats
-    // poden haver canviat — repintem.
-    const popScreen = document.getElementById('screen-popular');
-    if (popScreen && popScreen.classList.contains('active')) renderPopularList();
-  }
-  if (typeof onAfter === 'function') onAfter();
+  const msg = 'Eliminar la categoria "' + cat.name + '"?' + tail + ' Aquesta acció no es pot desfer.';
+  showConfirmDangerModal(
+    cat.icon || '🏷️',
+    cat.name || 'Categoria',
+    msg,
+    () => {
+      try {
+        window.CategoriesSystem.deleteCategory(cat.id);
+      } catch (err) {
+        showToast(err && err.message ? err.message : 'Error eliminant la categoria');
+        return;
+      }
+      showToast('Categoria "' + cat.name + '" eliminada');
+      // Si la categoria eliminada era el filtre actiu de pestanyes, tornem a "Tots".
+      if (typeof popularCategoryFilter !== 'undefined' && popularCategoryFilter === cat.id) {
+        popularCategoryFilter = 'all';
+      }
+      renderCategoriesList();
+      if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+      if (typeof renderPopularList === 'function') {
+        // Si l'usuari està a la pantalla de populars en aquest moment (cas
+        // probable: ha vingut via ⚙️ Gestionar) els seus productes filtrats
+        // poden haver canviat — repintem.
+        const popScreen = document.getElementById('screen-popular');
+        if (popScreen && popScreen.classList.contains('active')) renderPopularList();
+      }
+      if (typeof onAfter === 'function') onAfter();
+    }
+  );
 }
 
 // Listeners — s'enganxen al càrrec del DOM (idempotents via guard).
