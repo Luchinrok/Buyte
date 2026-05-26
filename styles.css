@@ -10573,6 +10573,10 @@ body.selection-mode-active #shops-slider .arrow-btn {
   height: 18px;
   cursor: pointer;
   flex-shrink: 0;
+  /* Empíric: el checkbox queda visualment ~4px més amunt que el text
+     i emoji a iOS Safari. Baixem amb margin-top per alinear amb la
+     primera línia del text. */
+  margin-top: 4px;
 }
 #screen-add .form-toggle-group .form-hint {
   font-size: 11px;
