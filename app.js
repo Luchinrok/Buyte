@@ -329,6 +329,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('save-btn').addEventListener('click', saveNewProduct);
 
+  // Helper global per al fix del placeholder gris dels inputs date.
+  // Aplica/treu classe .is-empty segons value, que el CSS usa per
+  // pintar el format "dd/mm/aaaa" en gris quan està buit. Cal cridar-lo
+  // manualment després de cada assignació JS a .value perquè els
+  // canvis programàtics no disparen events 'input' ni 'change'.
+  // (Substitueix l'intent inicial amb :placeholder-shown que iOS Safari
+  // no suportava amb type=date — vegeu commit a0171f3 → escalat.)
+  window._syncDateEmptyState = function (input) {
+    if (input) input.classList.toggle('is-empty', !input.value);
+  };
+
+  // Init i listeners per a tots els input[type="date"] de la pàgina.
+  // L'event 'input' cobreix l'entrada manual (teclat + native picker);
+  // 'change' cobreix el commit del native picker a Safari iOS.
+  document.querySelectorAll('input[type="date"]').forEach(input => {
+    window._syncDateEmptyState(input);
+    input.addEventListener('input', () => window._syncDateEmptyState(input));
+    input.addEventListener('change', () => window._syncDateEmptyState(input));
+  });
+
   document.querySelectorAll('.quick-date').forEach(b => {
     b.addEventListener('click', () => {
       const days = parseInt(b.dataset.days);
@@ -336,7 +356,10 @@ document.addEventListener('DOMContentLoaded', () => {
       d.setDate(d.getDate() + days);
       const targetId = b.classList.contains('shopping-quick-date') ? 'input-shopping-date' : 'input-date';
       const target = document.getElementById(targetId);
-      if (target) target.value = formatDateForInput(d);
+      if (target) {
+        target.value = formatDateForInput(d);
+        window._syncDateEmptyState(target);
+      }
       // Si està marcat "no caduca" del context shopping, el desmarquem
       if (b.classList.contains('shopping-quick-date')) {
         const noExp = document.getElementById('input-shopping-no-expiry');

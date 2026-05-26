@@ -1415,6 +1415,7 @@ function _autofillShoppingFromPopular(name) {
       }
     }
   }
+  if (dateInput && typeof window._syncDateEmptyState === 'function') window._syncDateEmptyState(dateInput);
 
   // Actualitzem el snapshot amb el popular que acabem d'aplicar.
   _lastAutofillSnapshot = {
@@ -1489,6 +1490,7 @@ function openShoppingItemEdit(item) {
       noExpInput.checked = !!item.noExpiry;
       dateInput.value = (!item.noExpiry && item.date) ? item.date : '';
     }
+    if (typeof window._syncDateEmptyState === 'function') window._syncDateEmptyState(dateInput);
   }
 
   const delBtn = document.getElementById('btn-delete-shopping-item');
@@ -2164,6 +2166,7 @@ function prefillShoppingItemFromPopular(p) {
       d.setDate(d.getDate() + 7);
       dateInput.value = formatDateForInput(d);
     }
+    if (typeof window._syncDateEmptyState === 'function') window._syncDateEmptyState(dateInput);
   }
 
   const delBtn = document.getElementById('btn-delete-shopping-item');

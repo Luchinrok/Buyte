@@ -1026,6 +1026,7 @@ function recalcDateByLocation() {
   const d = new Date();
   d.setDate(d.getDate() + finalDays);
   dateInput.value = formatDateForInput(d);
+  if (typeof window._syncDateEmptyState === 'function') window._syncDateEmptyState(dateInput);
 }
 
 // Obre la pantalla d'ubicacions recordant d'on s'ha cridat

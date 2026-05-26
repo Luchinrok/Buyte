@@ -3829,6 +3829,7 @@ function openAddForm(prefill) {
     dateInputEl.value = formatDateForInput(d);
     dateInputEl.dataset.baseDays = baseDays;
   }
+  if (typeof window._syncDateEmptyState === 'function') window._syncDateEmptyState(dateInputEl);
 
   selectedEmoji = prefill && prefill.emoji ? prefill.emoji : '🥛';
   renderEmojiPicker();
@@ -3987,6 +3988,7 @@ function applyKnownProductToForm(m) {
       dateInput.dataset.baseDays = m.days;
     }
   }
+  if (dateInput && typeof window._syncDateEmptyState === 'function') window._syncDateEmptyState(dateInput);
 
   const priceInput = document.getElementById('input-price');
   if (priceInput && !priceInput.value.trim() && typeof m.price === 'number' && m.price >= 0) {

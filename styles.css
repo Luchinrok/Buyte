@@ -10900,20 +10900,16 @@ body.selection-mode-active #shops-slider .arrow-btn {
    ::-webkit-datetime-edit. Aquest pseudo-element hereta color del
    parent input, que és var(--text) (negre al mode clar). Resultat:
    el format placeholder es veu en negre, inconsistent amb els
-   placeholders dels altres inputs (text/number) que el navegador
-   pinta en gris-placeholder per defecte.
+   placeholders dels altres inputs.
 
-   :placeholder-shown identifica quan l'input està buit (mostrant
-   el format placeholder, no un valor real). Apliquem color gris
-   només en aquest estat; quan l'usuari posa una data, el
-   pseudo-element torna a heretar el color normal del parent.
-
-   Suport :placeholder-shown amb type=date:
-   - Chrome/Edge/Firefox: ✓ correcte
-   - iOS Safari 16+: ✓
-   - iOS Safari <16: parcial. Fallback: placeholder segueix negre
-     (estat actual abans del fix). Cap regressió. */
-input[type="date"]:placeholder-shown::-webkit-datetime-edit {
+   Vam intentar primer :placeholder-shown (commit a0171f3) però iOS
+   Safari del target no el suporta amb type=date. Substituïm per
+   classe .is-empty aplicada via JS (window._syncDateEmptyState a
+   app.js) sincronitzada amb el value de l'input via listeners
+   'input'/'change' + crides manuals a les funcions que assignen
+   .value directament (openShoppingItemEdit, openAddForm, chips
+   quick-date, autofill popular, recalcDateByLocation). */
+input[type="date"].is-empty::-webkit-datetime-edit {
   color: var(--text-hint);
 }
 
