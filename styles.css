@@ -10573,6 +10573,12 @@ body.selection-mode-active #shops-slider .arrow-btn {
   height: 18px;
   cursor: pointer;
   flex-shrink: 0;
+  /* iOS Safari pot respectar un baseline default de l'input fins i tot
+     en context flex amb align-items:center, alineant el checkbox amb
+     la primera línia del text en lloc del centre vertical del bloc.
+     vertical-align: middle força el navegador a usar el centre del
+     control com a referència de baseline. */
+  vertical-align: middle;
 }
 /* El span amb el text necessita min-width: 0 explícit perquè el flex
    item pugui contraure per sota del seu content min-width (default
