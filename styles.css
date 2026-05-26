@@ -10854,3 +10854,11 @@ body.selection-mode-active #shops-slider .arrow-btn {
   margin-bottom: 0;
 }
 
+/* Refinament PAS 3 — labels centrats horitzontalment.
+   :not(.no-expiry-label) exclou el chip 'No caduca' (que és <label>
+   amb estructura flex pròpia — el text viu dins d'un <span> al
+   costat del checkbox, no a sobre l'input). */
+#screen-popular-edit .form-group label:not(.no-expiry-label) {
+  text-align: center;
+}
+
