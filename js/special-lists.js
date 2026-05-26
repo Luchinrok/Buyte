@@ -222,17 +222,25 @@ function deleteSpecialList(idx) {
 }
 
 function addCustomSpecialList() {
-  const name = prompt(t('newListName') || 'Nom de la nova llista:');
-  if (!name || !name.trim()) return;
-  specialListsData.push({
-    id: 'custom-' + Date.now(),
-    emoji: '📋',
-    name: name.trim(),
-    enabled: true,
-    items: []
-  });
-  saveSpecialLists();
-  renderSpecialLists();
+  showInputModal(
+    '📋',
+    t('newListName') || 'Nova llista',
+    null,
+    'Nom de la llista...',
+    (name) => {
+      if (!name) return;
+      specialListsData.push({
+        id: 'custom-' + Date.now(),
+        emoji: '📋',
+        name: name,
+        enabled: true,
+        items: []
+      });
+      saveSpecialLists();
+      renderSpecialLists();
+    },
+    { maxLength: 60 }
+  );
 }
 
 function openSpecialDetail(list, editMode) {

@@ -2493,6 +2493,88 @@ function showConfirmModal(emoji, title, message, opts, onConfirm) {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
+// Modal d'input de text (substitueix els prompt() nadius lletjos).
+// Patró coherent amb showConfirmModal/showConfirmDangerModal.
+//   emoji: string visible al capdamunt del modal
+//   title: string títol del modal
+//   message: string opcional (subtítol explicatiu); null/'' per ometre
+//   placeholder: placeholder del camp input
+//   onConfirm: function(value) — callback amb el text introduït (trimmed)
+//   options: { initialValue, maxLength, validator, confirmLabel, cancelLabel }
+//     - initialValue: text pre-omplir (per editar valors existents)
+//     - maxLength: caràcters màxims (defaults 200)
+//     - validator: function(value) → string|null. null=vàlid, string=missatge d'error
+//     - confirmLabel / cancelLabel: text botons (defaults "D'acord" / t('cancel'))
+//
+// Comportament: tancament per ESC, click fora, o Cancel·lar. Submit per
+// Enter dins el camp o clic al confirm. Si validator retorna error,
+// es mostra sota l'input i el modal no es tanca.
+function showInputModal(emoji, title, message, placeholder, onConfirm, options) {
+  const cfg = options || {};
+  const initialValue = cfg.initialValue || '';
+  const maxLength = cfg.maxLength || 200;
+  const validator = typeof cfg.validator === 'function' ? cfg.validator : null;
+  const confirmLabel = cfg.confirmLabel || "D'acord";
+  const cancelLabel = cfg.cancelLabel || t('cancel');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">${emoji}</div>
+      <p class="modal-title">${escapeHtml(title)}</p>
+      ${message ? `<p class="modal-sub">${escapeHtml(message)}</p>` : ''}
+      <input type="text" class="modal-input" id="modal-input-field"
+             placeholder="${escapeHtml(placeholder || '')}"
+             maxlength="${maxLength}"
+             value="${escapeHtml(initialValue)}"
+             autocomplete="off">
+      <p class="modal-input-error" id="modal-input-error" style="display:none"></p>
+      <div class="modal-buttons">
+        <button class="modal-cancel" id="modal-no-btn">${escapeHtml(cancelLabel)}</button>
+        <button class="modal-confirm" id="modal-yes-btn">${escapeHtml(confirmLabel)}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const input = overlay.querySelector('#modal-input-field');
+  const errorEl = overlay.querySelector('#modal-input-error');
+  const close = () => {
+    document.removeEventListener('keydown', onEscape);
+    if (overlay.parentNode) document.body.removeChild(overlay);
+  };
+  const onEscape = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onEscape);
+
+  const tryConfirm = () => {
+    const value = input.value.trim();
+    if (validator) {
+      const err = validator(value);
+      if (err) {
+        errorEl.textContent = err;
+        errorEl.style.display = '';
+        return;
+      }
+    }
+    close();
+    try { onConfirm(value); } catch (e) { console.error(e); }
+  };
+
+  overlay.querySelector('#modal-no-btn').addEventListener('click', close);
+  overlay.querySelector('#modal-yes-btn').addEventListener('click', tryConfirm);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); tryConfirm(); }
+  });
+  input.addEventListener('input', () => {
+    if (errorEl.style.display !== 'none') errorEl.style.display = 'none';
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  // Focus diferit perquè iOS Safari porti el keyboard al obrir.
+  setTimeout(() => { input.focus(); }, 50);
+}
+
 // Modal de confirmació reusable per a accions destructives.
 // title: text del títol; message: text d'avís; onConfirm: callback si l'usuari confirma.
 function showConfirmDangerModal(emoji, title, message, onConfirm) {

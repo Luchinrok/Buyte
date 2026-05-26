@@ -4523,6 +4523,30 @@ body.selection-mode-active #shops-slider .arrow-btn {
   line-height: 1;
 }
 
+/* Input dins de showInputModal (substitueix els prompt() nadius lletjos).
+   font-size 16px mantingut per anti-zoom iOS Safari. */
+.modal-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  outline: none;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.modal-input:focus { border-color: var(--primary); }
+.modal-input-error {
+  font-size: 13px;
+  color: var(--danger);
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
 .modal-flag-big {
   display: flex;
   justify-content: center;
