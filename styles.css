@@ -10846,6 +10846,14 @@ body.selection-mode-active #shops-slider .arrow-btn {
 }
 #screen-popular-edit .days-no-expiry-row .no-expiry-label {
   flex: 0 0 auto;
+  /* Match input box height per a centratge net amb la caixa del input.
+     Input height ≈ 46px (padding 10×14 PAS 3 + font 16 + border 2×2).
+     Chip intrinsic ≈ 40px és lleugerament més baix, causant un offset
+     visual subtil tot i align-items: flex-end al row pare. min-height
+     iguala les caixes de manera que input i chip comparteixen
+     identicament top/center/bottom. */
+  min-height: 46px;
+  box-sizing: border-box;
 }
 
 /* Fila Preu + Pes 50/50 */
