@@ -10862,3 +10862,19 @@ body.selection-mode-active #shops-slider .arrow-btn {
   text-align: center;
 }
 
+/* Refinament PAS 3 — alineació vertical dels inputs als form-row 50/50.
+   Bug pre-existent: quan les dues cel·les del form-row tenen labels de
+   longitud diferent i un fa wrap a 2 línies a viewport estret (ex:
+   'PREU PER ENVÀS' 1 línia vs 'CONTINGUT PER ENVÀS' 2 línies a 390px),
+   els inputs quedaven a alçades diferents.
+
+   Fix: cada form-group fill és display:flex column amb justify-content:
+   flex-end. Resultat: label flota al damunt (1 o 2 línies segons amplada)
+   i l'input sempre s'enganxa al fons de la cel·la. Els inputs queden
+   sempre alineats horitzontalment entre les dues cel·les. */
+#screen-popular-edit .form-row .form-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
