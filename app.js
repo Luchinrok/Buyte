@@ -368,6 +368,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Botó ℹ️ del toggle multi-lots (#screen-add) → obre modal informatiu
+  // amb els 2 casos d'ús. Substitueix el .form-hint llarg que pesava al
+  // formulari (#9 del backlog memory/BACKLOG.md). Reutilitza el helper
+  // _showInfoModal definit a settings.js.
+  const multiLotsInfoBtn = document.getElementById('multi-lots-info');
+  if (multiLotsInfoBtn) {
+    multiLotsInfoBtn.addEventListener('click', () => {
+      if (typeof _showInfoModal !== 'function') return;
+      _showInfoModal('📦', 'Crear envasos separats', [
+        'Marcat: cada envàs és un lot independent, amb la seva pròpia caducitat. Exemple: compres 4 paquets de formatge → es creen 4 lots separats.',
+        'Desmarcat: tots els envasos formen part del mateix lot. Exemple: compres un pack de 4 iogurts → 1 lot amb qty=4.'
+      ]);
+    });
+  }
+
   // Configuració — pantalla principal amb 5 cards de categoria. Cadascuna
   // obre una sub-pantalla amb pestanyes (instalada en commits posteriors).
   // Spaces UI (FASE 2): listeners del selector de la home + pantalla

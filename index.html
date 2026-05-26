@@ -1071,13 +1071,18 @@
     </div>
 
     <!-- Toggle multi-lot. Marcat = saveNewProduct crea N lots separats
-         (1 per envàs físic). Desmarcat = 1 sol lot amb qty=N unitats. -->
+         (1 per envàs físic). Desmarcat = 1 sol lot amb qty=N unitats.
+         El text explicatiu va passar de .form-hint inline a un modal
+         info disparat pel botó ℹ️ a la dreta del label (vegeu
+         _showInfoModal a settings.js i el listener a app.js). -->
     <div class="form-group form-toggle-group">
-      <label class="form-toggle-label">
-        <input type="checkbox" id="input-multi-lots">
-        <span>Crear envasos separats (lots independents)</span>
-      </label>
-      <p class="form-hint">Marca aquesta opció si compres més d'un envàs físic independent (ex: 4 paquets de formatge). Si compres un pack sencer (ex: pack de 4 iogurts), deixa-ho desmarcat.</p>
+      <div class="toggle-with-info">
+        <label class="form-toggle-label">
+          <input type="checkbox" id="input-multi-lots">
+          <span>Crear envasos separats (lots independents)</span>
+        </label>
+        <button type="button" class="info-btn" id="multi-lots-info" aria-label="Més informació">ℹ️</button>
+      </div>
     </div>
 
     <!-- Preview dinàmic: mostra què es crearà segons qty + weight + toggle.

@@ -10937,3 +10937,42 @@ input[type="date"].is-empty::-webkit-datetime-edit {
   color: var(--text-hint);
 }
 
+/* ============================================================
+   Botó info ℹ️ + wrapper per a labels amb help inline
+   ============================================================
+   Reutilitzable a qualsevol form-group. Primer ús: toggle multi-lots
+   al #screen-add (substitueix el .form-hint llarg). El click obre un
+   _showInfoModal (settings.js:1762). */
+
+.toggle-with-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toggle-with-info .form-toggle-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.info-btn {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.info-btn:active {
+  background: var(--bg-secondary);
+}
+
