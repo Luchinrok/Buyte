@@ -91,6 +91,23 @@ Detectats durant la sessió però no completats:
 
 ---
 
+## Decisions de disseny preses
+
+Decisions arquitecturals / d'UX preses després de valorar alternatives. Documentades aquí perquè futures sessions no tornin a obrir el mateix debat sense context.
+
+### Multi-lots: la decisió de "crear envasos separats" viu només al BiteMe
+
+**Context** (26/05/26): el toggle "Crear envasos separats" només existeix al `#screen-add` del BiteMe (`#input-multi-lots`). Considerat si calia replicar-ho al BuyMe (com a previsió en afegir item a la llista de la compra) o al catàleg de populars (com a `defaultMultiLots` per producte).
+
+**Decisió**: mantenir el comportament actual. La decisió es pren al moment de "Comprat" (BuyMe→BiteMe) i no abans, perquè:
+- El BuyMe no té lots reals (només previsió de compra). Afegir el toggle allà seria pre-decidir alguna cosa que es pot canviar quan es processa la compra.
+- Replicar-ho al BuyMe afegeix soroll a una pantalla ja compacta després de PAS 1 v2.
+- L'usuari no ha reportat el comportament actual com a problemàtic; és curiositat tècnica, no need real.
+
+**Quan reobrir**: si en algun moment l'usuari es troba marcant/desmarcant el toggle del BiteMe SEMPRE igual per a un producte concret (ex: ous sempre marcats, llet sempre desmarcada), valorar afegir `defaultMultiLots` al popular del catàleg (l'Opció B descartada avui). Mentre no hi hagi aquesta evidència, mantenir status quo.
+
+---
+
 ## Sessions completades importants — pointers per a context
 
 Si necessites entendre el "per què" d'una decisió arquitectural, el commit referenciat conté el detall complet al missatge. Aquí només l'ancora ràpida:
