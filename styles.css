@@ -10573,10 +10573,14 @@ body.selection-mode-active #shops-slider .arrow-btn {
   height: 18px;
   cursor: pointer;
   flex-shrink: 0;
-  /* Empíric: el checkbox queda visualment ~4px més amunt que el text
-     i emoji a iOS Safari. Baixem amb margin-top per alinear amb la
-     primera línia del text. */
-  margin-top: 4px;
+}
+/* El span amb el text necessita min-width: 0 explícit perquè el flex
+   item pugui contraure per sota del seu content min-width (default
+   auto), permetent que el text faci wrap natural en lloc de
+   comprimir-se vertical. */
+.form-toggle-label > span {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 #screen-add .form-toggle-group .form-hint {
   font-size: 11px;
