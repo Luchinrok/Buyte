@@ -2180,28 +2180,32 @@ function prefillShoppingItemFromPopular(p) {
   const titleEl = document.getElementById('shopping-item-edit-title');
   if (titleEl) titleEl.textContent = t('newShoppingItem');
 
+  // Camps específics de l'item del super (no presents al popular): buidats.
   document.getElementById('input-shopping-name').value = p.name || '';
   document.getElementById('input-shopping-qty').value = '';
   document.getElementById('input-shopping-notes').value = '';
-  selectedShoppingEmoji = p.emoji || '🥛';
-  renderShoppingEmojiPicker();
 
-  const dateInput = document.getElementById('input-shopping-date');
-  const noExpInput = document.getElementById('input-shopping-no-expiry');
-  if (noExpInput) noExpInput.checked = !!p.noExpiry;
-  if (dateInput) {
-    if (p.noExpiry) {
-      dateInput.value = '';
-    } else if (p.days) {
-      const d = new Date();
-      d.setDate(d.getDate() + p.days);
-      dateInput.value = formatDateForInput(d);
-    } else {
-      const d = new Date();
-      d.setDate(d.getDate() + 7);
-      dateInput.value = formatDateForInput(d);
-    }
-    if (typeof window._syncDateEmptyState === 'function') window._syncDateEmptyState(dateInput);
+  // Buidem price + weight ABANS del delegate perquè canReplace al
+  // _autofillShoppingFromPopular els consideri reemplaçables (snap=null
+  // + camp ple = "manual"; snap=null + camp buit = reemplaçable).
+  const priceInput = document.getElementById('input-shopping-price');
+  const weightInput = document.getElementById('input-shopping-weight');
+  if (priceInput) priceInput.value = '';
+  if (weightInput) weightInput.value = '';
+
+  // Reset snapshot: seleccionar del catàleg = "vull totes les dades del
+  // popular, oblida l'estat anterior del formulari". Sinó, valors manuals
+  // previs (ex: preu tocat per l'usuari abans de tornar al catàleg)
+  // bloquejarien l'override del nou popular seleccionat.
+  _lastAutofillSnapshot = null;
+
+  // Delegar al flow unificat: omple emoji + weight + price + date +
+  // noExpiry, actualitza snapshot, aplica canonicalització del nom.
+  // Mateix patró que el flow del blur — un sol lloc on viu la lògica
+  // d'autoomplir des de popular. Abans aquesta funció duplicava (parcialment)
+  // la lògica i no incloïa price/weight ni snapshot — bug fix 27/05/26.
+  if (typeof _autofillShoppingFromPopular === 'function') {
+    _autofillShoppingFromPopular(p.name);
   }
 
   const delBtn = document.getElementById('btn-delete-shopping-item');
