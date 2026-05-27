@@ -61,18 +61,24 @@ Detectats durant la sessió però no completats:
 
 - **Bug visual residual al checkbox del toggle multi-lots**. El checkbox de "CREAR ENVASOS SEPARATS" no queda centrat al centre vertical del bloc de text quan el text fa wrap a 2-3 línies. L'usuari va aclarir amb captura "abans/després" que vol els 3 elements (checkbox, text, emoji ℹ️) tots al centre vertical del bloc complet, no alineats amb la primera línia.
 
-  Intents fets el 26/05/26 (8 commits sense resoldre):
+  **9 intents fallits, 2 sessions (26-27/05/26)**:
   - `b4a6e51` — `align-items: flex-start` + `margin-top: 3px` (encara desalineat)
   - `88e58dd` — `align-items: baseline` (no funciona perquè input no té baseline real)
   - `2452ddc` — `flex-start` + `margin-top: 2px` (empíric, encara desalineat)
   - `aa39f6f` — `align-items: center` pur (cas 1 línia OK, 2+ línies amb checkbox a la primera línia)
   - `61b1e3d` — `margin-top: 4px` empíric (resol parcialment a 1 línia, no a 2+)
   - `34af737` — `flex: 1 1 auto + min-width: 0` al span (text feia 5 línies, ara fa 3 — millora però no resol centrat)
-  - `67cf5e7` — `vertical-align: middle` al checkbox (probablement no aplica en context flex amb iOS Safari)
+  - `67cf5e7` — `vertical-align: middle` al checkbox (no aplica en context flex)
+  - `f4f58f3` (9è intent, 27/05/26 amb cap fresc + DevTools) — wrapper estructural `<span class="checkbox-wrap">` amb `align-self:stretch + display:flex + align-items:center`. Captures de DevTools al PC van revelar que el `<input type="checkbox">` té comportament nadiu (margin 3px 3px 3px 4px + line-height:normal + display:inline-block + appearance:auto) que el navegador respecta tot i align-items:center del flex pare. Solució teòrica del wrapper teòricament hauria de funcionar (força tota l'alçada del label i centra el checkbox dins). **Resultat al mòbil: PITJOR que abans** — el checkbox queda visualment SEPARAT del text (com a "block" sobre el text en lloc d'alineat amb les paraules). Revertit en aquesta mateixa sessió.
   
-  **Hipòtesi pendent**: el problema requereix canvi estructural HTML (wrapper del checkbox amb display:flex i centrat propi) en lloc de només CSS al control nadiu. Solució fragil amb només CSS perquè `<input type=checkbox>` té comportament default difícil de sobreescriure consistentment a iOS Safari.
+  **Hipòtesi pendent**: el wrapper potser estava agafant amplada més del que tocava, o el flex layout del `.toggle-with-info` no és el correcte per al patró. Cal investigar més amb DevTools focalitzat al wrapper.
   
-  **Sessió futura**: atacar amb DevTools obert al PC, mesures de píxels reals, i si cal, canvi HTML — Backup 2 proposat: wrapping del checkbox en un `<span class="checkbox-wrap">` amb `display: flex; align-items: center; height: 100%` per centrat absolut dins el label. Estimat ~30-45 min amb cap fresc.
+  **Per a la pròxima sessió** — possible enfocament radical: revertir TOTS els canvis acumulats del toggle (els 9 intents) i començar de zero amb un disseny més simple. Opcions:
+  - (a) Canviar el text del label a una versió més curta com "Crear lots separats" o "Envasos independents" que NO necessiti wrap a la majoria de viewports. Acceptar que el centrat perfecte amb un text que fa wrap és tècnicament complex.
+  - (b) Posar el text en una sola línia compacta amb `white-space: nowrap` + `text-overflow: ellipsis` (perdria la part del text però evitaria el problema).
+  - (c) Acceptar el bug visual com "petit detall" no bloquejant i tancar l'ítem.
+  
+  Estat actual del codi: **revertit a equivalent de `aa39f6f`** (sense wrapper, sense `vertical-align`, només `align-items:center` al label + `flex:1 1 auto` al span del text). Ho deixem documentat però sense més intents avui.
 
 - **Bug autoomplir des de botó "Productes populars"** (`#popular-btn`/`#shopping-popular-btn`). Quan l'usuari obre el catàleg via el botó ⭐ i selecciona un popular, l'autoomplir dels camps del formulari no s'aplica de la mateixa manera que via blur del nom. Verificar quina funció gestiona aquest flow (probable `selectPopular` a populars.js o equivalent), comparar amb el flow de `_autofillShoppingFromPopular` (BuyMe) i `applyKnownProductToForm` (BiteMe), i unificar comportament. Possible que el snapshot `_lastAutofillSnapshot` (commit `c450d22`) no es respecti en aquest camí. Detectat avui durant tests del PAS 3.
 

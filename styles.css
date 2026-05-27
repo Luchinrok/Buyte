@@ -10574,21 +10574,6 @@ body.selection-mode-active #shops-slider .arrow-btn {
   cursor: pointer;
   flex-shrink: 0;
 }
-/* Wrapper estructural del checkbox per resoldre el bug de centrat
-   vertical quan el text del label fa wrap a 2-3 línies. El <input
-   type=checkbox> té comportament nadiu (margin 3px + line-height:normal
-   + display:inline-block) que el navegador respecta tot i
-   align-items:center del flex pare — diagnòstic empíric amb DevTools
-   després de 8 intents amb CSS pur (vegeu BACKLOG.md sessió 26/05/26).
-   align-self:stretch fa que el wrapper ocupi tota l'alçada del label;
-   dins el wrapper, el checkbox es centra amb el seu propi flex. */
-.form-toggle-label .checkbox-wrap {
-  flex: 0 0 18px;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 /* El span amb el text necessita min-width: 0 explícit perquè el flex
    item pugui contraure per sota del seu content min-width (default
    auto), permetent que el text faci wrap natural en lloc de
