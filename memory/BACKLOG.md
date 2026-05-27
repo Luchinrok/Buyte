@@ -55,6 +55,20 @@ Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté í
 
 ---
 
+## Sessió 27/05/26 — Commits
+
+Continuació del bug del centrat checkbox del toggle multi-lots (9è intent + revert) + fix del bug autoomplir des de botó ⭐ del catàleg al BuyMe (#10 del backlog d'ahir):
+
+| Hash | Una línia |
+|---|---|
+| `f4f58f3` | (9è intent fallit centrat checkbox — wrapper estructural amb DevTools) |
+| `a0a0a36` | Revert del 9è intent + apunt al backlog amb 3 enfocaments per a sessió futura |
+| `62c34da` | ✅ **Fix #10 — Bug autoomplir popular**: `prefillShoppingItemFromPopular` (catàleg BuyMe) ara delega a `_autofillShoppingFromPopular` (flow blur). Resol divergència acumulada: el path catàleg no omplia price/weight ni actualitzava el snapshot. Només afectava al BuyMe; el BiteMe ja era coherent via `openAddForm(prefill)`. |
+
+**Treballs no resolts**: bug del centrat checkbox segueix obert (vegeu Pendents — Avui).
+
+---
+
 ## Pendents — Avui (26/05/26)
 
 Detectats durant la sessió però no completats:
@@ -79,8 +93,6 @@ Detectats durant la sessió però no completats:
   - (c) Acceptar el bug visual com "petit detall" no bloquejant i tancar l'ítem.
   
   Estat actual del codi: **revertit a equivalent de `aa39f6f`** (sense wrapper, sense `vertical-align`, només `align-items:center` al label + `flex:1 1 auto` al span del text). Ho deixem documentat però sense més intents avui.
-
-- **Bug autoomplir des de botó "Productes populars"** (`#popular-btn`/`#shopping-popular-btn`). Quan l'usuari obre el catàleg via el botó ⭐ i selecciona un popular, l'autoomplir dels camps del formulari no s'aplica de la mateixa manera que via blur del nom. Verificar quina funció gestiona aquest flow (probable `selectPopular` a populars.js o equivalent), comparar amb el flow de `_autofillShoppingFromPopular` (BuyMe) i `applyKnownProductToForm` (BiteMe), i unificar comportament. Possible que el snapshot `_lastAutofillSnapshot` (commit `c450d22`) no es respecti en aquest camí. Detectat avui durant tests del PAS 3.
 
 - **Polish formularis — estendre a les pantalles secundàries**. La sèrie de polish formularis del 23-26/05/26 va atacar 3 pantalles principals (BuyMe afegir/editar, BiteMe afegir, popular-edit). Hi ha 3 pantalles més que afegeixen/editen productes/elements amb el mateix patró antic:
   - `#screen-special-item-edit` (afegir/editar item dins una llista especial)
