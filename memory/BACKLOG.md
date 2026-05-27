@@ -57,13 +57,14 @@ Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté í
 
 ## Sessió 27/05/26 — Commits
 
-Continuació del bug del centrat checkbox del toggle multi-lots (9è intent + revert) + fix del bug autoomplir des de botó ⭐ del catàleg al BuyMe (#10 del backlog d'ahir):
+Continuació del bug del centrat checkbox del toggle multi-lots (9è intent + revert) + fix del bug autoomplir des de botó ⭐ del catàleg al BuyMe (#10 del backlog d'ahir) + polish UI del `#screen-location-edit`:
 
 | Hash | Una línia |
 |---|---|
 | `f4f58f3` | (9è intent fallit centrat checkbox — wrapper estructural amb DevTools) |
 | `a0a0a36` | Revert del 9è intent + apunt al backlog amb 3 enfocaments per a sessió futura |
 | `62c34da` | ✅ **Fix #10 — Bug autoomplir popular**: `prefillShoppingItemFromPopular` (catàleg BuyMe) ara delega a `_autofillShoppingFromPopular` (flow blur). Resol divergència acumulada: el path catàleg no omplia price/weight ni actualitzava el snapshot. Només afectava al BuyMe; el BiteMe ja era coherent via `openAddForm(prefill)`. |
+| `4d7dbf1` | ✅ **Polish UI Editar ubicació**: eliminat big preview 64px + grid inline d'emojis substituït per `.emoji-button` compacte que obre `openEmojiPicker('location', ...)`. Nou target `location` al helper compartit amb subset `LOCATION_EMOJIS` (mateix patró que `supermarket`). Estalvi ~200px (31%). |
 
 **Treballs no resolts**: bug del centrat checkbox segueix obert (vegeu Pendents — Avui).
 
@@ -94,14 +95,13 @@ Detectats durant la sessió però no completats:
   
   Estat actual del codi: **revertit a equivalent de `aa39f6f`** (sense wrapper, sense `vertical-align`, només `align-items:center` al label + `flex:1 1 auto` al span del text). Ho deixem documentat però sense més intents avui.
 
-- **Polish formularis — estendre a les pantalles secundàries**. La sèrie de polish formularis del 23-26/05/26 va atacar 3 pantalles principals (BuyMe afegir/editar, BiteMe afegir, popular-edit). Hi ha 3 pantalles més que afegeixen/editen productes/elements amb el mateix patró antic:
+- **Polish formularis — estendre a les pantalles secundàries**. La sèrie de polish formularis del 23-26/05/26 va atacar 3 pantalles principals (BuyMe afegir/editar, BiteMe afegir, popular-edit). Queden 2 pantalles més amb el mateix patró antic:
   - `#screen-special-item-edit` (afegir/editar item dins una llista especial)
   - `#screen-supermarket-edit` (afegir/editar supermercat)
-  - `#screen-location-edit` (editar ubicació) — ja apuntat per separat amb la nota del picker d'emojis obert per defecte
+  
+  (`#screen-location-edit` ja resolt al commit `4d7dbf1` del 27/05/26 — emoji picker en overlay.)
   
   Pendent: revisar cadascuna i decidir si aplicar el mateix patró del polish (layout horitzontal, compactació marges, etc.) o si tenen necessitats específiques.
-
-- **Polish UI Editar ubicació — picker d'emojis obert per defecte**. Al `#screen-location-edit`, el picker d'emojis es mostra completament expandit per defecte (6 columnes × N files) en lloc d'estar plegat amb un botó "Triar emoji" com a la resta de formularis del projecte (popular-edit, screen-add, shopping-item-edit). Cal homogeneïtzar: substituir `.emoji-picker` inline per `.emoji-button` que obri el picker complet com a separate screen (mateix patró). Cal modificar HTML (`#screen-location-edit`) + JS (`renderLocationEmojiPicker` a settings.js) + ajustar `openEmojiPicker(target, origin)` per acceptar el nou target. Sessió pròpia (~45 min).
 
 - **Migrar `prompt()` de dia setmana a `showSelectModal`** (`settings.js:689` `promptDayFor`). Demana un número 0-6 representant un dia ("0=Diumenge, 1=Dilluns, ..."). UX antiquíssim — l'usuari mapeja dia→número mentalment. Cap migració trivial a `showInputModal`: necessita un helper nou `showSelectModal(emoji, title, message, options[], currentValue, onConfirm)` amb pills o radio buttons. Decisions: (1) disseny del component (pills horitzontals vs llista vertical), (2) mapping dia↔número per a `setSmartNotifType({day: n})`, (3) noms de dies via i18n. NO bloquejant — el `prompt()` segueix funcionant lleig però funcional.
 
