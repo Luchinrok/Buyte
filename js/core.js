@@ -490,6 +490,14 @@ const COUNTRIES = [
 
 const SUPERMARKET_EMOJIS = ['🛒','🛍️','🏪','🥖','🥬','🍎','🧺','💰','🏬','🎯','❄️','🥩','🐟','💊','🍞','🧀','🥛','🍷','🍕','🥗','🥦','🍰','☕','🛒','🎁','📦','🎈','🌽','🍌','🍓','🥕','🌶️','🥑','🌭','🍔','🍟','🍪','🍫','🥤','🍶','🥫','🥟','🍱','🍣','🥨','🌮','🍝','🍳','🍯','🧈','🍿','🥜','🥥','🍇','🥝','🍒','🥒','🍆','🍑','🍊','🍋','🥭','🥖','🍩','🥯','🌰','🍵','🥃','🍻','🥂','🧃','🛸','📱','🧴','🧼','🧹','🧻','🪣','🛁','🧪','💉','🩹','🌿'];
 
+// Subset curat d'emojis per a ubicacions (zones d'emmagatzematge).
+// Usat per openEmojiPicker amb target='location' (vegeu biteme.js).
+// Inclou contenidors (🥫🗄️📦), àrees domèstiques (🏠🚪🪟), tipus
+// d'aliments per zona (🍞🥖🍫🍯), botigues (🏪🛒), i opcions diverses
+// (🌿💼🚗🎒). El mateix subset que tenia la funció obsoleta
+// renderLocationEmojiPicker a settings.js.
+const LOCATION_EMOJIS = ['🧊','❄️','🥫','🍎','🏠','🍽️','🥤','🍷','🍞','🌶️','🚪','🏪','🛒','📦','🗄️','🪟','🌿','🥖','🍯','🍫','📍','🎒','💼','🚗'];
+
 // UBICACIONS PER DEFECTE
 // Cada ubicació pertany a una de 3 categories fixes:
 //  - 'fridge': nevera (productes refrigerats frescos)

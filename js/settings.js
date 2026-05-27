@@ -912,14 +912,18 @@ function openLocationEditor(index) {
 
   document.getElementById('loc-edit-title').textContent =
     isNew ? t('newLocation') : t('editLocation');
-  document.getElementById('loc-edit-emoji').textContent = loc.emoji;
   document.getElementById('loc-edit-name').value = isNew ? '' : getLocationName(loc);
   tempLocCategory = loc.category || 'fridge';
+
+  // Cursor d'estat per al picker compartit (openEmojiPicker target='location').
+  // Actualitzem el <span> dins del .emoji-button perquè mostri l'emoji actual.
+  tempLocEmoji = loc.emoji;
+  const emojiBtnSpan = document.getElementById('loc-edit-emoji-current');
+  if (emojiBtnSpan) emojiBtnSpan.textContent = loc.emoji;
 
   const delBtn = document.getElementById('loc-edit-delete');
   if (delBtn) delBtn.style.display = isNew ? 'none' : 'block';
 
-  renderLocationEmojiPicker(loc.emoji);
   renderCategoryPicker();
   showScreen('location-edit');
 }
@@ -958,25 +962,6 @@ function renderCategoryPicker() {
 }
 
 let tempLocEmoji = '📍';
-
-function renderLocationEmojiPicker(currentEmoji) {
-  tempLocEmoji = currentEmoji;
-  const locEmojis = ['🧊','❄️','🥫','🍎','🏠','🍽️','🥤','🍷','🍞','🌶️','🚪','🏪','🛒','📦','🗄️','🪟','🌿','🥖','🍯','🍫','📍','🎒','💼','🚗'];
-  const container = document.getElementById('loc-edit-emoji-picker');
-  container.innerHTML = '';
-  locEmojis.forEach(e => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'emoji-option' + (e === tempLocEmoji ? ' selected' : '');
-    btn.textContent = e;
-    btn.addEventListener('click', () => {
-      tempLocEmoji = e;
-      document.getElementById('loc-edit-emoji').textContent = e;
-      renderLocationEmojiPicker(e);
-    });
-    container.appendChild(btn);
-  });
-}
 
 function saveLocationEdit() {
   const name = document.getElementById('loc-edit-name').value.trim();

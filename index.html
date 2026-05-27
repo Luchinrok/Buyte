@@ -1142,10 +1142,6 @@
       <div style="width:40px"></div>
     </header>
 
-    <div style="text-align:center;font-size:64px;line-height:1;margin:10px 0 20px">
-      <span id="loc-edit-emoji">📍</span>
-    </div>
-
     <div class="form-group">
       <label data-i18n="locationName" for="loc-edit-name"></label>
       <input type="text" id="loc-edit-name" autocomplete="off">
@@ -1153,7 +1149,10 @@
 
     <div class="form-group">
       <label data-i18n="emoji"></label>
-      <div class="emoji-picker" id="loc-edit-emoji-picker"></div>
+      <button type="button" class="emoji-button" id="btn-pick-loc-emoji">
+        <span class="emoji-button-current" id="loc-edit-emoji-current">📍</span>
+        <span class="emoji-button-text" data-i18n="changeEmoji"></span>
+      </button>
     </div>
 
     <div class="form-group">

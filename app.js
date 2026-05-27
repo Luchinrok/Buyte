@@ -190,6 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPickPopularEmoji = document.getElementById('btn-pick-popular-emoji');
   if (btnPickPopularEmoji) btnPickPopularEmoji.addEventListener('click', () => openEmojiPicker('popular', 'popular-edit'));
 
+  // Ubicacions: editar (substitueix el grid inline obsolet, vegeu commit del
+  // refactor de l'UI #screen-location-edit). Mateix patró que els altres
+  // emoji pickers — openEmojiPicker amb target propi 'location'.
+  const btnPickLocEmoji = document.getElementById('btn-pick-loc-emoji');
+  if (btnPickLocEmoji) btnPickLocEmoji.addEventListener('click', () => openEmojiPicker('location', 'location-edit'));
+
   const btnSavePopular = document.getElementById('btn-save-popular');
   if (btnSavePopular) btnSavePopular.addEventListener('click', savePopularEdit);
 

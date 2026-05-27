@@ -4612,6 +4612,7 @@ function _emojiPickerCurrentEmoji(target) {
   if (target === 'shopping') return selectedShoppingEmoji;
   if (target === 'popular') return selectedPopularEmoji;
   if (target === 'special-item') return selectedSpecialItemEmoji;
+  if (target === 'location') return (typeof tempLocEmoji !== 'undefined') ? tempLocEmoji : '📍';
   if (target === 'recipe') return (typeof selectedRecipeEmoji !== 'undefined') ? selectedRecipeEmoji : '🍳';
   if (target === 'recipe-ingredient') {
     if (typeof editingRecipeData !== 'undefined' && editingRecipeData
@@ -4644,6 +4645,12 @@ function _emojiPickerApply(target, e) {
   } else if (target === 'special-item') {
     selectedSpecialItemEmoji = e;
     const btn = document.getElementById('special-item-emoji-current');
+    if (btn) btn.textContent = e;
+  } else if (target === 'location') {
+    // tempLocEmoji viu a settings.js (let top-level → global). saveLocationEdit
+    // el llegeix per persistir l'emoji al desar la ubicació.
+    tempLocEmoji = e;
+    const btn = document.getElementById('loc-edit-emoji-current');
     if (btn) btn.textContent = e;
   } else if (target === 'recipe') {
     selectedRecipeEmoji = e;
@@ -4694,6 +4701,20 @@ function renderEmojiPickerGrid() {
     if (!container) return;
     container.innerHTML = '';
     SUPERMARKET_EMOJIS.forEach(e => container.appendChild(_makeEmojiBtn(e, currentEmoji, target)));
+    return;
+  }
+
+  // Ubicacions: mateix pattern que supermercats. Subset curat (LOCATION_EMOJIS
+  // a core.js), sense search ni categories.
+  if (target === 'location') {
+    const cats = document.getElementById('emoji-categories');
+    const search = document.getElementById('emoji-search');
+    if (cats) cats.style.display = 'none';
+    if (search) search.style.display = 'none';
+    const container = document.getElementById('emoji-picker-full');
+    if (!container) return;
+    container.innerHTML = '';
+    LOCATION_EMOJIS.forEach(e => container.appendChild(_makeEmojiBtn(e, currentEmoji, target)));
     return;
   }
 
