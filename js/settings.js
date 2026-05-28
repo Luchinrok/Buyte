@@ -686,12 +686,17 @@ function openTimePickerModal(currentTime, onSave) {
 function promptDayFor(typeId) {
   const settings = getSmartNotifSettings();
   const cur = (settings.types[typeId] && settings.types[typeId].day) || 0;
-  const raw = window.prompt('Dia (0=Diumenge, 1=Dilluns, ..., 6=Dissabte)', String(cur));
-  if (raw === null) return;
-  const n = parseInt(raw, 10);
-  if (!isFinite(n) || n < 0 || n > 6) return;
-  setSmartNotifType(typeId, { day: n });
-  renderSmartNotifSettingsScreen();
+  const days = t('notifDayShort');
+  const names = Array.isArray(days)
+    ? days
+    : ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
+  // Display Dilluns-first, però mantenint el value getDay() (0=Diumenge).
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  const options = order.map(i => ({ value: i, label: names[i] }));
+  showSelectModal('📅', 'Dia de la setmana', null, options, cur, (day) => {
+    setSmartNotifType(typeId, { day: day });
+    renderSmartNotifSettingsScreen();
+  });
 }
 
 async function handleRequestPermission() {
@@ -2587,6 +2592,53 @@ function showConfirmDangerModal(emoji, title, message, onConfirm) {
   overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
     close();
     try { onConfirm(); } catch (e) { console.error(e); }
+  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
+// Modal de selecció d'una opció d'una llista (substitueix prompt() per a
+// tries discretes com el dia de la setmana). Coherent amb showInputModal.
+//   emoji, title: capçalera
+//   message: subtítol opcional (null/'' per ometre)
+//   options: array de { value, label }
+//   currentValue: value actualment seleccionat (es marca .selected)
+//   onConfirm: function(value) — value triat (tipus preservat des d'options)
+// Patró A: clic a una opció = selecciona + tanca + onConfirm.
+// Tancament sense canvi: Cancel·la, ESC o clic fora.
+function showSelectModal(emoji, title, message, options, currentValue, onConfirm) {
+  const opts = Array.isArray(options) ? options : [];
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const optionsHtml = opts.map(o =>
+    '<button type="button" class="modal-zone-option' +
+      (o.value === currentValue ? ' selected' : '') + '">' +
+      escapeHtml(o.label) + '</button>'
+  ).join('');
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">${emoji}</div>
+      <p class="modal-title">${escapeHtml(title)}</p>
+      ${message ? `<p class="modal-sub">${escapeHtml(message)}</p>` : ''}
+      <div class="modal-select-list">${optionsHtml}</div>
+      <div class="modal-buttons">
+        <button class="modal-cancel" id="modal-no-btn">${escapeHtml(t('cancel'))}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => {
+    document.removeEventListener('keydown', onEscape);
+    if (overlay.parentNode) document.body.removeChild(overlay);
+  };
+  const onEscape = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onEscape);
+  overlay.querySelector('#modal-no-btn').addEventListener('click', close);
+  overlay.querySelectorAll('.modal-zone-option').forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      const value = opts[i].value;   // del closure → preserva el tipus (number)
+      close();
+      try { onConfirm(value); } catch (e) { console.error(e); }
+    });
   });
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }

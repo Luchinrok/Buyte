@@ -4259,6 +4259,12 @@ body.selection-mode-active #shops-slider .arrow-btn {
   background: rgba(76, 175, 42, 0.25);
 }
 
+.modal-select-list {
+  margin: 10px 0 4px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
 .special-select-list {
   display: flex;
   flex-direction: column;
