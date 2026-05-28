@@ -673,7 +673,7 @@ function _formatLotQty(lot) {
   if (!lot) return '';
   if (lot.consumptionMode === 'quantity' && Number.isFinite(lot.qtyRemaining)) {
     const val = Math.round(lot.qtyRemaining * 1000) / 1000;
-    const unit = (lot.unit && lot.unit !== 'units') ? _displayUnit(lot.unit) : '';
+    const unit = (lot.unit && lot.unit !== 'units') ? _displayUnit(lot.unit) : ' u';
     return val + unit;
   }
   if (lot.consumptionMode === 'percent' && Number.isFinite(lot.percentRemaining)) {
