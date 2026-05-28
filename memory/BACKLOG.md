@@ -1,5 +1,7 @@
 # Backlog del projecte Buyte
 
+> **Última sincronització: 2026-05-28** (resolts 23-27/05 marcats amb ✅ + hash).
+
 Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté ítems detectats però NO completats, agrupats per sessió de detecció.
 
 ## Quan consultar-lo
@@ -13,6 +15,36 @@ Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté í
 - **Sessions completades importants** = pointers ràpids al git log per a context històric
 
 > Vivia abans a `~/.claude/projects/.../memory/backlog-current.md` (fora del repo). Migrat aquí el 2026-05-26 per persistència i visibilitat des de qualsevol PC.
+
+---
+
+## Sessió 23-25/05/26 — Commits
+
+Bloc weight/autoomplir al BuyMe + render de lots al BiteMe + polish formularis PAS 1 (BuyMe) i PAS 2 (BiteMe). 19 commits:
+
+| Hash | Una línia |
+|---|---|
+| `4b6e794` | ✅ Feat mostrar weight individual a cada fila del lot (resol render multi-lot **i** weights no parsejables — es pinten tal qual) |
+| `c63bd35` | Fix `_refreshProductMirrors` després de creació de producte 1-lot |
+| `af622dc` | Refactor eliminar `·` com a separador entre ubicació i dies |
+| `72bde83` | ✅ Feat normalització d'unitats al desar el lot ("1l"→"1L", "1KG"→"1kg", text lliure respectat) |
+| `77f4549` | ✅ Feat weight al llistat BuyMe + editable per item (override + fallback popular) |
+| `93ff46c` | Fix override de weight per ítem no propaga al popular canònic |
+| `4f8e58d` | ✅ Feat autoomplir camps des del popular en crear ítem nou (qty/weight/price/data) |
+| `b3c4d54` | Feat override per item del preu (paral·lel al weight) |
+| `c450d22` | ✅ Fix re-autoomplert intel·ligent al canviar nom (`_lastAutofillSnapshot` distingeix autoomplert vs manual) |
+| `80a4e91` | ✅ Feat càlcul de cost proporcional al weight (`_parseWeightToBase` + branca proporcional a `getEstimatedItemCost`) |
+| `9cf6162` | PAS 1 — compactar `#screen-shopping-item-edit` (BuyMe) |
+| `d26e82e` | PAS 1 — layout horitzontal `#screen-shopping-item-edit` (BuyMe) |
+| `ec625ad` | Refactor reordenar form-rows a `#screen-shopping-item-edit` |
+| `b8d3b8e` | Copy treure '(opcional)' dels labels dels formularis |
+| `86a3a71` | Chore placeholder més clar al camp Quantitat del BuyMe |
+| `8333165` | Fix camp data buit al obrir form nou (deixa via lliure a l'autoomplert) |
+| `ab47006` | PAS 2 — compactar marges a `#screen-add` (BiteMe) |
+| `f50cbde` | PAS 2 — layout horitzontal a `#screen-add` (BiteMe afegir/editar producte) |
+| `0463b6f` | Chore eliminar text obsolet del modal Editar lot |
+
+**Ítems del backlog tancats**: render weight individual multi-lot + weights no parsejables (`4b6e794`) · normalització d'unitats (`72bde83`) · weight editable + recuperar dades del popular en afegir (`77f4549`, `4f8e58d`) · re-autoomplert al canviar nom (`c450d22`) · cost proporcional al weight (`80a4e91`) · polish formularis PAS 1 BuyMe + PAS 2 BiteMe.
 
 ---
 
@@ -70,9 +102,9 @@ Continuació del bug del centrat checkbox del toggle multi-lots (9è intent + re
 
 ---
 
-## Pendents — Avui (26/05/26)
+## Pendents — Sessions 26-27/05 (encara oberts)
 
-Detectats durant la sessió però no completats:
+Detectats les sessions 26-27/05/26 i encara no completats a data 28/05:
 
 - **Bug visual residual al checkbox del toggle multi-lots**. El checkbox de "CREAR ENVASOS SEPARATS" no queda centrat al centre vertical del bloc de text quan el text fa wrap a 2-3 línies. L'usuari va aclarir amb captura "abans/després" que vol els 3 elements (checkbox, text, emoji ℹ️) tots al centre vertical del bloc complet, no alineats amb la primera línia.
 
@@ -123,9 +155,9 @@ Detectats durant la sessió però no completats:
 - **Catàleg popular: distingir unitats per a productes contables** (Ous = dotzena vs unitat, Cervesa = pack vs unitat, Llaunes = pack vs unitat). Camp `unitsPerPackage` o flag `isCountable`.
 - **Preu per unitat al catàleg** — 1kg vs 500g de pasta tenen mateix preu al popular; sistema pren preu del popular, no calcula proporcional. (Parcialment cobert pel commit `80a4e91` del 2026-05-25 a `getEstimatedItemCost`, però el bug al catàleg en si segueix obert.)
 - **`_computeAggregatedQty` no combina `units × weight`** (2026-05-22). Pasta amb `qty=4 weight="500g" unit="units"` mostra "Pasta 4" en comptes de "Pasta 2 kg". La branca units×weight ja existeix a biteme.js:718-741 (commit `f3fcc4d`) però no s'activa per al cas reportat. Hipòtesi: `lot.weight` no està al lot subjacent (només al mirror del producte). Sessió pròpia: verificar amb consola del mòbil + possible migració per copiar `product.weight → lot.weight` als lots que no en tenen.
-- **Render del lot oculta weights no parsejables** (2026-05-22). Si `lot.weight` és text lliure tipus "mig kg", la dada es desa correctament però no es pinta. Decisió pendent: mostrar el text tal qual o validar el format al modal d'edició.
-- **Render del lot no mostra weight individual en productes multi-lot** (2026-05-22). A Llet amb 2 lots (1L i 2L), cada lot mostra "1 · Caduca data" sense el weight. Dada correcta, només render. `_renderLotRow` a biteme.js.
-- **`_formatLotQty` retorna només el número quan `unit==='units'`** (2026-05-22). Quan es combina amb weight queda "1 · 1L · Caduca..." que és ambigu (el "1" sembla redundant). Considerar afegir sufix " u" o " envàs".
+- ~~**Render del lot oculta weights no parsejables** (2026-05-22)~~ **✅ RESOLT `4b6e794`** (23/05). `_renderLotRow` (biteme.js:1248-1251) ara pinta `weightText` tal qual sense filtre de parseig — el text lliure "mig kg" es mostra com és.
+- ~~**Render del lot no mostra weight individual en productes multi-lot** (2026-05-22)~~ **✅ RESOLT `4b6e794`** (23/05). Cada fila del lot ara combina qty i weight amb separador `×` (`_renderLotRow` biteme.js:1245-1259).
+- **`_formatLotQty` retorna només el número quan `unit==='units'`** (2026-05-22). ENCARA PENDENT (verificat 28/05 a biteme.js:676 — `unit==='units'` retorna sufix buit). Quan es combina amb weight queda "1 × 1L" que és ambigu (el "1" sembla redundant). Considerar afegir sufix " u" o " envàs".
 - **Propagar weight en altres camins de creació de shoppingItem** (2026-05-24). `_buildShoppingItemRow` fa fallback al popular (cobertura via render). Però seria més net que aquests camins de creació també propaguessin weight si l'origen el té: (1) `addToShoppingList` (buyme.js:2002) — quick buy des EatMe; (2) `special-lists.js:411` — push d'items de llistes especials. Polish, no bloqueja.
 - **Fusió/avís d'ítems duplicats al BuyMe** (2026-05-24). Afegir un producte amb el mateix nom dues vegades crea dues línies independents ("Pa 1 × 250g" + "Pa 2 × 250g"). Considerar: (a) avisar abans d'afegir; (b) fusionar automàticament si nom + weight són idèntics; (c) cas weight diferent — mantenir separats. Mirar lògica reaprofitable de Fase C+ (`_findGroupedProductForFusion`).
 
