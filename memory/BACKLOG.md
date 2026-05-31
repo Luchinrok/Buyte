@@ -1,6 +1,6 @@
 # Backlog del projecte Buyte
 
-> **Última sincronització: 2026-05-28** (resolts 23-27/05 marcats amb ✅ + hash).
+> **Última sincronització: 2026-05-31** (resolts 23-27/05 i 31/05 marcats amb ✅ + hash).
 
 Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté ítems detectats però NO completats, agrupats per sessió de detecció.
 
@@ -15,6 +15,23 @@ Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté í
 - **Sessions completades importants** = pointers ràpids al git log per a context històric
 
 > Vivia abans a `~/.claude/projects/.../memory/backlog-current.md` (fora del repo). Migrat aquí el 2026-05-26 per persistència i visibilitat des de qualsevol PC.
+
+---
+
+## ⭐ PENDENTS ACTUALS (a data 2026-05-31)
+
+Llista neta del que queda OBERT. El detall històric i els ítems resolts són més avall.
+
+- **Bug visual — centrat vertical del checkbox del toggle multi-lots** quan el text fa wrap (2-3 línies). 9 intents fallits (26-27/05). Cal enfocament nou (text més curt sense wrap, o investigació DevTools del wrapper). Detall a "Pendents — Sessions 26-27/05".
+- **Polish formularis a pantalles secundàries** restants: `#screen-special-item-edit` i `#screen-supermarket-edit`.
+- **Llindar configurable per a l'avís d'afegir al BuyMe** (`popular.minThreshold` + camp al popular-edit).
+- **Coherència del sufix " u" al llistat principal** (`_computeAggregatedQty`) — ajornat: cal desacoblar `parseQtyNumber` dels mirrors abans.
+- **Refactor de lots** — Fases E (recent-purchases per lot), F (banners per lot), G (polish + sync hardening), final (neteja de mirrors).
+- **Catàleg popular** — distingir unitats de productes contables (`unitsPerPackage`/`isCountable`) + preu per unitat.
+- **Propagar weight** en altres camins de creació de shoppingItem (`addToShoppingList`, `special-lists`).
+- **Fusió/avís d'ítems duplicats al BuyMe** (mateix nom afegit dues vegades).
+- **Features grans** — "Cuinat" v2 + refactor de `calculateRecipeMatch` (falsos positius).
+- **Despeses i altres** — cost mitjà cistella, despesa per categoria, pressupost mensual, planificador setmanal de receptes, recordatoris contextuals, revisar sistema d'Espais.
 
 ---
 
@@ -99,6 +116,22 @@ Continuació del bug del centrat checkbox del toggle multi-lots (9è intent + re
 | `4d7dbf1` | ✅ **Polish UI Editar ubicació**: eliminat big preview 64px + grid inline d'emojis substituït per `.emoji-button` compacte que obre `openEmojiPicker('location', ...)`. Nou target `location` al helper compartit amb subset `LOCATION_EMOJIS` (mateix patró que `supermarket`). Estalvi ~200px (31%). |
 
 **Treballs no resolts**: bug del centrat checkbox segueix obert (vegeu Pendents — Avui).
+
+---
+
+## Sessió 31/05/26 — Commits
+
+Sessió de validació al mòbil real: weight validation (Opció A) + 2 bugs/millores detectats avui en testejar. 2 commits:
+
+| Hash | Una línia |
+|---|---|
+| `1abbcb2` | ✅ **Feat validació de format al camp weight als 4 formularis** (Opció A — resol agregacions mixtes lletges) |
+| `5180570` | ✅ **Fix toast z-index sobre modals** + ✅ **'Menjat' → 'Consumit'** als textos visibles d'acció |
+
+**Ítems resolts aquesta sessió**:
+- ✅ **Weights no parsejables creen agregacions mixtes** (`1abbcb2`). Opció A: nou helper `validateWeight(raw)` (biteme.js) aplicat als 4 inputs de weight (`#input-weight`, `#input-popular-weight`, `#input-shopping-weight`, `#lot-edit-weight`). Rebutja text lliure / números pelats / ≤0, normalitza la sortida, bloqueig amb toast `weightInvalid` al desar + vora vermella al blur. `_computeAggregatedQty` no es toca (actua a l'origen). Detall complet a "Bugs / millores acumulats".
+- ✅ **Toast tapat pel modal** (Detectat i resolt 31/05). El toast d'error (p.ex. validació del weight al modal d'Editar lot) quedava darrere de l'overlay del modal. Fix: `.toast` z-index `1000` → `11000` (per sobre de `.modal-overlay`=1000 i pickers=2000). Commit `5180570`.
+- ✅ **'Menjat' no encaixa per a productes no comestibles** (Detectat i resolt 31/05). 'Menjat' no té sentit per a carbó, medicaments, neteja, etc. Canviat a 'Consumit' a tots els textos visibles d'acció sobre un lot/producte (i18n `consumed`/`howManyConsumed`/`consumedMsg`/`statsEmpty2`, biteme `verbInf`/`verbPp` + aria-label del botó ✓, patterns "Has consumit principalment", smart-notifications "Avui consumeix:"). NO s'ha tocat 'menjar' com a substantiu (aliment) ni frases no relacionades. Commit `5180570`.
 
 ---
 
