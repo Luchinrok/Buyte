@@ -407,9 +407,20 @@ function savePopularEdit() {
     if (!isNaN(parsed) && parsed >= 0) price = Math.round(parsed * 100) / 100;
   }
 
-  // Pes opcional
+  // Pes opcional — validat i normalitzat al format canònic (abans no
+  // es normalitzava). Rebutja text lliure / números sense unitat / ≤0.
   const weightInput = document.getElementById('input-popular-weight');
-  const weight = (weightInput && weightInput.value.trim()) || '';
+  let weight = '';
+  if (weightInput) {
+    const wv = validateWeight(weightInput.value);
+    if (!wv.valid) {
+      weightInput.classList.add('input-invalid');
+      showToast(t('weightInvalid'));
+      return;
+    }
+    weightInput.classList.remove('input-invalid');
+    weight = wv.normalized;
+  }
 
   const location = selectedPopularLocation || 'pantry';
 

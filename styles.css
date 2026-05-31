@@ -1042,6 +1042,10 @@ h1 {
 
 .form-group input:focus { border-color: var(--primary); }
 
+/* Validació de format del camp weight (validateWeight). !important per
+   guanyar a la regla base `.form-group input[type="text"]` (0,2,1). */
+.input-invalid { border-color: #d33 !important; }
+
 /* EMOJIS ARREGLATS - 6 columnes, sense sortir de la caixa */
 .emoji-picker {
   display: grid;

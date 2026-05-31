@@ -1601,11 +1601,22 @@ function saveShoppingItem() {
     }
   }
   const weightInput = document.getElementById('input-shopping-weight');
-  const weightRaw = weightInput ? String(weightInput.value || '').trim() : '';
-  // Normalitzem al format canònic per coherència amb el BiteMe
-  // ("1l" → "1L", "500 g" → "500g"). Si no és parsejable, queda tal qual.
-  const weightNormalized = (typeof _normalizeWeightString === 'function')
-    ? _normalizeWeightString(weightRaw) : weightRaw;
+  // Validem i normalitzem al format canònic per coherència amb el BiteMe
+  // ("1l" → "1L", "500 g" → "500g"). Rebutgem text lliure / números
+  // sense unitat / ≤0 (bloqueja el desat amb toast).
+  let weightNormalized = '';
+  if (weightInput) {
+    const wv = (typeof validateWeight === 'function')
+      ? validateWeight(weightInput.value)
+      : { valid: true, normalized: String(weightInput.value || '').trim() };
+    if (!wv.valid) {
+      weightInput.classList.add('input-invalid');
+      showToast(t('weightInvalid'));
+      return;
+    }
+    weightInput.classList.remove('input-invalid');
+    weightNormalized = wv.normalized;
+  }
   const hasPrice = price !== null;
   const hasWeight = weightNormalized !== '';
 

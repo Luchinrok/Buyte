@@ -26,6 +26,7 @@ const TRANSLATIONS = {
     productName: 'Nom del producte',
     emoji: 'Emoji',
     needName: 'Posa-li un nom!',
+    weightInvalid: 'Format no vàlid. Exemples: 500g, 1L, 2kg',
     productNamePlaceholder: 'Nom del producte',
     added: 'afegit!',
     product: 'Producte',

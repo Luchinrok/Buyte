@@ -995,6 +995,92 @@ function _normalizeWeightString(s) {
   return numStr + unitCanon;
 }
 
+// Valida el format d'un camp weight de formulari. El camp és OPCIONAL:
+// buit és vàlid. Si NO és buit, exigeix format numèric (decimal . o ,)
+// + unitat reconeguda (g/kg/ml/l), amb espai opcional. Rebutja text
+// lliure ("mig kilo"), números pelats sense unitat ("500") i valors ≤0.
+// Retorna { valid, normalized, error }:
+//   - valid:      bool
+//   - normalized: string canònic per desar ("1l"→"1L", "0,5 KG"→"0.5kg")
+//                 o '' si buit; null si invàlid
+//   - error:      missatge i18n si invàlid; null si vàlid
+// Reutilitzable cross-module (com _normalizeWeightString) — exposat a
+// window més avall. És l'únic guardià que evita que entrin weights no
+// parsejables que després embruten _computeAggregatedQty ("4.5 kg + 1").
+function validateWeight(raw) {
+  const s = (typeof raw === 'string' ? raw : String(raw || '')).trim();
+  if (!s) return { valid: true, normalized: '', error: null };
+  const m = s.match(/^([\d.,]+)\s*(ml|l|g|kg)$/i);
+  if (!m) return { valid: false, normalized: null, error: t('weightInvalid') };
+  const num = parseFloat(m[1].replace(',', '.'));
+  if (!Number.isFinite(num) || num <= 0) {
+    return { valid: false, normalized: null, error: t('weightInvalid') };
+  }
+  return { valid: true, normalized: _normalizeWeightString(s), error: null };
+}
+
+// Marca/desmarca visualment un input de weight segons validateWeight.
+// Retorna el resultat de la validació per si el caller vol bloquejar.
+function _validateWeightField(input) {
+  if (!input) return { valid: true, normalized: '', error: null };
+  const res = validateWeight(input.value);
+  if (res.valid) input.classList.remove('input-invalid');
+  else input.classList.add('input-invalid');
+  return res;
+}
+
+// Re-valida els camps de weight estàtics visibles. Cridada en obrir
+// qualsevol pantalla (via patch de showScreen) perquè un valor invàlid
+// preexistent ("mig kilo" en editar) surti vermell d'entrada.
+function _revalidateVisibleWeightFields() {
+  ['input-weight', 'input-popular-weight', 'input-shopping-weight'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.offsetParent !== null && String(el.value || '').trim()) {
+      _validateWeightField(el);
+    } else if (el) {
+      el.classList.remove('input-invalid');
+    }
+  });
+}
+
+// Enganxa la validació al blur dels 3 inputs de weight estàtics i
+// instrumenta showScreen perquè re-validi en obrir cada modal. El
+// modal d'edició de lot (overlay dinàmic) enganxa el seu propi blur
+// a openLotEditModal. Cridada un cop a l'arrencada.
+function setupWeightValidation() {
+  ['input-weight', 'input-popular-weight', 'input-shopping-weight'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.weightValidationBound) {
+      el.dataset.weightValidationBound = '1';
+      el.addEventListener('blur', () => {
+        const res = _validateWeightField(el);
+        if (!res.valid) showToast(t('weightInvalid'));
+      });
+    }
+  });
+  // Patch de showScreen: re-validar després d'obrir (microtask perquè
+  // el valor del camp ja estigui assignat encara que es faci després
+  // de showScreen dins de la mateixa funció d'obertura).
+  if (typeof window.showScreen === 'function' && !window.showScreen.__weightPatched) {
+    const _origShowScreen = window.showScreen;
+    window.showScreen = function () {
+      const r = _origShowScreen.apply(this, arguments);
+      Promise.resolve().then(_revalidateVisibleWeightFields);
+      return r;
+    };
+    window.showScreen.__weightPatched = true;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.validateWeight = validateWeight;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupWeightValidation);
+  } else {
+    setupWeightValidation();
+  }
+}
+
 // Cerca un producte v2 existent que coincideixi exactament per
 // (nom normalitzat, emoji, location). Retorna null si no n'hi ha.
 // La location comparada és la del producte (mirror) — equival al
@@ -1710,6 +1796,18 @@ function openLotEditModal(product, lot) {
 
   document.body.appendChild(overlay);
 
+  // Validació del weight de l'overlay dinàmic: blur (vora vermella +
+  // toast) + passada inicial perquè un lot amb weight invàlid preexistent
+  // ("mig kilo") surti vermell d'entrada.
+  const weightEl = overlay.querySelector('#lot-edit-weight');
+  if (weightEl) {
+    weightEl.addEventListener('blur', () => {
+      const res = _validateWeightField(weightEl);
+      if (!res.valid) showToast(t('weightInvalid'));
+    });
+    if (String(weightEl.value || '').trim()) _validateWeightField(weightEl);
+  }
+
   const chipsEl = overlay.querySelector('#lot-edit-qty-chips');
   if (chipsEl) {
     chipsEl.querySelectorAll('.cook-chip').forEach(c => {
@@ -1742,12 +1840,19 @@ function openLotEditModal(product, lot) {
   });
   overlay.querySelector('#lot-edit-confirm').addEventListener('click', () => {
     const smBtn = overlay.querySelector('#lot-edit-supermarket-picker-btn');
+    // Validem el weight ABANS de tancar l'overlay: si és invàlid, vora
+    // vermella + toast + return (no desem ni tanquem, l'usuari corregeix).
+    const wv = _validateWeightField(weightEl);
+    if (!wv.valid) {
+      showToast(t('weightInvalid'));
+      return;
+    }
     const values = {
       qtyRaw: overlay.querySelector('#lot-edit-qty').value,
       date: overlay.querySelector('#lot-edit-date').value || null,
       noExpiry: !!overlay.querySelector('#lot-edit-noexpiry').checked,
       priceRaw: overlay.querySelector('#lot-edit-price').value,
-      weightRaw: overlay.querySelector('#lot-edit-weight').value,
+      weightRaw: wv.normalized,
       supermarketId: smBtn ? (smBtn.dataset.value || '') : ''
     };
     destroySmPicker();
@@ -4165,7 +4270,17 @@ function saveNewProduct() {
   // "1l"/"1 l"/"1L" → "1L", "500 g" → "500g", "1,5L" → "1.5L".
   // Text lliure no parsejable ("mig kg") queda tal qual.
   const weightInput = document.getElementById('input-weight');
-  const weight = weightInput ? _normalizeWeightString(String(weightInput.value || '')) : '';
+  let weight = '';
+  if (weightInput) {
+    const wv = validateWeight(weightInput.value);
+    if (!wv.valid) {
+      weightInput.classList.add('input-invalid');
+      showToast(t('weightInvalid'));
+      return;
+    }
+    weightInput.classList.remove('input-invalid');
+    weight = wv.normalized;
+  }
 
   // Aprenentatge: registra historial i propaga al catàleg de populars
   // (creant entrada nova o actualitzant la existent amb les dades fresques).
