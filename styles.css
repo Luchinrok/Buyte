@@ -4424,6 +4424,11 @@ body.selection-mode-active #shops-slider .arrow-btn {
   animation: fadeIn 0.2s;
 }
 
+/* Variant de .modal-buttons en columna (3 accions, p.ex. duplicat al BuyMe:
+   Fusionar / Crear igualment / Cancel·la). */
+.modal-buttons.modal-buttons-col { flex-direction: column; }
+.modal-buttons.modal-buttons-col button { width: 100%; }
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
