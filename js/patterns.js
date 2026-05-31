@@ -590,7 +590,7 @@ function analyzeCategoryBalance(history) {
       type: 'categoryBalance',
       priority: 'info',
       title: 'Aquesta setmana: ' + summary,
-      description: 'Has menjat principalment ' + (_CA_CATEGORY_LABEL[top.cat] || top.cat)
+      description: 'Has consumit principalment ' + (_CA_CATEGORY_LABEL[top.cat] || top.cat)
         + '. Pots provar més ' + (_CA_CATEGORY_LABEL[missing] || missing) + '?',
       emoji: '🥗',
       action: null

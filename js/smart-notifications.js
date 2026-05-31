@@ -582,7 +582,7 @@ function _evalMealReminder() {
     .slice(0, 3);
   if (list.length === 0) return null;
   const names = list.map(x => (x.p.emoji || '') + ' ' + (x.p.name || '') + ' (' + x.d + 'd)').join(', ');
-  return { title: '💡 Buyte', body: '💡 Avui menja: ' + names };
+  return { title: '💡 Buyte', body: '💡 Avui consumeix: ' + names };
 }
 
 // 3. Inspiració culinària (receptes que pots fer al 100%)

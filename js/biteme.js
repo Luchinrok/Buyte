@@ -1356,7 +1356,7 @@ function _renderLotRow(lot) {
   const lotIdAttr = lot.id ? ' data-lot-id="' + escapeHtml(lot.id) + '"' : '';
   const actionsHtml = lot.id
     ? '<div class="lot-actions">'
-      + '<button class="lot-action-btn lot-eat-btn" data-lot-action="eat" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Menjar">✓</button>'
+      + '<button class="lot-action-btn lot-eat-btn" data-lot-action="eat" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Consumir">✓</button>'
       + '<button class="lot-action-btn lot-trash-btn" data-lot-action="trash" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Llençar">🗑️</button>'
       + '<button class="lot-action-btn lot-edit-btn" data-lot-action="edit" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Editar">✏️</button>'
       + '<button class="lot-action-btn lot-more-btn" data-lot-action="more" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Més accions">⋯</button>'
@@ -1467,8 +1467,8 @@ function openLotConsumeModal(product, lot, action) {
   overlay.className = 'modal-overlay';
 
   const isEat = (action === 'eat');
-  const verbInf = isEat ? 'Menjar' : 'Llençar';
-  const verbPp  = isEat ? 'menjat' : 'llençat';
+  const verbInf = isEat ? 'Consumir' : 'Llençar';
+  const verbPp  = isEat ? 'consumit' : 'llençat';
   const icon    = isEat ? '✓' : '🗑️';
 
   let bodyHtml;

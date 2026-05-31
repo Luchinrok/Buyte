@@ -5404,7 +5404,10 @@ body.selection-mode-active #shops-slider .arrow-btn {
   transform: translateY(20px);
   transition: opacity 0.25s, transform 0.25s;
   pointer-events: none;
-  z-index: 1000;
+  /* Per sobre dels modals (.modal-overlay z-index:1000) i dels pickers
+     (z-index:2000) perquè els toasts d'error sempre siguin visibles, p.ex.
+     la validació del weight al modal d'Editar lot. */
+  z-index: 11000;
 }
 
 .toast.show {
