@@ -1574,6 +1574,27 @@ function findExistingAtHome(name) {
   return products.filter(p => norm(p.name) === target);
 }
 
+// Cerca un ítem ja existent a la llista de la compra del MATEIX supermercat
+// amb el mateix nom (normalitzat accent/majúscules) I el mateix weight.
+// Regla (decisió 31/05 revisada): el weight SÍ entra a la clau —
+//   · tots dos amb weight  → han de coincidir (case-insensitive: "500G"=="500g")
+//   · tots dos sense weight → duplicat (només compta el nom)
+//   · un amb weight, l'altre no → NO duplicat (productes diferents)
+// Compara el weight PROPI de l'ítem (it.weight), no el fallback al popular.
+// `excludeId` permet excloure's a si mateix (no s'usa: només en crear nous).
+function findDuplicateInSupermarket(name, weight, supermarketId, excludeId) {
+  const target = normalizeForSearch(name);
+  if (!target) return null;
+  const normW = w => String(w || '').trim().toLowerCase();
+  const targetW = normW(weight);
+  return shoppingItems.find(it =>
+    it.supermarketId === supermarketId &&
+    it.id !== excludeId &&
+    normalizeForSearch(it.name) === target &&
+    normW(it.weight) === targetW
+  ) || null;
+}
+
 // Quan ve marcat a true, saveShoppingItem salta la comprovació "ja en tens"
 // (perquè l'usuari ja l'ha vista i confirmada en un pas previ).
 let skipExistingCheckOnNextSave = false;
@@ -1667,6 +1688,47 @@ function saveShoppingItem() {
     return;
   }
 
+  // Duplicat al MATEIX super? (mateix nom normalitzat). Avisem amb opcions
+  // Fusionar / Crear igualment / Cancel·la (Opció B). Si hi ha duplicat
+  // mostrem NOMÉS aquest modal i saltem la comprovació "ja en tens a casa"
+  // (és més rellevant: ja és a la mateixa llista). Només en crear ítems nous.
+  const dup = findDuplicateInSupermarket(name, weightNormalized, currentSupermarketId);
+  if (dup) {
+    const createNew = () => {
+      const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      const newItem = {
+        id, supermarketId: currentSupermarketId, name, emoji: selectedShoppingEmoji,
+        qty, notes, addedAt: Date.now(),
+        date: noExpiry ? null : (date || null),
+        noExpiry
+      };
+      if (weightNormalized) newItem.weight = weightNormalized;
+      if (price !== null) newItem.price = price;
+      shoppingItems.push(newItem);
+      saveShoppingData();
+      learnPopular();
+      showToast(t('saved'));
+      openSupermarket(currentSupermarketId);
+    };
+    const mergeQty = () => {
+      const a = (typeof parseQtyNumber === 'function') ? parseQtyNumber(dup.qty) : null;
+      const b = (typeof parseQtyNumber === 'function') ? parseQtyNumber(qty) : null;
+      const sum = (a || 0) + (b || 0);
+      if (sum > 0) dup.qty = String(sum);
+      else if (!dup.qty && qty) dup.qty = qty;  // cap dels dos és numèric: conservem text
+      // Completem només els camps BUITS de l'existent (no sobreescrivim).
+      // El weight ja és idèntic per definició (forma part de la clau de duplicat).
+      if ((dup.price === undefined || dup.price === null) && price !== null) dup.price = price;
+      if (!dup.notes && notes) dup.notes = notes;
+      saveShoppingData();
+      learnPopular();
+      showToast(t('merged'));
+      openSupermarket(currentSupermarketId);
+    };
+    showDuplicateShoppingModal(dup, mergeQty, createNew);
+    return;
+  }
+
   // Nou item: comprovem si ja en té a casa (EatMe), tret que ja s'hagi
   // confirmat en un pas previ (popular pre-check, barcode pre-check).
   const existingAtHome = skipExistingCheckOnNextSave ? [] : findExistingAtHome(name);
@@ -1740,6 +1802,32 @@ function showAlreadyHaveModal(itemName, existingProducts, onConfirm) {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) document.body.removeChild(overlay);
   });
+}
+
+// Modal de duplicat al BuyMe (Opció B). Germà de showAlreadyHaveModal però
+// amb 3 accions: Fusionar quantitats / Crear igualment / Cancel·la.
+function showDuplicateShoppingModal(existingItem, onMerge, onCreateAnyway) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-emoji-big">⚠️</div>
+      <p class="modal-title">${t('duplicateTitle')}</p>
+      <p class="modal-sub">${t('duplicateSub')}</p>
+      <div class="already-have-list"><div class="already-have-row">${existingItem.emoji || '🛒'} ${formatProductLine(existingItem.name, existingItem.qty)}</div></div>
+      <div class="modal-buttons modal-buttons-col">
+        <button class="modal-confirm" id="dup-merge-btn">${t('mergeBtn')}</button>
+        <button class="modal-confirm" id="dup-create-btn">${t('createAnywayBtn')}</button>
+        <button class="modal-cancel" id="dup-cancel-btn">${t('cancel')}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  overlay.querySelector('#dup-merge-btn').addEventListener('click', () => { close(); onMerge(); });
+  overlay.querySelector('#dup-create-btn').addEventListener('click', () => { close(); onCreateAnyway(); });
+  overlay.querySelector('#dup-cancel-btn').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 function deleteShoppingItem() {
