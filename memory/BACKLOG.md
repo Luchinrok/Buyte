@@ -1,6 +1,6 @@
 # Backlog del projecte Buyte
 
-> **Última sincronització: 2026-05-31** (resolts 23-27/05 i 31/05 marcats amb ✅ + hash; inclou fusió duplicats BuyMe `7b9b2df`+`573826d`).
+> **Última sincronització: 2026-06-01** (resolts fins 01/06 marcats amb ✅ + hash; inclou llindar minStock + fix autoomplir/Xu `f8b7d34`).
 
 Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté ítems detectats però NO completats, agrupats per sessió de detecció.
 
@@ -142,7 +142,7 @@ Llindar configurable minStock + fix autoomplir/Xu (productes per unitat com Ous 
 
 | Hash | Una línia |
 |---|---|
-| `__PENDING__` | ✅ **Feat llindar minStock (default 0) + avís d'afegir al BuyMe** + ✅ **fix autoomplir/Xu** (`validateWeight` accepta "Nu") + helper `_applyContentToAddForm` + camí ⭐ unificat |
+| `f8b7d34` | ✅ **Feat llindar minStock (default 0) + avís d'afegir al BuyMe** + ✅ **fix autoomplir/Xu** (`validateWeight` accepta "Nu") + helper `_applyContentToAddForm` + camí ⭐ unificat |
 
 **Ítems resolts aquesta sessió**:
 - ✅ **Llindar configurable minStock** (vegeu detall a "Pendents — Sessions 26-27/05", marcat resolt). Default **0** (retrocompat: només avisa en acabar-se). Camp al producte + herència del popular + transport via "Comprat". UI a `#screen-add` (Quantitat|Preu|Llindar alineat) i `#screen-popular-edit`, amb botó ℹ️.
