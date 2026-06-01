@@ -3892,6 +3892,11 @@ function openAddForm(prefill) {
   // surt del mode edició automàticament.
   editingProductId = (prefill && prefill._editingId) ? prefill._editingId : null;
 
+  // Reset del snapshot d'autoomplert: qualsevol obertura del formulari
+  // comença net (no recordem el match aplicat a una obertura anterior).
+  // Mateix patró que openShoppingItemEdit amb _lastAutofillSnapshot al BuyMe.
+  _lastKnownProductSnapshot = null;
+
   // Info de congelació al formulari d'edició: visible només si estem
   // editant un producte que té frozenDate guardat. Si l'usuari ha
   // canviat la zona FORA del congelador, la info es manté visible
@@ -4160,14 +4165,36 @@ function findKnownProductByName(name) {
   return null;
 }
 
+// Snapshot de l'últim popular/match aplicat per applyKnownProductToForm
+// (mirall de _lastAutofillSnapshot del BuyMe, buyme.js). Permet substituir
+// camps autoomplerts en canviar de producte sense trepitjar el que l'usuari
+// hagi editat a mà. Reset a null a openAddForm (cada obertura comença net).
+// Recorda ELS DOS valors del parell Quantitat+Contingut per fer el
+// round-trip net "ous↔pa".
+let _lastKnownProductSnapshot = null;
+
+// Decideix si un camp autoomplert es pot substituir: ho és si està
+// buit/per defecte, o si el valor actual coincideix amb el que el match
+// ANTERIOR hi va posar (= l'usuari no l'ha tocat). Si snap és null
+// (primer autoomplert) i el camp ja té valor → és manual, no es toca.
+function _knownProductCanReplace(currentValue, snapshotValue) {
+  if (currentValue === '' || currentValue === null || currentValue === undefined) return true;
+  if (_lastKnownProductSnapshot === null) return false;
+  return currentValue === snapshotValue;
+}
+
 // Aplica al formulari de l'EatMe (#input-qty + #input-weight) el valor
 // "contingut" d'un popular/match conegut. Cas especial "Nu" (ex: Ous
 // "12u"): és un comptador d'unitats, no un pes per envàs → s'expandeix a
 // Quantitat=N amb Contingut BUIT (així es desa unit='units', qtyRemaining=N,
 // consumible per unitats i amb el llindar comptant unitats). Qualsevol
 // altre valor va al camp Contingut tal qual.
-// Guardes (compartides pels dos callers): només toca camps no modificats
-// per l'usuari — Quantitat reemplaçable si buida o "1"; Contingut si buit.
+// Snapshot-aware (parell Quantitat+Contingut): un camp és reemplaçable si
+// està buit/per defecte ("1" per a Quantitat) O si coincideix amb el valor
+// que vam autoomplir l'últim cop (snap.qty / snap.content). Així el
+// round-trip "ous (12, buit) ↔ pa (1, 250g)" substitueix net sense
+// trepitjar edicions manuals de l'usuari. Si snap==null (primer autoomplert
+// o camí openAddForm), només buit/"1" → comportament històric, cap regressió.
 // Font ÚNICA de la conversió "Nu" (cridada des d'openAddForm i
 // applyKnownProductToForm — no duplicar la lògica enlloc).
 function _applyContentToAddForm(weightVal) {
@@ -4175,20 +4202,27 @@ function _applyContentToAddForm(weightVal) {
   const qtyInput = document.getElementById('input-qty');
   const val = weightVal ? String(weightVal) : '';
   const matchUnits = val.match(/^(\d+)\s*u$/i);
+  const snap = _lastKnownProductSnapshot;
+  const qtyReplaceable = () => {
+    if (!qtyInput) return false;
+    const cur = qtyInput.value.trim();
+    if (cur === '' || cur === '1') return true;
+    return snap !== null && cur === snap.qty;
+  };
+  const weightReplaceable = () => {
+    if (!weightInput) return false;
+    const cur = weightInput.value.trim();
+    if (cur === '') return true;
+    return snap !== null && cur === snap.content;
+  };
   if (matchUnits) {
-    if (qtyInput && (!qtyInput.value.trim() || qtyInput.value.trim() === '1')) {
-      qtyInput.value = matchUnits[1];
-    }
-    if (weightInput && !weightInput.value.trim()) {
-      weightInput.value = '';
-    }
+    // "Nu": Quantitat=N, Contingut buit.
+    if (qtyReplaceable()) qtyInput.value = matchUnits[1];
+    if (weightReplaceable()) weightInput.value = '';
   } else {
-    if (weightInput && !weightInput.value.trim() && val) {
-      weightInput.value = val;
-    }
-    if (qtyInput && !qtyInput.value.trim()) {
-      qtyInput.value = '1';
-    }
+    // Pes normal (o sense contingut): Contingut=val, Quantitat=1.
+    if (weightReplaceable()) weightInput.value = val;
+    if (qtyReplaceable()) qtyInput.value = '1';
   }
 }
 
@@ -4197,53 +4231,102 @@ function _applyContentToAddForm(weightVal) {
 // No esborra res que l'usuari ja hagi escrit a preu/pes si la match no en porta.
 function applyKnownProductToForm(m) {
   if (!m) return;
-  selectedEmoji = m.emoji || selectedEmoji;
-  if (typeof renderEmojiPicker === 'function') renderEmojiPicker();
+  const snap = _lastKnownProductSnapshot;
+
+  // Emoji: reemplaçable si snap==null (primer cop) o coincideix amb el
+  // que vam posar abans (mateix patró que el BuyMe).
+  if (m.emoji && (snap === null || selectedEmoji === snap.emoji || !selectedEmoji)) {
+    selectedEmoji = m.emoji;
+    if (typeof renderEmojiPicker === 'function') renderEmojiPicker();
+  }
 
   const guessedLoc = m.location || (typeof guessLocationFromName === 'function' ? guessLocationFromName(m.name) : null);
-  if (guessedLoc && getLocationById(guessedLoc)) {
+  if (guessedLoc && getLocationById(guessedLoc) &&
+      (snap === null || selectedLocation === snap.location)) {
     selectedLocation = guessedLoc;
     if (typeof renderLocationPicker === 'function') renderLocationPicker();
   }
 
   const noExpiryInput = document.getElementById('input-no-expiry');
   const dateInput = document.getElementById('input-date');
+  // Data calculada que aquest match aplicaria (per comparar amb el
+  // snapshot la DATA resultant, no els days crus).
+  let nextDateStr = '';
+  if (!m.noExpiry && m.days) {
+    const d = new Date();
+    d.setDate(d.getDate() + m.days);
+    nextDateStr = formatDateForInput(d);
+  }
   if (m.noExpiry) {
-    if (noExpiryInput) {
+    // noExpiry reemplaçable si desmarcat ara, o snap deia que ja era marcat.
+    const noExpReplaceable = noExpiryInput && (
+      !noExpiryInput.checked || (snap !== null && snap.noExpiry === noExpiryInput.checked)
+    );
+    if (noExpReplaceable) {
       noExpiryInput.checked = true;
       noExpiryInput.dispatchEvent(new Event('change'));
+      if (dateInput) dateInput.value = '';
     }
-    if (dateInput) dateInput.value = '';
   } else {
-    if (noExpiryInput && noExpiryInput.checked) {
+    // Si el checkbox ve d'un autoomplert anterior (no manual), el desmarquem.
+    const noExpManual = noExpiryInput && noExpiryInput.checked && (
+      snap === null || snap.noExpiry === false
+    );
+    if (noExpiryInput && noExpiryInput.checked && !noExpManual) {
       noExpiryInput.checked = false;
       noExpiryInput.dispatchEvent(new Event('change'));
     }
-    if (m.days && dateInput) {
-      const d = new Date();
-      d.setDate(d.getDate() + m.days);
-      dateInput.value = formatDateForInput(d);
+    if (m.days && dateInput && !noExpManual &&
+        _knownProductCanReplace(dateInput.value, snap && snap.dateStr)) {
+      dateInput.value = nextDateStr;
       dateInput.dataset.baseDays = m.days;
     }
   }
   if (dateInput && typeof window._syncDateEmptyState === 'function') window._syncDateEmptyState(dateInput);
 
   const priceInput = document.getElementById('input-price');
-  if (priceInput && !priceInput.value.trim() && typeof m.price === 'number' && m.price >= 0) {
-    priceInput.value = String(m.price);
+  // Preu: comparació numèrica per tolerar "1.2" vs "1.20" (com el BuyMe).
+  // target='' si el match no porta preu → en canviar a un producte sense
+  // preu, el camp es reseteja (no es queda amb el de l'anterior).
+  if (priceInput) {
+    const target = (typeof m.price === 'number' && m.price >= 0) ? String(m.price) : '';
+    const curRaw = priceInput.value.trim();
+    const curNum = curRaw === '' ? null : parseFloat(curRaw.replace(',', '.'));
+    const snapPrice = snap ? snap.price : undefined;
+    if (curRaw === '' || (snap !== null && typeof snapPrice === 'number' && curNum === snapPrice)) {
+      priceInput.value = target;
+    }
   }
 
-  // Weight i Qty via helper compartit: cas "Nu" (ex: Ous "12u") →
-  // Quantitat=N + Contingut buit; altrament Contingut tal qual.
+  // Weight i Qty via helper compartit (snapshot-aware: vegeu _applyContentToAddForm).
   _applyContentToAddForm(m.weight);
 
-  // Llindar minStock: si la match en porta i l'usuari no ha tocat el
-  // camp, l'hi posem (número negre). Si no en porta, el deixem tal qual
-  // (buit → placeholder "0"). Coherent amb price/weight (només si buit).
+  // Llindar minStock: reemplaçable si buit o == el que vam autoomplir abans.
+  // target='' si el match no en porta → en canviar a un producte sense
+  // minStock (default 0), el camp es reseteja en comptes de quedar-se amb
+  // el valor de l'anterior.
   const minStockInput = document.getElementById('input-minstock');
-  if (minStockInput && !minStockInput.value.trim() && typeof m.minStock === 'number' && m.minStock >= 0) {
-    minStockInput.value = String(m.minStock);
+  if (minStockInput) {
+    const target = (typeof m.minStock === 'number' && m.minStock >= 0) ? String(m.minStock) : '';
+    if (_knownProductCanReplace(minStockInput.value.trim(), snap && snap.minStock)) {
+      minStockInput.value = target;
+    }
   }
+
+  // Gravar snapshot amb els valors REALMENT aplicats (llegint els inputs,
+  // no els valors crus del match) per al proper canvi de producte.
+  const qtyInputEl = document.getElementById('input-qty');
+  const weightInputEl = document.getElementById('input-weight');
+  _lastKnownProductSnapshot = {
+    emoji: m.emoji || '',
+    location: (guessedLoc && getLocationById(guessedLoc)) ? guessedLoc : (selectedLocation || ''),
+    dateStr: nextDateStr,
+    noExpiry: !!m.noExpiry,
+    price: (typeof m.price === 'number') ? m.price : undefined,
+    minStock: (typeof m.minStock === 'number') ? String(m.minStock) : '',
+    qty: qtyInputEl ? qtyInputEl.value.trim() : '',
+    content: weightInputEl ? weightInputEl.value.trim() : ''
+  };
 
   // Refresc del preview dinàmic després d'omplir camps.
   if (typeof _updateAddProductPreview === 'function') _updateAddProductPreview();
