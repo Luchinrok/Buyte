@@ -24,7 +24,6 @@ Llista neta del que queda OBERT. El detall històric i els ítems resolts són m
 
 - **Bug visual — centrat vertical del checkbox del toggle multi-lots** quan el text fa wrap (2-3 línies). 9 intents fallits (26-27/05). Cal enfocament nou (text més curt sense wrap, o investigació DevTools del wrapper). Detall a "Pendents — Sessions 26-27/05".
 - **Polish formularis a pantalles secundàries** restants: `#screen-special-item-edit` i `#screen-supermarket-edit`.
-- **Llindar configurable per a l'avís d'afegir al BuyMe** (`popular.minThreshold` + camp al popular-edit).
 - **Coherència del sufix " u" al llistat principal** (`_computeAggregatedQty`) — ajornat: cal desacoblar `parseQtyNumber` dels mirrors abans.
 - **Refactor de lots** — Fases E (recent-purchases per lot), F (banners per lot), G (polish + sync hardening), final (neteja de mirrors).
 - **Catàleg popular** — distingir unitats de productes contables (`unitsPerPackage`/`isCountable`) + preu per unitat.
@@ -137,6 +136,21 @@ Sessió de validació al mòbil real: weight validation (Opció A) + 2 bugs/mill
 
 ---
 
+## Sessió 01/06/26 — Commits
+
+Llindar configurable minStock + fix autoomplir/Xu (productes per unitat com Ous "12u"). 1 commit (validat al mòbil per Dani abans de commitejar):
+
+| Hash | Una línia |
+|---|---|
+| `__PENDING__` | ✅ **Feat llindar minStock (default 0) + avís d'afegir al BuyMe** + ✅ **fix autoomplir/Xu** (`validateWeight` accepta "Nu") + helper `_applyContentToAddForm` + camí ⭐ unificat |
+
+**Ítems resolts aquesta sessió**:
+- ✅ **Llindar configurable minStock** (vegeu detall a "Pendents — Sessions 26-27/05", marcat resolt). Default **0** (retrocompat: només avisa en acabar-se). Camp al producte + herència del popular + transport via "Comprat". UI a `#screen-add` (Quantitat|Preu|Llindar alineat) i `#screen-popular-edit`, amb botó ℹ️.
+- ✅ **Fix autoomplir/Xu** — productes de format "Nu" (Ous "12u", All "3u", Crema catalana "4u", Hamburgueses "4u"): (1) `validateWeight` ara accepta "Nu" normalitzat a minúscula sense espai → editar el popular "Ous" ja no surt vermell; (2) helper compartit `_applyContentToAddForm` (font única de la conversió "Nu"→Quantitat) usat pel camí blur i pel botó ⭐; (3) camí ⭐ unificat: `openAddForm({name,emoji})` + `applyKnownProductToForm(p)` (recupera preu/dies/ubicació/pes/minStock, abans absents); (4) desbloqueja afegir/comprar Ous al **BuyMe** (mateix `validateWeight` compartit a `saveShoppingItem`). NO tocat: "6x33cl" (cervesa, format pack — tasca a part). NO calia migració de productes existents (estat real net: lot `unit='units'`, sense `weight:"12u"`).
+- ⏸️ **EN PAUSA**: patró snapshot-replace a `applyKnownProductToForm` (autoomplir EatMe no substitueix en canviar de producte, ex ous→pa); anirà sobre la funció unificada. Bug del camí ⭐ "12u" cru ja resolt pel helper.
+
+---
+
 ## Pendents — Sessions 26-27/05 (encara oberts)
 
 Detectats les sessions 26-27/05/26 i encara no completats a data 28/05:
@@ -172,7 +186,7 @@ Detectats les sessions 26-27/05/26 i encara no completats a data 28/05:
 
 - ~~**Migrar `prompt()` de dia setmana a `showSelectModal`** (`settings.js:689` `promptDayFor`)~~ **✅ RESOLT (28/05, commit `49c69ca`)**. Nou helper `showSelectModal(emoji, title, message, options, currentValue, onConfirm)` (settings.js, al costat de `showInputModal`) amb els 7 dies com a botons clicables. Patró A (clic = selecciona + tanca + desa), reutilitza `.modal-zone-option.selected`, tancament Cancel·la/ESC/clic-fora. Dies en ordre **Dilluns-first** mantenint el value `getDay()` (Dilluns=1…Diumenge=0); noms via `t('notifDayShort')`; el value es llegeix del closure per preservar el tipus number. Verificat estàticament (sintaxi + mapping); UI pendent de validació al mòbil iOS via test plan T1-T6.
 
-- **Llindar configurable per a l'avís d'afegir al BuyMe (BiteMe)**. Comportament actual: quan `lots.length` arriba a 0 apareix el modal "S'ha acabat [producte]". Poc útil per a productes que es consumeixen abans (ex: ous — vols comprar quan en queden 4, no quan ja no queden). **Millora**: permetre llindar mínim per producte/categoria que dispari l'avís abans. Decisions a prendre: (1) on viu — recomanat al popular catalogat (`popular.minThreshold`); (2) UI — camp opcional "Avisa'm quan quedi menys de X" al `#screen-popular-edit`; (3) unitat — començar per `qty`, `weight` com a v2; (4) trigger — una sola vegada quan baixa per sota; (5) anti-duplicat — si ja és al BuyMe, no oferir.
+- ~~**Llindar configurable per a l'avís d'afegir al BuyMe (BiteMe)**~~ **✅ RESOLT (01/06, sessió llindar minStock — vegeu bloc Sessió 01/06)**. Camp `minStock` al producte (mirror) + opcional al popular (herència). Default **0** (només avisa en acabar-se del tot = comportament històric). Helpers `getStockUnits` (compta envasos/unitats vius) + `_evaluateLowStock(product, prevBase)` (avisa si `base <= minStock && base < prevBase && !_lowStockWarned`; flag una-sola-vegada-per-episodi; guarda `_isProductInBuyMe`). Disparadors unificats: `_confirmLotConsume`, `finalizeConsumption`, `_confirmLotEdit` (a la baixa), `_addLotToProduct` (neteja flag en recompra). `_deleteLot` i `_executeMoveLot` exclosos. UI: `#input-minstock` + `#input-popular-minstock` amb botó ℹ️ + `_showInfoModal`; fila `#screen-add` reordenada a Quantitat|Preu|Llindar amb alineació flex-column (patró popular-edit).
 
 ---
 

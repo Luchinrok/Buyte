@@ -10792,7 +10792,7 @@ body.selection-mode-active #shops-slider .arrow-btn {
   font-size: 30px;
 }
 
-/* Fila horitzontal 50/50 (Qty + Preu) */
+/* Fila horitzontal 3 columnes (Quantitat | Preu | Llindar) */
 #screen-add .form-row {
   display: flex;
   gap: 10px;
@@ -10802,6 +10802,31 @@ body.selection-mode-active #shops-slider .arrow-btn {
   flex: 1 1 0;
   min-width: 0;
   margin-bottom: 0;
+}
+
+/* Alineació vertical dels inputs a la fila de 3 columnes.
+   Mateix patró validat a #screen-popular-edit (.form-row .form-group
+   com a flex column + justify-content:flex-end): la capçalera de cada
+   cel·la (label simple a Quantitat/Preu, o .toggle-with-info amb el
+   botó ℹ️ de 32px al Llindar) flota al damunt amb l'alçada que calgui,
+   i l'input sempre s'enganxa al fons → els 3 inputs queden alineats
+   sigui quina sigui l'alçada de la capçalera.
+   El number (#input-minstock) no rebia el padding compactat del screen
+   (la regla de dalt només cobreix text/date) i quedava més alt; el
+   igualem aquí perquè els 3 inputs facin la mateixa alçada. */
+#screen-add .form-row .form-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+#screen-add .form-row .toggle-with-info {
+  /* La capçalera label+ℹ️ no ha d'estirar-se ni encongir-se; manté la
+     seva alçada natural (32px del botó) damunt l'input. */
+  flex: 0 0 auto;
+  margin-bottom: 4px;
+}
+#screen-add .form-row input[type="number"] {
+  padding: 10px 14px;
 }
 
 /* Form-hint amagada al camp Contingut.

@@ -1010,6 +1010,11 @@ function _normalizeWeightString(s) {
 function validateWeight(raw) {
   const s = (typeof raw === 'string' ? raw : String(raw || '')).trim();
   if (!s) return { valid: true, normalized: '', error: null };
+  // Format comptable "Nu" (N unitats): legítim al catàleg de populars
+  // (Ous "12u", All "3u"...). És un comptador d'unitats, no un pes.
+  // Acceptat i normalitzat a minúscula sense espai ("12 U" → "12u").
+  const u = s.match(/^(\d+)\s*u$/i);
+  if (u) return { valid: true, normalized: u[1] + 'u', error: null };
   const m = s.match(/^([\d.,]+)\s*(ml|l|g|kg)$/i);
   if (!m) return { valid: false, normalized: null, error: t('weightInvalid') };
   const num = parseFloat(m[1].replace(',', '.'));
@@ -1164,6 +1169,9 @@ function _createV2ProductWithLot(productData, lot) {
   };
   if (typeof lot.price === 'number') product.price = lot.price;
   if (lot.weight) product.weight = lot.weight;
+  // minStock viu al nivell producte (no per lot). Default 0 si no ve.
+  product.minStock = (productData && typeof productData.minStock === 'number')
+    ? productData.minStock : 0;
   return product;
 }
 
@@ -1173,8 +1181,13 @@ function _createV2ProductWithLot(productData, lot) {
 function _addLotToProduct(existingProduct, newLot) {
   if (!existingProduct || !newLot) return;
   if (!Array.isArray(existingProduct.lots)) existingProduct.lots = [];
+  // Estoc previ a l'addició: _evaluateLowStock netejarà _lowStockWarned
+  // NOMÉS si la nova base > minStock (recompra total). Una recompra
+  // parcial que segueixi <= minStock no re-arma l'avís.
+  const prevBase = getStockUnits(existingProduct);
   existingProduct.lots.push(newLot);
   _refreshProductMirrors(existingProduct);
+  if (typeof _evaluateLowStock === 'function') _evaluateLowStock(existingProduct, prevBase);
 }
 
 // Treu un lot d'un producte existent per id. Si el producte queda
@@ -1260,6 +1273,63 @@ function getTotalQty(product) {
 
 function getLotsByLocation(product, location) {
   return getLots(product).filter(l => l && l.location === location);
+}
+
+// =============================================================
+//   LLINDAR D'ESTOC BAIX (minStock) — avís per afegir al BuyMe
+// =============================================================
+
+// Compta ENVASOS/UNITATS vius (no pes/volum agregat). És la base de
+// comparació del llindar minStock. Cada lot de pes/volum (g/kg/ml/l) o
+// mig consumit (mode percent) compta com 1 envàs; els lots d'unitats
+// sumen qtyRemaining. Resilient a productes legacy via getLots (que
+// reconstrueix un lot virtual des del mirror p.qty).
+function getStockUnits(product) {
+  const lots = getLots(product);
+  let count = 0;
+  for (const lot of lots) {
+    if (!lot) continue;
+    if (lot.consumptionMode === 'quantity' && Number.isFinite(lot.qtyRemaining)) {
+      const unit = (lot.unit || 'units').toLowerCase();
+      if (unit === 'units') count += lot.qtyRemaining;  // unitats soltes
+      else count += 1;                                  // 1 envàs de pes/volum
+    } else if (lot.consumptionMode === 'percent') {
+      count += 1;                                       // lot mig consumit = encara el tens
+    }
+  }
+  return count;
+}
+
+// Avaluador únic d'estoc baix. Cridat des de TOTS els camins que
+// redueixen estoc (consum/edició a la baixa) i d'_addLotToProduct (per
+// netejar el flag en recuperar estoc). `prevBase` = getStockUnits ABANS
+// de mutar. Regles (validades amb Dani 31/05):
+//   · Avisa només si: base <= minStock && base < prevBase && !_lowStockWarned
+//   · En avisar marca _lowStockWarned = true (una sola vegada per episodi)
+//   · Neteja el flag només quan base > minStock (recompra total; la
+//     parcial que es queda <= minStock NO re-arma l'avís)
+//   · Skip si el producte ja és a la llista del BuyMe (guarda unificada)
+// minStock per defecte 0 (productes existents sense camp: ?? 0 → només
+// avisa en acabar-se del tot, comportament històric).
+function _evaluateLowStock(product, prevBase) {
+  if (!product) return;
+  const minStock = (typeof product.minStock === 'number') ? product.minStock : 0;
+  // Si el producte ja s'ha tret de products[] (cas envàs únic 1->0),
+  // la base efectiva és 0 — així l'avís d'acabar-se es preserva.
+  const stillExists = products.some(p => p.id === product.id);
+  const base = stillExists ? getStockUnits(product) : 0;
+
+  if (base > minStock) {
+    if (product._lowStockWarned) product._lowStockWarned = false;
+    return;
+  }
+  if (base <= minStock && base < prevBase && !product._lowStockWarned) {
+    if (typeof _isProductInBuyMe === 'function' && _isProductInBuyMe(product.name)) return;
+    product._lowStockWarned = true;
+    if (typeof askAddToShoppingList === 'function') {
+      setTimeout(() => askAddToShoppingList(product), 600);
+    }
+  }
 }
 
 // =============================================================
@@ -1638,6 +1708,10 @@ function _confirmLotConsume(product, lot, action, amount) {
     return;
   }
 
+  // Base d'estoc ABANS de mutar qtyRemaining/eliminar el lot (per a
+  // l'avís d'estoc baix — vegeu _evaluateLowStock).
+  const prevBase = getStockUnits(realProduct);
+
   let consumedPercent;
   if (realLot.consumptionMode === 'quantity') {
     const startQty = realLot.qtyRemaining;
@@ -1687,11 +1761,9 @@ function _confirmLotConsume(product, lot, action, amount) {
     if (typeof renderHome === 'function') renderHome();
     navigateAfterAction();
     currentProduct = null;
-    // Oferir afegir al BuyMe (mateix patró que finalizeConsumption del
-    // camí legacy). Skip si ja és al BuyMe.
-    if (!_isProductInBuyMe(realProduct.name) && typeof askAddToShoppingList === 'function') {
-      setTimeout(() => askAddToShoppingList(realProduct), 600);
-    }
+    // Avís d'estoc baix unificat. base=0 (producte ja tret de products[])
+    // → es preserva l'avís d'envàs únic en acabar-se l'últim.
+    _evaluateLowStock(realProduct, prevBase);
     return;
   }
 
@@ -1699,6 +1771,8 @@ function _confirmLotConsume(product, lot, action, amount) {
   if (typeof updateStatsSub === 'function') updateStatsSub();
   openProduct(realProduct.id);
   showToast(action === 'eat' ? '✓ Lot consumit' : '🗑️ Lot llençat');
+  // Encara queden lots: avisa si l'estoc ha baixat fins al llindar.
+  _evaluateLowStock(realProduct, prevBase);
 }
 
 // Comprovació "ja és al BuyMe" per evitar oferir afegir-lo dues vegades
@@ -1884,6 +1958,10 @@ function _confirmLotEdit(product, lot, v) {
     return;
   }
 
+  // Base d'estoc ABANS de mutar qtyRemaining/percentRemaining (per a
+  // l'avís d'estoc baix; només dispara si l'edició la fa baixar).
+  const prevBase = getStockUnits(realProduct);
+
   const newQty = parseFloat(String(v.qtyRaw).replace(',', '.'));
   if (realLot.consumptionMode === 'quantity') {
     // Arrodoniment a 3 decimals (mateix patró que _confirmLotConsume).
@@ -1933,12 +2011,16 @@ function _confirmLotEdit(product, lot, v) {
     if (typeof renderHome === 'function') renderHome();
     navigateAfterAction();
     currentProduct = null;
+    // Editar la qty a 0 buida el producte; base=0 < prevBase → avisa
+    // (coherent amb consumir l'últim).
+    _evaluateLowStock(realProduct, prevBase);
     return;
   }
 
   saveData();
   openProduct(realProduct.id);
   showToast('✓ Lot actualitzat');
+  _evaluateLowStock(realProduct, prevBase);
 }
 
 function openProductEditModal(product, restoreState) {
@@ -3669,6 +3751,8 @@ function finalizeConsumption(product, action, percent, displayPercent) {
   // 'displayPercent' — el que l'usuari ha vist al slider (per al toast)
   // Sempre desem el percentatge real a l'historial (per a estadístiques
   // d'estalvi i CO₂), independentment de si el producte queda o desapareix.
+  // Base d'estoc ABANS de reduir p.qty / treure de products[].
+  const prevBase = getStockUnits(product);
   recordConsumption(product, action, percent);
 
   // XP de gamificació: només per "consumed" (aprofitament). +5 XP bonus
@@ -3737,10 +3821,10 @@ function finalizeConsumption(product, action, percent, displayPercent) {
   navigateAfterAction();
   currentProduct = null;
 
-  // Si el producte encara és a l'EatMe, no oferim afegir-lo a la llista
-  if (!stayInEatMe) {
-    setTimeout(() => askAddToShoppingList(product), 600);
-  }
+  // Avís d'estoc baix unificat (ara amb llindar minStock + guarda
+  // _isProductInBuyMe, que aquest camí legacy abans no tenia). Si el
+  // producte s'ha tret de products[], _evaluateLowStock veu base=0.
+  _evaluateLowStock(product, prevBase);
 }
 
 // Historial detallat de consum/llençaments per a futures estadístiques d'estalvi.
@@ -3793,6 +3877,7 @@ function openEditProductForm(product) {
     qty: product.qty,
     price: product.price,
     weight: product.weight,
+    minStock: product.minStock,
     location: product.location,
     noExpiry: !!product.noExpiry,
     date: product.date,
@@ -3871,6 +3956,16 @@ function openAddForm(prefill) {
   const qtyInput = document.getElementById('input-qty');
   if (qtyInput) qtyInput.value = (prefill && prefill.qty) ? String(prefill.qty) : '1';
 
+  // Llindar d'estoc baix (minStock). Hereta del prefill (popular /
+  // producte en edició) si hi és; si no, deixa l'input BUIT → el
+  // placeholder mostra "0" (default) sense forçar cap valor escrit.
+  const minStockInput = document.getElementById('input-minstock');
+  if (minStockInput) {
+    minStockInput.value = (prefill && typeof prefill.minStock === 'number')
+      ? String(prefill.minStock)
+      : '';
+  }
+
   // Toggle multi-lots: sempre desmarcat al obrir (l'usuari decideix
   // explícitament cada vegada).
   const multiLotsEl = document.getElementById('input-multi-lots');
@@ -3884,12 +3979,13 @@ function openAddForm(prefill) {
       : '';
   }
 
-  // Pes (opcional, en text lliure: "500g", "1kg", "1L"...). Pre-fillem
-  // si ve d'un popular/historial amb pes guardat.
+  // Pes / contingut. Reset (el form és estàtic → pot tenir valor residual)
+  // i després helper compartit: cas "Nu" (ex: Ous "12u") → Quantitat=N +
+  // Contingut buit (mateixa lògica que el camí blur, sense divergir).
+  // Cobreix els camins edició i "Comprat", que porten weight al prefill.
   const weightInput = document.getElementById('input-weight');
-  if (weightInput) {
-    weightInput.value = (prefill && prefill.weight) ? String(prefill.weight) : '';
-  }
+  if (weightInput) weightInput.value = '';
+  _applyContentToAddForm(prefill && prefill.weight);
 
 
   // Reset checkbox "sense data" — restaurat si el prefill ho indica (popular/historial)
@@ -4042,6 +4138,7 @@ function findKnownProductByName(name) {
       location: fromPopular.location,
       price: fromPopular.price,
       weight: fromPopular.weight,
+      minStock: fromPopular.minStock,
       noExpiry: !!fromPopular.noExpiry,
       source: 'popular'
     };
@@ -4061,6 +4158,38 @@ function findKnownProductByName(name) {
     };
   }
   return null;
+}
+
+// Aplica al formulari de l'EatMe (#input-qty + #input-weight) el valor
+// "contingut" d'un popular/match conegut. Cas especial "Nu" (ex: Ous
+// "12u"): és un comptador d'unitats, no un pes per envàs → s'expandeix a
+// Quantitat=N amb Contingut BUIT (així es desa unit='units', qtyRemaining=N,
+// consumible per unitats i amb el llindar comptant unitats). Qualsevol
+// altre valor va al camp Contingut tal qual.
+// Guardes (compartides pels dos callers): només toca camps no modificats
+// per l'usuari — Quantitat reemplaçable si buida o "1"; Contingut si buit.
+// Font ÚNICA de la conversió "Nu" (cridada des d'openAddForm i
+// applyKnownProductToForm — no duplicar la lògica enlloc).
+function _applyContentToAddForm(weightVal) {
+  const weightInput = document.getElementById('input-weight');
+  const qtyInput = document.getElementById('input-qty');
+  const val = weightVal ? String(weightVal) : '';
+  const matchUnits = val.match(/^(\d+)\s*u$/i);
+  if (matchUnits) {
+    if (qtyInput && (!qtyInput.value.trim() || qtyInput.value.trim() === '1')) {
+      qtyInput.value = matchUnits[1];
+    }
+    if (weightInput && !weightInput.value.trim()) {
+      weightInput.value = '';
+    }
+  } else {
+    if (weightInput && !weightInput.value.trim() && val) {
+      weightInput.value = val;
+    }
+    if (qtyInput && !qtyInput.value.trim()) {
+      qtyInput.value = '1';
+    }
+  }
 }
 
 // Aplica al formulari de l'EatMe (screen-add) tot el que sapiguem d'un
@@ -4104,31 +4233,16 @@ function applyKnownProductToForm(m) {
     priceInput.value = String(m.price);
   }
 
-  // Weight i Qty: cas especial "Xu" (X dígits + "u") al weight del
-  // popular vol dir "X unitats" (ex: Ous "12u"). L'interpretem com a
-  // qty=X amb pes buit, perquè és un comptador d'unitats (no un pes
-  // per envàs). Protecció habitual: només omplim camps si l'usuari
-  // no els ha modificat.
-  const weightInput = document.getElementById('input-weight');
-  const qtyInput = document.getElementById('input-qty');
-  const weightVal = m.weight ? String(m.weight) : '';
-  const matchUnits = weightVal.match(/^(\d+)u$/i);
+  // Weight i Qty via helper compartit: cas "Nu" (ex: Ous "12u") →
+  // Quantitat=N + Contingut buit; altrament Contingut tal qual.
+  _applyContentToAddForm(m.weight);
 
-  if (matchUnits) {
-    if (qtyInput && (!qtyInput.value.trim() || qtyInput.value.trim() === '1')) {
-      qtyInput.value = matchUnits[1];
-    }
-    // Weight queda buit (l'usuari ja sap que són X unitats via qty)
-    if (weightInput && !weightInput.value.trim()) {
-      weightInput.value = '';
-    }
-  } else {
-    if (weightInput && !weightInput.value.trim() && weightVal) {
-      weightInput.value = weightVal;
-    }
-    if (qtyInput && !qtyInput.value.trim()) {
-      qtyInput.value = '1';
-    }
+  // Llindar minStock: si la match en porta i l'usuari no ha tocat el
+  // camp, l'hi posem (número negre). Si no en porta, el deixem tal qual
+  // (buit → placeholder "0"). Coherent amb price/weight (només si buit).
+  const minStockInput = document.getElementById('input-minstock');
+  if (minStockInput && !minStockInput.value.trim() && typeof m.minStock === 'number' && m.minStock >= 0) {
+    minStockInput.value = String(m.minStock);
   }
 
   // Refresc del preview dinàmic després d'omplir camps.
@@ -4243,6 +4357,14 @@ function saveNewProduct() {
   // tal qual (només trim).
   const qty = qtyInput ? _normalizeWeightString(qtyInput.value.trim()) : '';
 
+  // Llindar d'estoc baix (minStock). Default 0 si el camp va buit; enter >= 0.
+  const minStockInput = document.getElementById('input-minstock');
+  let minStock = 0;
+  if (minStockInput) {
+    const ms = parseInt(String(minStockInput.value).trim(), 10);
+    if (Number.isFinite(ms) && ms >= 0) minStock = ms;
+  }
+
   // Preu (opcional). Només el guardem si l'usuari l'ha informat. Acceptem
   // tant punt com coma com a separador decimal: en alguns inputs type=number
   // amb locale ca/es, "2,50" no es parsa bé per parseFloat per defecte.
@@ -4298,6 +4420,7 @@ function saveNewProduct() {
       p.noExpiry = noExpiryChecked;
       p.location = selectedLocation;
       p.qty = qty;
+      p.minStock = minStock;
       if (price !== null) p.price = price; else delete p.price;
       if (weight) p.weight = weight; else delete p.weight;
       // frozenDate: si el producte ENTRA al congelador per primera
@@ -4359,6 +4482,7 @@ function saveNewProduct() {
     noExpiry: noExpiryChecked,
     location: selectedLocation,
     qty: qty,
+    minStock: minStock,
     addedAt: new Date().toISOString()
   };
   if (price !== null) productData.price = price;

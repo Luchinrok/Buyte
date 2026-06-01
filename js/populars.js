@@ -235,6 +235,13 @@ function openPopularEdit(idx) {
     weightInput.value = (!isNew && item && item.weight) ? String(item.weight) : '';
   }
 
+  // Llindar d'estoc baix (opcional al catàleg). Buit = els productes
+  // nous d'aquest popular heretaran el default 1.
+  const minStockInput = document.getElementById('input-popular-minstock');
+  if (minStockInput) {
+    minStockInput.value = (!isNew && item && typeof item.minStock === 'number') ? String(item.minStock) : '';
+  }
+
   selectedPopularLocation = (item && item.location) ? item.location : 'pantry';
   if (typeof getLocationById === 'function' && !getLocationById(selectedPopularLocation)) {
     selectedPopularLocation = (typeof locations !== 'undefined' && locations[0]) ? locations[0].id : 'pantry';
@@ -422,6 +429,15 @@ function savePopularEdit() {
     weight = wv.normalized;
   }
 
+  // Llindar d'estoc baix (opcional). null = no s'hi posa res → el
+  // producte heretarà el default 1 quan es creï des d'aquest popular.
+  const minStockInput = document.getElementById('input-popular-minstock');
+  let minStock = null;
+  if (minStockInput && String(minStockInput.value).trim() !== '') {
+    const ms = parseInt(String(minStockInput.value).trim(), 10);
+    if (Number.isFinite(ms) && ms >= 0) minStock = ms;
+  }
+
   const location = selectedPopularLocation || 'pantry';
 
   const list = getPopularProducts();
@@ -442,6 +458,7 @@ function savePopularEdit() {
     if (!noExpiry) entry.days = days;
     if (price !== null) entry.price = price;
     if (weight) entry.weight = weight;
+    if (minStock !== null) entry.minStock = minStock;
     list.push(entry);
     savedItemId = entry.id;
   } else {
@@ -459,6 +476,8 @@ function savePopularEdit() {
     else delete list[editingPopularIdx].price;
     if (weight) list[editingPopularIdx].weight = weight;
     else delete list[editingPopularIdx].weight;
+    if (minStock !== null) list[editingPopularIdx].minStock = minStock;
+    else delete list[editingPopularIdx].minStock;
     savedItemId = list[editingPopularIdx].id;
   }
   savePopularProducts(list);
@@ -708,11 +727,20 @@ function renderPopularList() {
         }
         showScreen('shopping-item-edit');
       } else {
-        openAddForm({
-          name: p.name, emoji: p.emoji, days: p.days,
-          location: p.location, noExpiry: !!p.noExpiry,
-          price: p.price, weight: p.weight
-        });
+        // Camí ⭐: obre el formulari net (només nom + emoji; qty='1' i
+        // preu/pes/minStock buits) i delega l'ompliment COMPLET a
+        // applyKnownProductToForm — la mateixa funció que el camí blur.
+        // Recupera preu, dies, ubicació, pes (amb expansió "Nu" via
+        // _applyContentToAddForm), minStock i noExpiry. Passem el popular
+        // CLICAT `p` directament (no findKnownProductByName) per no aplicar
+        // un record equivocat si un custom i un del catàleg base comparteixen
+        // nom — `p` ja porta tots els camps. Les guardes
+        // d'applyKnownProductToForm (omple només camps buits / qty=="1")
+        // eviten la doble aplicació amb el que openAddForm ja ha posat.
+        openAddForm({ name: p.name, emoji: p.emoji });
+        if (typeof applyKnownProductToForm === 'function') {
+          applyKnownProductToForm(p);
+        }
       }
     };
 

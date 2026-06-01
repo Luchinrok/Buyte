@@ -1892,6 +1892,7 @@ function _buildShoppingPrefill(item) {
          : (fromHistory && typeof fromHistory.price === 'number') ? fromHistory.price
          : undefined,
     weight: (fromPopular && fromPopular.weight) || (fromHistory && fromHistory.weight) || undefined,
+    minStock: (fromPopular && typeof fromPopular.minStock === 'number') ? fromPopular.minStock : undefined,
     popularId: (fromPopular && fromPopular.id) || null
   };
 }

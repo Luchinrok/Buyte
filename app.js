@@ -389,6 +389,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Botó ℹ️ del llindar minStock (a #screen-add i a #screen-popular-edit).
+  // Tots dos obren el mateix modal informatiu. Reutilitza _showInfoModal.
+  const minStockInfoText = [
+    'Quan l\'estoc baixi a aquest número o menys, t\'oferirà afegir-lo al BuyMe.',
+    '**0** = només avisa quan se t\'acaba del tot.',
+    'Exemple: posa **5** a l\'aigua per tenir temps d\'anar a comprar abans de quedar-te sense.'
+  ];
+  ['minstock-info', 'popular-minstock-info'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        if (typeof _showInfoModal !== 'function') return;
+        _showInfoModal('🔔', 'Llindar d\'avís', minStockInfoText);
+      });
+    }
+  });
+
   // Configuració — pantalla principal amb 5 cards de categoria. Cadascuna
   // obre una sub-pantalla amb pestanyes (instalada en commits posteriors).
   // Spaces UI (FASE 2): listeners del selector de la home + pantalla
