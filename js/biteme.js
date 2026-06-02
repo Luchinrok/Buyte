@@ -1362,6 +1362,41 @@ function _evaluateLowStock(product, prevBase) {
   }
 }
 
+// Deriva {qty, content} per enviar un producte EatMe a la llista de la
+// compra. qty = nombre d'ENVASOS/PACKS (no l'agregat de _computeAggregatedQty);
+// content = weight per-envàs catalogat (format pack inclòs: "6x33cl"/"12u"/
+// "250g"/"1L"). Regla:
+//   pack_count = _parsePackContent(content).count   (6 / 12 / 1 / 1)
+//   unitats    = getStockUnits(product)              [unitats individuals]
+//   qty = unitats>0 ? ceil(unitats/pack_count)
+//                   : (minStock>0 ? ceil(minStock/pack_count) : 1)
+// minStock està en unitats individuals (mateixa escala que getStockUnits),
+// per això es divideix per pack_count per passar a packs.
+function _deriveBuyMeFromProduct(product) {
+  if (!product) return { qty: '', content: '' };
+  let content = '';
+  const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
+  if (Array.isArray(populars)) {
+    const key = String(product.name || '').toLowerCase().trim();
+    const pop = populars.find(p => p && p.name && p.name.toLowerCase().trim() === key);
+    if (pop && pop.weight) content = String(pop.weight);
+  }
+  if (!content && product.weight) content = String(product.weight);
+
+  const parsed = (typeof _parsePackContent === 'function') ? _parsePackContent(content) : { count: 1 };
+  const packCount = (parsed && parsed.count > 0) ? parsed.count : 1;
+
+  const units = (typeof getStockUnits === 'function') ? getStockUnits(product) : 0;
+  let qtyNum;
+  if (units > 0) {
+    qtyNum = Math.ceil(units / packCount);
+  } else {
+    const ms = (typeof product.minStock === 'number' && product.minStock > 0) ? product.minStock : 0;
+    qtyNum = ms > 0 ? Math.ceil(ms / packCount) : 1;
+  }
+  return { qty: String(qtyNum), content: content };
+}
+
 // =============================================================
 //   RENDER de la secció "Lots" al detall del producte (Fase C+)
 //   Només lectura: cap interacció per lot (consumir/editar per lot

@@ -718,7 +718,11 @@ function _formatShoppingNameWithWeight(name, qty, weight) {
   const norm = s => String(s || '').toLowerCase().replace(/\s+/g, '');
   const showWeight = !!weightTrim && norm(weightTrim) !== norm(qtyTrim);
   let combo = '';
-  if (qtyTrim && showWeight) combo = qtyTrim + ' × ' + weightTrim;
+  if (qtyTrim && showWeight) {
+    // qty==1 amb contingut: suprimim el "1 ×" i mostrem només el contingut
+    // ("1L" / "6x33cl" / "12u"). qty>1: "N × contingut" ("2 × 250g").
+    combo = (qtyTrim === '1') ? weightTrim : (qtyTrim + ' × ' + weightTrim);
+  }
   else if (qtyTrim) combo = qtyTrim;
   else if (showWeight) combo = weightTrim;
   if (!combo) return safeName;
@@ -2417,16 +2421,22 @@ function showAddToShoppingModal(product) {
   });
 }
 
-function addToShoppingList(supermarketId, product, qty) {
+function addToShoppingList(supermarketId, product, qty, weight) {
   const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-  shoppingItems.push({
+  const newItem = {
     id, supermarketId,
     name: product.name,
     emoji: product.emoji,
     qty: qty || '',
     notes: '',
     addedAt: Date.now()
-  });
+  };
+  // Contingut per-envàs explícit (no fallback al render). Prioritza el
+  // weight passat (derivat del popular per-envàs); si no, el del producte.
+  // CookMe passa products sense weight i sense 4t arg → no-op.
+  const w = weight || product.weight;
+  if (w) newItem.weight = w;
+  shoppingItems.push(newItem);
   saveShoppingData();
   // Gamificació: 1 XP per item afegit al BuyMe + comptador històric.
   if (typeof bumpBuymeAddedCounter === 'function') bumpBuymeAddedCounter(1);
@@ -2445,6 +2455,10 @@ function manualAddToBuyMe(product) {
 function showManualAddToBuyMeModal(product) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
+  // qty d'ENVASOS + contingut per-envàs (no l'agregat de l'EatMe). Vegeu
+  // _deriveBuyMeFromProduct (biteme.js). L'usuari pot editar la qty a l'input.
+  const _derived = (typeof _deriveBuyMeFromProduct === 'function')
+    ? _deriveBuyMeFromProduct(product) : { qty: product.qty || '', content: '' };
   const gradients = [
     ['#42A5F5', '#1565C0'], ['#26A69A', '#00695C'], ['#FFA726', '#E65100'],
     ['#AB47BC', '#7B1FA2'], ['#EF5350', '#C62828'], ['#66BB6A', '#388E3C'],
@@ -2487,8 +2501,14 @@ function showManualAddToBuyMeModal(product) {
       <div class="modal-emoji-big">🛒</div>
       <p class="modal-title">${t('addToList')}</p>
       <p class="modal-product-name">${escapeHtml(product.emoji + ' ' + product.name)}</p>
-      <label style="display:block;text-align:left;font-size:13px;color:var(--text-muted);margin:14px 0 4px">${t('quantity')}</label>
-      <input type="text" id="modal-qty-input" class="select-input" placeholder="${t('quantityPlaceholder')}" value="${escapeHtml(product.qty || '')}" style="margin-bottom:14px">
+      <div class="form-group modal-form-group">
+        <label for="modal-qty-input">${t('itemQuantity')}</label>
+        <input type="text" id="modal-qty-input" placeholder="${t('quantityPlaceholder')}" value="${escapeHtml(_derived.qty)}">
+      </div>
+      <div class="form-group modal-form-group">
+        <label for="modal-content-input">${t('weightLabel')}</label>
+        <input type="text" id="modal-content-input" placeholder="${t('quantityPlaceholder')}" value="${escapeHtml(_derived.content)}">
+      </div>
       <p class="modal-sub" style="margin:0 0 6px">${t('chooseSupermarket')}</p>
       <div class="modal-options">${smButtons}</div>
       <button class="modal-cancel" id="modal-cancel-btn" style="margin-top:10px">${t('cancel')}</button>
@@ -2500,8 +2520,9 @@ function showManualAddToBuyMeModal(product) {
     btn.addEventListener('click', () => {
       const smId = btn.dataset.id;
       const qty = (overlay.querySelector('#modal-qty-input').value || '').trim();
+      const content = (overlay.querySelector('#modal-content-input').value || '').trim();
       const sm = getSupermarketById(smId);
-      addToShoppingList(smId, product, qty);
+      addToShoppingList(smId, product, qty, content || _derived.content);
       document.body.removeChild(overlay);
       showToast('🛒 ' + t('addedToShopping', sm ? sm.name : ''));
     });

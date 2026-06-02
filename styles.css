@@ -4466,6 +4466,22 @@ body.selection-mode-active #shops-slider .arrow-btn {
   text-align: center;
 }
 
+/* Camps de formulari dins d'un modal (ex: showManualAddToBuyMeModal —
+   Quantitat + Contingut). Hereten l'estil de formulari real via .form-group
+   (vora 2px, radius 14px, focus, label uppercase). Compactem el marge a 12px
+   (= #screen-add) perquè el marge base de .form-group (20px) deixaria el modal
+   massa airejat i podria fer scroll. Scoped a .modal-form-group → no afecta
+   cap altre .form-group ni el .space-modal-content. */
+.modal-content .modal-form-group {
+  margin-bottom: 12px;
+}
+
+/* Labels del modal centrats, per fer joc amb les pantalles d'afegir.
+   Scoped a .modal-form-group → no afecta cap altre .form-group ni modal. */
+.modal-content .modal-form-group label {
+  text-align: center;
+}
+
 .modal-options {
   display: flex;
   flex-direction: column;
@@ -10694,6 +10710,12 @@ body.selection-mode-active #shops-slider .arrow-btn {
   margin-bottom: 0;
 }
 
+/* Centrat de labels (coherent amb #screen-add / #screen-popular-edit).
+   Exclou el chip 'No caduca'. Aquesta pantalla no té .toggle-with-info. */
+#screen-shopping-item-edit .form-group label:not(.no-expiry-label) {
+  text-align: center;
+}
+
 /* Form-hint del camp Contingut: ocult només en aquesta screen.
    El label ja diu "Contingut per envàs (opcional)" i el placeholder
    mostra el format — la guia pedagògica és redundant aquí. */
@@ -10827,6 +10849,19 @@ body.selection-mode-active #shops-slider .arrow-btn {
 }
 #screen-add .form-row input[type="number"] {
   padding: 10px 14px;
+}
+
+/* Centrat de labels (mirall de #screen-popular-edit). Exclou:
+   - .no-expiry-label (chip 'No caduca', estructura flex pròpia)
+   - .form-toggle-label (label del toggle multi-lot amb checkbox). */
+#screen-add .form-group label:not(.no-expiry-label):not(.form-toggle-label) {
+  text-align: center;
+}
+/* LLINDAR: centrar el grup .toggle-with-info (label + ℹ️). NOMÉS el del
+   LLINDAR (dins .form-group normal); :not(.form-toggle-group) exclou el
+   toggle multi-lot — NO reobrim el centrat vertical del seu checkbox. */
+#screen-add .form-group:not(.form-toggle-group) .toggle-with-info {
+  justify-content: center;
 }
 
 /* Form-hint amagada al camp Contingut.

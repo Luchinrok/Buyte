@@ -137,7 +137,7 @@ const TRANSLATIONS = {
     noProductsAtHome: 'Encara no tens productes',
     addToBiteme: "Afegeix-ne a l'EatMe!",
     priceLabel: 'Preu per envàs',
-    weightLabel: 'Contingut per envàs',
+    weightLabel: 'Contingut',
     weightHint: 'Deixa-ho buit si compres unitats individuals (ous, iogurts...)',
     minStockLabel: 'Llindar',
     minStockHint: 'Quan l\'estoc baixi a aquest número o menys, t\'oferirà afegir-lo al BuyMe. 0 = només avisa quan se t\'acaba del tot.',
