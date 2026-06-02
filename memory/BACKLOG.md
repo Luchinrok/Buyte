@@ -1,6 +1,6 @@
 # Backlog del projecte Buyte
 
-> **Última sincronització: 2026-06-02** (resolts fins 02/06 marcats amb ✅ + hash; fil packs/preu COMPLET: format multipac `4f95e8f`, fixos A+B `fd5c5b5`, fix C `e500fc0` — sense pendents oberts d'aquest fil).
+> **Última sincronització: 2026-06-02** (resolts fins 02/06 marcats amb ✅ + hash; fil packs/preu COMPLET `4f95e8f`/`fd5c5b5`/`e500fc0`; polish formularis secundaris + centrat LLINDAR `9f03282`).
 
 Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté ítems detectats però NO completats, agrupats per sessió de detecció.
 
@@ -23,7 +23,6 @@ Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté í
 Llista neta del que queda OBERT. El detall històric i els ítems resolts són més avall.
 
 - **Bug visual — centrat vertical del checkbox del toggle multi-lots** quan el text fa wrap (2-3 línies). 9 intents fallits (26-27/05). Cal enfocament nou (text més curt sense wrap, o investigació DevTools del wrapper). Detall a "Pendents — Sessions 26-27/05".
-- **Polish formularis a pantalles secundàries** restants: `#screen-special-item-edit` i `#screen-supermarket-edit`.
 - **Coherència del sufix " u" al llistat principal** (`_computeAggregatedQty`) — ajornat: cal desacoblar `parseQtyNumber` dels mirrors abans.
 - **Refactor de lots** — Fases E (recent-purchases per lot), F (banners per lot), G (polish + sync hardening), final (neteja de mirrors).
 - **Catàleg popular** — distingir unitats de productes contables (`unitsPerPackage`/`isCountable`) + preu per unitat.
@@ -195,13 +194,7 @@ Detectats les sessions 26-27/05/26 i encara no completats a data 28/05:
   
   Estat actual del codi: **revertit a equivalent de `aa39f6f`** (sense wrapper, sense `vertical-align`, només `align-items:center` al label + `flex:1 1 auto` al span del text). Ho deixem documentat però sense més intents avui.
 
-- **Polish formularis — estendre a les pantalles secundàries**. La sèrie de polish formularis del 23-26/05/26 va atacar 3 pantalles principals (BuyMe afegir/editar, BiteMe afegir, popular-edit). Queden 2 pantalles més amb el mateix patró antic:
-  - `#screen-special-item-edit` (afegir/editar item dins una llista especial)
-  - `#screen-supermarket-edit` (afegir/editar supermercat)
-  
-  (`#screen-location-edit` ja resolt al commit `4d7dbf1` del 27/05/26 — emoji picker en overlay.)
-  
-  Pendent: revisar cadascuna i decidir si aplicar el mateix patró del polish (layout horitzontal, compactació marges, etc.) o si tenen necessitats específiques.
+- ~~**Polish formularis — estendre a les pantalles secundàries**~~ **✅ RESOLT (02/06, `9f03282`)**. `#screen-special-item-edit` i `#screen-supermarket-edit`: botó emoji compacte (`.emoji-button-compact` 52px, sense "Canviar emoji" — l'emoji picker en overlay ja existia) + densitat coherent (`form-group` 12px, input padding 10px 14px, valors copiats de `#screen-add`) + `.danger-btn margin-top` a CSS. (`#screen-location-edit` ja resolt a `4d7dbf1` el 27/05.) Al mateix commit: fix centrat del LLINDAR a `#screen-popular-edit` (`justify-content:center` al `.toggle-with-info`). Abast tancat: no calia layout horitzontal (1-3 camps).
 
 - ~~**Migrar `prompt()` de dia setmana a `showSelectModal`** (`settings.js:689` `promptDayFor`)~~ **✅ RESOLT (28/05, commit `49c69ca`)**. Nou helper `showSelectModal(emoji, title, message, options, currentValue, onConfirm)` (settings.js, al costat de `showInputModal`) amb els 7 dies com a botons clicables. Patró A (clic = selecciona + tanca + desa), reutilitza `.modal-zone-option.selected`, tancament Cancel·la/ESC/clic-fora. Dies en ordre **Dilluns-first** mantenint el value `getDay()` (Dilluns=1…Diumenge=0); noms via `t('notifDayShort')`; el value es llegeix del closure per preservar el tipus number. Verificat estàticament (sintaxi + mapping); UI pendent de validació al mòbil iOS via test plan T1-T6.
 
