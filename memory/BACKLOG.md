@@ -1,6 +1,6 @@
 # Backlog del projecte Buyte
 
-> **Última sincronització: 2026-06-02** (resolts fins 02/06 marcats amb ✅ + hash; inclou format multipac `4f95e8f` + fixos preu total del lot (A) i item.weight (B) `fd5c5b5`; pendent (C) aprenentatge perd info del pack — vegeu Sessió 02/06).
+> **Última sincronització: 2026-06-02** (resolts fins 02/06 marcats amb ✅ + hash; fil packs/preu COMPLET: format multipac `4f95e8f`, fixos A+B `fd5c5b5`, fix C `e500fc0` — sense pendents oberts d'aquest fil).
 
 Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté ítems detectats però NO completats, agrupats per sessió de detecció.
 
@@ -166,7 +166,7 @@ Format multipac "NxMunitat" (Cervesa "6x33cl") + suport "cl" + expansió de pack
 **📌 Pendents preexistents destapats en testejar (NO regressions; independents dels packs)**:
 - ✅ **(A) El preu del lot a l'EatMe ara escala amb la qty comprada** (`fd5c5b5`). Desacoblat: `_buildShoppingPrefill` calcula `totalPrice = getEstimatedItemCost(item)` (cost total, amb l'item CRU abans de l'expansió — usa `parseQtyNumber(item.qty)` × ratio de weight, el mateix que el BuyMe), TRANSITORI. `prefill.price` per-unitat (prioritza `item.price` → popular → history) queda per a l'aprenentatge. `_quickBuyCore` propaga `productData.totalPrice`; `_buildLotFromNewProduct` fa `lot.price = totalPrice ?? price`. `totalPrice` mai es persisteix al lot/producte. Ex: 2 packs de cervesa @6€ → lot 12€, aprenentatge rep 6€.
 - ✅ **(B) `_buildShoppingPrefill` ara respecta `item.weight` personalitzat** (`fd5c5b5`). `prefillWeight = item.weight || fromPopular.weight || fromHistory.weight`. Ex: 2 llets de 500ml (popular "Llet"="1L") → lot "2 u × 500ml" @ 1.20€ (coherent amb el BuyMe).
-- **(C) Edge — aprenentatge perd la info del pack.** Comprar un pack d'un producte NO catalogat fa que `recordProductInHistory`/`addToCustomPopular` aprenguin el popular amb `perUnit` ("330ml") en comptes del pack ("6x33cl"), perquè `_quickBuyCore` ja treballa amb el weight expandit. Per a populars existents NO degrada (`addToCustomPopular` només omple weight si està buit). Fix futur si es vol preservar el pack: passar el weight original a l'aprenentatge. **OBERT.**
+- ✅ **(C) L'aprenentatge ara preserva el weight del pack original** (`e500fc0`). `_buildShoppingPrefill` captura `originalWeight` (pre-expansió, transitori) i `_quickBuyCore` el passa a `recordProductInHistory` (que propaga a `addToCustomPopular`) en comptes del weight expandit. Així el popular/history learned aprenen el pack ("6x33cl"/"12u") i el lot manté l'expansió ("330ml") + `lot.price`=total. Abast: només quick-buy (el camí formulari "+" no es toca: l'usuari ja veu i accepta l'expansió al camp). La qty NO s'aprèn (correcte: el popular/history són plantilles, no registres de quantitat comprada). `originalWeight` no es persisteix.
 
 ---
 
