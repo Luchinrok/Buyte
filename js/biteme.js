@@ -985,12 +985,22 @@ function _normalizeWeightString(s) {
   if (typeof s !== 'string') return s;
   const trimmed = s.trim();
   if (!trimmed) return trimmed;
-  const m = trimmed.match(/^([\d.,]+)\s*(ml|l|g|kg)$/i);
+  // Multipac "NxM<unitat>": preserva el comptador N i normalitza la part
+  // del contingut (M<unitat>) recursivament. Ex: "6 X 33 CL" → "6x330ml".
+  // La recursió no és infinita: pack[2] mai conté 'x'.
+  const pack = trimmed.match(/^(\d+)\s*x\s*([\d.,]+\s*(?:ml|l|cl|g|kg))$/i);
+  if (pack) {
+    return pack[1] + 'x' + _normalizeWeightString(pack[2]);
+  }
+  const m = trimmed.match(/^([\d.,]+)\s*(ml|l|cl|g|kg)$/i);
   if (!m) return trimmed;
-  const num = parseFloat(m[1].replace(',', '.'));
+  let num = parseFloat(m[1].replace(',', '.'));
   if (!Number.isFinite(num) || num < 0) return trimmed;
+  let unitLower = m[2].toLowerCase();
+  // cl → ml (×10): no introduïm una unitat nova al model; ml ja és
+  // sumable per _computeAggregatedQty i el cost proporcional.
+  if (unitLower === 'cl') { num = num * 10; unitLower = 'ml'; }
   const numStr = String(num);
-  const unitLower = m[2].toLowerCase();
   const unitCanon = (unitLower === 'l') ? 'L' : unitLower;
   return numStr + unitCanon;
 }
@@ -1015,7 +1025,19 @@ function validateWeight(raw) {
   // Acceptat i normalitzat a minúscula sense espai ("12 U" → "12u").
   const u = s.match(/^(\d+)\s*u$/i);
   if (u) return { valid: true, normalized: u[1] + 'u', error: null };
-  const m = s.match(/^([\d.,]+)\s*(ml|l|g|kg)$/i);
+  // Format multipac "NxM<unitat>" (ex: Cervesa "6x33cl" = 6 envasos de
+  // 33cl). N=comptador d'envasos, M<unitat>=contingut per envàs. Es
+  // normalitza via _normalizeWeightString (cl→ml: "6x33cl" → "6x330ml").
+  const pack = s.match(/^(\d+)\s*x\s*([\d.,]+)\s*(ml|l|cl|g|kg)$/i);
+  if (pack) {
+    const n = parseInt(pack[1], 10);
+    const mNum = parseFloat(pack[2].replace(',', '.'));
+    if (!Number.isFinite(n) || n <= 0 || !Number.isFinite(mNum) || mNum <= 0) {
+      return { valid: false, normalized: null, error: t('weightInvalid') };
+    }
+    return { valid: true, normalized: _normalizeWeightString(s), error: null };
+  }
+  const m = s.match(/^([\d.,]+)\s*(ml|l|cl|g|kg)$/i);
   if (!m) return { valid: false, normalized: null, error: t('weightInvalid') };
   const num = parseFloat(m[1].replace(',', '.'));
   if (!Number.isFinite(num) || num <= 0) {
@@ -4197,11 +4219,29 @@ function _knownProductCanReplace(currentValue, snapshotValue) {
 // o camí openAddForm), només buit/"1" → comportament històric, cap regressió.
 // Font ÚNICA de la conversió "Nu" (cridada des d'openAddForm i
 // applyKnownProductToForm — no duplicar la lògica enlloc).
+// Descodifica un valor de "contingut" de popular i diu si és un "pack"
+// (comptador d'unitats amb contingut per unitat). Font ÚNICA de
+// descodificació "Nu"/"NxM<unitat>" — la usen _applyContentToAddForm
+// (formulari EatMe) i _quickBuyCore (compra ràpida BuyMe→EatMe).
+// Retorna { isPack, count, perUnit }:
+//   "12u"     → { isPack:true,  count:12, perUnit:'' }      (Ous)
+//   "6x33cl"  → { isPack:true,  count:6,  perUnit:'330ml' } (Cervesa; cl→ml)
+//   "500g"    → { isPack:false, count:1,  perUnit:'500g' }  (pes simple)
+//   ''/null   → { isPack:false, count:1,  perUnit:'' }
+function _parsePackContent(weightVal) {
+  const val = (weightVal === null || weightVal === undefined) ? '' : String(weightVal);
+  const u = val.match(/^(\d+)\s*u$/i);
+  if (u) return { isPack: true, count: parseInt(u[1], 10), perUnit: '' };
+  const p = val.match(/^(\d+)\s*x\s*([\d.,]+\s*(?:ml|l|cl|g|kg))$/i);
+  if (p) return { isPack: true, count: parseInt(p[1], 10), perUnit: _normalizeWeightString(p[2]) };
+  return { isPack: false, count: 1, perUnit: val };
+}
+
 function _applyContentToAddForm(weightVal) {
   const weightInput = document.getElementById('input-weight');
   const qtyInput = document.getElementById('input-qty');
   const val = weightVal ? String(weightVal) : '';
-  const matchUnits = val.match(/^(\d+)\s*u$/i);
+  const parsed = _parsePackContent(weightVal);
   const snap = _lastKnownProductSnapshot;
   const qtyReplaceable = () => {
     if (!qtyInput) return false;
@@ -4215,10 +4255,12 @@ function _applyContentToAddForm(weightVal) {
     if (cur === '') return true;
     return snap !== null && cur === snap.content;
   };
-  if (matchUnits) {
-    // "Nu": Quantitat=N, Contingut buit.
-    if (qtyReplaceable()) qtyInput.value = matchUnits[1];
-    if (weightReplaceable()) weightInput.value = '';
+  if (parsed.isPack) {
+    // Pack ("Nu" o "NxM<unitat>"): Quantitat=count, Contingut=perUnit
+    // (buit per a "Nu", "330ml" per a "6x33cl"). El formulari NO
+    // multiplica per cap qty prèvia — posa el count del pack tal qual.
+    if (qtyReplaceable()) qtyInput.value = String(parsed.count);
+    if (weightReplaceable()) weightInput.value = parsed.perUnit;
   } else {
     // Pes normal (o sense contingut): Contingut=val, Quantitat=1.
     if (weightReplaceable()) weightInput.value = val;

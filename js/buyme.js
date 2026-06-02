@@ -1881,17 +1881,36 @@ function _buildShoppingPrefill(item) {
     if (Number.isFinite(diff) && diff > 0) itemDays = diff;
   }
 
+  // Expansió de pack consolidada (font única per als DOS camins de compra:
+  // quick-buy i form-fallback). Si el contingut catalogat és un pack
+  // ("6x33cl" o "12u"), el desempaquetem a unitats individuals MULTIPLICANT
+  // pel nombre de packs comprats (item.qty): 2 packs × 6 = 12 cerveses de
+  // 330ml; 2 dotzenes × 12 = 24 ous. Descodificació via _parsePackContent
+  // (biteme.js). El formulari "+" directe (blur/⭐) NO passa per aquí →
+  // segueix posant qty=count sense multiplicar (correcte).
+  let prefillQty = item.qty;
+  let prefillWeight = (fromPopular && fromPopular.weight) || (fromHistory && fromHistory.weight) || undefined;
+  if (typeof _parsePackContent === 'function' && prefillWeight) {
+    const exp = _parsePackContent(prefillWeight);
+    if (exp.isPack) {
+      const buyN = (typeof parseQtyNumber === 'function') ? parseQtyNumber(item.qty) : null;
+      const mult = (buyN !== null && buyN > 0) ? buyN : 1;
+      prefillQty = String(mult * exp.count);
+      prefillWeight = exp.perUnit || undefined;
+    }
+  }
+
   return {
     name: item.name,
     emoji: item.emoji,
-    qty: item.qty,
+    qty: prefillQty,
     days: itemDays || (fromPopular && fromPopular.days) || (fromHistory && fromHistory.days) || null,
     location: (fromPopular && fromPopular.location) || (fromHistory && fromHistory.location) || null,
     noExpiry: !!(item.noExpiry || (fromPopular && fromPopular.noExpiry) || (fromHistory && fromHistory.noExpiry)),
     price: (fromPopular && typeof fromPopular.price === 'number') ? fromPopular.price
          : (fromHistory && typeof fromHistory.price === 'number') ? fromHistory.price
          : undefined,
-    weight: (fromPopular && fromPopular.weight) || (fromHistory && fromHistory.weight) || undefined,
+    weight: prefillWeight,
     minStock: (fromPopular && typeof fromPopular.minStock === 'number') ? fromPopular.minStock : undefined,
     popularId: (fromPopular && fromPopular.id) || null
   };
@@ -1996,7 +2015,9 @@ function _quickBuyCore(item, prefill) {
     date: dateStr,
     noExpiry: !!prefill.noExpiry,
     location: prefill.location,
-    qty: (item && item.qty) || prefill.qty || '',
+    // prefill.qty ja ve expandit de _buildShoppingPrefill (no item.qty cru,
+    // que per a un pack seria "2" en comptes de "12").
+    qty: prefill.qty || '',
     addedAt: new Date().toISOString(),
     popularId: prefill.popularId || null,
     supermarket: supermarket
