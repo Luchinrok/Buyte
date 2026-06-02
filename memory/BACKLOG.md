@@ -1,6 +1,6 @@
 # Backlog del projecte Buyte
 
-> **Última sincronització: 2026-06-01** (resolts fins 01/06 marcats amb ✅ + hash; inclou llindar minStock + fix autoomplir/Xu `f8b7d34`).
+> **Última sincronització: 2026-06-02** (resolts fins 02/06 marcats amb ✅ + hash; inclou format multipac "NxMunitat" + expansió de packs a la compra `4f95e8f`; 3 pendents preexistents A/B/C destapats — vegeu Sessió 02/06).
 
 Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté ítems detectats però NO completats, agrupats per sessió de detecció.
 
@@ -148,6 +148,25 @@ Llindar configurable minStock + fix autoomplir/Xu (productes per unitat com Ous 
 - ✅ **Llindar configurable minStock** (vegeu detall a "Pendents — Sessions 26-27/05", marcat resolt). Default **0** (retrocompat: només avisa en acabar-se). Camp al producte + herència del popular + transport via "Comprat". UI a `#screen-add` (Quantitat|Preu|Llindar alineat) i `#screen-popular-edit`, amb botó ℹ️.
 - ✅ **Fix autoomplir/Xu** — productes de format "Nu" (Ous "12u", All "3u", Crema catalana "4u", Hamburgueses "4u"): (1) `validateWeight` ara accepta "Nu" normalitzat a minúscula sense espai → editar el popular "Ous" ja no surt vermell; (2) helper compartit `_applyContentToAddForm` (font única de la conversió "Nu"→Quantitat) usat pel camí blur i pel botó ⭐; (3) camí ⭐ unificat: `openAddForm({name,emoji})` + `applyKnownProductToForm(p)` (recupera preu/dies/ubicació/pes/minStock, abans absents); (4) desbloqueja afegir/comprar Ous al **BuyMe** (mateix `validateWeight` compartit a `saveShoppingItem`). NO tocat: "6x33cl" (cervesa, format pack — tasca a part). NO calia migració de productes existents (estat real net: lot `unit='units'`, sense `weight:"12u"`).
 - ✅ **Snapshot-replace a l'autoomplir EatMe** (`3ef3a76`). Patró `_lastKnownProductSnapshot` + `_knownProductCanReplace` (mirall de `_lastAutofillSnapshot`/`canReplace` del BuyMe) a `applyKnownProductToForm`: en canviar de producte conegut, substitueix els camps autoomplerts NO tocats per l'usuari (emoji, ubicació, data calculada, noExpiry, preu, minStock, parell Quantitat+Contingut). `_applyContentToAddForm` snapshot-aware per al parell Quantitat+Contingut (round-trip net ous↔pa: recorda els DOS valors aplicats). Camps absents al match (preu/minStock sense valor) es reseteja al default en comptes de conservar l'anterior. Reset del snapshot a `openAddForm` (cada obertura comença net). Resol el bug ous→pa→ous que es quedava amb dades del producte anterior.
+
+---
+
+## Sessió 02/06/26 — Commits
+
+Format multipac "NxMunitat" (Cervesa "6x33cl") + suport "cl" + expansió de packs/Nu a la compra. 1 commit (validat al mòbil per Dani):
+
+| Hash | Una línia |
+|---|---|
+| `4f95e8f` | ✅ **Feat format multipac "NxMunitat" + "cl" (cl→ml) + expansió de packs/Nu a la compra** |
+
+**Ítems resolts aquesta sessió**:
+- ✅ **Format multipac "NxM<unitat>"** (ex: Cervesa "6x33cl" = 6 envasos de 33cl) + acceptació de "cl" (convertit a ml, ×10). `validateWeight` i `_normalizeWeightString` accepten el format pack i "cl"; `_parsePackContent` és el descodificador únic (`"Nu"`/`"NxM"` → `{isPack,count,perUnit}`).
+- ✅ **Expansió de packs/Nu coherent a la compra** (BuyMe→EatMe). `_buildShoppingPrefill` (font única dels TRES camins: quick-buy individual, `tryQuickBuyShoppingItem`, bulk-buy) expandeix: `qty = parseQtyNumber(item.qty) × count`, `weight = perUnit`. Ex: comprar 2 packs de cervesa → 12 u × 330ml; 2 dotzenes d'ous → 24 u. `_quickBuyCore` usa `prefill.qty` ja expandit (no `item.qty` cru). El camí "+" directe del formulari (`_applyContentToAddForm`) posa `qty=count` SENSE multiplicar (correcte: no hi ha qty de compra). NO calia migració.
+
+**📌 Pendents preexistents destapats en testejar (NO regressions; independents dels packs)**:
+- **(A) El preu del lot a l'EatMe no escala amb la qty comprada.** El camí de compra copia `popular.price` cru a `lot.price` (`_buildShoppingPrefill:price` → `_quickBuyCore` → `_buildLotFromNewProduct`), sense multiplicar per `item.qty` ni per `count`. Render a `_renderLotRow` (biteme.js:~1408) mostra el valor pla. Ex: 2 packs de cervesa a 6 € → lot diu "6.00 €" (hauria de ser 12 €). El **BuyMe sí** calcula el total via `getEstimatedItemCost` (multiplica per `qtyMultiplier` + `ratio`), però l'EatMe no n'hereta. Decisió pendent: si `lot.price` ha de ser per-unitat o total, i si el camí de compra l'ha d'escalar.
+- **(B) `_buildShoppingPrefill` ignora `item.weight` i sempre pren `fromPopular.weight`.** Si l'usuari personalitza el Contingut de l'item del BuyMe (ex: "500ml" quan el popular "Llet" és "1L"), aquesta personalització es perd en comprar → el lot surt "2 u × 1L". El "1L" ve del popular, no d'un bug d'expansió. Fix futur: prioritzar `item.weight` sobre `fromPopular.weight` al prefill.
+- **(C) Edge — aprenentatge perd la info del pack.** Comprar un pack d'un producte NO catalogat fa que `recordProductInHistory`/`addToCustomPopular` aprenguin el popular amb `perUnit` ("330ml") en comptes del pack ("6x33cl"), perquè `_quickBuyCore` ja treballa amb el weight expandit. Per a populars existents NO degrada (`addToCustomPopular` només omple weight si està buit). Fix futur si es vol preservar el pack: passar el weight original a l'aprenentatge.
 
 ---
 
