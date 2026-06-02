@@ -1142,7 +1142,15 @@ function _buildLotFromNewProduct(productData) {
     frozenDate: (productData && productData.frozenDate) || null,
     supermarket: (productData && productData.supermarket) || null
   };
-  if (productData && typeof productData.price === 'number' && productData.price >= 0) lot.price = productData.price;
+  // lot.price = cost TOTAL del lot. Prioritza productData.totalPrice
+  // (transitori, vingut de la compra via getEstimatedItemCost) i cau al
+  // price per-unitat si no n'hi ha (afegir manual, formulari "+", o compra
+  // no estimable). totalPrice NO es persisteix al lot ni al producte.
+  if (productData && typeof productData.totalPrice === 'number' && productData.totalPrice >= 0) {
+    lot.price = productData.totalPrice;
+  } else if (productData && typeof productData.price === 'number' && productData.price >= 0) {
+    lot.price = productData.price;
+  }
   if (productData && productData.weight) lot.weight = _normalizeWeightString(productData.weight);
 
   if (qtyNum !== null) {

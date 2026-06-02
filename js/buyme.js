@@ -1881,6 +1881,21 @@ function _buildShoppingPrefill(item) {
     if (Number.isFinite(diff) && diff > 0) itemDays = diff;
   }
 
+  // Cost total estimat (FIX A) — el MATEIX que mostra el BuyMe. Es calcula
+  // amb l'ITEM CRU (item.qty="2", item.weight original) ABANS de qualsevol
+  // expansió de pack, perquè getEstimatedItemCost ja multiplica per
+  // parseQtyNumber(item.qty) i pel ratio de weight. Reaprofitem el
+  // getPopularProducts() ja cridat (populars) per construir l'índex nom→popular.
+  // És TRANSITORI: viatja al prefill i acaba a lot.price (vegeu
+  // _buildLotFromNewProduct); NO es persisteix com a camp del producte.
+  let totalPrice;
+  if (typeof getEstimatedItemCost === 'function') {
+    const popIndex = {};
+    populars.forEach(p => { if (p && p.name) popIndex[p.name.toLowerCase().trim()] = p; });
+    const est = getEstimatedItemCost(item, popIndex);
+    if (est !== null && est !== undefined) totalPrice = est;
+  }
+
   // Expansió de pack consolidada (font única per als DOS camins de compra:
   // quick-buy i form-fallback). Si el contingut catalogat és un pack
   // ("6x33cl" o "12u"), el desempaquetem a unitats individuals MULTIPLICANT
@@ -1889,7 +1904,10 @@ function _buildShoppingPrefill(item) {
   // (biteme.js). El formulari "+" directe (blur/⭐) NO passa per aquí →
   // segueix posant qty=count sense multiplicar (correcte).
   let prefillQty = item.qty;
-  let prefillWeight = (fromPopular && fromPopular.weight) || (fromHistory && fromHistory.weight) || undefined;
+  // FIX B: prioritzar el weight personalitzat de l'item del BuyMe sobre el
+  // del popular. Si l'usuari ha posat "500ml" a l'item (popular "Llet"="1L"),
+  // respectem la seva personalització en comprar.
+  let prefillWeight = item.weight || (fromPopular && fromPopular.weight) || (fromHistory && fromHistory.weight) || undefined;
   if (typeof _parsePackContent === 'function' && prefillWeight) {
     const exp = _parsePackContent(prefillWeight);
     if (exp.isPack) {
@@ -1907,9 +1925,15 @@ function _buildShoppingPrefill(item) {
     days: itemDays || (fromPopular && fromPopular.days) || (fromHistory && fromHistory.days) || null,
     location: (fromPopular && fromPopular.location) || (fromHistory && fromHistory.location) || null,
     noExpiry: !!(item.noExpiry || (fromPopular && fromPopular.noExpiry) || (fromHistory && fromHistory.noExpiry)),
-    price: (fromPopular && typeof fromPopular.price === 'number') ? fromPopular.price
+    // Preu PER-UNITAT (per a aprenentatge i referència). item.price (override
+    // de l'usuari) té prioritat; després popular; després history.
+    price: (typeof item.price === 'number' && item.price >= 0) ? item.price
+         : (fromPopular && typeof fromPopular.price === 'number') ? fromPopular.price
          : (fromHistory && typeof fromHistory.price === 'number') ? fromHistory.price
          : undefined,
+    // totalPrice TRANSITORI (FIX A): cost total del lot; null/undefined si no
+    // estimable → lot.price caurà al per-unitat (status quo).
+    totalPrice: totalPrice,
     weight: prefillWeight,
     minStock: (fromPopular && typeof fromPopular.minStock === 'number') ? fromPopular.minStock : undefined,
     popularId: (fromPopular && fromPopular.id) || null
@@ -2023,6 +2047,12 @@ function _quickBuyCore(item, prefill) {
     supermarket: supermarket
   };
   if (typeof prefill.price === 'number' && prefill.price >= 0) productData.price = prefill.price;
+  // totalPrice transitori (FIX A): el cost total del lot. _buildLotFromNewProduct
+  // l'usarà per a lot.price; productData.price (per-unitat) queda per a
+  // l'aprenentatge (recordProductInHistory/addToCustomPopular).
+  if (typeof prefill.totalPrice === 'number' && prefill.totalPrice >= 0) {
+    productData.totalPrice = prefill.totalPrice;
+  }
   if (prefill.weight) productData.weight = prefill.weight;
 
   // frozenDate si va al congelador (mateixa regla que saveNewProduct).
