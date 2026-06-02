@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260601-1">
+  <link rel="stylesheet" href="styles.css?v=20260602-4">
 </head>
 <body>
 
@@ -1574,9 +1574,8 @@
 
     <div class="form-group">
       <label data-i18n="itemEmoji"></label>
-      <button type="button" class="emoji-button" id="btn-pick-special-item-emoji">
+      <button type="button" class="emoji-button emoji-button-compact" id="btn-pick-special-item-emoji" aria-label="Triar emoji">
         <span class="emoji-button-current" id="special-item-emoji-current">🥛</span>
-        <span class="emoji-button-text" data-i18n="changeEmoji"></span>
       </button>
     </div>
 
@@ -1722,14 +1721,13 @@
 
     <div class="form-group">
       <label data-i18n="supermarketEmoji"></label>
-      <button type="button" class="emoji-button" id="btn-pick-supermarket-emoji">
+      <button type="button" class="emoji-button emoji-button-compact" id="btn-pick-supermarket-emoji" aria-label="Triar emoji">
         <span class="emoji-button-current" id="supermarket-emoji-current">🛒</span>
-        <span class="emoji-button-text" data-i18n="changeEmoji"></span>
       </button>
     </div>
 
     <button class="primary-btn" id="btn-save-supermarket" data-i18n="save"></button>
-    <button class="danger-btn" id="btn-delete-supermarket" data-i18n="delete" style="display:none;margin-top:10px"></button>
+    <button class="danger-btn" id="btn-delete-supermarket" data-i18n="delete" style="display:none"></button>
   </div>
 
   <!-- PANTALLA AFEGIR/EDITAR ITEM DE LA COMPRA -->

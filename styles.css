@@ -10943,12 +10943,64 @@ body.selection-mode-active #shops-slider .arrow-btn {
   margin-bottom: 0;
 }
 
+/* ============================================================
+   Polish #screen-special-item-edit + #screen-supermarket-edit
+   Replica la densitat de #screen-add / #screen-popular-edit
+   (mateixos valors, no n'inventem de nous) + botó emoji compacte
+   (sense el text "Canviar emoji") + separació del botó Esborrar.
+   El botó Desar segueix el flux natural (els 12px del form-group
+   basten, com a popular-edit) — sense margin-top propi.
+   ============================================================ */
+
+/* Densitat: marges de grup + padding d'input (igual que #screen-add). */
+#screen-special-item-edit .form-group,
+#screen-supermarket-edit .form-group {
+  margin-bottom: 12px;
+}
+#screen-special-item-edit .form-group input[type="text"],
+#screen-supermarket-edit .form-group input[type="text"] {
+  padding: 10px 14px;
+  /* font-size 16px mantingut (anti-zoom iOS Safari) */
+}
+
+/* Botó emoji compacte (52px quadrat, sense text) — mateixos valors que
+   #screen-add .name-emoji-row .emoji-button. Aquí l'emoji viu al seu
+   propi form-group, així que apliquem via classe .emoji-button-compact.
+   Després de .emoji-button base (línia ~2467) → guanya per ordre. */
+.emoji-button-compact {
+  flex: 0 0 52px;
+  width: 52px;
+  padding: 6px;
+  justify-content: center;
+  gap: 0;
+}
+.emoji-button-compact .emoji-button-current {
+  font-size: 30px;
+}
+
+/* Separació del botó Esborrar (substitueix el margin-top:10px inline, #6). */
+#screen-supermarket-edit .danger-btn {
+  margin-top: 10px;
+}
+
 /* Refinament PAS 3 — labels centrats horitzontalment.
    :not(.no-expiry-label) exclou el chip 'No caduca' (que és <label>
    amb estructura flex pròpia — el text viu dins d'un <span> al
    costat del checkbox, no a sobre l'input). */
 #screen-popular-edit .form-group label:not(.no-expiry-label) {
   text-align: center;
+}
+
+/* LLINDAR: el seu label viu dins .toggle-with-info (flex amb el botó ℹ️),
+   així que el text-align:center de la regla de dalt no el centra respecte
+   a la columna (el flex el deixa a l'esquerra amb el ℹ️ al costat). Centrem
+   el grup flex sencer perquè quedi alineat amb els altres labels centrats
+   (NOM/PREU/CONTINGUT…). És l'ÚNIC .toggle-with-info de #screen-popular-edit
+   (els altres dos viuen a #screen-add, fora d'aquest scope). El text queda
+   ~20px a l'esquerra del centre exacte (el ℹ️ forma part del bloc centrat);
+   acceptat sense compensació. */
+#screen-popular-edit .toggle-with-info {
+  justify-content: center;
 }
 
 /* Refinament PAS 3 — alineació vertical dels inputs als form-row 50/50.
