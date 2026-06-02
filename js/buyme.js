@@ -1908,6 +1908,10 @@ function _buildShoppingPrefill(item) {
   // del popular. Si l'usuari ha posat "500ml" a l'item (popular "Llet"="1L"),
   // respectem la seva personalització en comprar.
   let prefillWeight = item.weight || (fromPopular && fromPopular.weight) || (fromHistory && fromHistory.weight) || undefined;
+  // FIX C: weight ORIGINAL pre-expansió (transitori) — per a l'aprenentatge,
+  // el popular/history han d'aprendre "6x33cl"/"12u" (el pack), no l'expandit
+  // "330ml". Per a no-packs és igual que prefillWeight. NO es persisteix.
+  const originalWeight = prefillWeight;
   if (typeof _parsePackContent === 'function' && prefillWeight) {
     const exp = _parsePackContent(prefillWeight);
     if (exp.isPack) {
@@ -1934,6 +1938,9 @@ function _buildShoppingPrefill(item) {
     // totalPrice TRANSITORI (FIX A): cost total del lot; null/undefined si no
     // estimable → lot.price caurà al per-unitat (status quo).
     totalPrice: totalPrice,
+    // originalWeight TRANSITORI (FIX C): weight del pack pre-expansió per a
+    // l'aprenentatge (vegeu _quickBuyCore). No es persisteix al lot/producte.
+    originalWeight: originalWeight,
     weight: prefillWeight,
     minStock: (fromPopular && typeof fromPopular.minStock === 'number') ? fromPopular.minStock : undefined,
     popularId: (fromPopular && fromPopular.id) || null
@@ -2064,7 +2071,8 @@ function _quickBuyCore(item, prefill) {
   // Aprenentatge: registra a l'historial / popular (mateixa crida que saveNewProduct).
   if (typeof recordProductInHistory === 'function') {
     recordProductInHistory(prefill.name, prefill.emoji, prefill.location,
-      prefill.days, !!prefill.noExpiry, productData.price, productData.weight);
+      prefill.days, !!prefill.noExpiry, productData.price,
+      prefill.originalWeight || productData.weight);
   }
 
   if (!Array.isArray(products)) products = [];
