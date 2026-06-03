@@ -1,6 +1,6 @@
 # Backlog del projecte Buyte
 
-> **Última sincronització: 2026-06-02** (resolts fins 02/06 marcats amb ✅ + hash; fil packs/preu COMPLET `4f95e8f`/`fd5c5b5`/`e500fc0`; polish formularis + centrat LLINDAR `9f03282`; bug agregat→BuyMe + format/centrat modal `45ea959`).
+> **Última sincronització: 2026-06-03** (resolts fins 02/06 marcats amb ✅ + hash; fil packs/preu COMPLET `4f95e8f`/`fd5c5b5`/`e500fc0`; polish formularis + centrat LLINDAR `9f03282`; bug agregat→BuyMe + format/centrat modal `45ea959`). **03/06**: tancats com a obsolets/acceptats dos ítems — catàleg contables/preu-unitat (cobert pel fil de packs) + bug visual checkbox multi-lot (acceptat detall menor).
 
 Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté ítems detectats però NO completats, agrupats per sessió de detecció.
 
@@ -18,14 +18,14 @@ Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté í
 
 ---
 
-## ⭐ PENDENTS ACTUALS (a data 2026-05-31)
+## ⭐ PENDENTS ACTUALS (a data 2026-06-03)
 
 Llista neta del que queda OBERT. El detall històric i els ítems resolts són més avall.
 
-- **Bug visual — centrat vertical del checkbox del toggle multi-lots** quan el text fa wrap (2-3 línies). 9 intents fallits (26-27/05). Cal enfocament nou (text més curt sense wrap, o investigació DevTools del wrapper). Detall a "Pendents — Sessions 26-27/05".
+- ~~**Bug visual — centrat vertical del checkbox del toggle multi-lots** quan el text fa wrap (2-3 línies). 9 intents fallits (26-27/05).~~ **✅ ACCEPTAT com a detall menor no bloquejant (03/06)**. Després de 9 intents en 2 sessions sense èxit, decisió de l'usuari: deixar-lo com està (equivalent `aa39f6f`). No s'hi gasten més sessions. Detall i historial a "Pendents — Sessions 26-27/05".
 - **Coherència del sufix " u" al llistat principal** (`_computeAggregatedQty`) — ajornat: cal desacoblar `parseQtyNumber` dels mirrors abans.
 - **Refactor de lots** — Fases E (recent-purchases per lot), F (banners per lot), G (polish + sync hardening), final (neteja de mirrors).
-- **Catàleg popular** — distingir unitats de productes contables (`unitsPerPackage`/`isCountable`) + preu per unitat.
+- ~~**Catàleg popular** — distingir unitats de productes contables (`unitsPerPackage`/`isCountable`) + preu per unitat.~~ **✅ COBERT pel fil de packs (03/06)** — vegeu detall + 3 matisos residuals a "Bugs / millores acumulats".
 - **Propagar weight** en altres camins de creació de shoppingItem (`addToShoppingList`, `special-lists`).
 - **Features grans** — "Cuinat" v2 + refactor de `calculateRecipeMatch` (falsos positius).
 - **Despeses i altres** — cost mitjà cistella, despesa per categoria, pressupost mensual, planificador setmanal de receptes, recordatoris contextuals, revisar sistema d'Espais.
@@ -175,7 +175,9 @@ Format multipac "NxMunitat" (Cervesa "6x33cl") + suport "cl" + expansió de pack
 
 Detectats les sessions 26-27/05/26 i encara no completats a data 28/05:
 
-- **Bug visual residual al checkbox del toggle multi-lots**. El checkbox de "CREAR ENVASOS SEPARATS" no queda centrat al centre vertical del bloc de text quan el text fa wrap a 2-3 línies. L'usuari va aclarir amb captura "abans/després" que vol els 3 elements (checkbox, text, emoji ℹ️) tots al centre vertical del bloc complet, no alineats amb la primera línia.
+- ~~**Bug visual residual al checkbox del toggle multi-lots**.~~ **✅ ACCEPTAT com a detall menor no bloquejant (03/06)**. Decisió definitiva de l'usuari: després de 9 intents fallits en 2 sessions (vegeu historial sota), es tanca acceptant l'estat actual (equivalent `aa39f6f`: `align-items:center` al label + `flex:1 1 auto` al span). NO s'hi gasten més sessions. Es preserva tot l'historial d'intents per si una sessió futura hi vol tornar amb cap fresc, però l'ítem NO és viu.
+
+  El checkbox de "CREAR ENVASOS SEPARATS" no queda centrat al centre vertical del bloc de text quan el text fa wrap a 2-3 línies. L'usuari va aclarir amb captura "abans/després" que vol els 3 elements (checkbox, text, emoji ℹ️) tots al centre vertical del bloc complet, no alineats amb la primera línia.
 
   **9 intents fallits, 2 sessions (26-27/05/26)**:
   - `b4a6e51` — `align-items: flex-start` + `margin-top: 3px` (encara desalineat)
@@ -215,8 +217,7 @@ Detectats les sessions 26-27/05/26 i encara no completats a data 28/05:
 
 ### Bugs / millores acumulats
 
-- **Catàleg popular: distingir unitats per a productes contables** (Ous = dotzena vs unitat, Cervesa = pack vs unitat, Llaunes = pack vs unitat). Camp `unitsPerPackage` o flag `isCountable`.
-- **Preu per unitat al catàleg** — 1kg vs 500g de pasta tenen mateix preu al popular; sistema pren preu del popular, no calcula proporcional. (Parcialment cobert pel commit `80a4e91` del 2026-05-25 a `getEstimatedItemCost`, però el bug al catàleg en si segueix obert.)
+- ~~**Catàleg popular: distingir unitats per a productes contables** (Ous = dotzena vs unitat, Cervesa = pack vs unitat, Llaunes = pack vs unitat). Camp `unitsPerPackage` o flag `isCountable`.~~ + ~~**Preu per unitat al catàleg**~~ **✅ COBERT pel fil de packs/preu (03/06 — investigació d'origen)**. L'ítem (detectat ~22-24/05, entrat al repo a `d340704`) era **híbrid**: enumerava casos concrets (Ous/Cervesa/Llaunes) però proposava una idea d'arquitectura (`unitsPerPackage`/`isCountable`). Els TRES casos concrets es van resoldre **per via string, sense introduir els camps formals**: Ous→`"12u"`, Cervesa/Llaunes→`"6x33cl"` (format `NxM`), tot descodificat per `_parsePackContent` + expansió/derivació a la compra (`f8b7d34` format "Nu" · `4f95e8f` multipac · `fd5c5b5` preu total del lot · `45ea959` EatMe→BuyMe envia envasos). El preu proporcional pes/volum ja el cobria `80a4e91`. **Veredicte**: enhancement cobert, cap repro viu; introduir `isCountable` ara seria refactor d'elegància que duplicaria info que l'string ja codifica. ⚠️ **3 matisos residuals — NO bloquejants, mai demanats** (documentats perquè una sessió futura no reobri el debat "falta isCountable" sense context): (1) no hi ha preu **per unitat individual** d'un contable (€/ou) — comprar una dotzena usa el preu de la dotzena, que és el que l'usuari vol; (2) un **iogurt "pack de N"** només és expressable com a `"4x125g"` (no hi ha "contable de N de 125g" altrament); (3) **fruita per peça sense `weight`** (Plàtans/Pomes) segueix estimant via pes mitjà per emoji (`PRODUCT_WEIGHTS_PER_UNIT`), no per compte real d'unitats.
 - ~~**`_computeAggregatedQty` no combina `units × weight`** (2026-05-22)~~ **✅ RESOLT (verificat 28/05 amb test net)**. L'error original (`qty=4 weight=500g` → "Pasta 4") ja no es reprodueix. Test: crear producte nou `qty=4 weight=500g` → mostra "2 kg" correctament. Resolt pels fixos del 22-23/05: `_refreshProductMirrors` a `saveNewProduct` (commit `c63bd35`) + one-shots `runQtyAggregateUnitsWeightRefresh`/`runMirrorRefreshAllProductsRefresh`. El backlog item era obsolet (apuntat el 22/05, abans dels fixos). **NOTA**: la investigació del 28/05 va revelar un problema DIFERENT i encara obert — vegeu "Weights no parsejables creen agregacions mixtes" més avall.
 - ~~**Render del lot oculta weights no parsejables** (2026-05-22)~~ **✅ RESOLT `4b6e794`** (23/05). `_renderLotRow` (biteme.js:1248-1251) ara pinta `weightText` tal qual sense filtre de parseig — el text lliure "mig kg" es mostra com és.
 - ~~**Render del lot no mostra weight individual en productes multi-lot** (2026-05-22)~~ **✅ RESOLT `4b6e794`** (23/05). Cada fila del lot ara combina qty i weight amb separador `×` (`_renderLotRow` biteme.js:1245-1259).
