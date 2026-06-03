@@ -1,6 +1,6 @@
 # Backlog del projecte Buyte
 
-> **Última sincronització: 2026-06-03** (resolts fins 02/06 marcats amb ✅ + hash; fil packs/preu COMPLET `4f95e8f`/`fd5c5b5`/`e500fc0`; polish formularis + centrat LLINDAR `9f03282`; bug agregat→BuyMe + format/centrat modal `45ea959`). **03/06**: tancats com a obsolets/acceptats dos ítems — catàleg contables/preu-unitat (cobert pel fil de packs) + bug visual checkbox multi-lot (acceptat detall menor); ✅ sufix " u" render-only; refactor de lots E/F/G/final APARCAT.
+> **Última sincronització: 2026-06-03** (resolts fins 02/06 marcats amb ✅ + hash; fil packs/preu COMPLET `4f95e8f`/`fd5c5b5`/`e500fc0`; polish formularis + centrat LLINDAR `9f03282`; bug agregat→BuyMe + format/centrat modal `45ea959`). **03/06**: tancats com a obsolets/acceptats dos ítems — catàleg contables/preu-unitat (cobert pel fil de packs) + bug visual checkbox multi-lot (acceptat detall menor); ✅ sufix " u" render-only; refactor de lots E/F/G/final APARCAT; ✅ matcher de Cuinat per nom (falsos positius emoji eliminats); + idea importar receptes per fitxer.
 
 Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté ítems detectats però NO completats, agrupats per sessió de detecció.
 
@@ -230,7 +230,8 @@ Detectats les sessions 26-27/05/26 i encara no completats a data 28/05:
 ### Features grans pendents
 
 - **Feature "Cuinat" v2** amb model correcte (lots + quantitats absolutes, no %).
-- **Refactor de `calculateRecipeMatch`** — falsos positius greus (sucre→Mel, canyella→Crema catalana). Cal investigar abans de tornar a fer Cuinat. Vegeu memòria `project-recipe-matching-and-cook-feature` per al primer intent.
+- ~~**Refactor de `calculateRecipeMatch`** — falsos positius greus (sucre→Mel, canyella→Crema catalana).~~ **✅ RESOLT (03/06, matcher per nom — validat a mòbil)**. `matchIngredient` reescrit a `cookme.js`: **emoji fora** del matching (els emojis de recepta són decoratius i col·lisionen → sucre 🍯=Mel, canyella 🍮=Crema), match **per nom i paraula completa** (subconjunt bidireccional de tokens, no substring intern → mata "all"⊂"galletes"/"pa"⊂"pasta"), **stem de plural català** (femení -a↔-es: ceba→Cebes, poma→Pomes, taronja→Taronges, pastanaga→Pastanagues), **guarda de compostos** ("llet de coco" exigeix superset → no casa amb "Llet"), i **mapa de 6 sinònims** família pasta (espaguetis/macarrons/fideus/fideua/lasanya/plaques → pasta). Auditoria 80 receptes × 89 ingredients: ~44 falsos positius eliminats, 0 matches legítims amb producte exacte perduts, 2 sobre-matches lleus residuals inofensius (Tomàquet fregit, Fruita). **ZERO canvis al DATA de les receptes.** Memòria del primer intent: `project-recipe-matching-and-cook-feature`. (El **Cuinat v2** —quantitats absolutes + consum de lots— segueix OBERT a la línia de dalt; aquest fix només era el matcher.)
+- **Importar receptes des d'un fitxer (enhancement CookMe, NO per ara, no bloquejant)** — idea: l'usuari descarrega un **fitxer de MOSTRA** (plantilla amb el format de recepta), l'edita amb les seves receptes i el torna a pujar per afegir-les **en bloc** al Cuinat. Ha d'incloure el fitxer de mostra descarregable. Pendent de decidir format (JSON amb l'esquema de `RECIPES`, o CSV més amigable) i UX d'importació (validació + fusió amb `customRecipes`).
 
 ### Backlog més antic (Despeses + altres)
 
