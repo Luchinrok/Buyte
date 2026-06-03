@@ -505,7 +505,7 @@ function _buildCalendarProductRow(p, size) {
   row.innerHTML =
     '<span class="calendar-product-emoji">' + (p.emoji || '🍽️') + '</span>' +
     '<div class="calendar-product-info">' +
-      '<strong class="calendar-product-name">' + escapeHtml(p.name || '') + (p.qty ? ' <span class="calendar-product-qty">(' + escapeHtml(p.qty) + ')</span>' : '') + '</strong>' +
+      '<strong class="calendar-product-name">' + escapeHtml(p.name || '') + (p.qty ? ' <span class="calendar-product-qty">(' + escapeHtml(_displayProductQty(p.qty)) + ')</span>' : '') + '</strong>' +
       '<small class="calendar-product-meta">' + escapeHtml(locText) + ' ' + escapeHtml(daysText(days)) + '</small>' +
     '</div>' +
     '<span class="calendar-product-arrow">›</span>';
@@ -521,7 +521,7 @@ function buildViewAllRow(p) {
   row.innerHTML = `
     <span class="view-all-emoji">${p.emoji}</span>
     <div class="view-all-info">
-      <p class="view-all-name">${formatProductLine(p.name, p.qty)}</p>
+      <p class="view-all-name">${formatProductLine(p.name, _displayProductQty(p.qty))}</p>
       <p class="view-all-meta">${loc ? loc.emoji + ' ' + getLocationName(loc) : ''} · ${daysText(days)}</p>
     </div>
     <span class="view-all-arrow">›</span>
@@ -680,6 +680,18 @@ function _formatLotQty(lot) {
     return lot.percentRemaining + '%';
   }
   return '';
+}
+
+// Display-only: afegeix el sufix " u" a la quantitat agregada quan el
+// producte és pure-units (l'string agregat és un enter pelat, ex "12" → "12 u").
+// NO toca product.qty: el mirror es manté número net perquè parseQtyNumber a
+// openProduct/finalizeConsumption el segueixi llegint com a número. Els casos
+// amb unitat de pes/volum ("2 kg", "500 ml") o percent ("2 lots") es retornen
+// sense canvis. Local al BiteMe — NO va a formatProductLine (compartit amb
+// BuyMe/special-lists, on qty és quantitat de compra).
+function _displayProductQty(qty) {
+  const s = (qty === null || qty === undefined) ? '' : String(qty).trim();
+  return /^\d+$/.test(s) ? s + ' u' : s;
 }
 
 // Genera el string qty agregat a partir dels lots. Estratègia:
@@ -3226,7 +3238,7 @@ function renderAlerts() {
     item.className = 'product-item product-item-alert product-item-' + p.level;
     const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' ' : '';
     item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div></div><span class="product-item-arrow">›</span>';
-    item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, p.qty);
+    item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, _displayProductQty(p.qty));
     item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
     item.addEventListener('click', () => { productDetailBack = 'alerts'; openProduct(p.id); });
     list.appendChild(item);
@@ -3295,7 +3307,7 @@ function _renderShelfProducts(slide, level, cat) {
       const isFreezer = p.loc && p.loc.category === 'freezer';
       const frozenLine = isFreezer ? formatFrozenInfo(p) : null;
       item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div>' + (frozenLine ? '<div class="product-item-frozen"></div>' : '') + '</div><span class="product-item-arrow">›</span>';
-      item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, p.qty);
+      item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, _displayProductQty(p.qty));
       item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
       if (frozenLine) {
         const frozenEl = item.querySelector('.product-item-frozen');
@@ -3661,7 +3673,7 @@ function openProduct(id) {
   const days = daysUntil(p.date);
   const loc = getLocationById(p.location || 'fridge');
   document.getElementById('product-emoji').textContent = p.emoji;
-  document.getElementById('product-name').innerHTML = formatProductLine(p.name, p.qty);
+  document.getElementById('product-name').innerHTML = formatProductLine(p.name, _displayProductQty(p.qty));
   const locStr = loc ? loc.emoji + ' ' + getLocationName(loc) + ' ' : '';
   document.getElementById('product-days').textContent = locStr + daysText(days);
 
