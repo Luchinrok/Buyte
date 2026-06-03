@@ -177,26 +177,64 @@ function cookmeNormalize(s) {
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
+// Mapa mínim de sinònims (família pasta): token normalitzat → token canònic.
+// És l'únic mapa que cal — la resta de coincidències les resol el stem de
+// plural + el match per paraula completa. NO toca el DATA de les receptes.
+const COOKME_INGREDIENT_SYNONYMS = {
+  espaguetis: 'pasta', macarrons: 'pasta', fideus: 'pasta',
+  fideua: 'pasta', lasanya: 'pasta', plaques: 'pasta'
+};
+
+// Stopwords catalanes que no aporten identitat a un nom d'ingredient/producte.
+const COOKME_STOPWORDS = new Set(['de','d','del','dels','la','el','els','l','amb','al','als','a','i','per','en','o','un','una','gust']);
+
+// Marca de compost qualificat ("llet de coco", "oli d'oliva"): conté connectiu.
+const COOKME_CONNECTIVE = /\b(?:de|d|amb)\b/;
+
+// Plega singular↔plural català al seu "stem" per poder comparar per igualtat.
+// Cobreix el plural femení -a↔-es amb els canvis ortogràfics habituals
+// (gu→g, qu→c, j→g): ceba/cebes→ceb, taronja/taronges→tarong,
+// pastanaga/pastanagues→pastanag, poma/pomes→pom, ous/ou→ou. NO col·lisiona
+// els perillosos: pa≠pasta (pa/past), oli≠olives (oli/oliv), mel≠melmelada.
+function cookmeStem(tok) {
+  let t = tok;
+  if (t.length >= 4 && t.endsWith('es')) t = t.slice(0, -2);
+  else if (t.length >= 3 && t.endsWith('s')) t = t.slice(0, -1);
+  if (t.length >= 3 && t.endsWith('a')) t = t.slice(0, -1);
+  return t.replace(/gu$/, 'g').replace(/qu$/, 'c').replace(/j$/, 'g');
+}
+
+// Tokens canònics d'un nom: normalitza (minúscules/sense accents), parteix
+// per no-alfanumèric, descarta tokens curts (<2) i stopwords, aplica
+// sinònims i el stem de plural. És la base del match per paraula completa.
+function cookmeCanonTokens(name) {
+  return cookmeNormalize(name)
+    .split(/[^a-z0-9]+/)
+    .filter(tk => tk.length >= 2 && !COOKME_STOPWORDS.has(tk))
+    .map(tk => COOKME_INGREDIENT_SYNONYMS[tk] || tk)
+    .map(cookmeStem);
+}
+
 // Comprova si l'usuari té un ingredient als seus productes de l'EatMe.
-//   - Primer per emoji exacte (match fort)
-//   - Si no, per nom: el nom del producte conté el de l'ingredient
-//     (case-insensitive, sense accents)
+// NOMÉS per nom — MAI per emoji: els emojis de recepta són decoratius i
+// col·lisionen (sucre 🍯=Mel, canyella 🍮=Crema catalana), fet que disparava
+// falsos positius. Coincidència per PARAULA COMPLETA (no substring intern):
+// subconjunt bidireccional de tokens canònics → "carn"↔"carn picada",
+// "formatge feta"→"Formatge", però NO "all"⊂"galletes" ni "pa"⊂"pasta".
+// Si l'ingredient és un compost qualificat ("llet de coco"), exigim que el
+// producte el contingui SENCER (superset), perquè un genèric "Llet" no el
+// satisfaci.
 function matchIngredient(ingredient, userProducts) {
   if (!ingredient || !userProducts || userProducts.length === 0) return false;
-
-  if (ingredient.emoji) {
-    for (let i = 0; i < userProducts.length; i++) {
-      if (userProducts[i].emoji === ingredient.emoji) return true;
-    }
-  }
-
-  const ingName = cookmeNormalize(ingredient.name);
-  if (!ingName) return false;
-
+  const Ti = cookmeCanonTokens(ingredient.name);
+  if (!Ti.length) return false;
+  const subset = (a, b) => a.every(tk => b.includes(tk));
+  const ingIsCompound = COOKME_CONNECTIVE.test(cookmeNormalize(ingredient.name)) && Ti.length >= 2;
   for (let i = 0; i < userProducts.length; i++) {
-    const pName = cookmeNormalize(userProducts[i].name);
-    if (!pName) continue;
-    if (pName.includes(ingName)) return true;
+    const Tp = cookmeCanonTokens(userProducts[i].name);
+    if (!Tp.length) continue;
+    if (ingIsCompound) { if (subset(Ti, Tp)) return true; }
+    else if (subset(Ti, Tp) || subset(Tp, Ti)) return true;
   }
   return false;
 }
