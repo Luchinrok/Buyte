@@ -295,6 +295,193 @@ function calculateRecipeMatch(recipe, userProducts) {
   return { matched, missing, percent, canMake };
 }
 
+// ============================================
+//   CERVELL DE "HE CUINAT" (Fase 2a — READ-ONLY)
+//   Lògica pura: cap UI, cap mutació de lots/productes.
+// ============================================
+
+// Converteix una quantitat entre unitats compatibles. Retorna number o null.
+//   - compte (u/units) ↔ compte: identitat. Mateixa unitat: identitat.
+//   - pes g↔kg i volum ml↔l: ×/÷ 1000 segons calgui.
+//   - famílies diferents (compte vs pes vs volum): null (incompatible).
+// Les unitats de recepta són 'u'|'g'|'kg'|'ml'|'l'; les de lot, 'units'|'g'|
+// 'kg'|'ml'|'l'. Normalitzem 'units'/'unit' → 'u' perquè casin.
+function cookmeConvertAmount(amount, fromUnit, toUnit) {
+  if (amount == null || !isFinite(amount)) return null;
+  const norm = u => (u === 'units' || u === 'unit' || u === 'u') ? 'u' : u;
+  const f = norm(fromUnit);
+  const t = norm(toUnit);
+  if (f === t) return amount;
+  if (f === 'g'  && t === 'kg') return amount / 1000;
+  if (f === 'kg' && t === 'g')  return amount * 1000;
+  if (f === 'ml' && t === 'l')  return amount / 1000;
+  if (f === 'l'  && t === 'ml') return amount * 1000;
+  return null; // famílies incompatibles
+}
+
+// Parseja un string de mesura simple ('1L', '250 ml', '33cl', '0,5 kg') a
+// { amount:number, unit }. Normalitza cl→ml (×10) i L→l (minúscula) perquè la
+// sortida encaixi amb cookmeConvertAmount (unit ∈ {ml,l,g,kg}). Retorna null per
+// a comptables ('Nu'), packs ('6x33cl'), buit o text lliure.
+function cookmeParseMeasure(str) {
+  if (typeof str !== 'string') return null;
+  const m = str.trim().match(/^([\d.,]+)\s*(ml|l|cl|g|kg)$/i);
+  if (!m) return null;
+  let amount = parseFloat(m[1].replace(',', '.'));
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  let unit = m[2].toLowerCase();
+  if (unit === 'cl') { amount = amount * 10; unit = 'ml'; }
+  return { amount, unit };
+}
+
+// Quant descomptar d'AQUEST lot (EN UNITAT DEL LOT) per cobrir recipeAmount de
+// recipeUnit. Conscient del content: un lot comptable (unit 'units') amb un
+// content mesurable a lot.weight (p. ex. Llet "1L") pot satisfer una recepta en
+// ml. Retorna number (pot ser fraccionari) o null si incompatible.
+function cookmeToLotAmount(recipeAmount, recipeUnit, lot) {
+  if (!lot) return null;
+  const direct = cookmeConvertAmount(recipeAmount, recipeUnit, lot.unit || 'u');
+  if (direct != null) return direct;
+  const lotIsCountable = (lot.unit === 'units' || lot.unit === 'unit' || !lot.unit);
+  if (lotIsCountable) {
+    const m = cookmeParseMeasure(lot.weight);
+    if (m && m.amount > 0) {
+      const c = cookmeConvertAmount(recipeAmount, recipeUnit, m.unit);
+      if (c != null) return c / m.amount; // nre. d'unitats (pot ser fraccionari)
+    }
+  }
+  return null;
+}
+
+// Invers de cookmeToLotAmount: què representa, EN UNITAT DE RECEPTA, consumir
+// lotAmount (en unitat del lot) d'aquest lot. Retorna number o null.
+function cookmeFromLotAmount(lotAmount, lot, recipeUnit) {
+  if (!lot) return null;
+  const direct = cookmeConvertAmount(lotAmount, lot.unit || 'u', recipeUnit);
+  if (direct != null) return direct;
+  const lotIsCountable = (lot.unit === 'units' || lot.unit === 'unit' || !lot.unit);
+  if (lotIsCountable) {
+    const m = cookmeParseMeasure(lot.weight);
+    if (m && m.amount > 0) {
+      return cookmeConvertAmount(lotAmount * m.amount, m.unit, recipeUnit);
+    }
+  }
+  return null;
+}
+
+// Lots d'un producte amb estoc viu (qualsevol mode de consum).
+function _cookmeLotsWithStock(product) {
+  const lots = (typeof getLots === 'function') ? getLots(product) : ((product && product.lots) || []);
+  return lots.filter(l => l && (
+    (l.consumptionMode === 'quantity' && Number.isFinite(l.qtyRemaining) && l.qtyRemaining > 0) ||
+    (l.consumptionMode === 'percent'  && Number.isFinite(l.percentRemaining) && l.percentRemaining > 0)
+  ));
+}
+
+// Construeix el PLA de consum d'una recepta (READ-ONLY): per cada ingredient,
+// quin producte casa i si es pot descomptar automàticament. NO muta res.
+// factor = servings / racions_base (mateix càlcul que el detall: recipe.servings).
+// Cada element: { ingredient, product, status, amount, unit, lotUnit }.
+//   status:
+//     'non-quantifiable' → ingredient.amount==null (mai es resta). amount=null.
+//     'no-product'       → cap producte casat O producte sense estoc.
+//                          amount=amount*factor (pista), unit.
+//     'ok'              → tots els lots amb estoc són 'quantity' i la quantitat
+//                          de recepta es pot descomptar de cada lot (directament
+//                          o, si el lot és comptable, via el seu content). amount escalat.
+//     'manual'          → algun lot és 'percent' o d'unitat incompatible →
+//                          es deixa per a confirmació manual. amount escalat
+//                          (pista) + lotUnit (unitat dels lots).
+function buildCookConsumePlan(recipe, servings, userProducts) {
+  const ings = (recipe && recipe.ingredients) || [];
+  const baseServings = (recipe && recipe.servings) || 1;
+  const factor = baseServings > 0 ? (servings / baseServings) : 1;
+  const prods = Array.isArray(userProducts) ? userProducts : [];
+  const plan = [];
+
+  for (let i = 0; i < ings.length; i++) {
+    const ing = ings[i];
+
+    if (ing.amount == null) {
+      plan.push({ ingredient: ing, product: null, status: 'non-quantifiable',
+                  amount: null, unit: null, lotUnit: null });
+      continue;
+    }
+
+    const product = findProductForIngredient(ing, prods);
+    if (!product) {
+      plan.push({ ingredient: ing, product: null, status: 'no-product',
+                  amount: ing.amount * factor, unit: ing.unit, lotUnit: null });
+      continue;
+    }
+
+    const lots = _cookmeLotsWithStock(product);
+    if (lots.length === 0) {
+      plan.push({ ingredient: ing, product: null, status: 'no-product',
+                  amount: ing.amount * factor, unit: ing.unit, lotUnit: null });
+      continue;
+    }
+
+    const eligible = lots.every(l =>
+      l.consumptionMode === 'quantity' &&
+      cookmeToLotAmount(1, ing.unit, l) != null
+    );
+    const lotUnit = lots.length ? (lots[0].unit || 'u') : null;
+
+    plan.push({
+      ingredient: ing,
+      product: product,
+      status: eligible ? 'ok' : 'manual',
+      amount: ing.amount * factor,
+      unit: ing.unit,
+      lotUnit: eligible ? null : lotUnit
+    });
+  }
+
+  return plan;
+}
+
+// Reparteix una quantitat total (en unitat de recepta) entre els lots d'un
+// producte en cascada FEFO (caducitat més propera primer, mateix criteri que
+// getPrimaryLot). READ-ONLY: NO muta cap lot. Retorna { steps, shortBy }:
+//   steps  = [{ lotId, amount }]  amount EN UNITAT DEL LOT (a restar a 2b).
+//   shortBy = quantitat (en unitat de recepta) que no s'ha pogut cobrir (0 si tot).
+function planProductLotCascade(product, totalAmount, recipeUnit) {
+  const steps = [];
+  if (!product || totalAmount == null || !isFinite(totalAmount) || totalAmount <= 0) {
+    return { steps, shortBy: (isFinite(totalAmount) && totalAmount > 0) ? totalAmount : 0 };
+  }
+
+  const lots = _cookmeLotsWithStock(product)
+    .filter(l => l.consumptionMode === 'quantity' && Number.isFinite(l.qtyRemaining) && l.qtyRemaining > 0)
+    .slice()
+    .sort((a, b) => {
+      if (a.noExpiry && b.noExpiry) return 0;
+      if (a.noExpiry) return 1;
+      if (b.noExpiry) return -1;
+      const da = a.date ? new Date(a.date).getTime() : Number.POSITIVE_INFINITY;
+      const db = b.date ? new Date(b.date).getTime() : Number.POSITIVE_INFINITY;
+      return da - db;
+    });
+
+  let remaining = totalAmount; // en unitat de recepta
+  for (let i = 0; i < lots.length && remaining > 0.0001; i++) {
+    const lot = lots[i];
+    // Capacitat del lot SENCER en unitat de recepta (conscient del content:
+    // un lot comptable de Llet "1L" aporta 1000 ml a una recepta en ml).
+    const cap = cookmeFromLotAmount(lot.qtyRemaining, lot, recipeUnit);
+    if (cap == null) continue; // unitat incompatible → salta el lot
+    const provide = Math.min(remaining, cap);                // en unitat de recepta
+    const take = cookmeToLotAmount(provide, recipeUnit, lot); // en unitat de lot
+    if (take == null || take <= 0) continue;
+    steps.push({ lotId: lot.id, amount: take });
+    remaining -= provide;
+  }
+
+  const shortBy = remaining > 0.0001 ? Math.round(remaining * 1000) / 1000 : 0;
+  return { steps, shortBy };
+}
+
 // Obre la pantalla CookMe i renderitza la pestanya per defecte. L'argument
 // origin ('home' | 'settings') determina la pantalla a la qual tornarà el
 // botó "back" — així es pot reutilitzar la mateixa pantalla des de Configuració.
