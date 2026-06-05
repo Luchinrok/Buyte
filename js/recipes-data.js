@@ -14,10 +14,10 @@ const RECIPES = [
     emoji: '🥖',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥖', name: 'pa', qty: '2 llesques', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '1 madur', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥖', name: 'pa', qty: '2 llesques', amount: null, unit: null, required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '1 madur', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla el pa a llesques i, si vols, torra-les lleugerament.',
@@ -32,10 +32,10 @@ const RECIPES = [
     emoji: '🍳',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥚', name: 'ous', qty: '2 unitats', required: true },
-      { emoji: '🥛', name: 'llet', qty: '1 cullerada', required: false },
-      { emoji: '🧈', name: 'mantega', qty: 'una nou', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥚', name: 'ous', qty: '2 unitats', amount: 2, unit: 'u', required: true },
+      { emoji: '🥛', name: 'llet', qty: '1 cullerada', amount: null, unit: null, required: false },
+      { emoji: '🧈', name: 'mantega', qty: 'una nou', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Bat els ous amb una mica de sal (i un raig de llet si vols).',
@@ -49,9 +49,9 @@ const RECIPES = [
     emoji: '🥛',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥛', name: 'iogurt', qty: '1 unitat', required: true },
-      { emoji: '🍓', name: 'maduixes', qty: '6-8', required: true },
-      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', required: false }
+      { emoji: '🥛', name: 'iogurt', qty: '1 unitat', amount: 1, unit: 'u', required: true },
+      { emoji: '🍓', name: 'maduixes', qty: '6-8', amount: 6, unit: 'u', required: true },
+      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', amount: null, unit: null, required: false }
     ],
     steps: [
       'Aboca el iogurt al bol.',
@@ -65,10 +65,10 @@ const RECIPES = [
     emoji: '🥪',
     time: 8, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥖', name: 'pa de motlle', qty: '2 llesques', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '1 llesca', required: true },
-      { emoji: '🥓', name: 'pernil dolç', qty: '1 llesca', required: true },
-      { emoji: '🧈', name: 'mantega', qty: 'al gust', required: false }
+      { emoji: '🥖', name: 'pa de motlle', qty: '2 llesques', amount: null, unit: null, required: true },
+      { emoji: '🧀', name: 'formatge', qty: '1 llesca', amount: null, unit: null, required: true },
+      { emoji: '🥓', name: 'pernil dolç', qty: '1 llesca', amount: null, unit: null, required: true },
+      { emoji: '🧈', name: 'mantega', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Posa pernil dolç i formatge entre les dues llesques de pa.',
@@ -82,9 +82,9 @@ const RECIPES = [
     emoji: '🥖',
     time: 3, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥖', name: 'pa', qty: '2 llesques', required: true },
-      { emoji: '🧈', name: 'mantega', qty: 'al gust', required: true },
-      { emoji: '🍯', name: 'melmelada', qty: '2 culleradetes', required: true }
+      { emoji: '🥖', name: 'pa', qty: '2 llesques', amount: null, unit: null, required: true },
+      { emoji: '🧈', name: 'mantega', qty: 'al gust', amount: null, unit: null, required: true },
+      { emoji: '🍯', name: 'melmelada', qty: '2 culleradetes', amount: null, unit: null, required: true }
     ],
     steps: [
       'Torra el pa fins que sigui daurat.',
@@ -98,9 +98,9 @@ const RECIPES = [
     emoji: '🥣',
     time: 2, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥛', name: 'llet', qty: '200 ml', required: true },
-      { emoji: '🥣', name: 'cereals', qty: '1 grapat', required: true },
-      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', required: false }
+      { emoji: '🥛', name: 'llet', qty: '200 ml', amount: 200, unit: 'ml', required: true },
+      { emoji: '🥣', name: 'cereals', qty: '1 grapat', amount: null, unit: null, required: true },
+      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', amount: null, unit: null, required: false }
     ],
     steps: [
       'Posa els cereals al bol.',
@@ -114,10 +114,10 @@ const RECIPES = [
     emoji: '🥣',
     time: 8, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🌾', name: 'flocs d\'avena', qty: '4 cullerades', required: true },
-      { emoji: '🍌', name: 'plàtan', qty: '1', required: true },
-      { emoji: '🥛', name: 'llet', qty: '200 ml', required: false },
-      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', required: false }
+      { emoji: '🌾', name: 'flocs d\'avena', qty: '4 cullerades', amount: null, unit: null, required: true },
+      { emoji: '🍌', name: 'plàtan', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥛', name: 'llet', qty: '200 ml', amount: 200, unit: 'ml', required: false },
+      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', amount: null, unit: null, required: false }
     ],
     steps: [
       'Cuina l\'avena amb la llet a foc baix 4-5 min remenant.',
@@ -131,10 +131,10 @@ const RECIPES = [
     emoji: '🥑',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥖', name: 'pa', qty: '1 llesca gruixuda', required: true },
-      { emoji: '🥑', name: 'alvocat', qty: '½', required: true },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false },
-      { emoji: '🌶️', name: 'pebre', qty: 'al gust', required: false }
+      { emoji: '🥖', name: 'pa', qty: '1 llesca gruixuda', amount: null, unit: null, required: true },
+      { emoji: '🥑', name: 'alvocat', qty: '½', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false },
+      { emoji: '🌶️', name: 'pebre', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Torra la llesca de pa.',
@@ -148,9 +148,9 @@ const RECIPES = [
     emoji: '🍌',
     time: 3, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🍌', name: 'plàtan', qty: '1', required: true },
-      { emoji: '🥛', name: 'llet', qty: '250 ml', required: true },
-      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', required: false }
+      { emoji: '🍌', name: 'plàtan', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥛', name: 'llet', qty: '250 ml', amount: 250, unit: 'ml', required: true },
+      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', amount: null, unit: null, required: false }
     ],
     steps: [
       'Pela el plàtan i posa\'l al got de batre.',
@@ -164,11 +164,11 @@ const RECIPES = [
     emoji: '🥞',
     time: 15, servings: 2, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥚', name: 'ous', qty: '2', required: true },
-      { emoji: '🥛', name: 'llet', qty: '200 ml', required: true },
-      { emoji: '🌾', name: 'farina', qty: '150 g', required: true },
-      { emoji: '🧈', name: 'mantega', qty: 'per la paella', required: false },
-      { emoji: '🍯', name: 'mel', qty: 'per servir', required: false }
+      { emoji: '🥚', name: 'ous', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥛', name: 'llet', qty: '200 ml', amount: 200, unit: 'ml', required: true },
+      { emoji: '🌾', name: 'farina', qty: '150 g', amount: 150, unit: 'g', required: true },
+      { emoji: '🧈', name: 'mantega', qty: 'per la paella', amount: null, unit: null, required: false },
+      { emoji: '🍯', name: 'mel', qty: 'per servir', amount: null, unit: null, required: false }
     ],
     steps: [
       'Mescla els ous, la llet i la farina fins a formar una pasta.',
@@ -182,9 +182,9 @@ const RECIPES = [
     emoji: '🧀',
     time: 3, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥖', name: 'pa', qty: '2 llesques', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '2 llesques', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🥖', name: 'pa', qty: '2 llesques', amount: null, unit: null, required: true },
+      { emoji: '🧀', name: 'formatge', qty: '2 llesques', amount: null, unit: null, required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla el pa a llesques.',
@@ -198,9 +198,9 @@ const RECIPES = [
     emoji: '🥛',
     time: 3, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥛', name: 'iogurt', qty: '1', required: true },
-      { emoji: '🍯', name: 'mel', qty: '1 cullerada', required: true },
-      { emoji: '🥜', name: 'fruits secs', qty: '1 grapat', required: true }
+      { emoji: '🥛', name: 'iogurt', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍯', name: 'mel', qty: '1 cullerada', amount: null, unit: null, required: true },
+      { emoji: '🥜', name: 'fruits secs', qty: '1 grapat', amount: null, unit: null, required: true }
     ],
     steps: [
       'Aboca el iogurt al bol.',
@@ -214,11 +214,11 @@ const RECIPES = [
     emoji: '🍞',
     time: 10, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥖', name: 'pa', qty: '2 llesques', required: true },
-      { emoji: '🥚', name: 'ous', qty: '1', required: true },
-      { emoji: '🥛', name: 'llet', qty: '100 ml', required: true },
-      { emoji: '🧈', name: 'mantega', qty: 'per la paella', required: false },
-      { emoji: '🍯', name: 'sucre', qty: 'al gust', required: false }
+      { emoji: '🥖', name: 'pa', qty: '2 llesques', amount: null, unit: null, required: true },
+      { emoji: '🥚', name: 'ous', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥛', name: 'llet', qty: '100 ml', amount: 100, unit: 'ml', required: true },
+      { emoji: '🧈', name: 'mantega', qty: 'per la paella', amount: null, unit: null, required: false },
+      { emoji: '🍯', name: 'sucre', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Bat l\'ou amb la llet en un bol.',
@@ -232,9 +232,9 @@ const RECIPES = [
     emoji: '🥩',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🥩', name: 'pernil dolç', qty: '4 llesques', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '4 llesques', required: true },
-      { emoji: '🥖', name: 'pa', qty: 'al gust', required: false }
+      { emoji: '🥩', name: 'pernil dolç', qty: '4 llesques', amount: null, unit: null, required: true },
+      { emoji: '🧀', name: 'formatge', qty: '4 llesques', amount: null, unit: null, required: true },
+      { emoji: '🥖', name: 'pa', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Disposa el pernil dolç al plat.',
@@ -248,10 +248,10 @@ const RECIPES = [
     emoji: '🍓',
     time: 8, servings: 2, difficulty: 'fàcil', category: 'esmorzar',
     ingredients: [
-      { emoji: '🍎', name: 'poma', qty: '1', required: true },
-      { emoji: '🍌', name: 'plàtan', qty: '1', required: true },
-      { emoji: '🍊', name: 'taronja', qty: '1', required: true },
-      { emoji: '🍓', name: 'maduixes', qty: '6', required: true }
+      { emoji: '🍎', name: 'poma', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍌', name: 'plàtan', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍊', name: 'taronja', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍓', name: 'maduixes', qty: '6', amount: 6, unit: 'u', required: true }
     ],
     steps: [
       'Pela les fruites i talla-les a daus petits.',
@@ -267,12 +267,12 @@ const RECIPES = [
     emoji: '🥗',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🥬', name: 'enciam', qty: '½ unitat', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '1', required: true },
-      { emoji: '🥒', name: 'cogombre', qty: '½', required: true },
-      { emoji: '🫒', name: 'olives', qty: '1 grapat', required: false },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥬', name: 'enciam', qty: '½ unitat', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥒', name: 'cogombre', qty: '½', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🫒', name: 'olives', qty: '1 grapat', amount: null, unit: null, required: false },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Renta i talla l\'enciam, el tomàquet i el cogombre.',
@@ -286,11 +286,11 @@ const RECIPES = [
     emoji: '🥗',
     time: 30, servings: 2, difficulty: 'mitjana', category: 'primer',
     ingredients: [
-      { emoji: '🥔', name: 'patates', qty: '2', required: true },
-      { emoji: '🥕', name: 'pastanagues', qty: '2', required: true },
-      { emoji: '🥚', name: 'ous', qty: '2', required: true },
-      { emoji: '🥚', name: 'maionesa', qty: '4 cullerades', required: true },
-      { emoji: '🫒', name: 'olives', qty: 'al gust', required: false }
+      { emoji: '🥔', name: 'patates', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥕', name: 'pastanagues', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥚', name: 'ous', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥚', name: 'maionesa', qty: '4 cullerades', amount: null, unit: null, required: true },
+      { emoji: '🫒', name: 'olives', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Bull patates, pastanagues i ous fins que estiguin tendres.',
@@ -304,10 +304,10 @@ const RECIPES = [
     emoji: '🥗',
     time: 20, servings: 2, difficulty: 'mitjana', category: 'primer',
     ingredients: [
-      { emoji: '🥬', name: 'enciam', qty: '1 unitat', required: true },
-      { emoji: '🐔', name: 'pollastre', qty: '1 pit', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '50 g ratllat', required: true },
-      { emoji: '🍞', name: 'pa torrat', qty: '1 grapat', required: true }
+      { emoji: '🥬', name: 'enciam', qty: '1 unitat', amount: 1, unit: 'u', required: true },
+      { emoji: '🐔', name: 'pollastre', qty: '1 pit', amount: 1, unit: 'u', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '50 g ratllat', amount: 50, unit: 'g', required: true },
+      { emoji: '🍞', name: 'pa torrat', qty: '1 grapat', amount: null, unit: null, required: true }
     ],
     steps: [
       'Cuina el pollastre a la planxa i talla\'l a tires.',
@@ -321,12 +321,12 @@ const RECIPES = [
     emoji: '🥗',
     time: 10, servings: 2, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🍅', name: 'tomàquets', qty: '2', required: true },
-      { emoji: '🥒', name: 'cogombre', qty: '1', required: true },
-      { emoji: '🧀', name: 'formatge feta', qty: '100 g', required: true },
-      { emoji: '🫒', name: 'olives', qty: '1 grapat', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍅', name: 'tomàquets', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥒', name: 'cogombre', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🧀', name: 'formatge feta', qty: '100 g', amount: 100, unit: 'g', required: true },
+      { emoji: '🫒', name: 'olives', qty: '1 grapat', amount: null, unit: null, required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla els tomàquets i el cogombre a daus.',
@@ -340,11 +340,11 @@ const RECIPES = [
     emoji: '🍲',
     time: 35, servings: 4, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🥕', name: 'pastanagues', qty: '2', required: true },
-      { emoji: '🥬', name: 'col', qty: '¼', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '💧', name: 'aigua', qty: '1,5 L', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥕', name: 'pastanagues', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥬', name: 'col', qty: '¼', amount: 0.25, unit: 'u', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '💧', name: 'aigua', qty: '1,5 L', amount: 1.5, unit: 'l', required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix la ceba picada en una olla amb una mica d\'oli.',
@@ -358,12 +358,12 @@ const RECIPES = [
     emoji: '🍲',
     time: 40, servings: 4, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🥕', name: 'pastanagues', qty: '2', required: true },
-      { emoji: '🥬', name: 'col', qty: '¼', required: true },
-      { emoji: '🥔', name: 'patates', qty: '2', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '💧', name: 'aigua', qty: '1,5 L', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥕', name: 'pastanagues', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥬', name: 'col', qty: '¼', amount: 0.25, unit: 'u', required: true },
+      { emoji: '🥔', name: 'patates', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '💧', name: 'aigua', qty: '1,5 L', amount: 1.5, unit: 'l', required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla totes les verdures a tires fines (juliana).',
@@ -377,11 +377,11 @@ const RECIPES = [
     emoji: '🍲',
     time: 30, servings: 3, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🍆', name: 'carbassó', qty: '2', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🥛', name: 'llet', qty: '200 ml', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍆', name: 'carbassó', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥛', name: 'llet', qty: '200 ml', amount: 200, unit: 'ml', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix la ceba i el carbassó tallats.',
@@ -395,11 +395,11 @@ const RECIPES = [
     emoji: '🍲',
     time: 35, servings: 3, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🥔', name: 'patates', qty: '3', required: true },
-      { emoji: '🧅', name: 'porro', qty: '2', required: true },
-      { emoji: '🥛', name: 'llet', qty: '200 ml', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥔', name: 'patates', qty: '3', amount: 3, unit: 'u', required: true },
+      { emoji: '🧅', name: 'porro', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥛', name: 'llet', qty: '200 ml', amount: 200, unit: 'ml', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix els porros tallats finament.',
@@ -413,12 +413,12 @@ const RECIPES = [
     emoji: '🍅',
     time: 15, servings: 4, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🍅', name: 'tomàquets', qty: '6 madurs', required: true },
-      { emoji: '🥒', name: 'cogombre', qty: '½', required: true },
-      { emoji: '🌶️', name: 'pebrot', qty: '½', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '¼', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍅', name: 'tomàquets', qty: '6 madurs', amount: 6, unit: 'u', required: true },
+      { emoji: '🥒', name: 'cogombre', qty: '½', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🌶️', name: 'pebrot', qty: '½', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '¼', amount: 0.25, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Pela els tomàquets i el cogombre.',
@@ -432,10 +432,10 @@ const RECIPES = [
     emoji: '🍲',
     time: 30, servings: 3, difficulty: 'mitjana', category: 'primer',
     ingredients: [
-      { emoji: '🥔', name: 'patates', qty: '3', required: true },
-      { emoji: '🧅', name: 'porro', qty: '2', required: true },
-      { emoji: '🥛', name: 'nata', qty: '200 ml', required: true },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥔', name: 'patates', qty: '3', amount: 3, unit: 'u', required: true },
+      { emoji: '🧅', name: 'porro', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥛', name: 'nata', qty: '200 ml', amount: 200, unit: 'ml', required: true },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix els porros tallats finament.',
@@ -449,11 +449,11 @@ const RECIPES = [
     emoji: '🍝',
     time: 15, servings: 2, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🍝', name: 'pasta', qty: '200 g', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '2', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '80 g', required: true },
-      { emoji: '🫒', name: 'olives', qty: '1 grapat', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🍝', name: 'pasta', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '80 g', amount: 80, unit: 'g', required: true },
+      { emoji: '🫒', name: 'olives', qty: '1 grapat', amount: null, unit: null, required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Bull la pasta i refresca-la amb aigua freda.',
@@ -467,10 +467,10 @@ const RECIPES = [
     emoji: '🥗',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🥬', name: 'enciam', qty: '½', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '1', required: true },
-      { emoji: '🐟', name: 'tonyina', qty: '1 llauna', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🥬', name: 'enciam', qty: '½', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🐟', name: 'tonyina', qty: '1 llauna', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Renta i trosseja l\'enciam.',
@@ -484,11 +484,11 @@ const RECIPES = [
     emoji: '🍅',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🍅', name: 'tomàquets', qty: '2', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '100 g mozzarella', required: true },
-      { emoji: '🌿', name: 'alfàbrega', qty: 'unes fulles', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍅', name: 'tomàquets', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '100 g mozzarella', amount: 100, unit: 'g', required: true },
+      { emoji: '🌿', name: 'alfàbrega', qty: 'unes fulles', amount: null, unit: null, required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla els tomàquets a rodanxes gruixudes.',
@@ -502,11 +502,11 @@ const RECIPES = [
     emoji: '🥗',
     time: 15, servings: 2, difficulty: 'fàcil', category: 'primer',
     ingredients: [
-      { emoji: '🥗', name: 'llenties', qty: '300 g cuites', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '½', required: true },
-      { emoji: '🥕', name: 'pastanaga', qty: '1', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥗', name: 'llenties', qty: '300 g cuites', amount: 300, unit: 'g', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '½', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🥕', name: 'pastanaga', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Escorre les llenties (millor si ja són cuites).',
@@ -520,12 +520,12 @@ const RECIPES = [
     emoji: '🍆',
     time: 60, servings: 3, difficulty: 'mitjana', category: 'primer',
     ingredients: [
-      { emoji: '🍆', name: 'albergínies', qty: '2', required: true },
-      { emoji: '🌶️', name: 'pebrots', qty: '2', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🍅', name: 'tomàquets', qty: '2', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍆', name: 'albergínies', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🌶️', name: 'pebrots', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍅', name: 'tomàquets', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Posa les verdures senceres al forn a 200°.',
@@ -541,11 +541,11 @@ const RECIPES = [
     emoji: '🍝',
     time: 20, servings: 2, difficulty: 'fàcil', category: 'pasta',
     ingredients: [
-      { emoji: '🍝', name: 'macarrons', qty: '200 g', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '400 g triturat', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '50 g ratllat', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍝', name: 'macarrons', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '400 g triturat', amount: 400, unit: 'g', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '50 g ratllat', amount: 50, unit: 'g', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Bull els macarrons en aigua salada al punt al dente.',
@@ -559,10 +559,10 @@ const RECIPES = [
     emoji: '🍝',
     time: 20, servings: 2, difficulty: 'mitjana', category: 'pasta',
     ingredients: [
-      { emoji: '🍝', name: 'espaguetis', qty: '200 g', required: true },
-      { emoji: '🥚', name: 'ous', qty: '2 rovells', required: true },
-      { emoji: '🥓', name: 'bacó', qty: '100 g', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '50 g', required: true }
+      { emoji: '🍝', name: 'espaguetis', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🥚', name: 'ous', qty: '2 rovells', amount: 2, unit: 'u', required: true },
+      { emoji: '🥓', name: 'bacó', qty: '100 g', amount: 100, unit: 'g', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '50 g', amount: 50, unit: 'g', required: true }
     ],
     steps: [
       'Bull els espaguetis i reserva una mica del seu aigua.',
@@ -577,11 +577,11 @@ const RECIPES = [
     emoji: '🍝',
     time: 35, servings: 2, difficulty: 'mitjana', category: 'pasta',
     ingredients: [
-      { emoji: '🍝', name: 'espaguetis', qty: '200 g', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '400 g triturat', required: true },
-      { emoji: '🥩', name: 'carn picada', qty: '250 g', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🍝', name: 'espaguetis', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '400 g triturat', amount: 400, unit: 'g', required: true },
+      { emoji: '🥩', name: 'carn picada', qty: '250 g', amount: 250, unit: 'g', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix la ceba picada i afegeix la carn fins que es daurí.',
@@ -595,9 +595,9 @@ const RECIPES = [
     emoji: '🍝',
     time: 18, servings: 2, difficulty: 'fàcil', category: 'pasta',
     ingredients: [
-      { emoji: '🍝', name: 'macarrons', qty: '200 g', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '400 g triturat', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '50 g', required: true }
+      { emoji: '🍝', name: 'macarrons', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '400 g triturat', amount: 400, unit: 'g', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '50 g', amount: 50, unit: 'g', required: true }
     ],
     steps: [
       'Bull els macarrons al dente.',
@@ -611,11 +611,11 @@ const RECIPES = [
     emoji: '🍝',
     time: 15, servings: 2, difficulty: 'fàcil', category: 'pasta',
     ingredients: [
-      { emoji: '🍝', name: 'pasta', qty: '200 g', required: true },
-      { emoji: '🌿', name: 'alfàbrega', qty: '1 manat', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '50 g parmesà', required: true },
-      { emoji: '🫒', name: 'oli', qty: '6 cullerades', required: true },
-      { emoji: '🥜', name: 'pinyons', qty: '2 cullerades', required: false }
+      { emoji: '🍝', name: 'pasta', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🌿', name: 'alfàbrega', qty: '1 manat', amount: null, unit: null, required: true },
+      { emoji: '🧀', name: 'formatge', qty: '50 g parmesà', amount: 50, unit: 'g', required: true },
+      { emoji: '🫒', name: 'oli', qty: '6 cullerades', amount: null, unit: null, required: true },
+      { emoji: '🥜', name: 'pinyons', qty: '2 cullerades', amount: null, unit: null, required: false }
     ],
     steps: [
       'Tritura l\'alfàbrega amb el formatge, els pinyons i l\'oli.',
@@ -629,11 +629,11 @@ const RECIPES = [
     emoji: '🍝',
     time: 60, servings: 4, difficulty: 'difícil', category: 'pasta',
     ingredients: [
-      { emoji: '🍝', name: 'plaques de lasanya', qty: '12', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '500 g triturat', required: true },
-      { emoji: '🥩', name: 'carn picada', qty: '300 g', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '150 g ratllat', required: true },
-      { emoji: '🥛', name: 'llet', qty: '500 ml (beixamel)', required: false }
+      { emoji: '🍝', name: 'plaques de lasanya', qty: '12', amount: 12, unit: 'u', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '500 g triturat', amount: 500, unit: 'g', required: true },
+      { emoji: '🥩', name: 'carn picada', qty: '300 g', amount: 300, unit: 'g', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '150 g ratllat', amount: 150, unit: 'g', required: true },
+      { emoji: '🥛', name: 'llet', qty: '500 ml (beixamel)', amount: 500, unit: 'ml', required: false }
     ],
     steps: [
       'Sofregeix la carn amb el tomàquet 15 min.',
@@ -647,11 +647,11 @@ const RECIPES = [
     emoji: '🍚',
     time: 30, servings: 2, difficulty: 'mitjana', category: 'pasta',
     ingredients: [
-      { emoji: '🍚', name: 'arròs', qty: '200 g', required: true },
-      { emoji: '🍄', name: 'bolets', qty: '250 g', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '50 g parmesà', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🍚', name: 'arròs', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🍄', name: 'bolets', qty: '250 g', amount: 250, unit: 'g', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '50 g parmesà', amount: 50, unit: 'g', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix la ceba i els bolets tallats.',
@@ -665,12 +665,12 @@ const RECIPES = [
     emoji: '🍚',
     time: 30, servings: 2, difficulty: 'fàcil', category: 'pasta',
     ingredients: [
-      { emoji: '🍚', name: 'arròs', qty: '200 g', required: true },
-      { emoji: '🥕', name: 'pastanaga', qty: '1', required: true },
-      { emoji: '🥬', name: 'verdures', qty: '1 grapat', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍚', name: 'arròs', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🥕', name: 'pastanaga', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥬', name: 'verdures', qty: '1 grapat', amount: null, unit: null, required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix la ceba i les verdures tallades.',
@@ -684,12 +684,12 @@ const RECIPES = [
     emoji: '🥘',
     time: 45, servings: 4, difficulty: 'mitjana', category: 'pasta',
     ingredients: [
-      { emoji: '🍚', name: 'arròs', qty: '400 g', required: true },
-      { emoji: '🐔', name: 'pollastre', qty: '300 g a trossos', required: true },
-      { emoji: '🦐', name: 'gambes', qty: '200 g', required: true },
-      { emoji: '🌶️', name: 'pebrot', qty: '1', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '1 ratllat', required: false },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🍚', name: 'arròs', qty: '400 g', amount: 400, unit: 'g', required: true },
+      { emoji: '🐔', name: 'pollastre', qty: '300 g a trossos', amount: 300, unit: 'g', required: true },
+      { emoji: '🦐', name: 'gambes', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🌶️', name: 'pebrot', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '1 ratllat', amount: 1, unit: 'u', required: false },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Daura el pollastre a la paella amb una mica d\'oli.',
@@ -703,11 +703,11 @@ const RECIPES = [
     emoji: '🍝',
     time: 30, servings: 4, difficulty: 'mitjana', category: 'pasta',
     ingredients: [
-      { emoji: '🍝', name: 'fideus', qty: '400 g', required: true },
-      { emoji: '🐟', name: 'peix', qty: '300 g', required: true },
-      { emoji: '🦐', name: 'gambes', qty: '200 g', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '1 ratllat', required: false },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🍝', name: 'fideus', qty: '400 g', amount: 400, unit: 'g', required: true },
+      { emoji: '🐟', name: 'peix', qty: '300 g', amount: 300, unit: 'g', required: true },
+      { emoji: '🦐', name: 'gambes', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '1 ratllat', amount: 1, unit: 'u', required: false },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix el peix i les gambes a la paella.',
@@ -721,11 +721,11 @@ const RECIPES = [
     emoji: '🍚',
     time: 30, servings: 2, difficulty: 'fàcil', category: 'pasta',
     ingredients: [
-      { emoji: '🍚', name: 'arròs', qty: '200 g', required: true },
-      { emoji: '🐔', name: 'pollastre', qty: '300 g', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍚', name: 'arròs', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🐔', name: 'pollastre', qty: '300 g', amount: 300, unit: 'g', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Daura el pollastre a la paella.',
@@ -739,10 +739,10 @@ const RECIPES = [
     emoji: '🍝',
     time: 15, servings: 2, difficulty: 'fàcil', category: 'pasta',
     ingredients: [
-      { emoji: '🍝', name: 'pasta', qty: '200 g', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '120 g', required: true },
-      { emoji: '🥛', name: 'llet', qty: '150 ml', required: true },
-      { emoji: '🧈', name: 'mantega', qty: '20 g', required: false }
+      { emoji: '🍝', name: 'pasta', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '120 g', amount: 120, unit: 'g', required: true },
+      { emoji: '🥛', name: 'llet', qty: '150 ml', amount: 150, unit: 'ml', required: true },
+      { emoji: '🧈', name: 'mantega', qty: '20 g', amount: 20, unit: 'g', required: false }
     ],
     steps: [
       'Bull la pasta al dente.',
@@ -756,10 +756,10 @@ const RECIPES = [
     emoji: '🍝',
     time: 18, servings: 2, difficulty: 'fàcil', category: 'pasta',
     ingredients: [
-      { emoji: '🍝', name: 'espaguetis', qty: '200 g', required: true },
-      { emoji: '🐟', name: 'tonyina', qty: '2 llaunes', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '300 g triturat', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🍝', name: 'espaguetis', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🐟', name: 'tonyina', qty: '2 llaunes', amount: 2, unit: 'u', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '300 g triturat', amount: 300, unit: 'g', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Bull els espaguetis al dente.',
@@ -773,10 +773,10 @@ const RECIPES = [
     emoji: '🍚',
     time: 20, servings: 2, difficulty: 'fàcil', category: 'pasta',
     ingredients: [
-      { emoji: '🍚', name: 'arròs', qty: '200 g', required: true },
-      { emoji: '🥕', name: 'pastanaga', qty: '1', required: true },
-      { emoji: '🥚', name: 'ous', qty: '2', required: true },
-      { emoji: '🥓', name: 'bacó', qty: '80 g', required: true }
+      { emoji: '🍚', name: 'arròs', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🥕', name: 'pastanaga', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥚', name: 'ous', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥓', name: 'bacó', qty: '80 g', amount: 80, unit: 'g', required: true }
     ],
     steps: [
       'Bull l\'arròs i refresca\'l amb aigua freda.',
@@ -790,11 +790,11 @@ const RECIPES = [
     emoji: '🍚',
     time: 35, servings: 2, difficulty: 'mitjana', category: 'pasta',
     ingredients: [
-      { emoji: '🍚', name: 'arròs', qty: '200 g', required: true },
-      { emoji: '🦐', name: 'gambes', qty: '250 g', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🌶️', name: 'safrà', qty: 'un pessic', required: false },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🍚', name: 'arròs', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🦐', name: 'gambes', qty: '250 g', amount: 250, unit: 'g', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🌶️', name: 'safrà', qty: 'un pessic', amount: null, unit: null, required: false },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix la ceba i les gambes.',
@@ -810,11 +810,11 @@ const RECIPES = [
     emoji: '🍗',
     time: 75, servings: 4, difficulty: 'mitjana', category: 'carn-peix',
     ingredients: [
-      { emoji: '🍗', name: 'pollastre', qty: '1 sencer', required: true },
-      { emoji: '🥔', name: 'patates', qty: '4', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '2', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍗', name: 'pollastre', qty: '1 sencer', amount: 1, unit: 'u', required: true },
+      { emoji: '🥔', name: 'patates', qty: '4', amount: 4, unit: 'u', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Salpebra el pollastre per dins i per fora.',
@@ -828,10 +828,10 @@ const RECIPES = [
     emoji: '🥩',
     time: 8, servings: 1, difficulty: 'fàcil', category: 'carn-peix',
     ingredients: [
-      { emoji: '🥩', name: 'filet', qty: '200 g', required: true },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false },
-      { emoji: '🌶️', name: 'pebre', qty: 'al gust', required: false },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🥩', name: 'filet', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false },
+      { emoji: '🌶️', name: 'pebre', qty: 'al gust', amount: null, unit: null, required: false },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Salpebra el filet.',
@@ -845,11 +845,11 @@ const RECIPES = [
     emoji: '🍗',
     time: 35, servings: 2, difficulty: 'fàcil', category: 'carn-peix',
     ingredients: [
-      { emoji: '🍗', name: 'pollastre', qty: '2 cuixes', required: true },
-      { emoji: '🥕', name: 'pastanaga', qty: '2', required: true },
-      { emoji: '🥬', name: 'verdures', qty: '1 grapat', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🍗', name: 'pollastre', qty: '2 cuixes', amount: 2, unit: 'u', required: true },
+      { emoji: '🥕', name: 'pastanaga', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥬', name: 'verdures', qty: '1 grapat', amount: null, unit: null, required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Daura el pollastre a la cassola.',
@@ -863,11 +863,11 @@ const RECIPES = [
     emoji: '🍳',
     time: 30, servings: 3, difficulty: 'mitjana', category: 'carn-peix',
     ingredients: [
-      { emoji: '🥚', name: 'ous', qty: '4', required: true },
-      { emoji: '🥔', name: 'patates', qty: '3', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'per fregir', required: true },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥚', name: 'ous', qty: '4', amount: 4, unit: 'u', required: true },
+      { emoji: '🥔', name: 'patates', qty: '3', amount: 3, unit: 'u', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'per fregir', amount: null, unit: null, required: true },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla les patates a làmines fines i fregeix-les amb la ceba.',
@@ -881,10 +881,10 @@ const RECIPES = [
     emoji: '🍔',
     time: 15, servings: 2, difficulty: 'fàcil', category: 'carn-peix',
     ingredients: [
-      { emoji: '🥩', name: 'carn picada', qty: '300 g', required: true },
-      { emoji: '🍞', name: 'pa d\'hamburguesa', qty: '2', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥩', name: 'carn picada', qty: '300 g', amount: 300, unit: 'g', required: true },
+      { emoji: '🍞', name: 'pa d\'hamburguesa', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Salpebra la carn i fes-ne dues boles aplanades.',
@@ -898,10 +898,10 @@ const RECIPES = [
     emoji: '🥩',
     time: 60, servings: 3, difficulty: 'mitjana', category: 'carn-peix',
     ingredients: [
-      { emoji: '🥩', name: 'costelles', qty: '800 g', required: true },
-      { emoji: '🥔', name: 'patates', qty: '3', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥩', name: 'costelles', qty: '800 g', amount: 800, unit: 'g', required: true },
+      { emoji: '🥔', name: 'patates', qty: '3', amount: 3, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Salpebra les costelles i posa-les a la safata.',
@@ -915,11 +915,11 @@ const RECIPES = [
     emoji: '🐟',
     time: 30, servings: 2, difficulty: 'fàcil', category: 'carn-peix',
     ingredients: [
-      { emoji: '🐟', name: 'peix', qty: '2 lloms', required: true },
-      { emoji: '🥬', name: 'verdures', qty: '1 grapat', required: true },
-      { emoji: '🍋', name: 'llimona', qty: '1', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🐟', name: 'peix', qty: '2 lloms', amount: 2, unit: 'u', required: true },
+      { emoji: '🥬', name: 'verdures', qty: '1 grapat', amount: null, unit: null, required: true },
+      { emoji: '🍋', name: 'llimona', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Posa les verdures tallades a la safata.',
@@ -933,10 +933,10 @@ const RECIPES = [
     emoji: '🐟',
     time: 10, servings: 1, difficulty: 'fàcil', category: 'carn-peix',
     ingredients: [
-      { emoji: '🐟', name: 'salmó', qty: '1 lloms', required: true },
-      { emoji: '🍋', name: 'llimona', qty: '½', required: true },
-      { emoji: '🌿', name: 'herbes', qty: 'al gust', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🐟', name: 'salmó', qty: '1 lloms', amount: 1, unit: 'u', required: true },
+      { emoji: '🍋', name: 'llimona', qty: '½', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🌿', name: 'herbes', qty: 'al gust', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Salpebra el salmó.',
@@ -950,11 +950,11 @@ const RECIPES = [
     emoji: '🦑',
     time: 15, servings: 2, difficulty: 'fàcil', category: 'carn-peix',
     ingredients: [
-      { emoji: '🦑', name: 'calamars', qty: '400 g', required: true },
-      { emoji: '🌾', name: 'farina', qty: '100 g', required: true },
-      { emoji: '🍋', name: 'llimona', qty: '1', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'per fregir', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🦑', name: 'calamars', qty: '400 g', amount: 400, unit: 'g', required: true },
+      { emoji: '🌾', name: 'farina', qty: '100 g', amount: 100, unit: 'g', required: true },
+      { emoji: '🍋', name: 'llimona', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'per fregir', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla els calamars a anelles i sala\'ls.',
@@ -968,10 +968,10 @@ const RECIPES = [
     emoji: '🐟',
     time: 25, servings: 2, difficulty: 'fàcil', category: 'carn-peix',
     ingredients: [
-      { emoji: '🐟', name: 'tonyina', qty: '300 g', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '400 g triturat', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🐟', name: 'tonyina', qty: '300 g', amount: 300, unit: 'g', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '400 g triturat', amount: 400, unit: 'g', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Sofregeix la ceba picada.',
@@ -985,10 +985,10 @@ const RECIPES = [
     emoji: '🍛',
     time: 30, servings: 2, difficulty: 'mitjana', category: 'carn-peix',
     ingredients: [
-      { emoji: '🍗', name: 'pollastre', qty: '400 g', required: true },
-      { emoji: '🌶️', name: 'curry', qty: '1 cullerada', required: true },
-      { emoji: '🥥', name: 'llet de coco', qty: '400 ml', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true }
+      { emoji: '🍗', name: 'pollastre', qty: '400 g', amount: 400, unit: 'g', required: true },
+      { emoji: '🌶️', name: 'curry', qty: '1 cullerada', amount: null, unit: null, required: true },
+      { emoji: '🥥', name: 'llet de coco', qty: '400 ml', amount: 400, unit: 'ml', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true }
     ],
     steps: [
       'Sofregeix la ceba i el pollastre tallat a daus.',
@@ -1002,10 +1002,10 @@ const RECIPES = [
     emoji: '🍳',
     time: 12, servings: 2, difficulty: 'fàcil', category: 'carn-peix',
     ingredients: [
-      { emoji: '🥚', name: 'ous', qty: '4', required: true },
-      { emoji: '🥬', name: 'espinacs', qty: '200 g', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🥚', name: 'ous', qty: '4', amount: 4, unit: 'u', required: true },
+      { emoji: '🥬', name: 'espinacs', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Saltejat els espinacs a la paella fins que minvin.',
@@ -1019,10 +1019,10 @@ const RECIPES = [
     emoji: '🍆',
     time: 50, servings: 2, difficulty: 'mitjana', category: 'carn-peix',
     ingredients: [
-      { emoji: '🍆', name: 'albergínies', qty: '2', required: true },
-      { emoji: '🥩', name: 'carn picada', qty: '250 g', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '80 g ratllat', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '1 triturat', required: false }
+      { emoji: '🍆', name: 'albergínies', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥩', name: 'carn picada', qty: '250 g', amount: 250, unit: 'g', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '80 g ratllat', amount: 80, unit: 'g', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '1 triturat', amount: 1, unit: 'u', required: false }
     ],
     steps: [
       'Buida les albergínies tallades per la meitat.',
@@ -1036,10 +1036,10 @@ const RECIPES = [
     emoji: '🌶️',
     time: 50, servings: 3, difficulty: 'mitjana', category: 'carn-peix',
     ingredients: [
-      { emoji: '🌶️', name: 'pebrots', qty: '4', required: true },
-      { emoji: '🍚', name: 'arròs', qty: '150 g cuit', required: true },
-      { emoji: '🥩', name: 'carn picada', qty: '200 g', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: false }
+      { emoji: '🌶️', name: 'pebrots', qty: '4', amount: 4, unit: 'u', required: true },
+      { emoji: '🍚', name: 'arròs', qty: '150 g cuit', amount: 150, unit: 'g', required: true },
+      { emoji: '🥩', name: 'carn picada', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: false }
     ],
     steps: [
       'Buida els pebrots i reserva les tapes.',
@@ -1053,11 +1053,11 @@ const RECIPES = [
     emoji: '🐟',
     time: 35, servings: 2, difficulty: 'fàcil', category: 'carn-peix',
     ingredients: [
-      { emoji: '🐟', name: 'peix', qty: '2 lloms', required: true },
-      { emoji: '🥕', name: 'pastanaga', qty: '2', required: true },
-      { emoji: '🥬', name: 'verdures', qty: '1 grapat', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false },
-      { emoji: '🧂', name: 'sal', qty: 'al gust', required: false }
+      { emoji: '🐟', name: 'peix', qty: '2 lloms', amount: 2, unit: 'u', required: true },
+      { emoji: '🥕', name: 'pastanaga', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🥬', name: 'verdures', qty: '1 grapat', amount: null, unit: null, required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false },
+      { emoji: '🧂', name: 'sal', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla les verdures a tires.',
@@ -1073,11 +1073,11 @@ const RECIPES = [
     emoji: '🍕',
     time: 25, servings: 2, difficulty: 'mitjana', category: 'plat-unic',
     ingredients: [
-      { emoji: '🥖', name: 'massa de pizza', qty: '1', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '200 g triturat', required: true },
-      { emoji: '🧀', name: 'mozzarella', qty: '150 g', required: true },
-      { emoji: '🌿', name: 'alfàbrega', qty: 'unes fulles', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🥖', name: 'massa de pizza', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '200 g triturat', amount: 200, unit: 'g', required: true },
+      { emoji: '🧀', name: 'mozzarella', qty: '150 g', amount: 150, unit: 'g', required: true },
+      { emoji: '🌿', name: 'alfàbrega', qty: 'unes fulles', amount: null, unit: null, required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Estén la massa sobre paper de forn.',
@@ -1091,10 +1091,10 @@ const RECIPES = [
     emoji: '🌯',
     time: 15, servings: 1, difficulty: 'fàcil', category: 'plat-unic',
     ingredients: [
-      { emoji: '🌯', name: 'wrap', qty: '1', required: true },
-      { emoji: '🍗', name: 'pollastre', qty: '150 g', required: true },
-      { emoji: '🥬', name: 'enciam', qty: 'unes fulles', required: true },
-      { emoji: '🥚', name: 'maionesa', qty: '1 cullerada', required: false }
+      { emoji: '🌯', name: 'wrap', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍗', name: 'pollastre', qty: '150 g', amount: 150, unit: 'g', required: true },
+      { emoji: '🥬', name: 'enciam', qty: 'unes fulles', amount: null, unit: null, required: true },
+      { emoji: '🥚', name: 'maionesa', qty: '1 cullerada', amount: null, unit: null, required: false }
     ],
     steps: [
       'Cuina el pollastre tallat a tires.',
@@ -1108,11 +1108,11 @@ const RECIPES = [
     emoji: '🥪',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'plat-unic',
     ingredients: [
-      { emoji: '🥖', name: 'pa', qty: '2 llesques', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '1', required: true },
-      { emoji: '🥬', name: 'enciam', qty: 'unes fulles', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '1 llesca', required: true },
-      { emoji: '🥚', name: 'maionesa', qty: 'al gust', required: false }
+      { emoji: '🥖', name: 'pa', qty: '2 llesques', amount: null, unit: null, required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥬', name: 'enciam', qty: 'unes fulles', amount: null, unit: null, required: true },
+      { emoji: '🧀', name: 'formatge', qty: '1 llesca', amount: null, unit: null, required: true },
+      { emoji: '🥚', name: 'maionesa', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla el pa i unta una mica de maionesa.',
@@ -1126,11 +1126,11 @@ const RECIPES = [
     emoji: '🍔',
     time: 15, servings: 1, difficulty: 'fàcil', category: 'plat-unic',
     ingredients: [
-      { emoji: '🍔', name: 'hamburguesa', qty: '1', required: true },
-      { emoji: '🥬', name: 'enciam', qty: 'una fulla', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '1 rodanxa', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '1 llesca', required: true },
-      { emoji: '🧅', name: 'ceba', qty: 'unes anelles', required: false }
+      { emoji: '🍔', name: 'hamburguesa', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥬', name: 'enciam', qty: 'una fulla', amount: null, unit: null, required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '1 rodanxa', amount: null, unit: null, required: true },
+      { emoji: '🧀', name: 'formatge', qty: '1 llesca', amount: null, unit: null, required: true },
+      { emoji: '🧅', name: 'ceba', qty: 'unes anelles', amount: null, unit: null, required: false }
     ],
     steps: [
       'Cuina la hamburguesa a la planxa.',
@@ -1144,10 +1144,10 @@ const RECIPES = [
     emoji: '🥟',
     time: 50, servings: 4, difficulty: 'mitjana', category: 'plat-unic',
     ingredients: [
-      { emoji: '🥟', name: 'massa d\'empanada', qty: '2 plaques', required: true },
-      { emoji: '🥩', name: 'carn picada', qty: '300 g', required: true },
-      { emoji: '🧅', name: 'ceba', qty: '1', required: true },
-      { emoji: '🥚', name: 'ou', qty: '1 (per pintar)', required: false }
+      { emoji: '🥟', name: 'massa d\'empanada', qty: '2 plaques', amount: 2, unit: 'u', required: true },
+      { emoji: '🥩', name: 'carn picada', qty: '300 g', amount: 300, unit: 'g', required: true },
+      { emoji: '🧅', name: 'ceba', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥚', name: 'ou', qty: '1 (per pintar)', amount: 1, unit: 'u', required: false }
     ],
     steps: [
       'Sofregeix la ceba amb la carn 10 min.',
@@ -1161,11 +1161,11 @@ const RECIPES = [
     emoji: '🥖',
     time: 50, servings: 3, difficulty: 'mitjana', category: 'plat-unic',
     ingredients: [
-      { emoji: '🥖', name: 'massa', qty: '1 base', required: true },
-      { emoji: '🌶️', name: 'pebrot', qty: '1', required: true },
-      { emoji: '🍆', name: 'albergínia', qty: '1', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '2', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🥖', name: 'massa', qty: '1 base', amount: 1, unit: 'u', required: true },
+      { emoji: '🌶️', name: 'pebrot', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍆', name: 'albergínia', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Estén la massa fina sobre la safata del forn.',
@@ -1179,10 +1179,10 @@ const RECIPES = [
     emoji: '🥧',
     time: 50, servings: 4, difficulty: 'mitjana', category: 'plat-unic',
     ingredients: [
-      { emoji: '🥚', name: 'ous', qty: '3', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '100 g ratllat', required: true },
-      { emoji: '🥬', name: 'verdures', qty: '300 g', required: true },
-      { emoji: '🥛', name: 'nata', qty: '200 ml', required: true }
+      { emoji: '🥚', name: 'ous', qty: '3', amount: 3, unit: 'u', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '100 g ratllat', amount: 100, unit: 'g', required: true },
+      { emoji: '🥬', name: 'verdures', qty: '300 g', amount: 300, unit: 'g', required: true },
+      { emoji: '🥛', name: 'nata', qty: '200 ml', amount: 200, unit: 'ml', required: true }
     ],
     steps: [
       'Saltejat les verdures tallades fins que estiguin tendres.',
@@ -1196,10 +1196,10 @@ const RECIPES = [
     emoji: '🌯',
     time: 15, servings: 1, difficulty: 'fàcil', category: 'plat-unic',
     ingredients: [
-      { emoji: '🌯', name: 'tortilla', qty: '1', required: true },
-      { emoji: '🥩', name: 'carn', qty: '120 g', required: true },
-      { emoji: '🧀', name: 'formatge', qty: '50 g ratllat', required: true },
-      { emoji: '🥑', name: 'alvocat', qty: '½', required: true }
+      { emoji: '🌯', name: 'tortilla', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥩', name: 'carn', qty: '120 g', amount: 120, unit: 'g', required: true },
+      { emoji: '🧀', name: 'formatge', qty: '50 g ratllat', amount: 50, unit: 'g', required: true },
+      { emoji: '🥑', name: 'alvocat', qty: '½', amount: 0.5, unit: 'u', required: true }
     ],
     steps: [
       'Cuina la carn i adoba-la al gust.',
@@ -1213,10 +1213,10 @@ const RECIPES = [
     emoji: '🥖',
     time: 15, servings: 1, difficulty: 'fàcil', category: 'plat-unic',
     ingredients: [
-      { emoji: '🥖', name: 'pa', qty: '1 barra petita', required: true },
-      { emoji: '🦑', name: 'calamars', qty: '200 g', required: true },
-      { emoji: '🍋', name: 'llimona', qty: '½', required: true },
-      { emoji: '🥚', name: 'maionesa', qty: 'al gust', required: false }
+      { emoji: '🥖', name: 'pa', qty: '1 barra petita', amount: 1, unit: 'u', required: true },
+      { emoji: '🦑', name: 'calamars', qty: '200 g', amount: 200, unit: 'g', required: true },
+      { emoji: '🍋', name: 'llimona', qty: '½', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🥚', name: 'maionesa', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Fregeix els calamars arrebossats.',
@@ -1230,10 +1230,10 @@ const RECIPES = [
     emoji: '🥖',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'plat-unic',
     ingredients: [
-      { emoji: '🥖', name: 'pa', qty: '1 barra petita', required: true },
-      { emoji: '🐟', name: 'tonyina', qty: '1 llauna', required: true },
-      { emoji: '🍅', name: 'tomàquet', qty: '1', required: true },
-      { emoji: '🥚', name: 'maionesa', qty: 'al gust', required: false }
+      { emoji: '🥖', name: 'pa', qty: '1 barra petita', amount: 1, unit: 'u', required: true },
+      { emoji: '🐟', name: 'tonyina', qty: '1 llauna', amount: 1, unit: 'u', required: true },
+      { emoji: '🍅', name: 'tomàquet', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥚', name: 'maionesa', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Obre el pa per la meitat.',
@@ -1249,10 +1249,10 @@ const RECIPES = [
     emoji: '🍓',
     time: 10, servings: 4, difficulty: 'fàcil', category: 'postre',
     ingredients: [
-      { emoji: '🍎', name: 'poma', qty: '1', required: true },
-      { emoji: '🍌', name: 'plàtan', qty: '1', required: true },
-      { emoji: '🍊', name: 'taronja', qty: '2', required: true },
-      { emoji: '🍓', name: 'maduixes', qty: '8', required: true }
+      { emoji: '🍎', name: 'poma', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍌', name: 'plàtan', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍊', name: 'taronja', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🍓', name: 'maduixes', qty: '8', amount: 8, unit: 'u', required: true }
     ],
     steps: [
       'Pela i talla totes les fruites a daus.',
@@ -1266,9 +1266,9 @@ const RECIPES = [
     emoji: '🍯',
     time: 3, servings: 1, difficulty: 'fàcil', category: 'postre',
     ingredients: [
-      { emoji: '🥛', name: 'iogurt', qty: '1', required: true },
-      { emoji: '🍯', name: 'mel', qty: '1 cullerada', required: true },
-      { emoji: '🥜', name: 'fruits secs', qty: 'opcional', required: false }
+      { emoji: '🥛', name: 'iogurt', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍯', name: 'mel', qty: '1 cullerada', amount: null, unit: null, required: true },
+      { emoji: '🥜', name: 'fruits secs', qty: 'opcional', amount: null, unit: null, required: false }
     ],
     steps: [
       'Aboca el iogurt al bol.',
@@ -1282,9 +1282,9 @@ const RECIPES = [
     emoji: '🍫',
     time: 15, servings: 1, difficulty: 'fàcil', category: 'postre',
     ingredients: [
-      { emoji: '🍌', name: 'plàtan', qty: '1', required: true },
-      { emoji: '🍫', name: 'xocolata', qty: '50 g', required: true },
-      { emoji: '🥜', name: 'fruits secs', qty: 'opcional', required: false }
+      { emoji: '🍌', name: 'plàtan', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍫', name: 'xocolata', qty: '50 g', amount: 50, unit: 'g', required: true },
+      { emoji: '🥜', name: 'fruits secs', qty: 'opcional', amount: null, unit: null, required: false }
     ],
     steps: [
       'Fon la xocolata al bany Maria o microones.',
@@ -1298,10 +1298,10 @@ const RECIPES = [
     emoji: '🍮',
     time: 30, servings: 4, difficulty: 'mitjana', category: 'postre',
     ingredients: [
-      { emoji: '🥛', name: 'llet', qty: '500 ml', required: true },
-      { emoji: '🥚', name: 'ous', qty: '4 rovells', required: true },
-      { emoji: '🍯', name: 'sucre', qty: '100 g', required: true },
-      { emoji: '🍮', name: 'canyella', qty: '1 branca', required: false }
+      { emoji: '🥛', name: 'llet', qty: '500 ml', amount: 500, unit: 'ml', required: true },
+      { emoji: '🥚', name: 'ous', qty: '4 rovells', amount: 4, unit: 'u', required: true },
+      { emoji: '🍯', name: 'sucre', qty: '100 g', amount: 100, unit: 'g', required: true },
+      { emoji: '🍮', name: 'canyella', qty: '1 branca', amount: null, unit: null, required: false }
     ],
     steps: [
       'Bull la llet amb la canyella.',
@@ -1315,9 +1315,9 @@ const RECIPES = [
     emoji: '🍫',
     time: 5, servings: 1, difficulty: 'fàcil', category: 'postre',
     ingredients: [
-      { emoji: '🥖', name: 'pa', qty: '2 llesques', required: true },
-      { emoji: '🍫', name: 'xocolata', qty: '4 rajoles', required: true },
-      { emoji: '🫒', name: 'oli', qty: 'un raig', required: false }
+      { emoji: '🥖', name: 'pa', qty: '2 llesques', amount: null, unit: null, required: true },
+      { emoji: '🍫', name: 'xocolata', qty: '4 rajoles', amount: null, unit: null, required: true },
+      { emoji: '🫒', name: 'oli', qty: 'un raig', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla el pa a llesques.',
@@ -1331,9 +1331,9 @@ const RECIPES = [
     emoji: '🍓',
     time: 10, servings: 2, difficulty: 'fàcil', category: 'postre',
     ingredients: [
-      { emoji: '🍓', name: 'maduixes', qty: '300 g', required: true },
-      { emoji: '🥛', name: 'nata', qty: '200 ml per muntar', required: true },
-      { emoji: '🍯', name: 'sucre', qty: '2 cullerades', required: false }
+      { emoji: '🍓', name: 'maduixes', qty: '300 g', amount: 300, unit: 'g', required: true },
+      { emoji: '🥛', name: 'nata', qty: '200 ml per muntar', amount: 200, unit: 'ml', required: true },
+      { emoji: '🍯', name: 'sucre', qty: '2 cullerades', amount: null, unit: null, required: false }
     ],
     steps: [
       'Renta i talla les maduixes a quarts.',
@@ -1347,9 +1347,9 @@ const RECIPES = [
     emoji: '🍎',
     time: 35, servings: 2, difficulty: 'fàcil', category: 'postre',
     ingredients: [
-      { emoji: '🍎', name: 'pomes', qty: '2', required: true },
-      { emoji: '🍯', name: 'mel', qty: '2 cullerades', required: true },
-      { emoji: '🍮', name: 'canyella', qty: 'al gust', required: false }
+      { emoji: '🍎', name: 'pomes', qty: '2', amount: 2, unit: 'u', required: true },
+      { emoji: '🍯', name: 'mel', qty: '2 cullerades', amount: null, unit: null, required: true },
+      { emoji: '🍮', name: 'canyella', qty: 'al gust', amount: null, unit: null, required: false }
     ],
     steps: [
       'Buida el cor de les pomes sense travessar-les.',
@@ -1363,9 +1363,9 @@ const RECIPES = [
     emoji: '🥛',
     time: 3, servings: 1, difficulty: 'fàcil', category: 'postre',
     ingredients: [
-      { emoji: '🥛', name: 'iogurt', qty: '1', required: true },
-      { emoji: '🥜', name: 'fruits secs', qty: '1 grapat', required: true },
-      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', required: false }
+      { emoji: '🥛', name: 'iogurt', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥜', name: 'fruits secs', qty: '1 grapat', amount: null, unit: null, required: true },
+      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', amount: null, unit: null, required: false }
     ],
     steps: [
       'Aboca el iogurt al bol.',
@@ -1379,9 +1379,9 @@ const RECIPES = [
     emoji: '🥭',
     time: 10, servings: 2, difficulty: 'fàcil', category: 'postre',
     ingredients: [
-      { emoji: '🥭', name: 'mango', qty: '1', required: true },
-      { emoji: '🍍', name: 'pinya', qty: '½', required: true },
-      { emoji: '🥥', name: 'coco', qty: '50 g ratllat', required: true }
+      { emoji: '🥭', name: 'mango', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍍', name: 'pinya', qty: '½', amount: 0.5, unit: 'u', required: true },
+      { emoji: '🥥', name: 'coco', qty: '50 g ratllat', amount: 50, unit: 'g', required: true }
     ],
     steps: [
       'Pela i talla el mango i la pinya a daus.',
@@ -1395,9 +1395,9 @@ const RECIPES = [
     emoji: '🍌',
     time: 3, servings: 1, difficulty: 'fàcil', category: 'postre',
     ingredients: [
-      { emoji: '🍌', name: 'plàtan', qty: '1', required: true },
-      { emoji: '🥛', name: 'iogurt', qty: '1', required: true },
-      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', required: false }
+      { emoji: '🍌', name: 'plàtan', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🥛', name: 'iogurt', qty: '1', amount: 1, unit: 'u', required: true },
+      { emoji: '🍯', name: 'mel', qty: '1 culleradeta', amount: null, unit: null, required: false }
     ],
     steps: [
       'Talla el plàtan a rodanxes en un bol.',
