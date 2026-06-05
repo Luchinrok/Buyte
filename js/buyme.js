@@ -2434,6 +2434,14 @@ function addToShoppingList(supermarketId, product, qty, weight) {
   // Contingut per-envàs explícit (no fallback al render). Prioritza el
   // weight passat (derivat del popular per-envàs); si no, el del producte.
   // CookMe passa products sense weight i sense 4t arg → no-op.
+  // REGLA D'OR del weight: el 4t arg ha de ser SEMPRE el contingut
+  // per-envàs canònic ("6x33cl"/"12u"), MAI l'expandit per-unitat ("330ml").
+  // Els callers l'han de derivar del popular (com _deriveBuyMeFromProduct,
+  // que llegeix pop.weight primer), NO del mirror del lot — que després d'una
+  // compra de pack pot tenir el per-unitat expandit. El fallback product.weight
+  // d'aquí és l'últim recurs: si un caller futur passés un producte/lot amb
+  // weight expandit i ometés el 4t arg, reintroduiria la regressió dels packs
+  // que va arreglar 45ea959.
   const w = weight || product.weight;
   if (w) newItem.weight = w;
   shoppingItems.push(newItem);
