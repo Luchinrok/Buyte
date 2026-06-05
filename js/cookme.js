@@ -215,7 +215,9 @@ function cookmeCanonTokens(name) {
     .map(cookmeStem);
 }
 
-// Comprova si l'usuari té un ingredient als seus productes de l'EatMe.
+// Troba el PRODUCTE de l'usuari (element real de userProducts) que casa amb un
+// ingredient de recepta, o null si cap. És el pont matcher→producte que permet
+// arribar als lots per descomptar a "He cuinat" (Fase 1).
 // NOMÉS per nom — MAI per emoji: els emojis de recepta són decoratius i
 // col·lisionen (sucre 🍯=Mel, canyella 🍮=Crema catalana), fet que disparava
 // falsos positius. Coincidència per PARAULA COMPLETA (no substring intern):
@@ -223,20 +225,28 @@ function cookmeCanonTokens(name) {
 // "formatge feta"→"Formatge", però NO "all"⊂"galletes" ni "pa"⊂"pasta".
 // Si l'ingredient és un compost qualificat ("llet de coco"), exigim que el
 // producte el contingui SENCER (superset), perquè un genèric "Llet" no el
-// satisfaci.
-function matchIngredient(ingredient, userProducts) {
-  if (!ingredient || !userProducts || userProducts.length === 0) return false;
+// satisfaci. Retorna el PRIMER match (MVP; best/multi-match es deixa per a més
+// tard).
+function findProductForIngredient(ingredient, userProducts) {
+  if (!ingredient || !userProducts || userProducts.length === 0) return null;
   const Ti = cookmeCanonTokens(ingredient.name);
-  if (!Ti.length) return false;
+  if (!Ti.length) return null;
   const subset = (a, b) => a.every(tk => b.includes(tk));
   const ingIsCompound = COOKME_CONNECTIVE.test(cookmeNormalize(ingredient.name)) && Ti.length >= 2;
   for (let i = 0; i < userProducts.length; i++) {
     const Tp = cookmeCanonTokens(userProducts[i].name);
     if (!Tp.length) continue;
-    if (ingIsCompound) { if (subset(Ti, Tp)) return true; }
-    else if (subset(Ti, Tp) || subset(Tp, Ti)) return true;
+    if (ingIsCompound) { if (subset(Ti, Tp)) return userProducts[i]; }
+    else if (subset(Ti, Tp) || subset(Tp, Ti)) return userProducts[i];
   }
-  return false;
+  return null;
+}
+
+// Embolcall booleà prim sobre findProductForIngredient: true si l'usuari té
+// l'ingredient. Tots els callers existents (calculateRecipeMatch, render) hi
+// segueixen passant igual.
+function matchIngredient(ingredient, userProducts) {
+  return findProductForIngredient(ingredient, userProducts) != null;
 }
 
 // Calcula la coincidència d'una recepta amb els productes de l'usuari.
