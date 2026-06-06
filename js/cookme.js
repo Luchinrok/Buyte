@@ -482,6 +482,82 @@ function planProductLotCascade(product, totalAmount, recipeUnit) {
   return { steps, shortBy };
 }
 
+// ============================================
+//   EXECUTOR DE "HE CUINAT" (Fase 2b — pas 1)
+//   ÚNIC punt que MUTA estoc + historial. SENSE cap efecte de UI:
+//   cap toast, re-render, navegació, XP, stats ni low-stock (ho fa la UI
+//   al pas següent). Un sol saveData() al final.
+// ============================================
+
+// Executa el consum d'una llista d'items ja resolts a producte.
+//   items: [{ product, amount, unit }]  amb amount en unitat de RECEPTA.
+// Per cada item, EN SEQÜÈNCIA, calcula la cascada FEFO sobre els lots ACTUALS
+// (re-llegits a cada item: si dos items casen amb el mateix producte, el segon
+// ja veu l'estoc reduït pel primer) i descompta cada step replicant EXACTAMENT
+// el nucli mode 'quantity' de _confirmLotConsume (biteme.js): mateixa resta
+// absoluta, mateix arrodoniment, mateix recordConsumption (price+percent),
+// mateix esborrat de lot i de producte.
+// Retorna { consumed:[{productId,name,requested,unit}],
+//           shorts:[{productId,name,shortBy,unit}] }.
+function executeCookConsume(items) {
+  const consumed = [];
+  const shorts = [];
+  const list = Array.isArray(items) ? items : [];
+
+  for (let i = 0; i < list.length; i++) {
+    const item = list[i];
+    if (!item || !item.product || item.amount == null || !isFinite(item.amount) || item.amount <= 0) continue;
+
+    // Producte viu (estoc actual, ja reduït per items previs del mateix product).
+    const liveProduct = (typeof products !== 'undefined' && Array.isArray(products))
+      ? products.find(p => p.id === item.product.id) : null;
+
+    // Cascada FEFO sobre els lots ACTUALS (liveProduct null → steps buits, shortBy=amount).
+    const plan = planProductLotCascade(liveProduct, item.amount, item.unit);
+
+    for (let s = 0; s < plan.steps.length; s++) {
+      const step = plan.steps[s];
+      const realProduct = products.find(p => p.id === item.product.id);
+      if (!realProduct) break;                       // producte ja tret
+      const lot = realProduct.lots && realProduct.lots.find(l => l.id === step.lotId);
+      if (!lot) continue;                            // lot ja tret
+
+      // --- MIRALL EXACTE del nucli mode 'quantity' de _confirmLotConsume ---
+      const startQty = lot.qtyRemaining;
+      const newQty = startQty - step.amount;
+      let consumedPercent;
+      if (newQty <= 0.001) {
+        consumedPercent = 100;
+        if (typeof recordConsumption === 'function') {
+          recordConsumption(Object.assign({}, realProduct, { price: lot.price, qty: '' }), 'consumed', consumedPercent);
+        }
+        _removeLotFromProduct(realProduct, lot.id);
+      } else {
+        consumedPercent = startQty > 0 ? Math.round((step.amount / startQty) * 100) : 100;
+        lot.qtyRemaining = Math.round(newQty * 1000) / 1000;
+        if (typeof recordConsumption === 'function') {
+          recordConsumption(Object.assign({}, realProduct, { price: lot.price, qty: '' }), 'consumed', consumedPercent);
+        }
+        _refreshProductMirrors(realProduct);
+      }
+      // Producte sense lots → treure'l de products[] (mateix filtre que _confirmLotConsume).
+      if (!Array.isArray(realProduct.lots) || realProduct.lots.length === 0) {
+        products = products.filter(p => p.id !== realProduct.id);
+      }
+    }
+
+    consumed.push({ productId: item.product.id, name: item.product.name,
+                    requested: item.amount, unit: item.unit });
+    if (plan.shortBy > 0) {
+      shorts.push({ productId: item.product.id, name: item.product.name,
+                    shortBy: plan.shortBy, unit: item.unit });
+    }
+  }
+
+  if (typeof saveData === 'function') saveData();
+  return { consumed, shorts };
+}
+
 // Obre la pantalla CookMe i renderitza la pestanya per defecte. L'argument
 // origin ('home' | 'settings') determina la pantalla a la qual tornarà el
 // botó "back" — així es pot reutilitzar la mateixa pantalla des de Configuració.
