@@ -146,6 +146,17 @@ function incrementRecipeAddedToShopping(id, count) {
   saveRecipeUsage();
 }
 
+// Marca una recepta com a cuinada (comptador propi 'cooked' + lastUsed).
+// Mateix patró que els altres incrementadors. NO altera _filterRecipesForTab
+// (el filtre 'used' ja inclou qualsevol recepta amb entrada d'ús).
+function incrementRecipeCooked(id) {
+  if (!id) return;
+  const e = ensureRecipeUsageEntry(id);
+  e.cooked = (e.cooked || 0) + 1;
+  e.lastUsed = Date.now();
+  saveRecipeUsage();
+}
+
 function resetRecipeUsage() {
   recipeUsage = {};
   try { localStorage.removeItem('eatmefirst_recipe_usage'); } catch (e) {}
@@ -556,6 +567,105 @@ function executeCookConsume(items) {
 
   if (typeof saveData === 'function') saveData();
   return { consumed, shorts };
+}
+
+// Modal "He cuinat": mostra els ingredients descomptables (editables) i executa
+// el consum en confirmar. Patró de modal construït a mà (com
+// showManualAddToBuyMeModal). Sense low-stock (MVP).
+function openCookConsumeModal() {
+  const recipe = currentRecipeId ? getRecipe(currentRecipeId) : null;
+  if (!recipe) return;
+  const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
+  const plan = buildCookConsumePlan(recipe, currentServings, userProducts);
+  const okRows = plan.filter(r => r.status === 'ok');
+  const infoRows = plan.filter(r => r.status !== 'ok');
+
+  const peopleLabel = currentServings === 1 ? t('people') : t('peoplePlural');
+  // Valor per a un <input type=number>: decimal amb PUNT (la coma de
+  // cookmeFormatNumber no és vàlida per a type=number). Arrodonit a 3 decimals.
+  const numVal = (n) => String(Math.round(n * 1000) / 1000);
+
+  let okHtml = '';
+  okRows.forEach((r, idx) => {
+    const ing = r.ingredient || {};
+    const em = ing.emoji ? (ing.emoji + ' ') : '';
+    okHtml += '<label class="cook-row" data-idx="' + idx + '">'
+      + '<input type="checkbox" class="cook-row-check" checked>'
+      + '<span class="cook-row-name">' + em + escapeHtml(cookmeCapitalize(ing.name || '')) + '</span>'
+      + '<input type="number" class="cook-row-amount" value="' + numVal(r.amount) + '" step="any" min="0" inputmode="decimal">'
+      + '<span class="cook-row-unit">' + escapeHtml(r.unit || '') + '</span>'
+      + '</label>';
+  });
+  if (!okHtml) okHtml = '<p class="modal-sub">Cap ingredient descomptable automàticament.</p>';
+
+  let infoHtml = '';
+  if (infoRows.length) {
+    const reason = (st) => st === 'manual' ? "ajusta-ho a l'EatMe"
+      : (st === 'non-quantifiable' ? 'al gust' : 'no en tens');
+    let lis = '';
+    infoRows.forEach(r => {
+      const ing = r.ingredient || {};
+      const em = ing.emoji ? (ing.emoji + ' ') : '';
+      lis += '<li>' + em + escapeHtml(cookmeCapitalize(ing.name || ''))
+        + ' <span class="cook-info-reason">— ' + escapeHtml(reason(r.status)) + '</span></li>';
+    });
+    infoHtml = '<p class="modal-sub cook-info-title">No es descompten:</p>'
+      + '<ul class="cook-info-list">' + lis + '</ul>';
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal-content">'
+    + '<p class="modal-title">🍳 He cuinat</p>'
+    + '<p class="modal-sub">' + escapeHtml(recipe.name || '') + ' · ' + currentServings + ' ' + escapeHtml(peopleLabel) + '</p>'
+    + '<div class="cook-rows">' + okHtml + '</div>'
+    + infoHtml
+    + '<div class="modal-buttons">'
+    + '<button class="modal-cancel" id="cook-cancel-btn">' + t('cancel') + '</button>'
+    + '<button class="modal-confirm" id="cook-confirm-btn">🍳 He cuinat</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(overlay);
+
+  const close = () => {
+    document.removeEventListener('keydown', onEsc);
+    if (overlay.parentNode) document.body.removeChild(overlay);
+  };
+  const onEsc = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onEsc);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('#cook-cancel-btn').addEventListener('click', close);
+
+  overlay.querySelector('#cook-confirm-btn').addEventListener('click', () => {
+    const items = [];
+    overlay.querySelectorAll('.cook-row').forEach(row => {
+      const check = row.querySelector('.cook-row-check');
+      if (!check || !check.checked) return;
+      const idx = parseInt(row.getAttribute('data-idx'), 10);
+      const amtInput = row.querySelector('.cook-row-amount');
+      const amount = amtInput ? parseFloat(amtInput.value) : NaN;
+      if (!Number.isFinite(amount) || amount <= 0) return;
+      const okRow = okRows[idx];
+      if (!okRow) return;
+      items.push({ product: okRow.product, amount: amount, unit: okRow.unit });
+    });
+
+    if (items.length === 0) { close(); return; }
+
+    const res = executeCookConsume(items);
+    incrementRecipeCooked(recipe.id);
+    if (typeof addXp === 'function') addXp(25, 'cookme-cooked');
+
+    const n = res.consumed.length;
+    let msg = '🍳 Cuinat! ' + n + (n === 1 ? ' ingredient descomptat' : ' ingredients descomptats');
+    if (res.shorts && res.shorts.length) {
+      msg += ' · no n\'hi havia prou de: ' + res.shorts.map(s => s.name).join(', ');
+    }
+    showToast(msg);
+    close();
+    if (typeof renderRecipeDetail === 'function') renderRecipeDetail();
+  });
 }
 
 // Obre la pantalla CookMe i renderitza la pestanya per defecte. L'argument

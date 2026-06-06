@@ -11114,3 +11114,14 @@ input[type="date"].is-empty::-webkit-datetime-edit {
   background: var(--bg-secondary);
 }
 
+/* Modal "He cuinat" (CookMe Fase 2b) */
+.cook-rows { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; text-align: left; }
+.cook-row { display: flex; align-items: center; gap: 8px; }
+.cook-row-check { flex: 0 0 auto; }
+.cook-row-name { flex: 1 1 auto; min-width: 0; }
+.cook-row-amount { flex: 0 0 auto; width: 76px; text-align: right; }
+.cook-row-unit { flex: 0 0 auto; width: 36px; opacity: 0.7; }
+.cook-info-title { margin-top: 12px; }
+.cook-info-list { text-align: left; margin: 4px 0 0; padding-left: 18px; font-size: 13px; opacity: 0.85; }
+.cook-info-reason { opacity: 0.6; }
+
