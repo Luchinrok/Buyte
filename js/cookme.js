@@ -1401,9 +1401,22 @@ function showIngredientPicker(recipe, supers) {
 // Afegeix una llista d'ingredients (amb qty ja escalada) al supermercat indicat.
 function addItemsToShop(supermarketId, items) {
   if (typeof addToShoppingList !== 'function') return;
+  // Fix arrel CookMe→BuyMe: NO escrivim la qty de CUINA com a qty de compra
+  // (text com "½"/"1 unitat"/"unes fulles" no parseja → el lot cau a 'percent'
+  // sense unit i el Cuinat no el pot descomptar). En comptes d'això escrivim la
+  // UNITAT DE COMPRA: qty="1" + content per-envàs del popular del catàleg
+  // (ous→"12u", formatge→"250g"…). Lookup per nom exacte (minúscules+trim),
+  // igual que _buildShoppingPrefill (buyme.js). Si no hi ha popular o no té
+  // weight (enciam, mel…), qty="1" sense content → igualment cau a 'quantity'
+  // mode i és descomptable per a receptes en unitats.
+  const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
   items.forEach(ing => {
     const product = { name: cookmeCapitalize(ing.name || ''), emoji: ing.emoji || '🛒' };
-    addToShoppingList(supermarketId, product, ing.qty || '');
+    const key = String(ing.name || '').toLowerCase().trim();
+    const pop = Array.isArray(populars)
+      ? populars.find(p => p && p.name && p.name.toLowerCase().trim() === key)
+      : null;
+    addToShoppingList(supermarketId, product, '1', (pop && pop.weight) ? pop.weight : undefined);
   });
   if (currentRecipeId) incrementRecipeAddedToShopping(currentRecipeId, items.length);
   const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(supermarketId) : null;
