@@ -1213,6 +1213,18 @@ function renderRecipeDetail() {
     }
   }
 
+  // Botó "He cuinat": visible només si algun ingredient és descomptable
+  // automàticament (algun status 'ok' del pla de consum). Read-only.
+  const cookedBtn = document.getElementById('recipe-cooked');
+  if (cookedBtn) {
+    let anyOk = false;
+    try {
+      const cookPlan = buildCookConsumePlan(recipe, currentServings, userProducts);
+      anyOk = cookPlan.some(r => r.status === 'ok');
+    } catch (e) { anyOk = false; }
+    cookedBtn.style.display = anyOk ? 'flex' : 'none';
+  }
+
   // Passos
   const stepsEl = document.getElementById('recipe-steps-list');
   if (stepsEl) {

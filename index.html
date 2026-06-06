@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260606-1">
+  <link rel="stylesheet" href="styles.css?v=20260606-2">
 </head>
 <body>
 
@@ -569,7 +569,10 @@
     <div class="recipe-section">
       <h3 class="recipe-section-title">🥗 <span data-i18n="recipeIngredients"></span></h3>
       <div class="recipe-ingredients-card" id="recipe-ingredients-list"></div>
-      <button id="recipe-add-missing" class="recipe-add-missing-btn" type="button" style="display:none"></button>
+      <div class="recipe-action-row">
+        <button id="recipe-add-missing" class="recipe-add-missing-btn" type="button" style="display:none"></button>
+        <button id="recipe-cooked" class="recipe-add-missing-btn" type="button" style="display:none">🍳 He cuinat</button>
+      </div>
     </div>
 
     <div class="recipe-section">
@@ -2240,11 +2243,11 @@
   <script src="js/impact.js?v=20260503-3"></script>
   <script src="js/expenses.js?v=20260515-1"></script>
   <script src="js/recipes-data.js?v=20260605-1"></script>
-  <script src="js/cookme.js?v=20260606-2"></script>
+  <script src="js/cookme.js?v=20260606-3"></script>
   <script src="js/badges-data.js?v=20260506-10"></script>
   <script src="js/gamification.js?v=20260506-11"></script>
   <script src="js/patterns.js?v=20260505-5"></script>
   <script src="js/smart-notifications.js?v=20260506-10"></script>
-  <script src="app.js?v=20260601-1"></script>
+  <script src="app.js?v=20260606-1"></script>
 </body>
 </html>

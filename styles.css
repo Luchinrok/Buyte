@@ -7475,6 +7475,9 @@ body.selection-mode-active #shops-slider .arrow-btn {
 
 .recipe-add-missing-btn:active { transform: scale(0.98); }
 
+.recipe-action-row { display: flex; gap: 8px; }
+.recipe-action-row .recipe-add-missing-btn { flex: 1; }
+
 .recipe-steps {
   list-style: none;
   margin: 0;

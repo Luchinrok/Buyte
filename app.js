@@ -768,6 +768,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof addMissingToBuyMe === 'function') addMissingToBuyMe();
   });
 
+  // Botó "He cuinat" del detall de recepta
+  const recipeCooked = document.getElementById('recipe-cooked');
+  if (recipeCooked) recipeCooked.addEventListener('click', () => {
+    if (typeof openCookConsumeModal === 'function') openCookConsumeModal();
+  });
+
   // Editor de persones al detall de recepta
   const recipeServingMinus = document.getElementById('recipe-serving-minus');
   if (recipeServingMinus) recipeServingMinus.addEventListener('click', () => {
