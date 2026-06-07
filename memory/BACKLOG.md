@@ -39,6 +39,7 @@ Llista neta del que queda OBERT. El detall històric i els ítems resolts són m
 - 🟡 **[NETEJA opcional, baixa prioritat]** `afterInit` + `_cookmeEnableActiveSlide` + branch a `slideChangeTransitionEnd` (reactivació de `pointer-events`) són redundants ara que el fix real és el `pointerup`; es poden eliminar amb una validació ràpida.
 - 🟡 **[REVISAR]** Mateix patró de cub (click a cares no-frontals) potencialment latent als cubs de shops/zones/levels (buyme.js). Verificar i, si cal, aplicar-hi la mateixa solució `pointerup`.
 - 🔴 **[BUG nou] Navegació insígnies** — en tocar una insígnia i tornar enrere, l'app sempre torna a la pantalla de Configuració en comptes de la pantalla on estaves. Revisar la pila de navegació del detall d'insígnia.
+- 🟡 **[CONTINGUT] Completar `POPULAR_PRODUCTS` amb TOTS els ingredients de receptes del CookMe** que encara no hi són, especialment els compostos/específics que `cookmeSameProduct` (correctament) NO fusiona amb el seu producte base — ex. "pa torrat", "formatge feta", etc. Afegir-los com a entrada pròpia (noms ca+en, price/weight/days/location, noExpiry si escau) perquè en comprar-los heretin dades i no demanin preu/pes/zona. Mètode: reusar l'extracció `cookmeCanonTokens` per llistar ingredients distints i creuar amb el catàleg per detectar els que falten (com a l'expansió de les 44 entrades, commit `2db9484`).
 - **Despeses i altres** — cost mitjà cistella, despesa per categoria, pressupost mensual, planificador setmanal de receptes, recordatoris contextuals, revisar sistema d'Espais.
 
 ---
