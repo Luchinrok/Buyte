@@ -601,7 +601,13 @@ function _parseWeightToBase(s) {
 function getEstimatedItemCost(item, popularByName) {
   if (!item || typeof getProductPrice !== 'function') return null;
   const key = String(item.name || '').toLowerCase().trim();
-  const popular = (key && popularByName) ? popularByName[key] : null;
+  let popular = (key && popularByName) ? popularByName[key] : null;
+  // Fallback "mateix producte" (tokens stemmed) quan el nom exacte falla
+  // (p. ex. "albergínies" vs catàleg "Albergínia"). Guard de runtime.
+  if (!popular && typeof cookmeSameProduct === 'function' && typeof getPopularProducts === 'function') {
+    const all = getPopularProducts();
+    if (Array.isArray(all)) popular = all.find(p => p && p.name && cookmeSameProduct(item.name, p.name)) || null;
+  }
 
   const itemHasOverridePrice = (typeof item.price === 'number' && item.price >= 0);
   const popPrice = (popular && typeof popular.price === 'number' && popular.price > 0)
@@ -745,7 +751,11 @@ function _buildShoppingItemRow(item, opts) {
     const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
     if (Array.isArray(populars)) {
       const key = String(item.name || '').toLowerCase().trim();
-      const popular = populars.find(p => p && p.name && p.name.toLowerCase().trim() === key);
+      let popular = populars.find(p => p && p.name && p.name.toLowerCase().trim() === key);
+      // Fallback "mateix producte" (tokens stemmed) quan el nom exacte falla.
+      if (!popular && typeof cookmeSameProduct === 'function') {
+        popular = populars.find(p => p && p.name && cookmeSameProduct(item.name, p.name));
+      }
       if (popular && popular.weight) weightText = String(popular.weight);
     }
   }
@@ -1586,15 +1596,21 @@ function findExistingAtHome(name) {
 //   · un amb weight, l'altre no → NO duplicat (productes diferents)
 // Compara el weight PROPI de l'ítem (it.weight), no el fallback al popular.
 // `excludeId` permet excloure's a si mateix (no s'usa: només en crear nous).
-function findDuplicateInSupermarket(name, weight, supermarketId, excludeId) {
+function findDuplicateInSupermarket(name, weight, supermarketId, excludeId, useCanonical) {
   const target = normalizeForSearch(name);
   if (!target) return null;
   const normW = w => String(w || '').trim().toLowerCase();
   const targetW = normW(weight);
+  // Per defecte (formulari manual): igualtat de nom EXACTA normalitzada (sense
+  // canvis). Amb useCanonical=true (adds programàtics via addToShoppingList):
+  // "mateix producte" per tokens stemmed (albergínia≡albergínies). El weight
+  // segueix a la clau en tots dos casos. Guard de runtime + fallback a exacte.
+  const canon = !!useCanonical && (typeof cookmeSameProduct === 'function');
+  const nameMatch = it => canon ? cookmeSameProduct(name, it) : (normalizeForSearch(it) === target);
   return shoppingItems.find(it =>
     it.supermarketId === supermarketId &&
     it.id !== excludeId &&
-    normalizeForSearch(it.name) === target &&
+    nameMatch(it.name) &&
     normW(it.weight) === targetW
   ) || null;
 }
@@ -1696,7 +1712,7 @@ function saveShoppingItem() {
   // Fusionar / Crear igualment / Cancel·la (Opció B). Si hi ha duplicat
   // mostrem NOMÉS aquest modal i saltem la comprovació "ja en tens a casa"
   // (és més rellevant: ja és a la mateixa llista). Només en crear ítems nous.
-  const dup = findDuplicateInSupermarket(name, weightNormalized, currentSupermarketId);
+  const dup = findDuplicateInSupermarket(name, weightNormalized, currentSupermarketId, null, true);
   if (dup) {
     const createNew = () => {
       const id = 'si-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
@@ -2443,6 +2459,24 @@ function addToShoppingList(supermarketId, product, qty, weight) {
   // weight expandit i ometés el 4t arg, reintroduiria la regressió dels packs
   // que va arreglar 45ea959.
   const w = weight || product.weight;
+  // Fusió automàtica per a adds PROGRAMÀTICS (CookMe addItemsToShop + quick-buy
+  // EatMe→BuyMe): si ja hi ha un ítem amb el mateix nom+weight al super, acumula
+  // la qty en lloc de crear una fila duplicada. Sense modal — el formulari manual
+  // (saveShoppingItem) NO passa per aquí i conserva el seu modal de 3 botons.
+  const dup = (typeof findDuplicateInSupermarket === 'function')
+    ? findDuplicateInSupermarket(product.name, w, supermarketId, null, true) : null;
+  if (dup) {
+    const sum = (typeof parseQtyNumber === 'function')
+      ? ((parseQtyNumber(dup.qty) || 0) + (parseQtyNumber(qty) || 0)) : 0;
+    if (sum > 0) dup.qty = String(sum);
+    else if (!dup.qty && qty) dup.qty = String(qty);  // cap numèric: conserva text
+    if (!dup.weight && w) dup.weight = w;             // omple només si buit (no sobreescriu)
+    // (price/notes no es reben en aquesta funció → res a omplir)
+    saveShoppingData();
+    if (typeof bumpBuymeAddedCounter === 'function') bumpBuymeAddedCounter(1);
+    if (typeof addXp === 'function') addXp(1, 'buyme-add');
+    return;
+  }
   if (w) newItem.weight = w;
   shoppingItems.push(newItem);
   saveShoppingData();

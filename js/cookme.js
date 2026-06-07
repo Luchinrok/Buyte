@@ -253,6 +253,16 @@ function findProductForIngredient(ingredient, userProducts) {
   return null;
 }
 
+// "Mateix producte" = MATEIX conjunt de tokens canònics (amb stem de plural),
+// comparat per IGUALTAT (no subconjunt). Així albergínia≡albergínies, però
+// "formatge feta"≠"Formatge" i "pa torrat"≠"Pa". Usat pel lookup de catàleg i
+// la fusió de duplicats del BuyMe (cridable des de buyme.js en runtime).
+function cookmeSameProduct(a, b) {
+  const A = cookmeCanonTokens(a), B = cookmeCanonTokens(b);
+  if (!A.length || !B.length || A.length !== B.length) return false;
+  return A.slice().sort().join(' ') === B.slice().sort().join(' ');
+}
+
 // Embolcall booleà prim sobre findProductForIngredient: true si l'usuari té
 // l'ingredient. Tots els callers existents (calculateRecipeMatch, render) hi
 // segueixen passant igual.
@@ -1405,16 +1415,16 @@ function addItemsToShop(supermarketId, items) {
   // (text com "½"/"1 unitat"/"unes fulles" no parseja → el lot cau a 'percent'
   // sense unit i el Cuinat no el pot descomptar). En comptes d'això escrivim la
   // UNITAT DE COMPRA: qty="1" + content per-envàs del popular del catàleg
-  // (ous→"12u", formatge→"250g"…). Lookup per nom exacte (minúscules+trim),
-  // igual que _buildShoppingPrefill (buyme.js). Si no hi ha popular o no té
+  // (ous→"12u", formatge→"250g"…). Lookup "mateix producte" per IGUALTAT de
+  // tokens stemmed (cookmeSameProduct): albergínies≡Albergínia, però NO
+  // "formatge feta"→Formatge ni "pa torrat"→Pa. Si no hi ha popular o no té
   // weight (enciam, mel…), qty="1" sense content → igualment cau a 'quantity'
   // mode i és descomptable per a receptes en unitats.
   const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
   items.forEach(ing => {
     const product = { name: cookmeCapitalize(ing.name || ''), emoji: ing.emoji || '🛒' };
-    const key = String(ing.name || '').toLowerCase().trim();
     const pop = Array.isArray(populars)
-      ? populars.find(p => p && p.name && p.name.toLowerCase().trim() === key)
+      ? (populars.find(p => p && p.name && cookmeSameProduct(ing.name, p.name)) || null)
       : null;
     addToShoppingList(supermarketId, product, '1', (pop && pop.weight) ? pop.weight : undefined);
   });
