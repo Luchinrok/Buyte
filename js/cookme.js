@@ -1908,6 +1908,14 @@ function _initCookMeSwiperWhenReady() {
   }
 }
 
+// Reactiva els taps a la slide ACTIVA del cub (Swiper cube la deixa amb
+// pointer-events:none). Cridat a l'init (afterInit) i post-transició
+// (slideChangeTransitionEnd) — la mateixa lògica per a tots dos.
+function _cookmeEnableActiveSlide(sw) {
+  const a = sw && sw.slides && sw.slides[sw.activeIndex];
+  if (a) a.style.pointerEvents = 'auto';
+}
+
 function _ensureCookMeSwiper() {
   const slider = document.querySelector('.cookme-slider');
   if (!slider || !slider.clientWidth) return null;
@@ -1973,6 +1981,13 @@ function _ensureCookMeSwiper() {
       }
     },
     on: {
+      afterInit: function () {
+        // La slide inicial ('Disponibles') NO passa per slideChangeTransitionEnd
+        // → cal reactivar-li els taps aquí. rAF per blindar el timing del cub
+        // durant l'init (els transforms 3D s'apliquen en aquest tick).
+        const sw = this;
+        requestAnimationFrame(() => _cookmeEnableActiveSlide(sw));
+      },
       slideChange: function () {
         const filter = COOKME_FILTERS[this.realIndex];
         if (filter && filter !== currentRecipeFilter) {
@@ -1983,9 +1998,7 @@ function _ensureCookMeSwiper() {
       // al slide actiu post-transició perquè el primer tap registri sense
       // doble click (Android amb touchstart preventDefault).
       slideChangeTransitionEnd: function () {
-        const swiper = this;
-        const active = swiper.slides && swiper.slides[swiper.activeIndex];
-        if (active) active.style.pointerEvents = 'auto';
+        _cookmeEnableActiveSlide(this);
       }
     }
   });
@@ -2040,9 +2053,47 @@ function _onCookMeSliderClick(e) {
 // Mantenim _initCookMeActionsDelegate com a no-op per compatibilitat
 // amb les crides existents des de _ensureCookMeSwiper.
 function _initCookMeActionsDelegate(_slider) { /* listener viu a document */ }
-// Enganxat un sol cop al carregar l'script.
+// Obertura de recepta basada en POINTER (no 'click'): el cube de Swiper pot
+// empassar-se el 'click' a la slide inicial. Detectem el tap manualment
+// (pointerdown→pointerup amb guarda de moviment/durada) en fase de CAPTURA,
+// i capturem el target del pointerdown perquè el closest('.cookme-card')
+// apunti a la card correcta. (_onCookMeSliderClick queda definida però sense
+// registrar — ja no s'usa.)
+let _cookmeTapStart = null;
+function _onCookMePointerDown(e) {
+  if (!e.target.closest('.cookme-slider')) { _cookmeTapStart = null; return; }
+  _cookmeTapStart = { x: e.clientX, y: e.clientY, t: Date.now(), target: e.target };
+}
+function _onCookMePointerCancel() { _cookmeTapStart = null; }
+function _onCookMePointerUp(e) {
+  const start = _cookmeTapStart;
+  _cookmeTapStart = null;
+  if (!start) return;
+  const dx = e.clientX - start.x, dy = e.clientY - start.y;
+  if (Math.sqrt(dx*dx + dy*dy) > 10) return;   // swipe/scroll, no tap
+  if (Date.now() - start.t > 800) return;       // press massa llarg
+  const targetEl = start.target;                // captura del punter → card correcta
+  const actionBtn = targetEl.closest('.cookme-card [data-action]');
+  if (actionBtn) {
+    const card = actionBtn.closest('.cookme-card');
+    const recipeId = card ? card.dataset.recipeId : '';
+    if (!recipeId) return;
+    const action = actionBtn.dataset.action;
+    if (action === 'edit') openEditRecipeForm(recipeId);
+    else if (action === 'delete') deleteCustomRecipe(recipeId);
+    else if (action === 'restore') restoreCatalogRecipe(recipeId);
+    return;
+  }
+  const card = targetEl.closest('.cookme-card');
+  if (card && !recipeEditMode) {
+    const recipeId = card.dataset.recipeId;
+    if (recipeId) openRecipeDetail(recipeId);
+  }
+}
 if (typeof document !== 'undefined') {
-  document.addEventListener('click', _onCookMeSliderClick);
+  document.addEventListener('pointerdown', _onCookMePointerDown, true);
+  document.addEventListener('pointerup', _onCookMePointerUp, true);
+  document.addEventListener('pointercancel', _onCookMePointerCancel, true);
 }
 
 // ============================================
