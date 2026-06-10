@@ -142,7 +142,16 @@ const POPULAR_PRODUCTS = [
   { ca: 'Curry', en: 'Curry', emoji: '🍛', location: 'pantry', price: 1.80, weight: '50g', noExpiry: true },
   { ca: 'Safrà', en: 'Saffron', emoji: '🌼', location: 'pantry', price: 3.00, weight: '2g', noExpiry: true },
   { ca: 'Herbes', en: 'Herbs', emoji: '🌿', location: 'pantry', price: 1.20, weight: '20g', noExpiry: true },
-  { ca: 'Alfàbrega', en: 'Basil', emoji: '🌿', days: 7, location: 'fridge', price: 1.20 }
+  { ca: 'Alfàbrega', en: 'Basil', emoji: '🌿', days: 7, location: 'fridge', price: 1.20 },
+  // Ingredients de receptes que faltaven (10/06/2026)
+  { ca: 'Iogurt',        en: 'Yogurt',      emoji: '🥛', days: 21,  location: 'fridge', price: 1.50, weight: '4x125g' },
+  { ca: 'Peix',          en: 'Fish',        emoji: '🐟', days: 2,   location: 'fridge', price: 9.00, weight: '500g' },
+  { ca: 'Tonyina',       en: 'Tuna',        emoji: '🐟', days: 730, location: 'pantry', price: 2.50, weight: '3x80g' },
+  { ca: 'Carn',          en: 'Meat',        emoji: '🥩', days: 3,   location: 'fridge', price: 8.00, weight: '500g' },
+  { ca: "Flocs d'avena", en: 'Oat flakes',  emoji: '🌾', days: 365, location: 'pantry', price: 1.80, weight: '500g' },
+  { ca: 'Formatge feta', en: 'Feta cheese', emoji: '🧀', days: 30,  location: 'fridge', price: 2.50, weight: '200g' },
+  { ca: 'Fruits secs',   en: 'Nuts',        emoji: '🥜', days: 180, location: 'pantry', price: 3.00, weight: '200g' },
+  { ca: 'Pa torrat',     en: 'Toast',       emoji: '🍞', days: 60,  location: 'pantry', price: 1.50, weight: '200g' }
 ];
 
 // Catàleg d'emojis organitzat per categoria. Es fa servir tant per l'EMOJI
