@@ -188,13 +188,11 @@ function cookmeNormalize(s) {
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
-// Mapa mínim de sinònims (família pasta): token normalitzat → token canònic.
-// És l'únic mapa que cal — la resta de coincidències les resol el stem de
-// plural + el match per paraula completa. NO toca el DATA de les receptes.
-const COOKME_INGREDIENT_SYNONYMS = {
-  espaguetis: 'pasta', macarrons: 'pasta', fideus: 'pasta',
-  fideua: 'pasta', lasanya: 'pasta', plaques: 'pasta'
-};
+// Mapa de sinònims (token normalitzat → token canònic). Sense sinònims actius:
+// cada tipus de pasta (espaguetis, macarrons, fideus, lasanya…) és un producte
+// propi, no tots "pasta". Es manté el mapa (buit) perquè cookmeCanonTokens hi
+// faci el lookup `[tk] || tk` sense canvis. NO toca el DATA de les receptes.
+const COOKME_INGREDIENT_SYNONYMS = {};
 
 // Stopwords catalanes que no aporten identitat a un nom d'ingredient/producte.
 const COOKME_STOPWORDS = new Set(['de','d','del','dels','la','el','els','l','amb','al','als','a','i','per','en','o','un','una','gust']);
@@ -226,6 +224,35 @@ function cookmeCanonTokens(name) {
     .map(cookmeStem);
 }
 
+// Famílies d'ingredients INTERCANVIABLES — NOMÉS per al matcher de receptes
+// (findProductForIngredient). Qualsevol membre al rebost satisfà qualsevol
+// ingredient de la mateixa família. NO afecta cookmeSameProduct (compra/catàleg),
+// que segueix tractant cada tipus com a producte propi (Espaguetis≠Macarrons≠Pasta).
+const COOKME_INGREDIENT_FAMILIES = [
+  ['pasta', 'espaguetis', 'macarrons', 'fideus', 'fideuà', 'lasanya', 'plaques de lasanya']
+];
+// Precòmput: cada família → Set de claus canòniques (sorted-join de tokens),
+// perquè el stem (p. ex. "plaques de lasanya" → "lasany plac") no s'endevini a mà.
+const _COOKME_FAMILY_KEYSETS = COOKME_INGREDIENT_FAMILIES.map(names =>
+  new Set(names
+    .map(n => cookmeCanonTokens(n).slice().sort().join(' '))
+    .filter(k => k))
+);
+function _cookmeFamilyIndexOf(name) {
+  const key = cookmeCanonTokens(name).slice().sort().join(' ');
+  if (!key) return -1;
+  for (let i = 0; i < _COOKME_FAMILY_KEYSETS.length; i++) {
+    if (_COOKME_FAMILY_KEYSETS[i].has(key)) return i;
+  }
+  return -1;
+}
+// True si tots dos noms pertanyen a la MATEIXA família intercanviable. Usat
+// NOMÉS dins findProductForIngredient (receptes); MAI a compra/catàleg.
+function cookmeSameFamily(a, b) {
+  const i = _cookmeFamilyIndexOf(a);
+  return i !== -1 && i === _cookmeFamilyIndexOf(b);
+}
+
 // Troba el PRODUCTE de l'usuari (element real de userProducts) que casa amb un
 // ingredient de recepta, o null si cap. És el pont matcher→producte que permet
 // arribar als lots per descomptar a "He cuinat" (Fase 1).
@@ -247,6 +274,9 @@ function findProductForIngredient(ingredient, userProducts) {
   for (let i = 0; i < userProducts.length; i++) {
     const Tp = cookmeCanonTokens(userProducts[i].name);
     if (!Tp.length) continue;
+    // Família intercanviable (NOMÉS receptes): qualsevol pasta satisfà qualsevol
+    // ingredient de pasta, també els compostos ("plaques de lasanya").
+    if (cookmeSameFamily(ingredient.name, userProducts[i].name)) return userProducts[i];
     if (ingIsCompound) { if (subset(Ti, Tp)) return userProducts[i]; }
     else if (subset(Ti, Tp) || subset(Tp, Ti)) return userProducts[i];
   }

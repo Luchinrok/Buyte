@@ -151,7 +151,11 @@ const POPULAR_PRODUCTS = [
   { ca: "Flocs d'avena", en: 'Oat flakes',  emoji: '🌾', days: 365, location: 'pantry', price: 1.80, weight: '500g' },
   { ca: 'Formatge feta', en: 'Feta cheese', emoji: '🧀', days: 30,  location: 'fridge', price: 2.50, weight: '200g' },
   { ca: 'Fruits secs',   en: 'Nuts',        emoji: '🥜', days: 180, location: 'pantry', price: 3.00, weight: '200g' },
-  { ca: 'Pa torrat',     en: 'Toast',       emoji: '🍞', days: 60,  location: 'pantry', price: 1.50, weight: '200g' }
+  { ca: 'Pa torrat',     en: 'Toast',       emoji: '🍞', days: 60,  location: 'pantry', price: 1.50, weight: '200g' },
+  // Tipus de pasta com a productes propis (sense sinònim → 'pasta'; 10/06/2026)
+  { ca: 'Macarrons',          en: 'Macaroni',       emoji: '🍝', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
+  { ca: 'Fideus',             en: 'Noodles',        emoji: '🍝', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
+  { ca: 'Plaques de lasanya', en: 'Lasagna sheets', emoji: '🍝', days: 730, location: 'pantry', price: 1.50, weight: '500g' }
 ];
 
 // Catàleg d'emojis organitzat per categoria. Es fa servir tant per l'EMOJI
