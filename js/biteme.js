@@ -4018,7 +4018,9 @@ function openAddForm(prefill) {
     // que estem comprant), back ha de tornar a la pantalla del super,
     // no a la tria genèrica "Afegir producte" de l'EatMe.
     if (backBtn) {
-      backBtn.dataset.back = pendingShoppingItemId ? 'supermarket' : 'add-choice';
+      // "Afegir producte" obre el manual directament (sense selector
+      // manual/escàner): el back torna a 'home', no al selector orfe.
+      backBtn.dataset.back = pendingShoppingItemId ? 'supermarket' : 'home';
     }
     if (popularBtn) popularBtn.style.display = '';
     if (saveBtnEl) {

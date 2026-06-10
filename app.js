@@ -269,12 +269,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // styles.css). Mantenim setupSwipeNavigation() com a hook buit.
   setupSwipeNavigation();
 
-  document.getElementById('add-btn').addEventListener('click', () => showScreen('add-choice'));
+  // "Afegir producte" (EatMe) obre el formulari manual directament; l'escàner
+  // és un accés secundari (icona al header del formulari). El selector
+  // #screen-add-choice queda orfe (neteja per a un altre dia).
+  document.getElementById('add-btn').addEventListener('click', () => openAddForm({}));
   document.getElementById('choice-scan').addEventListener('click', () => {
     showScreen('scan');
     setTimeout(startScanner, 200);
   });
   document.getElementById('choice-manual').addEventListener('click', () => openAddForm({}));
+  // Icona d'escàner al header del formulari EatMe: en cancel·lar, torna al manual.
+  const addScanBtn = document.getElementById('add-scan-btn');
+  if (addScanBtn) {
+    addScanBtn.setAttribute('aria-label', t('scanBarcode'));
+    addScanBtn.title = t('scanBarcode');
+    addScanBtn.addEventListener('click', () => {
+      const sb = document.querySelector('#screen-scan .back-btn');
+      if (sb) sb.dataset.back = 'add';
+      showScreen('scan');
+      setTimeout(startScanner, 200);
+    });
+  }
 
   const menuBtn = document.getElementById('menu-btn');
   if (menuBtn) menuBtn.addEventListener('click', () => openSettings('home'));
@@ -807,11 +822,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnDelSm = document.getElementById('btn-delete-supermarket');
   if (btnDelSm) btnDelSm.addEventListener('click', deleteSupermarket);
 
-  // Pantalla d'items
+  // Pantalla d'items: "Afegir" obre el manual directament (escàner = icona
+  // al header). El selector #screen-shopping-add-choice queda orfe.
   const btnAddItem = document.getElementById('btn-add-shopping-item');
   if (btnAddItem) btnAddItem.addEventListener('click', () => {
-    showScreen('shopping-add-choice');
+    openShoppingItemEdit(null);
   });
+  // Icona d'escàner al header del formulari BuyMe: en cancel·lar, torna al manual.
+  const shoppingScanBtn = document.getElementById('shopping-scan-btn');
+  if (shoppingScanBtn) {
+    shoppingScanBtn.setAttribute('aria-label', t('scanBarcode'));
+    shoppingScanBtn.title = t('scanBarcode');
+    shoppingScanBtn.addEventListener('click', () => {
+      const sb = document.querySelector('#screen-scan .back-btn');
+      if (sb) sb.dataset.back = 'shopping-item-edit';
+      if (typeof startShoppingScanner === 'function') startShoppingScanner();
+    });
+  }
 
   // Botons de la pantalla de tria d'afegir a BuyMe
   const choiceShopScan = document.getElementById('shop-choice-scan');
