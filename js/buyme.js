@@ -1500,15 +1500,17 @@ function openShoppingItemEdit(item) {
   if (!isNew && item && item.name && typeof getPopularProducts === 'function') {
     const populars = getPopularProducts() || [];
     const key = String(item.name).toLowerCase().trim();
-    const popular = populars.find(p => p.name && p.name.toLowerCase().trim() === key);
-    if (popular) {
-      // Fallback al popular SI el camp segueix buit (no s'ha aplicat override)
-      if (priceInput && !priceInput.value && typeof popular.price === 'number' && popular.price >= 0) {
-        priceInput.value = String(popular.price);
-      }
-      if (weightInput && !weightInput.value && popular.weight) {
-        weightInput.value = String(popular.weight);
-      }
+    let popular = populars.find(p => p.name && p.name.toLowerCase().trim() === key);
+    // Fallback "mateix producte" (tokens stemmed): "albergínies" → catàleg "Albergínia".
+    if (!popular && typeof cookmeSameProduct === 'function') {
+      popular = populars.find(p => p && p.name && cookmeSameProduct(item.name, p.name)) || popular;
+    }
+    if (popular && typeof _autofillShoppingFromPopular === 'function') {
+      // Omple TOTS els camps del popular (emoji/contingut/preu/data/noExpiry)
+      // només on estiguin buits (canReplace + snapshot null protegeix els
+      // overrides de l'usuari, escrits a 1494-1499). Passem el nom CANÒNIC
+      // perquè el lookup intern (normalizeForSearch) no plega plurals.
+      _autofillShoppingFromPopular(popular.name);
     }
   }
 
@@ -1891,9 +1893,17 @@ function buyShoppingItem(item) {
 function _buildShoppingPrefill(item) {
   const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
   const key = String(item.name || '').toLowerCase().trim();
-  const fromPopular = populars.find(p => p.name && p.name.toLowerCase().trim() === key);
-  const fromHistory = (Array.isArray(productHistory) ? productHistory : [])
+  let fromPopular = populars.find(p => p.name && p.name.toLowerCase().trim() === key);
+  let fromHistory = (Array.isArray(productHistory) ? productHistory : [])
     .find(p => p.name && p.name.toLowerCase().trim() === key);
+
+  // Fallback "mateix producte" (tokens stemmed): "albergínies" → catàleg "Albergínia".
+  if (typeof cookmeSameProduct === 'function') {
+    if (!fromPopular)
+      fromPopular = populars.find(p => p && p.name && cookmeSameProduct(item.name, p.name)) || fromPopular;
+    if (!fromHistory && Array.isArray(productHistory))
+      fromHistory = productHistory.find(p => p && p.name && cookmeSameProduct(item.name, p.name)) || fromHistory;
+  }
 
   let itemDays = null;
   if (item.date && typeof daysUntil === 'function') {
@@ -1943,8 +1953,8 @@ function _buildShoppingPrefill(item) {
   }
 
   return {
-    name: item.name,
-    emoji: item.emoji,
+    name:  (fromPopular && fromPopular.name)  || item.name,
+    emoji: (fromPopular && fromPopular.emoji) || item.emoji,
     qty: prefillQty,
     days: itemDays || (fromPopular && fromPopular.days) || (fromHistory && fromHistory.days) || null,
     location: (fromPopular && fromPopular.location) || (fromHistory && fromHistory.location) || null,
