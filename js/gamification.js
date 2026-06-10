@@ -546,7 +546,9 @@ function _buildRewardToast(opts) {
   const overlay = document.createElement('div');
   overlay.className = 'reward-toast ' + (opts.cls || '') + ' reward-toast-clickable';
   overlay.innerHTML = opts.body +
-    '<span class="reward-toast-arrow" aria-hidden="true">›</span>';
+    '<span class="reward-toast-arrow" aria-hidden="true">›</span>' +
+    '<button type="button" class="reward-toast-close" aria-label="' + escapeHtml(t('close')) +
+      '" title="' + escapeHtml(t('close')) + '">×</button>';
   document.body.appendChild(overlay);
   // Doble requestAnimationFrame: força el browser a aplicar l'estat
   // inicial abans d'afegir la classe que dispara la transició.
@@ -569,6 +571,13 @@ function _buildRewardToast(opts) {
 
   overlay.addEventListener('click', () => {
     dismiss(opts.navigateOnClick);
+  });
+  // X: tanca sense navegar. stopPropagation evita que el clic arribi al
+  // listener de l'overlay (que navegaria); dismiss() ja atura l'auto-timer.
+  const closeBtn = overlay.querySelector('.reward-toast-close');
+  if (closeBtn) closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dismiss();
   });
   autoTimer = setTimeout(() => dismiss(), opts.autoDismissMs || 4000);
   return overlay;

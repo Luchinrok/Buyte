@@ -8645,6 +8645,35 @@ body.selection-mode-active #shops-slider .arrow-btn {
   align-self: center;
 }
 
+/* X per tancar el toast de recompensa a l'instant (sense navegar a Èxits).
+   El contenidor .reward-toast és position:fixed → ja és containing block
+   per a aquest fill absolut. Handler a _buildRewardToast (gamification.js). */
+.reward-toast-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #FFFFFF;
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0.75;
+  cursor: pointer;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+}
+.reward-toast-close:active {
+  opacity: 1;
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.18);
+}
+
 /* Highlight de la insignia destinació quan s'arriba des del click
    d'un toast (vegeu openAchievements({ focusBadge }) a
    js/gamification.js). 2 polsacions d'1.5s, total ~3s, prou per
