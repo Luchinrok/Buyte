@@ -643,6 +643,16 @@ function openAchievements(opts) {
     if (target && target.category) achievementsFilter = target.category;
   }
   renderAchievements();
+  // Destí del back: tornem a la pantalla d'on venim (toast d'insígnia/nivell
+  // pot saltar des de qualsevol pantalla), no al 'impact' fix. Capturem la
+  // .screen activa ABANS de showScreen('achievements') (que canvia quina és
+  // l'activa). Fallback a 'impact' (navegació normal Impacte→Èxits).
+  const backBtn = document.querySelector('#screen-achievements .back-btn');
+  if (backBtn) {
+    const activeEl = document.querySelector('.screen.active');
+    const cur = activeEl ? activeEl.id.replace(/^screen-/, '') : '';
+    backBtn.dataset.back = (cur && cur !== 'achievements') ? cur : 'impact';
+  }
   showScreen('achievements');
   if (focusBadge) {
     // Esperem un frame perquè el render acabi i les cards estiguin al
