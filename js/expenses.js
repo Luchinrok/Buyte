@@ -41,6 +41,31 @@ function setExpensesPeriod(period) {
   renderExpenses();
 }
 
+// Assigna .pct ENTERS que sumen exactament 100 (mètode del residu major):
+// floor de cada quota total/grandTotal*100 i reparteix les unitats que
+// falten (100 − suma de floors) als ítems amb el residu decimal més gran.
+// grandTotal 0 → tots pct=0. Muta i retorna el mateix array.
+function _assignPctLargestRemainder(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return arr;
+  const grand = arr.reduce((s, x) => s + (typeof x.total === 'number' ? x.total : 0), 0);
+  if (grand <= 0) { arr.forEach(x => { x.pct = 0; }); return arr; }
+  let assigned = 0;
+  const withRem = arr.map(x => {
+    const exact = (x.total / grand) * 100;
+    const floor = Math.floor(exact);
+    x.pct = floor;
+    assigned += floor;
+    return { x: x, rem: exact - floor };
+  });
+  let leftover = 100 - assigned;
+  withRem.sort((a, b) => b.rem - a.rem);   // residu decimal més gran primer
+  for (let i = 0; i < withRem.length && leftover > 0; i++) {
+    withRem[i].x.pct += 1;
+    leftover--;
+  }
+  return arr;
+}
+
 // === Agregació de dades des de purchase_history ===
 function _expensesGetData(rangeKey) {
   let history = {};
@@ -102,8 +127,7 @@ function _expensesGetData(rangeKey) {
     bySuperMap[key].count += 1;
   });
   const bySuper = Object.values(bySuperMap).sort((a, b) => b.total - a.total);
-  const bySuperTotal = bySuper.reduce((s, x) => s + x.total, 0);
-  bySuper.forEach(x => { x.pct = bySuperTotal > 0 ? Math.round((x.total / bySuperTotal) * 100) : 0; });
+  _assignPctLargestRemainder(bySuper);
 
   // Per producte popular (al període, resol nom + emoji des de la cache)
   const populars = (typeof getPopularProducts === 'function')
@@ -130,6 +154,36 @@ function _expensesGetData(rangeKey) {
   const byPopular = Object.values(byPopularMap)
     .sort((a, b) => b.total - a.total)
     .slice(0, 10);
+
+  // Per categoria (al període). Reusa popById per a emoji/nom; resol amb
+  // el mapa explícit d'assignacions de l'usuari i, si manca, l'endevina
+  // per emoji/nom (detectCategoryForItem). Els no resolts → cat_other
+  // ("Altres"), el catch-all del sistema de categories.
+  const _CS = (typeof window !== 'undefined') ? window.CategoriesSystem : null;
+  const itemCats = (_CS && typeof _CS.getItemCategories === 'function') ? _CS.getItemCategories() : {};
+  const byCategoryMap = {};
+  filtered.forEach(e => {
+    const pop = popById.get(e.popularId);
+    let catId = itemCats[e.popularId];
+    if (!catId && _CS && typeof _CS.detectCategoryForItem === 'function') {
+      catId = _CS.detectCategoryForItem({ name: pop ? pop.name : e.name, emoji: pop ? pop.emoji : null });
+    }
+    catId = catId || 'cat_other';
+    if (!byCategoryMap[catId]) {
+      const cat = (_CS && typeof _CS.getCategoryById === 'function') ? _CS.getCategoryById(catId) : null;
+      byCategoryMap[catId] = {
+        id: catId,
+        name: cat ? cat.name : 'Altres',
+        icon: cat ? cat.icon : '📦',
+        total: 0,
+        count: 0
+      };
+    }
+    byCategoryMap[catId].total += (typeof e.price === 'number' ? e.price : 0);
+    byCategoryMap[catId].count += 1;
+  });
+  const byCategory = Object.values(byCategoryMap).sort((a, b) => b.total - a.total);
+  _assignPctLargestRemainder(byCategory);
 
   // Per mes: SEMPRE últims 6 mesos des d'allEntries (independent del
   // filtre temporal — el chart mostra evolució que persisteix encara
@@ -161,6 +215,7 @@ function _expensesGetData(rangeKey) {
     avgBasket,
     totalEntries: allEntries.length, // history global, independent del filtre
     bySuper,
+    byCategory,
     byPopular,
     byMonth
   };
@@ -192,6 +247,7 @@ function renderExpenses() {
     _renderExpensesTotalCard(data),
     _renderExpensesMonthlyCard(data),
     _renderExpensesBySupCard(data),
+    _renderExpensesByCategoryCard(data),
     _renderExpensesTopProductsCard(data)
   ].join('');
 }
@@ -207,11 +263,11 @@ function _expensesRangeLabel(rangeKey) {
 // per evidenciar que no s'ha comprat res últimament.
 function _renderExpensesTotalCard(data) {
   const articles = data.count === 1 ? 'article' : 'articles';
-  const cistelles = data.basketCount === 1 ? 'cistella' : 'cistelles';
-  // Cistella mitjana: només si hi ha alguna cistella al període.
+  const compresAvg = data.basketCount === 1 ? 'compra' : 'compres';
+  // Compra mitjana: només si hi ha alguna compra al període.
   const basketLine = data.basketCount > 0
-    ? '<p class="stats-card-v2-sub">🧺 Cistella mitjana: ' + fmtEur(data.avgBasket)
-        + ' · ' + data.basketCount + ' ' + cistelles + '</p>'
+    ? '<p class="stats-card-v2-sub">🧺 Compra mitjana: ' + fmtEur(data.avgBasket)
+        + ' ' + data.basketCount + ' ' + compresAvg + '</p>'
     : '';
   return '<div class="stats-card-v2">'
     + '<h3 class="stats-card-v2-title">💰 <span>' + escapeHtml(_expensesRangeLabel(data.rangeKey)) + '</span></h3>'
@@ -268,6 +324,29 @@ function _renderExpensesBySupCard(data) {
     + '</div>';
 }
 
+// Card — Per categoria. Mateix patró que la card "Per supermercat":
+// barres + percentatges, però amb icona + nom de la categoria.
+function _renderExpensesByCategoryCard(data) {
+  if (!data.byCategory || data.byCategory.length === 0) {
+    return '<div class="stats-card-v2">'
+      + '<h3 class="stats-card-v2-title">🏷️ <span>Per categoria</span></h3>'
+      + '<div class="stats-chart-empty">Cap compra al període seleccionat</div>'
+      + '</div>';
+  }
+  const rows = data.byCategory.map(c =>
+    '<div class="stats-zone-row">'
+    + '<span class="stats-zone-emoji">' + (c.icon || '📦') + '</span>'
+    + '<span class="stats-zone-name">' + escapeHtml(c.name) + '</span>'
+    + '<div class="stats-zone-bar"><div class="stats-zone-bar-fill" style="width:' + c.pct + '%"></div></div>'
+    + '<span class="stats-zone-count">' + fmtEur(c.total) + ' (' + c.pct + '%)</span>'
+    + '</div>'
+  ).join('');
+  return '<div class="stats-card-v2">'
+    + '<h3 class="stats-card-v2-title">🏷️ <span>Per categoria</span></h3>'
+    + '<div class="stats-zone-list">' + rows + '</div>'
+    + '</div>';
+}
+
 // Card 4 — Top productes. Igual que la card 3: empty vol dir cap
 // compra al període.
 function _renderExpensesTopProductsCard(data) {
@@ -282,7 +361,7 @@ function _renderExpensesTopProductsCard(data) {
     return '<div class="stats-top-row">'
       + '<span class="stats-top-emoji">' + p.emoji + '</span>'
       + '<span class="stats-top-name">' + escapeHtml(p.name) + '</span>'
-      + '<span class="stats-top-count">' + fmtEur(p.total) + ' · ' + p.count + ' ' + compres + '</span>'
+      + '<span class="stats-top-count">' + fmtEur(p.total) + ' ' + p.count + ' ' + compres + '</span>'
       + '</div>';
   }).join('');
   return '<div class="stats-card-v2">'
