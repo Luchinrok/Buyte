@@ -76,11 +76,22 @@ function _expensesGetData(rangeKey) {
       })
     : allEntries;
 
-  // total i count del PERÍODE. count compta totes les compres del
-  // període; total només suma les que tenen price numèric.
+  // total i count del PERÍODE. count compta tots els ARTICLES del
+  // període; total només suma els que tenen price numèric.
   const total = filtered.reduce((s, e) =>
     s + (typeof e.price === 'number' ? e.price : 0), 0);
   const count = filtered.length;
+
+  // Cistella mitjana (v1): no hi ha sessió de compra al model, així que
+  // agrupem els articles per (dia + supermercat) com a proxy d'una
+  // "cistella". avgBasket = despesa total / nombre de cistelles.
+  const basketKeys = {};
+  filtered.forEach(e => {
+    const key = (e.date || '?') + '|' + (e.supermarket || '(sense super)');
+    basketKeys[key] = true;
+  });
+  const basketCount = Object.keys(basketKeys).length;
+  const avgBasket = basketCount ? total / basketCount : 0;
 
   // Per super (al període)
   const bySuperMap = {};
@@ -146,6 +157,8 @@ function _expensesGetData(rangeKey) {
     rangeKey,
     total,
     count,
+    basketCount,
+    avgBasket,
     totalEntries: allEntries.length, // history global, independent del filtre
     bySuper,
     byPopular,
@@ -193,11 +206,18 @@ function _expensesRangeLabel(rangeKey) {
 // res al període (però sí al history global) — això és intencional
 // per evidenciar que no s'ha comprat res últimament.
 function _renderExpensesTotalCard(data) {
-  const compres = data.count === 1 ? 'compra' : 'compres';
+  const articles = data.count === 1 ? 'article' : 'articles';
+  const cistelles = data.basketCount === 1 ? 'cistella' : 'cistelles';
+  // Cistella mitjana: només si hi ha alguna cistella al període.
+  const basketLine = data.basketCount > 0
+    ? '<p class="stats-card-v2-sub">🧺 Cistella mitjana: ' + fmtEur(data.avgBasket)
+        + ' · ' + data.basketCount + ' ' + cistelles + '</p>'
+    : '';
   return '<div class="stats-card-v2">'
     + '<h3 class="stats-card-v2-title">💰 <span>' + escapeHtml(_expensesRangeLabel(data.rangeKey)) + '</span></h3>'
     + '<p style="font-size:36px;font-weight:800;color:var(--primary);margin:8px 0 4px;">' + fmtEur(data.total) + '</p>'
-    + '<p class="stats-card-v2-sub">en ' + data.count + ' ' + compres + '</p>'
+    + '<p class="stats-card-v2-sub">en ' + data.count + ' ' + articles + '</p>'
+    + basketLine
     + '</div>';
 }
 
