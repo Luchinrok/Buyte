@@ -207,12 +207,19 @@ function _expensesGetData(rangeKey) {
     if (idx >= 0) byMonth[idx].total += (typeof e.price === 'number' ? e.price : 0);
   });
 
+  // Pressupost mensual + despesa del MES NATURAL en curs (byMonth[últim],
+  // independent del filtre week/month/all — "month" del filtre és rolling 30d).
+  const monthlyBudget = Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0;
+  const monthSpent = byMonth.length ? byMonth[byMonth.length - 1].total : 0;
+
   return {
     rangeKey,
     total,
     count,
     basketCount,
     avgBasket,
+    monthlyBudget,
+    monthSpent,
     totalEntries: allEntries.length, // history global, independent del filtre
     bySuper,
     byCategory,
@@ -245,6 +252,7 @@ function renderExpenses() {
 
   cards.innerHTML = [
     _renderExpensesTotalCard(data),
+    _renderExpensesBudgetCard(data),
     _renderExpensesMonthlyCard(data),
     _renderExpensesBySupCard(data),
     _renderExpensesByCategoryCard(data),
@@ -274,6 +282,38 @@ function _renderExpensesTotalCard(data) {
     + '<p style="font-size:36px;font-weight:800;color:var(--primary);margin:8px 0 4px;">' + fmtEur(data.total) + '</p>'
     + '<p class="stats-card-v2-sub">en ' + data.count + ' ' + articles + '</p>'
     + basketLine
+    + '</div>';
+}
+
+// Card — Pressupost mensual. Compara la despesa del MES NATURAL en curs
+// (data.monthSpent) amb el límit fixat (data.monthlyBudget). Estats de
+// color: ok (<80%), a prop (80–<100%), passat (≥100%). El botó obre el
+// modal d'edició (delegat a _onExpensesClick).
+function _renderExpensesBudgetCard(data) {
+  const budget = data.monthlyBudget;
+  if (!(budget > 0)) {
+    return '<div class="stats-card-v2">'
+      + '<h3 class="stats-card-v2-title">🎯 <span>Pressupost mensual</span></h3>'
+      + '<div class="stats-chart-empty">Encara no has fixat cap pressupost</div>'
+      + '<button type="button" class="primary-btn" id="expenses-budget-edit" style="margin-top:10px">🎯 Fixa un pressupost mensual</button>'
+      + '</div>';
+  }
+  const spent = data.monthSpent;
+  const pct = Math.min(100, Math.round((spent / budget) * 100));
+  const ratio = spent / budget;
+  const barClass = ratio >= 1 ? 'budget-bar-over' : (ratio >= 0.8 ? 'budget-bar-near' : 'budget-bar-ok');
+  let statusLine;
+  if (ratio >= 1) {
+    statusLine = '<p class="stats-card-v2-sub" style="color:#C62828">⚠️ Has superat el pressupost en ' + fmtEur(spent - budget) + '</p>';
+  } else {
+    statusLine = '<p class="stats-card-v2-sub">Et queden ' + fmtEur(budget - spent) + '</p>';
+  }
+  return '<div class="stats-card-v2">'
+    + '<h3 class="stats-card-v2-title">🎯 <span>Pressupost mensual</span></h3>'
+    + '<p class="stats-card-v2-sub" style="font-size:15px">Gastat <strong>' + fmtEur(spent) + '</strong> de <strong>' + fmtEur(budget) + '</strong></p>'
+    + '<div class="impact-card-progress-track" style="margin:8px 0"><div class="budget-bar ' + barClass + '" style="width:' + pct + '%"></div></div>'
+    + statusLine
+    + '<button type="button" class="secondary-btn" id="expenses-budget-edit" style="margin-top:10px">🎯 Edita pressupost</button>'
     + '</div>';
 }
 
@@ -370,8 +410,29 @@ function _renderExpensesTopProductsCard(data) {
     + '</div>';
 }
 
-// Listeners dels pills temporals — IIFE idempotent.
-(function _attachExpensesPillListeners() {
+// Obre el modal d'edició del pressupost mensual. Reusa showInputModal
+// (numèric, precarregat). Buit/0 = sense pressupost. Desa + sync + re-render.
+function _promptMonthlyBudget() {
+  const current = Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0;
+  const apply = (raw) => {
+    const v = parseFloat(String(raw == null ? '' : raw).replace(',', '.'));
+    const budget = (Number.isFinite(v) && v > 0) ? Math.round(v * 100) / 100 : 0;
+    if (budget > 0) localStorage.setItem('eatmefirst_monthly_budget', String(budget));
+    else localStorage.removeItem('eatmefirst_monthly_budget');
+    if (typeof pushToServer === 'function') pushToServer();
+    renderExpenses();
+  };
+  if (typeof showInputModal === 'function') {
+    showInputModal('🎯', 'Pressupost mensual', 'Límit de despesa per mes (en €). Deixa-ho buit per treure el pressupost.',
+      'Ex: 300', apply, { initialValue: current > 0 ? String(current) : '', confirmLabel: 'Desar' });
+  } else {
+    const raw = window.prompt('Pressupost mensual (€):', current > 0 ? String(current) : '');
+    if (raw !== null) apply(raw);
+  }
+}
+
+// Listeners dels pills temporals + botó d'editar pressupost — IIFE idempotent.
+(function _attachExpensesListeners() {
   if (typeof document === 'undefined') return;
   if (window.__expensesPillListeners) return;
   window.__expensesPillListeners = true;
@@ -382,5 +443,11 @@ function _renderExpensesTopProductsCard(data) {
         if (period) setExpensesPeriod(period);
       });
     });
+  });
+  // Delegació: el botó del pressupost es repinta a cada renderExpenses.
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.closest && e.target.closest('#expenses-budget-edit')) {
+      _promptMonthlyBudget();
+    }
   });
 })();

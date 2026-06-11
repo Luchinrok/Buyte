@@ -3592,6 +3592,18 @@ body.selection-mode-active #shops-slider .arrow-btn {
   transition: width 0.4s ease;
 }
 
+/* Barra del pressupost mensual (Despeses) — 3 estats de color sobre
+   .impact-card-progress-track: ok (verd) <80%, a prop (taronja) 80-99%,
+   passat (vermell) >=100%. */
+.budget-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.budget-bar-ok   { background: linear-gradient(90deg, #66BB6A 0%, #2E7D32 100%); }
+.budget-bar-near { background: linear-gradient(90deg, #FFB74D 0%, #F57F17 100%); }
+.budget-bar-over { background: linear-gradient(90deg, #EF5350 0%, #C62828 100%); }
+
 .impact-money-util {
   font-size: 13px;
   font-weight: 600;

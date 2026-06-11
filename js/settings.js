@@ -96,6 +96,12 @@ function onRemoteData(remoteData) {
       JSON.stringify(remoteData.categoryOrderBySuper));
   }
 
+  // Pressupost mensual: guarda > 0 perquè un dispositiu sense pressupost
+  // no esborri el local (mateixa regla conservadora que la resta).
+  if (typeof remoteData.monthlyBudget === 'number' && remoteData.monthlyBudget > 0) {
+    localStorage.setItem('eatmefirst_monthly_budget', String(remoteData.monthlyBudget));
+  }
+
   localStorage.setItem('eatmefirst_products', JSON.stringify(products));
   localStorage.setItem('eatmefirst_locations', JSON.stringify(locations));
   localStorage.setItem('eatmefirst_stats', JSON.stringify(stats));
@@ -132,7 +138,8 @@ function pushToServer() {
       shoppingItems: shoppingItems,
       purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {},
       popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : [],
-      categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}')
+      categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}'),
+      monthlyBudget: Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0
     });
   }
 }
@@ -195,7 +202,8 @@ async function createNewList() {
       shoppingItems: shoppingItems,
       purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {},
       popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : [],
-      categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}')
+      categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}'),
+      monthlyBudget: Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0
     });
     await window.FBSync.connectToList(code, onRemoteData);
 
