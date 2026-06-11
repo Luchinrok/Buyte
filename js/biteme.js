@@ -3332,16 +3332,20 @@ function _renderShelfProducts(slide, level, cat) {
 // Swiper i a qualsevol manipulació DOM (incloent embed dins Settings).
 // Filtrem amb closest('#levels-slider') perquè només actuï per clicks
 // dins el cub de nivells.
-function _onLevelsSliderClick(e) {
-  if (!e.target.closest('#levels-slider')) return;
-  const item = e.target.closest('.product-item');
+// Resol un tap sobre el cub de nivells a partir del target del pointerdown.
+// Cos extret de l'antic _onLevelsSliderClick. El tap ja no es resol amb
+// 'click' (el cube de Swiper pot empassar-se'l / reapuntar-lo) sinó amb el
+// detector pointerup compartit d'app.js. Es preserven els guards de
+// long-press i mode selecció.
+function _handleLevelsTap(targetEl) {
+  if (!targetEl || !targetEl.closest || !targetEl.closest('#levels-slider')) return;
+  const item = targetEl.closest('.product-item');
   if (!item) return;
   const id = item.dataset.productId;
   if (!id) return;
-  // Suprimeix el click sintètic que el navegador dispara després d'un
-  // long-press exitós (touchstart → 600ms timer → touchend genera
-  // click). Sense aquest guard, el toggle de la selecció es desfaria
-  // immediatament o openProduct es dispararia.
+  // Suprimeix el tap fantasma després d'un long-press exitós (entrada a
+  // mode selecció). Sense aquest guard, el toggle de la selecció es
+  // desfaria immediatament o openProduct es dispararia.
   if (_levelsLongPressTriggered) {
     _levelsLongPressTriggered = false;
     return;
@@ -3354,11 +3358,9 @@ function _onLevelsSliderClick(e) {
   openProduct(id);
 }
 // Mantenim _initLevelsActionsDelegate com a no-op per compatibilitat
-// amb la crida des de _ensureLevelsSwiper.
-function _initLevelsActionsDelegate(_slider) { /* listener viu a document */ }
-if (typeof document !== 'undefined') {
-  document.addEventListener('click', _onLevelsSliderClick);
-}
+// amb la crida des de _ensureLevelsSwiper. El tap es resol via el detector
+// pointerup compartit d'app.js (_handleLevelsTap).
+function _initLevelsActionsDelegate(_slider) { /* tap resolt via pointerup a app.js */ }
 
 
 // =========================================================
@@ -3589,13 +3591,19 @@ function _ensureLevelsSwiper() {
           _updateLevelHeaderAndNevi(level);
         }
       },
-      // Mateix fallback que a _ensureZonesSwiper: pointer-events:auto
-      // explícit al slide actiu post-transició perquè els taps a
-      // product-items registrin al primer toc.
+      // Reactivació AUTORITATIVA dels pointer-events post-transició:
+      // l'activa → 'auto', TOTES les altres (inclosos els clons del loop)
+      // → 'none'. Només posar l'activa a 'auto' deixava 'auto' residual a
+      // cares ja visitades; amb l'efecte cub, el plec d'una cara veïna amb
+      // 'auto' solapava els product-items de la frontal i interceptava el
+      // tap (2n nivell "mort"). Confinar el hit-testing a la cara visible
+      // ho resol.
       slideChangeTransitionEnd: function() {
-        const swiper = this;
-        const active = swiper.slides && swiper.slides[swiper.activeIndex];
-        if (active) active.style.pointerEvents = 'auto';
+        const sw = this;
+        if (!sw.slides) return;
+        for (let i = 0; i < sw.slides.length; i++) {
+          sw.slides[i].style.pointerEvents = (i === sw.activeIndex) ? 'auto' : 'none';
+        }
       }
     }
   });

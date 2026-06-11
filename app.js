@@ -947,3 +947,38 @@ document.addEventListener('visibilitychange', () => {
     stopScanner();
   }
 });
+
+
+// ============================================================
+// Detector de TAP compartit per als cubs de Swiper shops/levels.
+// Mateix patró que el del CookMe (fece010): l'efecte 'cube' pot
+// empassar-se el 'click' i, amb la rotació 3D, el click sintetitzat es
+// reapunta a un node pare → el delegate 'click' no trobava el botó/item.
+// Detectem el tap manualment (pointerdown→pointerup en CAPTURA, amb guarda
+// de moviment/durada) i resolem amb el TARGET del pointerdown, que sí
+// apunta al botó/item correcte. NO afecta #zones-slider ni el CookMe.
+let _cubeTapStart = null;
+function _onCubePointerDown(e) {
+  const cube = e.target.closest && e.target.closest('#shops-slider, #levels-slider');
+  if (!cube) { _cubeTapStart = null; return; }
+  _cubeTapStart = { x: e.clientX, y: e.clientY, t: Date.now(), target: e.target, cube: cube.id };
+}
+function _onCubePointerCancel() { _cubeTapStart = null; }
+function _onCubePointerUp(e) {
+  const start = _cubeTapStart;
+  _cubeTapStart = null;
+  if (!start) return;
+  const dx = e.clientX - start.x, dy = e.clientY - start.y;
+  if (Math.sqrt(dx * dx + dy * dy) > 10) return;  // swipe/scroll, no tap
+  if (Date.now() - start.t > 800) return;          // press massa llarg (long-press)
+  if (start.cube === 'shops-slider') {
+    if (typeof _handleShopsTap === 'function') _handleShopsTap(start.target);
+  } else if (start.cube === 'levels-slider') {
+    if (typeof _handleLevelsTap === 'function') _handleLevelsTap(start.target);
+  }
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('pointerdown', _onCubePointerDown, true);
+  document.addEventListener('pointerup', _onCubePointerUp, true);
+  document.addEventListener('pointercancel', _onCubePointerCancel, true);
+}

@@ -323,14 +323,19 @@ function _ensureShopsSwiper() {
           });
         }
       },
-      // Mateix fallback que a _ensureZonesSwiper a js/biteme.js:
-      // pointer-events:auto explícit al slide actiu post-transició
-      // perquè els taps al primer toc registrin sense necessitat
-      // de doble click.
+      // Reactivació AUTORITATIVA dels pointer-events post-transició:
+      // l'activa → 'auto', TOTES les altres (inclosos els clons del loop)
+      // → 'none'. Només posar l'activa a 'auto' deixava 'auto' residual a
+      // cares ja visitades; amb l'efecte cub, el plec d'una cara veïna
+      // amb 'auto' solapava una sub-regió de la frontal (p. ex. el botó
+      // "Comprat" a la vora dreta) i interceptava el tap. Confinar el
+      // hit-testing a la cara visible ho resol.
       slideChangeTransitionEnd: function() {
-        const swiper = this;
-        const active = swiper.slides && swiper.slides[swiper.activeIndex];
-        if (active) active.style.pointerEvents = 'auto';
+        const sw = this;
+        if (!sw.slides) return;
+        for (let i = 0; i < sw.slides.length; i++) {
+          sw.slides[i].style.pointerEvents = (i === sw.activeIndex) ? 'auto' : 'none';
+        }
       }
     }
   });
@@ -1015,60 +1020,66 @@ function _renderShopPageItems(smId, listEl, mode) {
 // directes als botons, que es perdien al clone i feien que la
 // primera/última botiga no respongués al voltant de la costura del
 // loop. Aquesta és l'opció A del diagnòstic del BuyMe-mobile bug.
-function _initShopsActionsDelegate() {
-  const slider = document.getElementById('shops-slider');
-  if (!slider || slider.dataset.actionsDelegated === '1') return;
-  slider.dataset.actionsDelegated = '1';
-  slider.addEventListener('click', (e) => {
-    // === A) Botons d'acció dels items ([data-action][data-item-id]) ===
-    const btn = e.target && e.target.closest && e.target.closest('[data-action][data-item-id]');
-    if (btn && slider.contains(btn)) {
-      if (btn.disabled) return;
-      const action = btn.dataset.action;
-      const itemId = btn.dataset.itemId;
-      if (!action || !itemId) return;
-      // Trobem l'item a la llista global. shoppingItems és l'array
-      // global; els items tenen un id únic. (És el mateix patró que
-      // moveShoppingItem usa internament a js/shops.js.)
-      const item = (Array.isArray(shoppingItems) ? shoppingItems : []).find(it => it.id === itemId);
-      if (!item) return;
-      if (action === 'bought') {
-        buyShoppingItem(item);
-      } else if (action === 'edit') {
-        openShoppingItemEdit(item);
-      } else if (action === 'up' || action === 'down') {
-        // moveShoppingItem(idx, ±1) treballa amb l'índex DINS de la
-        // llista d'items del super actual. Calculem-lo a partir de
-        // l'item.id.
-        const supItems = getShoppingItemsBySupermarket(currentSupermarketId);
-        const idx = supItems.findIndex(it => it.id === itemId);
-        if (idx < 0) return;
-        moveShoppingItem(idx, action === 'up' ? -1 : 1);
-      }
-      return;
-    }
+// No-op per compatibilitat amb la crida des de renderSupermarkets. El tap
+// ja no es resol amb un listener 'click' (el cube de Swiper pot empassar-se
+// el click i, amb la rotació 3D, el reapunta) sinó amb el detector pointerup
+// compartit d'app.js, que crida _handleShopsTap(target) amb el target del
+// pointerdown. Mateix patró que el CookMe (fece010).
+function _initShopsActionsDelegate() { /* tap resolt via pointerup a app.js */ }
 
-    // === B) Botons ▲▼ de reorder de categories (.cat-move-btn) ===
-    // Via delegació perquè els headers viuen dins de .shop-page que
-    // Swiper amb loop:true clona. Listeners directes no sobreviuen
-    // als clones — vegeu el comentari a _renderShopPageItems sobre
-    // per què els ▲▼ NO tenen addEventListener directe. El superId
-    // ve del .shop-page pare (data-sm-id), no de currentSupermarketId,
-    // perquè un clone pot estar visible sense ser el currentSuper.
-    const moveBtn = e.target && e.target.closest && e.target.closest('.cat-move-btn');
-    if (moveBtn && slider.contains(moveBtn)) {
-      if (moveBtn.disabled) return;
-      const catId = moveBtn.dataset.catId;
-      const page = moveBtn.closest('.shop-page');
-      const superId = page && page.dataset ? page.dataset.smId : null;
-      if (!catId || !superId) return;
-      const isUp = moveBtn.classList.contains('cat-move-up');
-      const direction = isUp ? 'up' : 'down';
-      if (_moveCategoryInSuper(superId, catId, direction) && typeof renderShoppingItems === 'function') {
-        renderShoppingItems();
-      }
+// Resol un tap sobre el cub de supermercats a partir del target del
+// pointerdown. Cos extret de l'antic listener 'click'.
+function _handleShopsTap(targetEl) {
+  const slider = document.getElementById('shops-slider');
+  if (!slider || !targetEl || !targetEl.closest) return;
+  // === A) Botons d'acció dels items ([data-action][data-item-id]) ===
+  const btn = targetEl.closest('[data-action][data-item-id]');
+  if (btn && slider.contains(btn)) {
+    if (btn.disabled) return;
+    const action = btn.dataset.action;
+    const itemId = btn.dataset.itemId;
+    if (!action || !itemId) return;
+    // Trobem l'item a la llista global. shoppingItems és l'array
+    // global; els items tenen un id únic. (És el mateix patró que
+    // moveShoppingItem usa internament a js/shops.js.)
+    const item = (Array.isArray(shoppingItems) ? shoppingItems : []).find(it => it.id === itemId);
+    if (!item) return;
+    if (action === 'bought') {
+      buyShoppingItem(item);
+    } else if (action === 'edit') {
+      openShoppingItemEdit(item);
+    } else if (action === 'up' || action === 'down') {
+      // moveShoppingItem(idx, ±1) treballa amb l'índex DINS de la
+      // llista d'items del super actual. Calculem-lo a partir de
+      // l'item.id.
+      const supItems = getShoppingItemsBySupermarket(currentSupermarketId);
+      const idx = supItems.findIndex(it => it.id === itemId);
+      if (idx < 0) return;
+      moveShoppingItem(idx, action === 'up' ? -1 : 1);
     }
-  });
+    return;
+  }
+
+  // === B) Botons ▲▼ de reorder de categories (.cat-move-btn) ===
+  // Via delegació perquè els headers viuen dins de .shop-page que
+  // Swiper amb loop:true clona. Listeners directes no sobreviuen
+  // als clones — vegeu el comentari a _renderShopPageItems sobre
+  // per què els ▲▼ NO tenen addEventListener directe. El superId
+  // ve del .shop-page pare (data-sm-id), no de currentSupermarketId,
+  // perquè un clone pot estar visible sense ser el currentSuper.
+  const moveBtn = targetEl.closest('.cat-move-btn');
+  if (moveBtn && slider.contains(moveBtn)) {
+    if (moveBtn.disabled) return;
+    const catId = moveBtn.dataset.catId;
+    const page = moveBtn.closest('.shop-page');
+    const superId = page && page.dataset ? page.dataset.smId : null;
+    if (!catId || !superId) return;
+    const isUp = moveBtn.classList.contains('cat-move-up');
+    const direction = isUp ? 'up' : 'down';
+    if (_moveCategoryInSuper(superId, catId, direction) && typeof renderShoppingItems === 'function') {
+      renderShoppingItems();
+    }
+  }
 }
 
 // No-op stub: la sincronització "swipe → currentSupermarketId" la fa
