@@ -270,14 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSwipeNavigation();
 
   // "Afegir producte" (EatMe) obre el formulari manual directament; l'escàner
-  // és un accés secundari (icona al header del formulari). El selector
-  // #screen-add-choice queda orfe (neteja per a un altre dia).
+  // és un accés secundari (icona 📷 al header del formulari).
   document.getElementById('add-btn').addEventListener('click', () => openAddForm({}));
-  document.getElementById('choice-scan').addEventListener('click', () => {
-    showScreen('scan');
-    setTimeout(startScanner, 200);
-  });
-  document.getElementById('choice-manual').addEventListener('click', () => openAddForm({}));
   // Icona d'escàner al header del formulari EatMe: en cancel·lar, torna al manual.
   const addScanBtn = document.getElementById('add-scan-btn');
   if (addScanBtn) {
@@ -822,8 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnDelSm = document.getElementById('btn-delete-supermarket');
   if (btnDelSm) btnDelSm.addEventListener('click', deleteSupermarket);
 
-  // Pantalla d'items: "Afegir" obre el manual directament (escàner = icona
-  // al header). El selector #screen-shopping-add-choice queda orfe.
+  // Pantalla d'items: "Afegir" obre el manual directament (escàner = icona al header).
   const btnAddItem = document.getElementById('btn-add-shopping-item');
   if (btnAddItem) btnAddItem.addEventListener('click', () => {
     openShoppingItemEdit(null);
@@ -839,16 +832,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof startShoppingScanner === 'function') startShoppingScanner();
     });
   }
-
-  // Botons de la pantalla de tria d'afegir a BuyMe
-  const choiceShopScan = document.getElementById('shop-choice-scan');
-  if (choiceShopScan) choiceShopScan.addEventListener('click', () => {
-    pendingShoppingScanContext = true;
-    if (typeof startShoppingScanner === 'function') startShoppingScanner();
-  });
-
-  const choiceShopManual = document.getElementById('shop-choice-manual');
-  if (choiceShopManual) choiceShopManual.addEventListener('click', () => openShoppingItemEdit(null));
 
   // Botó "⭐ Productes populars" dins del formulari del BuyMe — reutilitza la
   // mateixa pantalla de populars que l'EatMe, però amb origin='shopping'

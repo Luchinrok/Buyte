@@ -532,67 +532,6 @@ h1 {
   background: var(--primary-dark);
 }
 
-/* Triar com afegir (escàner o manual) - BONICS */
-.add-choices {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  flex: 1;
-  justify-content: center;
-  padding: 20px 0;
-}
-
-.big-choice {
-  background: var(--bg-card);
-  border: 2px solid var(--border);
-  border-radius: 20px;
-  padding: 32px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: transform 0.12s, border-color 0.2s, background 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-
-.big-choice::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 6px;
-  background: var(--primary);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.big-choice:active {
-  transform: scale(0.97);
-  background: var(--bg-secondary);
-  border-color: var(--primary);
-}
-
-.big-choice:active::before {
-  opacity: 1;
-}
-
-.big-choice-emoji {
-  font-size: 64px;
-  line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
-}
-
-.big-choice-text {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.01em;
-}
-
 /* ESCÀNER */
 .scanner-container {
   display: flex;

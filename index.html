@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260610-2">
+  <link rel="stylesheet" href="styles.css?v=20260610-3">
 </head>
 <body>
 
@@ -972,30 +972,10 @@
     </div>
   </div>
 
-  <!-- PANTALLA TRIAR COM AFEGIR -->
-  <div id="screen-add-choice" class="screen">
-    <header class="top-bar">
-      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
-      <h1 data-i18n="addProductTitle"></h1>
-      <div style="width:40px"></div>
-    </header>
-
-    <div class="add-choices">
-      <button class="big-choice" id="choice-scan">
-        <span class="big-choice-emoji">📷</span>
-        <span class="big-choice-text" data-i18n="scanBarcode"></span>
-      </button>
-      <button class="big-choice" id="choice-manual">
-        <span class="big-choice-emoji">✍️</span>
-        <span class="big-choice-text" data-i18n="manual"></span>
-      </button>
-    </div>
-  </div>
-
   <!-- PANTALLA ESCÀNER -->
   <div id="screen-scan" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="add-choice" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
       <h1 data-i18n="scanning"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1037,7 +1017,7 @@
   <!-- PANTALLA AFEGIR PRODUCTE (manual o després d'escanejar) -->
   <div id="screen-add" class="screen">
     <header class="top-bar">
-      <button class="back-btn" id="screen-add-back" data-back="add-choice" aria-label="Back">‹</button>
+      <button class="back-btn" id="screen-add-back" data-back="home" aria-label="Back">‹</button>
       <h1 id="screen-add-title" data-i18n="addProductTitle"></h1>
       <button class="header-icon-btn" id="add-scan-btn" type="button">📷</button>
     </header>
@@ -1734,26 +1714,6 @@
   </div>
 
   <!-- PANTALLA AFEGIR/EDITAR ITEM DE LA COMPRA -->
-  <!-- PANTALLA TRIA: COM AFEGIR A BUYME -->
-  <div id="screen-shopping-add-choice" class="screen">
-    <header class="top-bar">
-      <button class="back-btn" data-back="supermarket" aria-label="Back">‹</button>
-      <h1 data-i18n="addShoppingItem"></h1>
-      <div style="width:40px"></div>
-    </header>
-
-    <div class="add-choices">
-      <button class="big-choice" id="shop-choice-scan">
-        <span class="big-choice-emoji">📷</span>
-        <span class="big-choice-text" data-i18n="scanBarcode"></span>
-      </button>
-      <button class="big-choice" id="shop-choice-manual">
-        <span class="big-choice-emoji">✍️</span>
-        <span class="big-choice-text" data-i18n="manual"></span>
-      </button>
-    </div>
-  </div>
-
   <div id="screen-shopping-item-edit" class="screen">
     <header class="top-bar">
       <button class="back-btn" id="shopping-item-back" data-back="supermarket" aria-label="Back">‹</button>
@@ -2224,7 +2184,7 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260508-4"></script>
   <script src="notifications.js?v=20260503-3"></script>
-  <script src="i18n.js?v=20260602-5"></script>
+  <script src="i18n.js?v=20260611-1"></script>
   <script src="js/core.js?v=20260610-2"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260610-1"></script>
@@ -2248,6 +2208,6 @@
   <script src="js/gamification.js?v=20260610-2"></script>
   <script src="js/patterns.js?v=20260505-5"></script>
   <script src="js/smart-notifications.js?v=20260506-10"></script>
-  <script src="app.js?v=20260610-1"></script>
+  <script src="app.js?v=20260611-1"></script>
 </body>
 </html>

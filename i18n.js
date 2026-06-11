@@ -17,7 +17,6 @@ const TRANSLATIONS = {
     shelfRed: 'Alerta!',
     addProduct: '+ Afegir producte',
     scanBarcode: 'Escanejar codi de barres',
-    manual: 'Afegir manualment',
     scanning: 'Escanejant...',
     cameraError: 'No puc accedir a la càmera. Revisa els permisos.',
     productFound: 'Producte trobat!',
