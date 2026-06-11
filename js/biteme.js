@@ -1460,7 +1460,7 @@ function _renderLotRow(lot) {
   }
 
   const superText = lot.supermarket || '';
-  const priceText = (typeof lot.price === 'number') ? lot.price.toFixed(2) + ' €' : '';
+  const priceText = (typeof lot.price === 'number') ? lot.price.toFixed(2) + '€' : '';
 
   // Data d'alta relativa
   let addedText = '';

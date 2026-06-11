@@ -201,7 +201,7 @@ const TRANSLATIONS = {
       {
         emoji: '💡',
         title: 'Exemple',
-        example: 'Llet 1 L · preu 1,20 €\nHas begut el 50% → 0,60 € aprofitat'
+        example: 'Llet 1 L · preu 1,20€\nHas begut el 50% → 0,60€ aprofitat'
       }
     ],
     infoCalcCo2Sections: [

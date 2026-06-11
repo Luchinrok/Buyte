@@ -86,19 +86,19 @@ const BADGES = [
 
   // ============= ESTALVIADOR (5) =============
   { id: 'saved-5',   emoji: '💵', name: 'Primer estalvi',
-    description: "Has aprofitat 5 € en menjar",
+    description: "Has aprofitat 5€ en menjar",
     category: 'estalviador', xpReward: 50, type: 'money_saved', value: 5 },
   { id: 'saved-25',  emoji: '💴', name: 'Estalviador',
-    description: 'Has aprofitat 25 € en menjar',
+    description: 'Has aprofitat 25€ en menjar',
     category: 'estalviador', xpReward: 100, type: 'money_saved', value: 25 },
   { id: 'saved-50',  emoji: '💶', name: 'Estalviador pro',
-    description: 'Has aprofitat 50 € en menjar',
+    description: 'Has aprofitat 50€ en menjar',
     category: 'estalviador', xpReward: 200, type: 'money_saved', value: 50 },
   { id: 'saved-100', emoji: '💷', name: 'Estalviador màster',
-    description: 'Has aprofitat 100 € en menjar',
+    description: 'Has aprofitat 100€ en menjar',
     category: 'estalviador', xpReward: 350, type: 'money_saved', value: 100 },
   { id: 'saved-500', emoji: '🤑', name: 'Magnat anti-malbaratament',
-    description: 'Has aprofitat 500 € en menjar',
+    description: 'Has aprofitat 500€ en menjar',
     category: 'estalviador', xpReward: 800, type: 'money_saved', value: 500 },
 
   // ============= MESTRE PER CATEGORIES (8) =============

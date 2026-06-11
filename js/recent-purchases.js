@@ -150,7 +150,7 @@
     if (labelEl) labelEl.textContent = label;
     if (metaEl) {
       const compresWord = count === 1 ? 'compra' : 'compres';
-      metaEl.textContent = count + ' ' + compresWord + ' · ' + total.toFixed(2) + ' €';
+      metaEl.textContent = count + ' ' + compresWord + ' · ' + total.toFixed(2) + '€';
     }
   }
 

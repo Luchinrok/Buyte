@@ -180,12 +180,12 @@ function monthlyChartData(history) {
 }
 
 function fmtEur(n) {
-  if (!isFinite(n) || n === 0) return '0,00 €';
+  if (!isFinite(n) || n === 0) return '0,00€';
   // Format català: 1.234,56 €
   const fixed = n.toFixed(2);
   const [intPart, decPart] = fixed.split('.');
   const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return withThousands + ',' + decPart + ' €';
+  return withThousands + ',' + decPart + '€';
 }
 
 function fmtCo2(n) {
