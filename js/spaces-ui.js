@@ -1,15 +1,16 @@
 /* ============================================
    Buyte — js/spaces-ui.js
-   UI del sistema d'Espais (FASE 2).
+   UI del sistema d'Espais.
 
    - Pinta el selector d'Espai actiu a la home (.space-bar).
    - Pantalla #screen-spaces ("Els meus espais"): llista, renombrar,
-     esborrar.
-   - Botons "Crear nou espai" / "Unir-me a un existent" mostren toast
-     "Disponible properament" — la lògica de creació + Firebase ve a
-     la FASE 3. El canvi d'espai (switch) ve a la FASE 4.
+     esborrar, copiar/compartir codi, i canviar d'Espai (switch).
+   - "Crear nou espai": genera un codi Firebase únic + doc buit i afegeix
+     l'Espai local. "Unir-me a un existent": valida el codi i afegeix
+     l'Espai. Moure productes/ítems entre Espais (un o múltiples).
 
    Tota la mutació de dades viu a window.SpacesSystem (js/spaces.js).
+   El sistema està completament implementat.
    ============================================ */
 
 
@@ -114,10 +115,10 @@ function renderSpacesList() {
     row.className = 'space-row' + (isActive ? ' is-active' : '');
     row.dataset.spaceId = space.id;
     const codeText = space.syncCode ? space.syncCode : t('spacesNoCode');
-    // Per a Phase 2 deshabilitem esborrar:
+    // Deshabilitem esborrar:
     //   - Si és l'únic espai (l'usuari ha de tenir sempre almenys un)
-    //   - Si és l'actiu (el switch ve a Phase 4; sense switch, esborrar
-    //     l'actiu deixa l'app sense espai actiu)
+    //   - Si és l'actiu (per canviar-hi primer cal fer switch a un altre;
+    //     esborrar l'actiu deixaria l'app sense espai actiu)
     const cantDelete = onlyOne || isActive;
     const deleteTitle = onlyOne ? t('spacesDeleteLastWarn')
       : isActive ? t('spacesDeleteActiveWarn') : t('spacesDeleteTitle');
@@ -239,8 +240,8 @@ function _onSpacesListClick(e) {
     }
     return;
   }
-  // Click a la fila d'un Espai NO actiu → confirmació + switch.
-  // (FASE 4 — el switch real, amb backup, clear i reload.)
+  // Click a la fila d'un Espai NO actiu → confirmació + switch real
+  // (backup, clear de claus per-espai i reload).
   const row = e.target.closest('.space-row');
   if (row && !row.classList.contains('is-active')) {
     const id = row.dataset.spaceId;
@@ -722,7 +723,7 @@ async function _executeMoveShoppingItem(item, targetSpace) {
 }
 
 
-// ----- Switch d'Espai actiu (FASE 4) -----
+// ----- Switch d'Espai actiu -----
 //
 // Demana confirmació, fa el switch (que esborra dades per-espai i
 // sincronitza el codi de Firebase), mostra un overlay durant un
@@ -802,12 +803,11 @@ function _showSwitchingOverlay(target, customText) {
 }
 
 
-// ----- Botons "Crear" / "Unir-me" — modals integrats (FASE 3) -----
+// ----- Botons "Crear" / "Unir-me" — modals integrats -----
 // Tots dos modals creen un Espai LOCAL (a SpacesSystem) i, en el cas
 // de Crear, també un document a Firebase (lists/{codi}). NO fan
-// switch — els nous Espais queden a la llista però no s'activen.
-// El canvi d'Espai (i el clear/restore de dades locals associat) ve
-// a la FASE 4.
+// switch — els nous Espais queden a la llista però no s'activen; per
+// entrar-hi cal triar-los a la pantalla d'Espais (switchToSpace).
 
 function _onSpacesCreateClick() { _showCreateSpaceModal(); }
 function _onSpacesJoinClick()   { _showJoinSpaceModal(); }
@@ -905,7 +905,7 @@ function _showCreateSpaceModal() {
       }
 
       // Document Firebase amb estat buit. NO copiem dades de l'Espai
-      // actual (això evita que en fer switch a la Fase 4 l'usuari es
+      // actual (això evita que en fer switch l'usuari es
       // trobi amb dades duplicades). Locations buides perquè
       // onRemoteData ja les ignora si length === 0.
       await window.FBSync.createList(code, {

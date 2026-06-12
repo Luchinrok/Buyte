@@ -12,10 +12,13 @@
    amb el concepte EXISTENT de "locations" (zones de productes, vegeu
    js/biteme.js i la pantalla #screen-locations). La UI mostra "Espais".
 
-   AQUEST FITXER (FASE 1) NOMÉS exposa el data layer + la migració
+   Aquest fitxer és el DATA LAYER dels Espais: lectura/mutació de la
+   llista, Espai actiu, switch entre Espais (amb backup + clear de les
+   claus per-espai + reconnexió Firebase via syncCode), i la migració
    automàtica que crea l'Espai "Casa" per als usuaris existents
-   heretant el seu eatmefirst_sync_code actual. No toca Firebase ni
-   la UI — això ho fan les fases 2-4.
+   heretant el seu eatmefirst_sync_code actual. La UI (selector, llista,
+   crear/unir-se/renombrar/esborrar, moure productes/ítems) viu a
+   js/spaces-ui.js. El sistema està completament implementat.
 
    ============================================ */
 
@@ -106,8 +109,8 @@ function getAvailableSpacesForMove() {
 // ----- Mutacions -----
 
 // Marca un Espai com a actiu. Retorna true si ha canviat. NO toca el
-// localStorage de dades (productes, etc.) — això és responsabilitat
-// del switch que es farà a la FASE 4.
+// localStorage de dades (productes, etc.) — això és responsabilitat de
+// switchToSpace (backup + clear + reconnexió).
 function setActiveSpace(spaceId) {
   if (!spaceId) return false;
   const spaces = _spacesRead();
@@ -127,7 +130,7 @@ function createSpace(name, icon) {
     id: 'space_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
     name: trimmed,
     icon: icon || '🏠',
-    syncCode: null,         // s'omplirà en connectar-lo a Firebase (fase 3)
+    syncCode: null,         // s'omple en connectar-lo a Firebase (crear/unir-se)
     createdAt: Date.now(),
     isActive: false
   };
@@ -137,9 +140,8 @@ function createSpace(name, icon) {
   return newSpace;
 }
 
-// Esborra un Espai. Si era l'actiu, queda sense espai actiu (la fase
-// 4 s'encarregarà de què passa amb les dades en aquest cas — aquí
-// només mantenim el data layer).
+// Esborra un Espai. Si era l'actiu, queda sense espai actiu (cas
+// defensiu: la UI no permet esborrar l'Espai actiu).
 function deleteSpace(spaceId) {
   if (!spaceId) return false;
   const spaces = _spacesRead().filter(s => s.id !== spaceId);
@@ -174,14 +176,14 @@ function updateSpaceSyncCode(spaceId, syncCode) {
 }
 
 
-// ----- Switch d'Espai actiu (FASE 4) -----
+// ----- Switch d'Espai actiu -----
 
 // Canvia l'Espai actiu. Aplica el següent flux:
 //   1) Backup local automàtic via BackupSystem (si existeix). Així si
 //      l'usuari es penedeix té una còpia de l'estat anterior.
 //   2) Sincronitza la clau legacy 'eatmefirst_sync_code' amb el codi
 //      del nou Espai (firebase-sync.js encara llegeix aquesta clau a
-//      initSync — així no cal tocar-lo per a la fase 4).
+//      initSync — així no cal tocar firebase-sync.js).
 //   3) Esborra les claus PER-ESPAI del localStorage. Les GLOBALS
 //      (gamificació, tema, idioma, smart notifs, backups, recordatori
 //      d'export, patterns dismissed, TOTES les receptes) es preserven.
