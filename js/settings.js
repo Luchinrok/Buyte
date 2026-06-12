@@ -102,6 +102,14 @@ function onRemoteData(remoteData) {
     localStorage.setItem('eatmefirst_monthly_budget', String(remoteData.monthlyBudget));
   }
 
+  // Pla setmanal de menús: guarda d'objecte no buit (mateixa regla
+  // conservadora; no esborrar el local des d'un dispositiu sense pla).
+  if (remoteData.mealPlan && typeof remoteData.mealPlan === 'object'
+      && !Array.isArray(remoteData.mealPlan)
+      && Object.keys(remoteData.mealPlan).length > 0) {
+    localStorage.setItem('eatmefirst_meal_plan', JSON.stringify(remoteData.mealPlan));
+  }
+
   localStorage.setItem('eatmefirst_products', JSON.stringify(products));
   localStorage.setItem('eatmefirst_locations', JSON.stringify(locations));
   localStorage.setItem('eatmefirst_stats', JSON.stringify(stats));
@@ -139,7 +147,8 @@ function pushToServer() {
       purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {},
       popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : [],
       categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}'),
-      monthlyBudget: Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0
+      monthlyBudget: Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0,
+      mealPlan: JSON.parse(localStorage.getItem('eatmefirst_meal_plan') || '{}')
     });
   }
 }
@@ -203,7 +212,8 @@ async function createNewList() {
       purchaseHistory: (typeof _getPurchaseHistoryForSync === 'function') ? _getPurchaseHistoryForSync() : {},
       popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : [],
       categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}'),
-      monthlyBudget: Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0
+      monthlyBudget: Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0,
+      mealPlan: JSON.parse(localStorage.getItem('eatmefirst_meal_plan') || '{}')
     });
     await window.FBSync.connectToList(code, onRemoteData);
 

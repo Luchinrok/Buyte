@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260611-1">
+  <link rel="stylesheet" href="styles.css?v=20260612-3">
 </head>
 <body>
 
@@ -491,6 +491,10 @@
         <span style="font-size:20px;margin-right:8px">➕</span>
         <span data-i18n="addNewRecipe"></span>
       </button>
+      <button type="button" id="btn-open-meal-planner" class="cookme-add-recipe-btn">
+        <span style="font-size:20px;margin-right:8px">📅</span>
+        <span>Planificador</span>
+      </button>
     </div>
 
     <!-- Pestanyes de filtre (Swiper bullets renderitzats com a "tabs").
@@ -545,6 +549,16 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- PANTALLA PLANIFICADOR SETMANAL (CookMe) -->
+  <div id="screen-meal-planner" class="screen">
+    <header class="top-bar">
+      <button class="back-btn" data-back="cookme" aria-label="Back">‹</button>
+      <h1>📅 Planificador</h1>
+      <div style="width:40px"></div>
+    </header>
+    <div id="meal-planner-list" class="meal-planner-list"></div>
   </div>
 
   <!-- PANTALLA DETALL DE LA RECEPTA -->
@@ -2195,7 +2209,7 @@
   <script src="js/purchase-history.js?v=20260513-1"></script>
   <script src="js/recent-purchases.js?v=20260611-1"></script>
   <script src="js/special-lists.js?v=20260503-3"></script>
-  <script src="js/settings.js?v=20260611-1"></script>
+  <script src="js/settings.js?v=20260612-1"></script>
   <script src="js/backup.js?v=20260508-2"></script>
   <script src="js/spaces.js?v=20260508-4"></script>
   <script src="js/spaces-ui.js?v=20260508-8"></script>
@@ -2204,6 +2218,7 @@
   <script src="js/expenses.js?v=20260611-4"></script>
   <script src="js/recipes-data.js?v=20260605-1"></script>
   <script src="js/cookme.js?v=20260610-2"></script>
+  <script src="js/meal-planner.js?v=20260612-2"></script>
   <script src="js/badges-data.js?v=20260611-1"></script>
   <script src="js/gamification.js?v=20260610-2"></script>
   <script src="js/patterns.js?v=20260505-5"></script>
