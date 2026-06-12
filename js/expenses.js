@@ -85,21 +85,31 @@ function _expensesGetData(rangeKey) {
     });
   });
 
-  // Filtre temporal per a Card 1, 3, 4. Card 2 (chart 6 mesos)
-  // sempre usa allEntries.
+  // Filtre temporal per a Card 1, 3, 4 — períodes NATURALS (de calendari),
+  // no rolling. Card 2 (chart 6 mesos) sempre usa allEntries.
+  //   month: mateix any+mes que now (mateix predicat que byMonth) → data.total
+  //          queda idèntic a data.monthSpent i la card "Aquest mes" quadra
+  //          amb el pressupost.
+  //   week:  setmana natural, del dilluns d'aquesta setmana fins ara.
+  //   all:   tot.
   const now = new Date();
-  let cutoff = null;
-  if (rangeKey === 'week') {
-    cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
-  } else if (rangeKey === 'month') {
-    cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 30);
+  let inPeriod;
+  if (rangeKey === 'month') {
+    inPeriod = (d) => d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  } else if (rangeKey === 'week') {
+    // Dilluns de la setmana en curs (00:00 local). getDay(): 0=Diu…6=Dis.
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const day = monday.getDay();
+    monday.setDate(monday.getDate() + (day === 0 ? -6 : 1 - day));
+    const mondayMs = monday.getTime();
+    inPeriod = (d) => d.getTime() >= mondayMs;
+  } else {
+    inPeriod = () => true; // all
   }
-  const filtered = cutoff
-    ? allEntries.filter(e => {
-        const t = new Date(e.date).getTime();
-        return Number.isFinite(t) && t >= cutoff.getTime();
-      })
-    : allEntries;
+  const filtered = allEntries.filter(e => {
+    const d = new Date(e.date);
+    return Number.isFinite(d.getTime()) && inPeriod(d);
+  });
 
   // total i count del PERÍODE. count compta tots els ARTICLES del
   // període; total només suma els que tenen price numèric.
