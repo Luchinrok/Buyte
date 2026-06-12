@@ -33,7 +33,8 @@ const SMART_NOTIF_DEFAULTS = {
     badgeProgress:      { enabled: true,  hour: 12, minute: 0 },
     patternSuggestions: { enabled: true,  day: 1,  hour: 12, minute: 0 }, // 1 = dilluns (dia fix)
     rebuyOverdue:       { enabled: true,  hour: 10, minute: 0 },
-    budgetAlert:        { enabled: true,  hour: 10, minute: 0 }
+    budgetAlert:        { enabled: true,  hour: 10, minute: 0 },
+    lowStock:           { enabled: true,  hour: 10, minute: 0 }
   }
 };
 
@@ -53,7 +54,8 @@ const SMART_NOTIF_TYPES = [
   { id: 'badgeProgress',      emoji: '🎯', i18n: 'notifTypeBadge',             hasHour: true,  hasDay: false },
   { id: 'patternSuggestions', emoji: '🧠', i18n: 'notifTypePatternSuggestions', hasHour: true, hasDay: false, fixedDay: 1 },
   { id: 'rebuyOverdue',       emoji: '🔄', i18n: 'notifTypeRebuy',              hasHour: true,  hasDay: false },
-  { id: 'budgetAlert',        emoji: '💰', i18n: 'notifTypeBudget',             hasHour: true,  hasDay: false }
+  { id: 'budgetAlert',        emoji: '💰', i18n: 'notifTypeBudget',             hasHour: true,  hasDay: false },
+  { id: 'lowStock',           emoji: '📉', i18n: 'notifTypeLowStock',           hasHour: true,  hasDay: false }
 ];
 
 
@@ -205,6 +207,10 @@ function dismissBanner(bannerId) {
   // mes (perquè no reaparegui demà, encara que el push estigui desactivat).
   if (bannerId === 'budgetAlert' && typeof _budgetSpendAndLevel === 'function') {
     _ackBudgetLevel(_budgetSpendAndLevel().level);
+  }
+  // Descartar el banner d'estoc baix reconeix el conjunt actual de low-stock.
+  if (bannerId === 'lowStock') {
+    _ackLowStock();
   }
 }
 
@@ -365,7 +371,8 @@ function getActiveBanners() {
     { id: 'weeklyRecap',       eval: _evalWeeklyRecap,       emoji: '📊' },
     { id: 'badgeProgress',     eval: _evalBadgeProgress,     emoji: '🎯' },
     { id: 'rebuyOverdue',      eval: _evalRebuyOverdue,      emoji: '🔄' },
-    { id: 'budgetAlert',       eval: _evalBudgetAlert,       emoji: '💰' }
+    { id: 'budgetAlert',       eval: _evalBudgetAlert,       emoji: '💰' },
+    { id: 'lowStock',          eval: _evalLowStock,          emoji: '📉' }
   ];
   aggregated.forEach(item => {
     if (!_isTypeEnabled(item.id)) return;
@@ -394,6 +401,7 @@ function getActiveBanners() {
     if (payload.popularId) banner.popularId = payload.popularId;
     if (payload.emoji) banner.productEmoji = payload.emoji;
     if (typeof payload.level === 'number') banner.level = payload.level;
+    if (Array.isArray(payload.lowIds)) banner.lowIds = payload.lowIds;
     out.push(banner);
   });
 
@@ -441,6 +449,10 @@ function sendSmartNotification(typeId, data) {
   // nivell del mes perquè no es repeteixi (vegeu _evalBudgetAlert).
   if (typeId === 'budgetAlert' && data && typeof data.level === 'number') {
     _ackBudgetLevel(data.level);
+  }
+  // Reconeixement del conjunt de low-stock en enviar el push.
+  if (typeId === 'lowStock' && data && Array.isArray(data.lowIds)) {
+    _ackLowStock(data.lowIds);
   }
   markNotifiedToday(typeId);
 }
@@ -559,6 +571,7 @@ function evaluateNotificationType(typeId, cfg) {
     case 'patternSuggestions': return _evalPatternSuggestions();
     case 'rebuyOverdue':      return _evalRebuyOverdue();
     case 'budgetAlert':       return _evalBudgetAlert();
+    case 'lowStock':          return _evalLowStock();
   }
   return null;
 }
@@ -887,6 +900,43 @@ function _ackBudgetLevel(level) {
   } catch (e) {}
 }
 
+// 12. Estoc baix (lowStock). Foto explícita dels productes sota el llindar
+// (getLowStockProducts a biteme.js). Dedup per SIGNATURA del conjunt: només
+// re-avisa quan apareix algun producte NOU sota mínim; els que es recuperen
+// surten del conjunt sol (l'ack escriu el conjunt actual). Pur (no escriu).
+function _evalLowStock() {
+  const low = (typeof getLowStockProducts === 'function') ? getLowStockProducts() : [];
+  if (!low.length) return null;
+  let acked = [];
+  try {
+    const raw = localStorage.getItem('eatmefirst_lowstock_alert_state');
+    if (raw) { const s = JSON.parse(raw); if (s && Array.isArray(s.ids)) acked = s.ids; }
+  } catch (e) { acked = []; }
+  const ackedSet = new Set(acked);
+  const hasNew = low.some(p => !ackedSet.has(p.id));
+  if (!hasNew) return null; // tots els low ja reconeguts → no re-avisar
+
+  let body;
+  if (low.length === 1) {
+    body = '📉 Et queda poc de ' + (low[0].emoji || '📦') + ' ' + (low[0].name || '');
+  } else {
+    body = '📉 ' + low.length + ' productes sota l\'estoc mínim';
+  }
+  return { title: '📉 Buyte', body: body, lowIds: low.map(p => p.id) };
+}
+
+// Reconeix el conjunt de low-stock (overwrite). Escrit fora de _eval
+// (push-send / dismiss). Si no es passen ids, captura el conjunt actual.
+function _ackLowStock(ids) {
+  let list = ids;
+  if (!Array.isArray(list)) {
+    list = (typeof getLowStockProducts === 'function') ? getLowStockProducts().map(p => p.id) : [];
+  }
+  try {
+    localStorage.setItem('eatmefirst_lowstock_alert_state', JSON.stringify({ ids: list }));
+  } catch (e) {}
+}
+
 
 // ============================================
 //   BANNERS A LA HOME (Phase 4)
@@ -1006,6 +1056,28 @@ function _smartBannerAction(banner) {
         else showScreen('expenses');
         const _b = document.querySelector('#screen-expenses .back-btn');
         if (_b) _b.dataset.back = 'launcher';
+      };
+    case 'lowStock':
+      // Obre el picker del CookMe amb els productes baixos (preseleccionats)
+      // perquè l'usuari triï botiga i els enviï al BuyMe (mateix flux que
+      // "Generar llista de la compra" del planificador). Fallback: rebost.
+      return () => {
+        const low = (typeof getLowStockProducts === 'function') ? getLowStockProducts() : [];
+        if (!low.length) { showScreen('home'); return; }
+        const all = (typeof supermarkets !== 'undefined' && Array.isArray(supermarkets)) ? supermarkets : [];
+        if (!all.length) { showToast(typeof t === 'function' ? t('noStoreConfigured') : 'No hi ha cap supermercat'); return; }
+        const enabled = all.filter(s => s.enabled !== false);
+        const others = all.filter(s => s.enabled === false);
+        if (typeof showIngredientPicker === 'function') {
+          showIngredientPicker(null, { enabled, others }, {
+            ingredients: low.map(p => ({ name: p.name, emoji: p.emoji })),
+            title: 'Estoc baix (' + low.length + ')',
+            preselectAll: true,
+            skipRecipeCount: true
+          });
+        } else {
+          showScreen('home');
+        }
       };
     case 'rebuyOverdue':
       // Afegir directe el producte habitual al BuyMe (modal amb selector

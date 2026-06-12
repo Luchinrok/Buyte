@@ -1331,10 +1331,13 @@ function showIngredientPicker(recipe, supers, opts) {
   const otherSupers = (supers && supers.others) ? supers.others : [];
   const allSupers = enabledSupers.concat(otherSupers);
 
-  // Estat dins el modal: índexs marcats i super seleccionat
+  // Estat dins el modal: índexs marcats i super seleccionat.
+  // opts.preselectAll marca TOTS els ítems (cas lowStock: els productes ja
+  // els tens en estoc però els vols comprar igualment; el pre-marcat normal
+  // —marcar els que NO tens— els deixaria desmarcats).
   const checked = new Set();
   ingredients.forEach((ing, idx) => {
-    if (!matchIngredient(ing, userProducts)) checked.add(idx);
+    if (opts.preselectAll || !matchIngredient(ing, userProducts)) checked.add(idx);
   });
   let selectedSuperId = allSupers[0] ? allSupers[0].id : null;
 

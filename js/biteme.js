@@ -634,6 +634,9 @@ function _migrateLegacyProduct(legacy) {
   };
   if (typeof lot.price === 'number') migrated.price = lot.price;
   if (lot.weight) migrated.weight = lot.weight;
+  // minStock viu a nivell PRODUCTE (no per lot) — la migració l'ha de
+  // conservar; sense això el llindar es perdia en migrar legacy→v2.
+  if (typeof legacy.minStock === 'number') migrated.minStock = legacy.minStock;
   return migrated;
 }
 
@@ -817,6 +820,11 @@ function _transformProductsToV2(rawArr) {
     if (groups.has(key)) {
       const host = groups.get(key);
       host.lots.push(...prod.lots);
+      // El merge descarta els camps de nivell-producte del fusionat; si el
+      // host no tenia llindar però el fusionat sí, el conservem.
+      if (typeof host.minStock !== 'number' && typeof prod.minStock === 'number') {
+        host.minStock = prod.minStock;
+      }
       mergedCount++;
       mergedHosts.add(host);
     } else {
@@ -1342,6 +1350,27 @@ function getStockUnits(product) {
   return count;
 }
 
+// LLINDAR ÚNIC = el del producte POPULAR. Resol el llindar d'estoc baix
+// d'un producte del rebost via el seu popularId; si no en té (orfe), per
+// nom canònic (cookmeSameProduct: "albergínies"≡"Albergínia"). Fallback
+// silenciós a product.minStock (legacy/orfes sense popular) — NO exposat
+// a la UI. `populars` opcional: passa-la per evitar N crides a
+// getPopularProducts() quan s'itera (vegeu getLowStockProducts).
+function getProductThreshold(product, populars) {
+  if (!product) return 0;
+  const pops = Array.isArray(populars)
+    ? populars
+    : ((typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : []);
+  let pop = null;
+  if (product.popularId) pop = pops.find(p => p && p.id === product.popularId) || null;
+  if (!pop && typeof cookmeSameProduct === 'function') {
+    pop = pops.find(p => p && p.name && cookmeSameProduct(product.name, p.name)) || null;
+  }
+  if (pop && typeof pop.minStock === 'number') return pop.minStock;
+  if (typeof product.minStock === 'number') return product.minStock; // fallback orfes
+  return 0;
+}
+
 // Avaluador únic d'estoc baix. Cridat des de TOTS els camins que
 // redueixen estoc (consum/edició a la baixa) i d'_addLotToProduct (per
 // netejar el flag en recuperar estoc). `prevBase` = getStockUnits ABANS
@@ -1355,7 +1384,7 @@ function getStockUnits(product) {
 // avisa en acabar-se del tot, comportament històric).
 function _evaluateLowStock(product, prevBase) {
   if (!product) return;
-  const minStock = (typeof product.minStock === 'number') ? product.minStock : 0;
+  const minStock = getProductThreshold(product); // llindar del popular (font única)
   // Si el producte ja s'ha tret de products[] (cas envàs únic 1->0),
   // la base efectiva és 0 — així l'avís d'acabar-se es preserva.
   const stillExists = products.some(p => p.id === product.id);
@@ -1372,6 +1401,36 @@ function _evaluateLowStock(product, prevBase) {
       setTimeout(() => askAddToShoppingList(product), 600);
     }
   }
+}
+
+// Llista (foto) dels productes ACTUALMENT sota l'estoc mínim. Només els que
+// tenen llindar explícit (minStock > 0); els de minStock 0 (default) no
+// compten per no saturar. Base de comparació = getStockUnits (envasos vius).
+// La fa servir el tipus de notificació lowStock (smart-notifications.js).
+function getLowStockProducts() {
+  if (typeof products === 'undefined' || !Array.isArray(products)) return [];
+  // El llindar és el del popular: agafem la llista de populars UNA vegada
+  // i la reusem per a tots els productes (getProductThreshold accepta el 2n arg).
+  const pops = (typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : [];
+  // Exclou els que ja són a la llista de la compra (mateix criteri canònic
+  // que rebuyOverdue: cookmeSameProduct, amb fallback a nom normalitzat).
+  // Llegim shoppingItems una sola vegada.
+  const buyme = (typeof shoppingItems !== 'undefined' && Array.isArray(shoppingItems)) ? shoppingItems : [];
+  const inBuyMe = (name) => buyme.some(it => {
+    if (!it || !it.name) return false;
+    if (typeof cookmeSameProduct === 'function') return cookmeSameProduct(name, it.name);
+    return String(it.name).toLowerCase().trim() === String(name).toLowerCase().trim();
+  });
+  const out = [];
+  products.forEach(p => {
+    if (!p) return;
+    const minStock = getProductThreshold(p, pops);
+    if (minStock <= 0) return;
+    if (getStockUnits(p) > minStock) return;
+    if (inBuyMe(p.name)) return;   // ja és a la llista de la compra
+    out.push({ id: p.id, name: p.name || '', emoji: p.emoji || '📦' });
+  });
+  return out;
 }
 
 // Deriva {qty, content} per enviar un producte EatMe a la llista de la
@@ -3962,7 +4021,6 @@ function openEditProductForm(product) {
     qty: product.qty,
     price: product.price,
     weight: product.weight,
-    minStock: product.minStock,
     location: product.location,
     noExpiry: !!product.noExpiry,
     date: product.date,
@@ -4047,16 +4105,6 @@ function openAddForm(prefill) {
   // està marcat i qty > 1.
   const qtyInput = document.getElementById('input-qty');
   if (qtyInput) qtyInput.value = (prefill && prefill.qty) ? String(prefill.qty) : '1';
-
-  // Llindar d'estoc baix (minStock). Hereta del prefill (popular /
-  // producte en edició) si hi és; si no, deixa l'input BUIT → el
-  // placeholder mostra "0" (default) sense forçar cap valor escrit.
-  const minStockInput = document.getElementById('input-minstock');
-  if (minStockInput) {
-    minStockInput.value = (prefill && typeof prefill.minStock === 'number')
-      ? String(prefill.minStock)
-      : '';
-  }
 
   // Toggle multi-lots: sempre desmarcat al obrir (l'usuari decideix
   // explícitament cada vegada).
@@ -4230,7 +4278,6 @@ function findKnownProductByName(name) {
       location: fromPopular.location,
       price: fromPopular.price,
       weight: fromPopular.weight,
-      minStock: fromPopular.minStock,
       noExpiry: !!fromPopular.noExpiry,
       source: 'popular'
     };
@@ -4408,18 +4455,6 @@ function applyKnownProductToForm(m) {
   // Weight i Qty via helper compartit (snapshot-aware: vegeu _applyContentToAddForm).
   _applyContentToAddForm(m.weight);
 
-  // Llindar minStock: reemplaçable si buit o == el que vam autoomplir abans.
-  // target='' si el match no en porta → en canviar a un producte sense
-  // minStock (default 0), el camp es reseteja en comptes de quedar-se amb
-  // el valor de l'anterior.
-  const minStockInput = document.getElementById('input-minstock');
-  if (minStockInput) {
-    const target = (typeof m.minStock === 'number' && m.minStock >= 0) ? String(m.minStock) : '';
-    if (_knownProductCanReplace(minStockInput.value.trim(), snap && snap.minStock)) {
-      minStockInput.value = target;
-    }
-  }
-
   // Gravar snapshot amb els valors REALMENT aplicats (llegint els inputs,
   // no els valors crus del match) per al proper canvi de producte.
   const qtyInputEl = document.getElementById('input-qty');
@@ -4430,7 +4465,6 @@ function applyKnownProductToForm(m) {
     dateStr: nextDateStr,
     noExpiry: !!m.noExpiry,
     price: (typeof m.price === 'number') ? m.price : undefined,
-    minStock: (typeof m.minStock === 'number') ? String(m.minStock) : '',
     qty: qtyInputEl ? qtyInputEl.value.trim() : '',
     content: weightInputEl ? weightInputEl.value.trim() : ''
   };
@@ -4547,14 +4581,6 @@ function saveNewProduct() {
   // tal qual (només trim).
   const qty = qtyInput ? _normalizeWeightString(qtyInput.value.trim()) : '';
 
-  // Llindar d'estoc baix (minStock). Default 0 si el camp va buit; enter >= 0.
-  const minStockInput = document.getElementById('input-minstock');
-  let minStock = 0;
-  if (minStockInput) {
-    const ms = parseInt(String(minStockInput.value).trim(), 10);
-    if (Number.isFinite(ms) && ms >= 0) minStock = ms;
-  }
-
   // Preu (opcional). Només el guardem si l'usuari l'ha informat. Acceptem
   // tant punt com coma com a separador decimal: en alguns inputs type=number
   // amb locale ca/es, "2,50" no es parsa bé per parseFloat per defecte.
@@ -4610,7 +4636,6 @@ function saveNewProduct() {
       p.noExpiry = noExpiryChecked;
       p.location = selectedLocation;
       p.qty = qty;
-      p.minStock = minStock;
       if (price !== null) p.price = price; else delete p.price;
       if (weight) p.weight = weight; else delete p.weight;
       // frozenDate: si el producte ENTRA al congelador per primera
@@ -4672,7 +4697,6 @@ function saveNewProduct() {
     noExpiry: noExpiryChecked,
     location: selectedLocation,
     qty: qty,
-    minStock: minStock,
     addedAt: new Date().toISOString()
   };
   if (price !== null) productData.price = price;
