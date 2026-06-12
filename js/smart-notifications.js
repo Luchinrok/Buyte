@@ -32,7 +32,8 @@ const SMART_NOTIF_DEFAULTS = {
     weeklyRecap:        { enabled: true,  day: 0,  hour: 19, minute: 0 }, // 0 = diumenge
     badgeProgress:      { enabled: true,  hour: 12, minute: 0 },
     patternSuggestions: { enabled: true,  day: 1,  hour: 12, minute: 0 }, // 1 = dilluns (dia fix)
-    rebuyOverdue:       { enabled: true,  hour: 10, minute: 0 }
+    rebuyOverdue:       { enabled: true,  hour: 10, minute: 0 },
+    budgetAlert:        { enabled: true,  hour: 10, minute: 0 }
   }
 };
 
@@ -51,7 +52,8 @@ const SMART_NOTIF_TYPES = [
   { id: 'weeklyRecap',        emoji: '📊', i18n: 'notifTypeWeekly',            hasHour: true,  hasDay: true  },
   { id: 'badgeProgress',      emoji: '🎯', i18n: 'notifTypeBadge',             hasHour: true,  hasDay: false },
   { id: 'patternSuggestions', emoji: '🧠', i18n: 'notifTypePatternSuggestions', hasHour: true, hasDay: false, fixedDay: 1 },
-  { id: 'rebuyOverdue',       emoji: '🔄', i18n: 'notifTypeRebuy',              hasHour: true,  hasDay: false }
+  { id: 'rebuyOverdue',       emoji: '🔄', i18n: 'notifTypeRebuy',              hasHour: true,  hasDay: false },
+  { id: 'budgetAlert',        emoji: '💰', i18n: 'notifTypeBudget',             hasHour: true,  hasDay: false }
 ];
 
 
@@ -199,6 +201,11 @@ function dismissBanner(bannerId) {
   const map = _readDismissed();
   map[bannerId] = _todayKey();
   _writeMap('eatmefirst_notif_dismissed', map);
+  // Descartar el banner de pressupost també reconeix el nivell actual del
+  // mes (perquè no reaparegui demà, encara que el push estigui desactivat).
+  if (bannerId === 'budgetAlert' && typeof _budgetSpendAndLevel === 'function') {
+    _ackBudgetLevel(_budgetSpendAndLevel().level);
+  }
 }
 
 // Banners de productes JA CADUCATS (daysUntilExpiry < 0). Es generen LIVE
@@ -357,7 +364,8 @@ function getActiveBanners() {
     { id: 'reactivation',      eval: _evalReactivation,      emoji: '👋' },
     { id: 'weeklyRecap',       eval: _evalWeeklyRecap,       emoji: '📊' },
     { id: 'badgeProgress',     eval: _evalBadgeProgress,     emoji: '🎯' },
-    { id: 'rebuyOverdue',      eval: _evalRebuyOverdue,      emoji: '🔄' }
+    { id: 'rebuyOverdue',      eval: _evalRebuyOverdue,      emoji: '🔄' },
+    { id: 'budgetAlert',       eval: _evalBudgetAlert,       emoji: '💰' }
   ];
   aggregated.forEach(item => {
     if (!_isTypeEnabled(item.id)) return;
@@ -385,6 +393,7 @@ function getActiveBanners() {
     if (payload.name) banner.name = payload.name;
     if (payload.popularId) banner.popularId = payload.popularId;
     if (payload.emoji) banner.productEmoji = payload.emoji;
+    if (typeof payload.level === 'number') banner.level = payload.level;
     out.push(banner);
   });
 
@@ -427,6 +436,11 @@ function sendSmartNotification(typeId, data) {
     const body = (data && data.body) || '';
     try { window.Notif.showNotification(title, body, { tag: 'buyte-' + typeId }); }
     catch (e) {}
+  }
+  // Reconeixement del nivell de pressupost: en enviar el push, marquem el
+  // nivell del mes perquè no es repeteixi (vegeu _evalBudgetAlert).
+  if (typeId === 'budgetAlert' && data && typeof data.level === 'number') {
+    _ackBudgetLevel(data.level);
   }
   markNotifiedToday(typeId);
 }
@@ -544,6 +558,7 @@ function evaluateNotificationType(typeId, cfg) {
     case 'badgeProgress':     return _evalBadgeProgress();
     case 'patternSuggestions': return _evalPatternSuggestions();
     case 'rebuyOverdue':      return _evalRebuyOverdue();
+    case 'budgetAlert':       return _evalBudgetAlert();
   }
   return null;
 }
@@ -810,6 +825,68 @@ function _capitalizeFirst(s) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+// 11. Avís de pressupost mensual (80% / 100%). Helper compartit:
+// despesa del MES NATURAL en curs (suma purchase_history, preu per-unitat,
+// mateixa base que la pantalla Despeses) + nivell creuat.
+function _budgetMonthKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function _budgetSpendAndLevel() {
+  const budget = Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0;
+  if (budget <= 0) return { budget: 0, monthSpent: 0, pct: 0, level: 0 };
+  let history = {};
+  try {
+    const raw = localStorage.getItem('eatmefirst_purchase_history');
+    if (raw) history = JSON.parse(raw) || {};
+  } catch (e) { history = {}; }
+  const monthPrefix = _budgetMonthKey(); // 'YYYY-MM'
+  let monthSpent = 0;
+  Object.keys(history).forEach(key => {
+    const list = Array.isArray(history[key]) ? history[key] : [];
+    list.forEach(r => {
+      if (!r || typeof r.date !== 'string') return;
+      if (r.date.slice(0, 7) !== monthPrefix) return;
+      if (typeof r.price === 'number') monthSpent += r.price;
+    });
+  });
+  const pct = budget > 0 ? Math.round((monthSpent / budget) * 100) : 0;
+  const level = pct >= 100 ? 100 : (pct >= 80 ? 80 : 0);
+  return { budget: budget, monthSpent: monthSpent, pct: pct, level: level };
+}
+
+function _evalBudgetAlert() {
+  const info = _budgetSpendAndLevel();
+  if (info.budget <= 0 || info.level === 0) return null;
+  // Dedup per (mes + nivell): no repetir l'avís d'un nivell ja reconegut
+  // aquest mes. L'state s'escriu fora de l'_eval (push-send / dismiss).
+  let state = {};
+  try {
+    const raw = localStorage.getItem('eatmefirst_budget_alert_state');
+    if (raw) state = JSON.parse(raw) || {};
+  } catch (e) { state = {}; }
+  const acked = (state && state.month === _budgetMonthKey() && typeof state.level === 'number') ? state.level : 0;
+  if (info.level <= acked) return null;
+
+  const eur = (n) => (typeof fmtEur === 'function') ? fmtEur(n) : (Math.round(n * 100) / 100) + '€';
+  let body;
+  if (info.level === 100) {
+    body = '💰 Has superat el pressupost (' + eur(info.monthSpent) + ' de ' + eur(info.budget) + ')';
+  } else {
+    body = '💰 Has gastat el ' + info.pct + '% del pressupost (' + eur(info.monthSpent) + ' de ' + eur(info.budget) + ')';
+  }
+  return { title: '💰 Buyte', body: body, level: info.level };
+}
+
+// Escriu l'state de reconeixement del nivell de pressupost (mes actual).
+function _ackBudgetLevel(level) {
+  if (!level) return;
+  try {
+    localStorage.setItem('eatmefirst_budget_alert_state', JSON.stringify({ month: _budgetMonthKey(), level: level }));
+  } catch (e) {}
+}
+
 
 // ============================================
 //   BANNERS A LA HOME (Phase 4)
@@ -921,6 +998,15 @@ function _smartBannerAction(banner) {
     case 'reactivation':
       // Tornar al launcher (home de l'app).
       return () => { showScreen('launcher'); };
+    case 'budgetAlert':
+      // Obre Despeses (la card de pressupost). Com que el banner viu al
+      // launcher, forcem el back a 'launcher' (mateix patró que weeklyRecap).
+      return () => {
+        if (typeof openExpenses === 'function') openExpenses();
+        else showScreen('expenses');
+        const _b = document.querySelector('#screen-expenses .back-btn');
+        if (_b) _b.dataset.back = 'launcher';
+      };
     case 'rebuyOverdue':
       // Afegir directe el producte habitual al BuyMe (modal amb selector
       // de supermercat). manualAddToBuyMe viu a js/buyme.js.
