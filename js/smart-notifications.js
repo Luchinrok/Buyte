@@ -31,7 +31,8 @@ const SMART_NOTIF_DEFAULTS = {
     reactivation:       { enabled: true,  hour: 10, minute: 0 },
     weeklyRecap:        { enabled: true,  day: 0,  hour: 19, minute: 0 }, // 0 = diumenge
     badgeProgress:      { enabled: true,  hour: 12, minute: 0 },
-    patternSuggestions: { enabled: true,  day: 1,  hour: 12, minute: 0 }  // 1 = dilluns (dia fix)
+    patternSuggestions: { enabled: true,  day: 1,  hour: 12, minute: 0 }, // 1 = dilluns (dia fix)
+    rebuyOverdue:       { enabled: true,  hour: 10, minute: 0 }
   }
 };
 
@@ -49,7 +50,8 @@ const SMART_NOTIF_TYPES = [
   { id: 'reactivation',       emoji: '👋', i18n: 'notifTypeReactivation',      hasHour: true,  hasDay: false },
   { id: 'weeklyRecap',        emoji: '📊', i18n: 'notifTypeWeekly',            hasHour: true,  hasDay: true  },
   { id: 'badgeProgress',      emoji: '🎯', i18n: 'notifTypeBadge',             hasHour: true,  hasDay: false },
-  { id: 'patternSuggestions', emoji: '🧠', i18n: 'notifTypePatternSuggestions', hasHour: true, hasDay: false, fixedDay: 1 }
+  { id: 'patternSuggestions', emoji: '🧠', i18n: 'notifTypePatternSuggestions', hasHour: true, hasDay: false, fixedDay: 1 },
+  { id: 'rebuyOverdue',       emoji: '🔄', i18n: 'notifTypeRebuy',              hasHour: true,  hasDay: false }
 ];
 
 
@@ -354,7 +356,8 @@ function getActiveBanners() {
     { id: 'streakMotivation',  eval: _evalStreakMotivation,  emoji: '🔥' },
     { id: 'reactivation',      eval: _evalReactivation,      emoji: '👋' },
     { id: 'weeklyRecap',       eval: _evalWeeklyRecap,       emoji: '📊' },
-    { id: 'badgeProgress',     eval: _evalBadgeProgress,     emoji: '🎯' }
+    { id: 'badgeProgress',     eval: _evalBadgeProgress,     emoji: '🎯' },
+    { id: 'rebuyOverdue',      eval: _evalRebuyOverdue,      emoji: '🔄' }
   ];
   aggregated.forEach(item => {
     if (!_isTypeEnabled(item.id)) return;
@@ -370,13 +373,19 @@ function getActiveBanners() {
     let payload;
     try { payload = item.eval(); } catch (e) { payload = null; }
     if (!payload) return;
-    out.push({
+    const banner = {
       id: item.id,
       type: item.id,
       emoji: item.emoji,
       title: payload.title,
       body: payload.body
-    });
+    };
+    // Meta opcional del payload (p. ex. rebuyOverdue: producte a recomprar)
+    // perquè l'acció "Veure" pugui afegir-lo al BuyMe.
+    if (payload.name) banner.name = payload.name;
+    if (payload.popularId) banner.popularId = payload.popularId;
+    if (payload.emoji) banner.productEmoji = payload.emoji;
+    out.push(banner);
   });
 
   // 4. PATTERN-SUGGESTION — màxim 1 banner. Sempre s'afegeix DESPRÉS dels
@@ -534,6 +543,7 @@ function evaluateNotificationType(typeId, cfg) {
     case 'weeklyRecap':       return _evalWeeklyRecap();
     case 'badgeProgress':     return _evalBadgeProgress();
     case 'patternSuggestions': return _evalPatternSuggestions();
+    case 'rebuyOverdue':      return _evalRebuyOverdue();
   }
   return null;
 }
@@ -717,6 +727,89 @@ function _evalPatternSuggestions() {
   };
 }
 
+// 10. Re-compra endarrerida ("fa X que no compres [habitual]"). Sobre
+// purchase_history REAL: per a cada producte amb ≥3 compres, calcula la
+// mediana dels intervals i avisa si fa molt que no se'n compra. Guardes:
+// mediana ∈ [3,45] dies; descarta abandonats (daysSince > mediana×3);
+// endarrerit si daysSince > mediana×1.3; omet si ja és al BuyMe.
+function _rebuyMedian(arr) {
+  if (!arr.length) return null;
+  const s = arr.slice().sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 === 0 ? (s[mid - 1] + s[mid]) / 2 : s[mid];
+}
+
+function _evalRebuyOverdue() {
+  let history = {};
+  try {
+    const raw = localStorage.getItem('eatmefirst_purchase_history');
+    if (raw) history = JSON.parse(raw) || {};
+  } catch (e) { history = {}; }
+  if (!history || typeof history !== 'object') return null;
+
+  const populars = (typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : [];
+  const popById = {};
+  populars.forEach(p => { if (p && p.id) popById[p.id] = p; });
+  const shopping = _smartShoppingItems();
+  const REBUY_FACTOR = 1.3;
+  const todayMs = Date.now();
+
+  // Ja al BuyMe? (match canònic si està disponible, si no per nom normalitzat)
+  const _alreadyInBuyMe = (name) => {
+    return shopping.some(it => {
+      if (!it || !it.name) return false;
+      if (typeof cookmeSameProduct === 'function') return cookmeSameProduct(name, it.name);
+      return String(it.name).toLowerCase().trim() === String(name).toLowerCase().trim();
+    });
+  };
+
+  let best = null; // { name, emoji, popularId, daysSince, ratio }
+  Object.keys(history).forEach(key => {
+    const records = Array.isArray(history[key]) ? history[key] : [];
+    if (records.length < 3) return;
+    // Dates (ms) ordenades asc.
+    const times = records
+      .map(r => r && r.date ? new Date(r.date).getTime() : NaN)
+      .filter(t => isFinite(t))
+      .sort((a, b) => a - b);
+    if (times.length < 3) return;
+    const intervals = [];
+    for (let i = 1; i < times.length; i++) intervals.push((times[i] - times[i - 1]) / 86400000);
+    const median = _rebuyMedian(intervals);
+    if (median == null || median < 3 || median > 45) return; // banda sana
+    const daysSince = Math.floor((todayMs - times[times.length - 1]) / 86400000);
+    if (daysSince > median * 3) return;        // abandonat → no insistir
+    if (daysSince <= median * REBUY_FACTOR) return; // encara dins de cadència
+
+    // Resol nom + emoji
+    const pop = popById[key];
+    const name = pop ? pop.name : _capitalizeFirst(key);
+    const emoji = pop ? (pop.emoji || '🛒') : '🛒';
+    if (_alreadyInBuyMe(name)) return;          // ja el compra
+
+    const ratio = daysSince / median;
+    if (!best || ratio > best.ratio) {
+      best = { name: name, emoji: emoji, popularId: pop ? pop.id : null, daysSince: daysSince, ratio: ratio };
+    }
+  });
+
+  if (!best) return null;
+  return {
+    title: '🔄 Buyte',
+    body: '🔄 Fa ' + best.daysSince + ' dies que no compres ' + best.emoji + ' ' + best.name,
+    name: best.name,
+    emoji: best.emoji,
+    popularId: best.popularId
+  };
+}
+
+// Capitalitza la primera lletra (per a claus que són noms, no popularId).
+function _capitalizeFirst(s) {
+  const str = String(s || '').trim();
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 
 // ============================================
 //   BANNERS A LA HOME (Phase 4)
@@ -828,6 +921,18 @@ function _smartBannerAction(banner) {
     case 'reactivation':
       // Tornar al launcher (home de l'app).
       return () => { showScreen('launcher'); };
+    case 'rebuyOverdue':
+      // Afegir directe el producte habitual al BuyMe (modal amb selector
+      // de supermercat). manualAddToBuyMe viu a js/buyme.js.
+      return () => {
+        if (typeof manualAddToBuyMe === 'function') {
+          manualAddToBuyMe({ name: banner.name, emoji: banner.productEmoji || '🛒' });
+        } else if (typeof openShoppingList === 'function') {
+          openShoppingList();
+        } else {
+          showScreen('shopping');
+        }
+      };
     case 'pattern-suggestion':
       // Obre Configuració > Activitat amb la pestanya 'suggeriments' activa.
       return () => {
