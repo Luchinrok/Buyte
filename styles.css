@@ -3606,7 +3606,60 @@ body.selection-mode-active #shops-slider .arrow-btn {
 
 /* ===== Planificador setmanal (CookMe) ===== */
 .meal-planner-list {
-  padding: 0 0 24px;
+  padding: 0 0 16px;
+}
+/* Capçalera de navegació de setmana (‹ rang ›) */
+.mp-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.mp-week-arrow {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 26px;
+  line-height: 1;
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mp-week-arrow:active { transform: scale(0.94); }
+.mp-week-label {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+.mp-week-range {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+.mp-week-rel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-soft);
+  margin-top: 1px;
+}
+/* Dia d'avui ressaltat (quan es veu la setmana en curs) */
+.mp-day-card.is-today {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.meal-planner-footer {
+  padding-bottom: 8px;
+}
+#btn-generate-shopping:disabled,
+#btn-generate-shopping.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .mp-day-card {
   background: var(--bg-card);

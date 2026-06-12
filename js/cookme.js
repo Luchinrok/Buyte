@@ -1320,9 +1320,13 @@ function addMissingToBuyMe() {
 }
 
 // Construeix i mostra el modal de selecció d'ingredients + supermercat.
-function showIngredientPicker(recipe, supers) {
+function showIngredientPicker(recipe, supers, opts) {
+  opts = opts || {};
   const userProducts = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
-  const ingredients = recipe.ingredients || [];
+  // opts.ingredients permet alimentar el picker amb una llista JA construïda
+  // (p. ex. el planificador: ingredients fusionats de tot el pla). Sense
+  // recepta concreta no hi ha escala de racions (factor 1, sense qty).
+  const ingredients = Array.isArray(opts.ingredients) ? opts.ingredients : ((recipe && recipe.ingredients) || []);
   const enabledSupers = (supers && supers.enabled) ? supers.enabled : [];
   const otherSupers = (supers && supers.others) ? supers.others : [];
   const allSupers = enabledSupers.concat(otherSupers);
@@ -1334,9 +1338,10 @@ function showIngredientPicker(recipe, supers) {
   });
   let selectedSuperId = allSupers[0] ? allSupers[0].id : null;
 
-  // Factor d'escala segons l'editor de persones
-  const baseServings = recipe.servings || 1;
-  const factor = baseServings > 0 ? (currentServings / baseServings) : 1;
+  // Factor d'escala segons l'editor de persones (només per a una recepta
+  // concreta; per a una llista pre-construïda NO s'escala).
+  const baseServings = recipe ? (recipe.servings || 1) : 1;
+  const factor = (recipe && baseServings > 0) ? (currentServings / baseServings) : 1;
 
   // Construeix els blocs HTML
   const ingHtml = ingredients.map((ing, idx) => {
@@ -1378,8 +1383,8 @@ function showIngredientPicker(recipe, supers) {
   overlay.innerHTML =
     '<div class="modal-content modal-content-tall">' +
       '<div class="modal-emoji-big">🛒</div>' +
-      '<p class="modal-title">' + escapeHtml(t('selectAllToBuy')) + '</p>' +
-      '<p class="modal-sub">' + escapeHtml(recipe.name || '') + '</p>' +
+      '<p class="modal-title">' + escapeHtml(opts.title || t('selectAllToBuy')) + '</p>' +
+      ((recipe && recipe.name) ? '<p class="modal-sub">' + escapeHtml(recipe.name) + '</p>' : '') +
       '<div class="ingredient-pick-list">' + ingHtml + '</div>' +
       '<p class="modal-section-label">' + escapeHtml(t('whichSuper')) + '</p>' +
       supersHtml +
@@ -1427,7 +1432,7 @@ function showIngredientPicker(recipe, supers) {
       return { name: ing.name || '', emoji: ing.emoji || '🛒', qty: scaleIngredient(ing.qty, factor) };
     });
     document.body.removeChild(overlay);
-    addItemsToShop(selectedSuperId, items);
+    addItemsToShop(selectedSuperId, items, { skipRecipeCount: !!opts.skipRecipeCount });
   });
 
   overlay.querySelector('#modal-cancel-btn').addEventListener('click', () => {
@@ -1439,7 +1444,8 @@ function showIngredientPicker(recipe, supers) {
 }
 
 // Afegeix una llista d'ingredients (amb qty ja escalada) al supermercat indicat.
-function addItemsToShop(supermarketId, items) {
+function addItemsToShop(supermarketId, items, opts) {
+  opts = opts || {};
   if (typeof addToShoppingList !== 'function') return;
   // Fix arrel CookMe→BuyMe: NO escrivim la qty de CUINA com a qty de compra
   // (text com "½"/"1 unitat"/"unes fulles" no parseja → el lot cau a 'percent'
@@ -1458,7 +1464,7 @@ function addItemsToShop(supermarketId, items) {
       : null;
     addToShoppingList(supermarketId, product, '1', (pop && pop.weight) ? pop.weight : undefined);
   });
-  if (currentRecipeId) incrementRecipeAddedToShopping(currentRecipeId, items.length);
+  if (!opts.skipRecipeCount && currentRecipeId) incrementRecipeAddedToShopping(currentRecipeId, items.length);
   const sm = (typeof getSupermarketById === 'function') ? getSupermarketById(supermarketId) : null;
   const smName = sm ? sm.name : '';
   showToast('🛒 ' + items.length + ' ' + t('ingredientsAdded') + ' ' + smName);

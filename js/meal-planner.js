@@ -1,20 +1,20 @@
 /* ============================================
    Buyte — js/meal-planner.js
-   Planificador setmanal de receptes (dins de CookMe), Fase 1.
+   Planificador setmanal de receptes (dins de CookMe).
 
-   Template setmanal genèric (Dilluns–Diumenge), NO lligat a dates:
+   Setmanes REALS amb navegació ‹ / ›. El pla s'indexa pel dilluns de
+   cada setmana (weekId = "YYYY-MM-DD"):
      localStorage['eatmefirst_meal_plan'] =
-       { mon:{esmorzar:null,dinar:null,sopar:null}, tue:{…}, … sun:{…} }
-   Valors = recipeId | null. Es sincronitza via settings.js (patró
-   categoryOrderBySuper/monthlyBudget).
+       { "2026-06-15": { mon:{esmorzar,dinar,sopar}, … sun:{…} }, … }
+   Es sincronitza via settings.js (objecte → push/apply ja funcionen).
 
-   Fase 1: assignar/treure receptes per slot. El botó "Generar llista de
-   la compra" arribarà a la Fase 2 (reusarà addItemsToShop de cookme.js).
+   Migració: si el pla desat té forma PLANA antiga (claus de dia a
+   l'arrel), s'embolcalla sota el weekId de la setmana en curs.
    ============================================ */
 
 const MEAL_PLAN_KEY = 'eatmefirst_meal_plan';
 
-// Ordre i etiquetes dels dies (Dilluns-first, com la resta de l'app).
+// Ordre i etiquetes dels dies (Dilluns-first).
 const MEAL_PLAN_DAYS = [
   { id: 'mon', label: 'Dilluns' },
   { id: 'tue', label: 'Dimarts' },
@@ -25,22 +25,54 @@ const MEAL_PLAN_DAYS = [
   { id: 'sun', label: 'Diumenge' }
 ];
 
-// Slots de cada dia (en ordre cronològic).
 const MEAL_PLAN_SLOTS = [
   { id: 'esmorzar', label: 'Esmorzar', emoji: '🌅' },
   { id: 'dinar', label: 'Dinar', emoji: '🍽️' },
   { id: 'sopar', label: 'Sopar', emoji: '🌙' }
 ];
 
-function _mpEmptyDay() {
-  return { esmorzar: null, dinar: null, sopar: null };
+const MEAL_PLAN_MONTHS = ['gener', 'febrer', 'març', 'abril', 'maig', 'juny',
+  'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'];
+
+// Setmana actualment visualitzada (weekId del dilluns). Es fixa a la
+// setmana en curs en obrir el planificador.
+let _mpViewedWeekId = null;
+
+// ---- Helpers de data (local, sense desfasament UTC) ----
+function _mpLocalYMD(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+function _mpParseYMD(ymd) {
+  const parts = String(ymd || '').split('-');
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+}
+// Dilluns de la setmana que conté `date` (setmana comença dilluns).
+function _mpMondayOf(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = d.getDay(); // 0=Diu … 6=Dis
+  const diff = (day === 0) ? -6 : (1 - day);
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+function _mpCurrentWeekId() {
+  return _mpLocalYMD(_mpMondayOf(new Date()));
 }
 
-// Normalitza un pla: garanteix totes les claus de dia i de slot. Valors
-// no-string es passen a null. Defensiu davant de plans incomplets/antics.
-function _mpNormalize(plan) {
+// ---- Model ----
+function _mpEmptyWeek() {
+  const w = {};
+  MEAL_PLAN_DAYS.forEach(d => {
+    w[d.id] = {};
+    MEAL_PLAN_SLOTS.forEach(s => { w[d.id][s.id] = null; });
+  });
+  return w;
+}
+function _mpNormalizeWeek(weekObj) {
+  const src = (weekObj && typeof weekObj === 'object' && !Array.isArray(weekObj)) ? weekObj : {};
   const out = {};
-  const src = (plan && typeof plan === 'object' && !Array.isArray(plan)) ? plan : {};
   MEAL_PLAN_DAYS.forEach(d => {
     const day = (src[d.id] && typeof src[d.id] === 'object') ? src[d.id] : {};
     out[d.id] = {};
@@ -52,30 +84,81 @@ function _mpNormalize(plan) {
   return out;
 }
 
+// Retorna el pla complet { weekId: week } normalitzat. Migra la forma
+// plana antiga (claus de dia a l'arrel) sota el weekId de la setmana en curs.
 function loadMealPlan() {
-  let raw = null;
-  try { raw = localStorage.getItem(MEAL_PLAN_KEY); } catch (e) { raw = null; }
   let parsed = {};
-  if (raw) {
-    try { parsed = JSON.parse(raw) || {}; } catch (e) { parsed = {}; }
+  try {
+    const raw = localStorage.getItem(MEAL_PLAN_KEY);
+    if (raw) parsed = JSON.parse(raw) || {};
+  } catch (e) { parsed = {}; }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) parsed = {};
+
+  // Forma plana antiga: alguna clau de dia ('mon'…'sun') a l'arrel.
+  const looksFlat = MEAL_PLAN_DAYS.some(d => parsed[d.id] && typeof parsed[d.id] === 'object');
+  if (looksFlat) {
+    parsed = { [_mpCurrentWeekId()]: parsed };
   }
-  return _mpNormalize(parsed);
+
+  const out = {};
+  Object.keys(parsed).forEach(weekId => {
+    out[weekId] = _mpNormalizeWeek(parsed[weekId]);
+  });
+  return out;
 }
 
 function saveMealPlan(plan) {
-  const normalized = _mpNormalize(plan);
-  try { localStorage.setItem(MEAL_PLAN_KEY, JSON.stringify(normalized)); } catch (e) {}
+  const norm = {};
+  if (plan && typeof plan === 'object') {
+    Object.keys(plan).forEach(weekId => { norm[weekId] = _mpNormalizeWeek(plan[weekId]); });
+  }
+  try { localStorage.setItem(MEAL_PLAN_KEY, JSON.stringify(norm)); } catch (e) {}
   if (typeof pushToServer === 'function') pushToServer();
-  return normalized;
+  return norm;
+}
+
+// Assigna/treu una recepta a la setmana VISUALITZADA.
+function _mpSetSlot(day, slot, recipeId) {
+  const plan = loadMealPlan();
+  if (!plan[_mpViewedWeekId]) plan[_mpViewedWeekId] = _mpEmptyWeek();
+  if (plan[_mpViewedWeekId][day]) plan[_mpViewedWeekId][day][slot] = recipeId;
+  saveMealPlan(plan);
+}
+
+// ---- Navegació ----
+function _mpGoWeek(delta) {
+  const monday = _mpParseYMD(_mpViewedWeekId || _mpCurrentWeekId());
+  monday.setDate(monday.getDate() + delta * 7);
+  _mpViewedWeekId = _mpLocalYMD(monday);
+  renderMealPlanner();
+}
+
+// Etiqueta de la setmana: rang de dates + paraula relativa (si escau).
+function _mpWeekHeaderLabel(weekId) {
+  const monday = _mpParseYMD(weekId);
+  const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
+  let range;
+  if (monday.getMonth() === sunday.getMonth()) {
+    range = monday.getDate() + '–' + sunday.getDate() + ' de ' + MEAL_PLAN_MONTHS[monday.getMonth()];
+  } else {
+    range = monday.getDate() + ' ' + MEAL_PLAN_MONTHS[monday.getMonth()]
+      + ' – ' + sunday.getDate() + ' ' + MEAL_PLAN_MONTHS[sunday.getMonth()];
+  }
+  const curMonday = _mpParseYMD(_mpCurrentWeekId());
+  const diffWeeks = Math.round((monday.getTime() - curMonday.getTime()) / (7 * 86400000));
+  let rel = '';
+  if (diffWeeks === 0) rel = 'Aquesta setmana';
+  else if (diffWeeks === 1) rel = 'Setmana vinent';
+  else if (diffWeeks === -1) rel = 'Setmana passada';
+  return { range, rel };
 }
 
 function openMealPlanner() {
+  _mpViewedWeekId = _mpCurrentWeekId();
   renderMealPlanner();
   showScreen('meal-planner');
 }
 
-// Resol el nom visible d'una recepta assignada. Si l'id és null o la
-// recepta ja no existeix (custom esborrada, etc.) → null.
 function _mpRecipeName(recipeId) {
   if (!recipeId || typeof getRecipe !== 'function') return null;
   const r = getRecipe(recipeId);
@@ -85,11 +168,30 @@ function _mpRecipeName(recipeId) {
 function renderMealPlanner() {
   const host = document.getElementById('meal-planner-list');
   if (!host) return;
-  const plan = loadMealPlan();
+  if (!_mpViewedWeekId) _mpViewedWeekId = _mpCurrentWeekId();
 
-  host.innerHTML = MEAL_PLAN_DAYS.map(d => {
+  const plan = loadMealPlan();
+  const week = plan[_mpViewedWeekId] || _mpEmptyWeek();
+  const monday = _mpParseYMD(_mpViewedWeekId);
+  const todayYMD = _mpLocalYMD(new Date());
+  const head = _mpWeekHeaderLabel(_mpViewedWeekId);
+
+  // Capçalera de setmana amb fletxes.
+  const navHtml = '<div class="mp-week-nav">'
+    + '<button type="button" class="mp-week-arrow" data-mp-week="prev" aria-label="Setmana anterior">‹</button>'
+    + '<div class="mp-week-label">'
+      + '<span class="mp-week-range">' + escapeHtml(head.range) + '</span>'
+      + (head.rel ? '<span class="mp-week-rel">' + escapeHtml(head.rel) + '</span>' : '')
+    + '</div>'
+    + '<button type="button" class="mp-week-arrow" data-mp-week="next" aria-label="Setmana següent">›</button>'
+    + '</div>';
+
+  const daysHtml = MEAL_PLAN_DAYS.map((d, i) => {
+    const dayDate = new Date(monday); dayDate.setDate(dayDate.getDate() + i);
+    const isToday = _mpLocalYMD(dayDate) === todayYMD;
+    const dayTitle = d.label + ' ' + dayDate.getDate();
     const rows = MEAL_PLAN_SLOTS.map(s => {
-      const recipeId = plan[d.id][s.id];
+      const recipeId = week[d.id][s.id];
       const name = _mpRecipeName(recipeId);
       const assigned = !!name;
       const valueHtml = assigned
@@ -102,15 +204,75 @@ function renderMealPlanner() {
         + valueHtml
         + '</div>';
     }).join('');
-    return '<div class="mp-day-card">'
-      + '<h3 class="mp-day-title">' + d.label + '</h3>'
+    return '<div class="mp-day-card' + (isToday ? ' is-today' : '') + '">'
+      + '<h3 class="mp-day-title">' + dayTitle + '</h3>'
       + rows
       + '</div>';
   }).join('');
+
+  host.innerHTML = navHtml + daysHtml;
+
+  // Estat del botó "Generar llista": deshabilitat si la setmana visualitzada
+  // no té cap recepta assignada.
+  const genBtn = document.getElementById('btn-generate-shopping');
+  if (genBtn) {
+    let hasAny = false;
+    MEAL_PLAN_DAYS.forEach(d => MEAL_PLAN_SLOTS.forEach(s => { if (week[d.id][s.id]) hasAny = true; }));
+    genBtn.disabled = !hasAny;
+    genBtn.classList.toggle('is-disabled', !hasAny);
+  }
 }
 
-// Modal de selecció de recepta (patró modal-overlay/modal-content de
-// showIngredientPicker). Llista completa de getAllRecipes() amb cerca per nom.
+// Recull els ingredients required de les receptes assignades a la setmana
+// VISUALITZADA, fusionats per clau canònica (base de cookmeSameProduct).
+function _mpCollectPlanIngredients() {
+  const plan = loadMealPlan();
+  const week = plan[_mpViewedWeekId] || _mpEmptyWeek();
+  const recipeIds = new Set();
+  MEAL_PLAN_DAYS.forEach(d => MEAL_PLAN_SLOTS.forEach(s => {
+    const id = week[d.id][s.id];
+    if (id) recipeIds.add(id);
+  }));
+  const seen = new Set();
+  const out = [];
+  recipeIds.forEach(id => {
+    const r = (typeof getRecipe === 'function') ? getRecipe(id) : null;
+    if (!r || !Array.isArray(r.ingredients)) return;
+    r.ingredients.filter(i => i && i.required).forEach(ing => {
+      const key = (typeof cookmeCanonTokens === 'function')
+        ? cookmeCanonTokens(ing.name).slice().sort().join(' ')
+        : String(ing.name || '').toLowerCase().trim();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push({ name: ing.name || '', emoji: ing.emoji || '🛒' });
+    });
+  });
+  return out;
+}
+
+// "🛒 Generar llista de la compra" sobre la setmana visualitzada.
+function _mpGenerateShoppingList() {
+  const items = _mpCollectPlanIngredients();
+  if (items.length === 0) {
+    showToast('Cap recepta planificada');
+    return;
+  }
+  const all = (typeof supermarkets !== 'undefined' && Array.isArray(supermarkets)) ? supermarkets : [];
+  if (all.length === 0) {
+    showToast(typeof t === 'function' ? t('noStoreConfigured') : 'No hi ha cap supermercat');
+    return;
+  }
+  const enabled = all.filter(s => s.enabled !== false);
+  const others = all.filter(s => s.enabled === false);
+  if (typeof showIngredientPicker !== 'function') return;
+  showIngredientPicker(null, { enabled, others }, {
+    ingredients: items,
+    title: 'Generar llista (' + items.length + ' ingredients)',
+    skipRecipeCount: true
+  });
+}
+
+// Modal de selecció de recepta: llista completa de getAllRecipes() + cerca.
 function openRecipeSelector(day, slot) {
   const recipes = (typeof getAllRecipes === 'function') ? (getAllRecipes() || []) : [];
   const slotMeta = MEAL_PLAN_SLOTS.find(s => s.id === slot);
@@ -157,9 +319,7 @@ function openRecipeSelector(day, slot) {
     btn.addEventListener('click', () => {
       const id = btn.dataset.recipeId;
       if (!id) return;
-      const plan = loadMealPlan();
-      if (plan[day]) plan[day][slot] = id;
-      saveMealPlan(plan);
+      _mpSetSlot(day, slot, id);
       close();
       renderMealPlanner();
     });
@@ -170,13 +330,12 @@ function openRecipeSelector(day, slot) {
 }
 
 function _mpClearSlot(day, slot) {
-  const plan = loadMealPlan();
-  if (plan[day]) plan[day][slot] = null;
-  saveMealPlan(plan);
+  _mpSetSlot(day, slot, null);
   renderMealPlanner();
 }
 
-// Listeners idempotents: entrada des de CookMe + delegació de clic als slots.
+// Listeners idempotents: entrada des de CookMe, botó generar, i delegació
+// de clic (slots, ✕ i fletxes de setmana — tot es repinta a cada render).
 (function _attachMealPlannerListeners() {
   if (typeof document === 'undefined') return;
   if (window.__mealPlannerListeners) return;
@@ -185,14 +344,21 @@ function _mpClearSlot(day, slot) {
   document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('btn-open-meal-planner');
     if (btn) btn.addEventListener('click', openMealPlanner);
+    const genBtn = document.getElementById('btn-generate-shopping');
+    if (genBtn) genBtn.addEventListener('click', _mpGenerateShoppingList);
   });
 
-  // Delegació: les files es repinten a cada renderMealPlanner.
   document.addEventListener('click', (e) => {
     if (!e.target || !e.target.closest) return;
     const host = document.getElementById('meal-planner-list');
     if (!host || !host.contains(e.target)) return;
-    // ✕ (treure) primer — viu dins de la fila.
+    // Fletxes de navegació de setmana.
+    const weekBtn = e.target.closest('[data-mp-week]');
+    if (weekBtn) {
+      _mpGoWeek(weekBtn.dataset.mpWeek === 'next' ? 1 : -1);
+      return;
+    }
+    // ✕ (treure) — viu dins de la fila.
     const clearBtn = e.target.closest('[data-mp-clear]');
     if (clearBtn) {
       e.stopPropagation();
