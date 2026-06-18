@@ -34,7 +34,8 @@ const SMART_NOTIF_DEFAULTS = {
     patternSuggestions: { enabled: true,  day: 1,  hour: 12, minute: 0 }, // 1 = dilluns (dia fix)
     rebuyOverdue:       { enabled: true,  hour: 10, minute: 0 },
     budgetAlert:        { enabled: true,  hour: 10, minute: 0 },
-    lowStock:           { enabled: true,  hour: 10, minute: 0 }
+    lowStock:           { enabled: true,  hour: 10, minute: 0 },
+    weeklyPlanReminder: { enabled: true,  day: 6,  hour: 10, minute: 0 }  // 6 = dissabte
   }
 };
 
@@ -55,7 +56,8 @@ const SMART_NOTIF_TYPES = [
   { id: 'patternSuggestions', emoji: '🧠', i18n: 'notifTypePatternSuggestions', hasHour: true, hasDay: false, fixedDay: 1 },
   { id: 'rebuyOverdue',       emoji: '🔄', i18n: 'notifTypeRebuy',              hasHour: true,  hasDay: false },
   { id: 'budgetAlert',        emoji: '💰', i18n: 'notifTypeBudget',             hasHour: true,  hasDay: false },
-  { id: 'lowStock',           emoji: '📉', i18n: 'notifTypeLowStock',           hasHour: true,  hasDay: false }
+  { id: 'lowStock',           emoji: '📉', i18n: 'notifTypeLowStock',           hasHour: true,  hasDay: false },
+  { id: 'weeklyPlanReminder', emoji: '📅', i18n: 'notifTypeWeeklyPlan',         hasHour: true,  hasDay: true  }
 ];
 
 
@@ -372,7 +374,8 @@ function getActiveBanners() {
     { id: 'badgeProgress',     eval: _evalBadgeProgress,     emoji: '🎯' },
     { id: 'rebuyOverdue',      eval: _evalRebuyOverdue,      emoji: '🔄' },
     { id: 'budgetAlert',       eval: _evalBudgetAlert,       emoji: '💰' },
-    { id: 'lowStock',          eval: _evalLowStock,          emoji: '📉' }
+    { id: 'lowStock',          eval: _evalLowStock,          emoji: '📉' },
+    { id: 'weeklyPlanReminder', eval: _evalWeeklyPlanReminder, emoji: '📅' }
   ];
   aggregated.forEach(item => {
     if (!_isTypeEnabled(item.id)) return;
@@ -383,6 +386,14 @@ function getActiveBanners() {
     if (item.id === 'weeklyRecap') {
       const cfg = smartNotifSettings.types[item.id];
       if (typeof cfg.day === 'number' && new Date().getDay() !== cfg.day) return;
+    }
+    // El recordatori de compra de la setmana vinent es mostra tot el cap de
+    // setmana: del dia configurat (dissabte) fins diumenge.
+    if (item.id === 'weeklyPlanReminder') {
+      const cfg = smartNotifSettings.types[item.id];
+      const dow = new Date().getDay(); // 0=Diu … 6=Dis
+      const startDay = (typeof cfg.day === 'number') ? cfg.day : 6;
+      if (dow !== 0 && dow < startDay) return;
     }
 
     let payload;
@@ -402,6 +413,7 @@ function getActiveBanners() {
     if (payload.emoji) banner.productEmoji = payload.emoji;
     if (typeof payload.level === 'number') banner.level = payload.level;
     if (Array.isArray(payload.lowIds)) banner.lowIds = payload.lowIds;
+    if (payload.weekId) banner.weekId = payload.weekId;
     out.push(banner);
   });
 
@@ -490,7 +502,7 @@ function checkScheduledNotifications() {
     if (!shouldNotifyToday(meta.id)) return;
 
     // Filtre temporal segons la metadada del tipus
-    if (meta.id === 'weeklyRecap') {
+    if (meta.id === 'weeklyRecap' || meta.id === 'weeklyPlanReminder') {
       if (!_isWeeklyDayReady(cfg)) return;
     } else if (typeof meta.fixedDay === 'number') {
       // Dia imposat (ex: patternSuggestions només dilluns).
@@ -572,6 +584,7 @@ function evaluateNotificationType(typeId, cfg) {
     case 'rebuyOverdue':      return _evalRebuyOverdue();
     case 'budgetAlert':       return _evalBudgetAlert();
     case 'lowStock':          return _evalLowStock();
+    case 'weeklyPlanReminder': return _evalWeeklyPlanReminder();
   }
   return null;
 }
@@ -937,6 +950,22 @@ function _ackLowStock(ids) {
   } catch (e) {}
 }
 
+// 13. Recordatori de compra de la setmana planificada VINENT: si la setmana
+// vinent té pla (≥1 recepta) i encara no s'ha generat la compra. Pur (no
+// escriu). El dedup és el flag mpIsShoppingDone(weekId) + el gate de dia
+// (dissabte per defecte) → es reseteja sol cada setmana.
+function _evalWeeklyPlanReminder() {
+  if (typeof mpNextWeekId !== 'function' || typeof mpWeekHasPlan !== 'function' || typeof mpIsShoppingDone !== 'function') return null;
+  const wId = mpNextWeekId();
+  if (!mpWeekHasPlan(wId)) return null;     // la setmana vinent no té cap recepta
+  if (mpIsShoppingDone(wId)) return null;   // ja s'ha generat la compra
+  return {
+    title: '📅 Buyte',
+    body: '📅 Tens menús per a la setmana vinent — vols generar la compra?',
+    weekId: wId
+  };
+}
+
 
 // ============================================
 //   BANNERS A LA HOME (Phase 4)
@@ -1078,6 +1107,18 @@ function _smartBannerAction(banner) {
         } else {
           showScreen('home');
         }
+      };
+    case 'weeklyPlanReminder':
+      // Obre el planificador a la setmana vinent (perquè revisi el pla i
+      // premi "Generar llista"). Banner del launcher → back a 'launcher'.
+      return () => {
+        if (typeof openMealPlanner === 'function') {
+          openMealPlanner(banner.weekId);
+        } else {
+          showScreen('meal-planner');
+        }
+        const _b = document.querySelector('#screen-meal-planner .back-btn');
+        if (_b) _b.dataset.back = 'launcher';
       };
     case 'rebuyOverdue':
       // Afegir directe el producte habitual al BuyMe (modal amb selector

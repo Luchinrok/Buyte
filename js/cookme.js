@@ -1436,6 +1436,9 @@ function showIngredientPicker(recipe, supers, opts) {
     });
     document.body.removeChild(overlay);
     addItemsToShop(selectedSuperId, items, { skipRecipeCount: !!opts.skipRecipeCount });
+    // Callback post-alta (p. ex. el planificador marca la setmana com a
+    // "compra generada"). Es crida només en confirmar, no en cancel·lar.
+    if (typeof opts.onAdded === 'function') { try { opts.onAdded(); } catch (e) {} }
   });
 
   overlay.querySelector('#modal-cancel-btn').addEventListener('click', () => {

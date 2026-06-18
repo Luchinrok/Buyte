@@ -13,6 +13,11 @@
    ============================================ */
 
 const MEAL_PLAN_KEY = 'eatmefirst_meal_plan';
+// Rastre de "compra ja generada" per setmana: { weekId: true }. Escrit en
+// confirmar la generació (vegeu opts.onAdded a showIngredientPicker) i
+// sincronitzat (settings.js, patró mealPlan). El consumeix el recordatori
+// weeklyPlanReminder (smart-notifications.js).
+const MEAL_PLAN_SHOPPING_DONE_KEY = 'eatmefirst_mealplan_shopping_done';
 
 // Ordre i etiquetes dels dies (Dilluns-first).
 const MEAL_PLAN_DAYS = [
@@ -60,6 +65,40 @@ function _mpMondayOf(date) {
 function _mpCurrentWeekId() {
   return _mpLocalYMD(_mpMondayOf(new Date()));
 }
+// weekId (dilluns) de la setmana VINENT.
+function mpNextWeekId() {
+  const m = _mpParseYMD(_mpCurrentWeekId());
+  m.setDate(m.getDate() + 7);
+  return _mpLocalYMD(m);
+}
+
+// ---- Estat "compra generada" per setmana ----
+function _mpReadShoppingDone() {
+  try {
+    const raw = localStorage.getItem(MEAL_PLAN_SHOPPING_DONE_KEY);
+    const o = raw ? JSON.parse(raw) : {};
+    return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
+  } catch (e) { return {}; }
+}
+function mpIsShoppingDone(weekId) {
+  if (!weekId) return false;
+  return !!_mpReadShoppingDone()[weekId];
+}
+function mpMarkShoppingDone(weekId) {
+  if (!weekId) return;
+  const o = _mpReadShoppingDone();
+  o[weekId] = true;
+  try { localStorage.setItem(MEAL_PLAN_SHOPPING_DONE_KEY, JSON.stringify(o)); } catch (e) {}
+  if (typeof pushToServer === 'function') pushToServer();
+}
+
+// True si la setmana indicada té ≥1 recepta assignada en algun slot.
+function mpWeekHasPlan(weekId) {
+  if (!weekId) return false;
+  const wk = loadMealPlan()[weekId];
+  if (!wk) return false;
+  return MEAL_PLAN_DAYS.some(d => MEAL_PLAN_SLOTS.some(s => wk[d.id] && wk[d.id][s.id]));
+}
 
 // ---- Model ----
 function _mpEmptyWeek() {
@@ -79,6 +118,30 @@ function _mpNormalizeWeek(weekObj) {
     MEAL_PLAN_SLOTS.forEach(s => {
       const v = day[s.id];
       out[d.id][s.id] = (typeof v === 'string' && v) ? v : null;
+    });
+  });
+  return out;
+}
+
+// Fusió de dos plans per setmana→dia→slot (last-writer-wins per slot: el
+// remot guanya si té valor, si no es manté el local). Evita que un snapshot
+// ranci del sync esborri slots germans assignats localment (vegeu
+// onRemoteData a settings.js). NO propaga esborrats de slot cross-device
+// (sense valor a cap banda → null); és el trade-off acceptat sense tombstone.
+function _mpMergePlans(localPlan, remotePlan) {
+  const lp = (localPlan && typeof localPlan === 'object' && !Array.isArray(localPlan)) ? localPlan : {};
+  const rp = (remotePlan && typeof remotePlan === 'object' && !Array.isArray(remotePlan)) ? remotePlan : {};
+  const weeks = new Set([...Object.keys(lp), ...Object.keys(rp)]);
+  const out = {};
+  weeks.forEach(w => {
+    const lw = _mpNormalizeWeek(lp[w]);
+    const rw = _mpNormalizeWeek(rp[w]);
+    out[w] = {};
+    MEAL_PLAN_DAYS.forEach(d => {
+      out[w][d.id] = {};
+      MEAL_PLAN_SLOTS.forEach(s => {
+        out[w][d.id][s.id] = rw[d.id][s.id] || lw[d.id][s.id] || null;
+      });
     });
   });
   return out;
@@ -153,8 +216,13 @@ function _mpWeekHeaderLabel(weekId) {
   return { range, rel };
 }
 
-function openMealPlanner() {
-  _mpViewedWeekId = _mpCurrentWeekId();
+// weekId opcional: obre el planificador en una setmana concreta (p. ex. el
+// recordatori weeklyPlanReminder obre la setmana vinent). Per defecte, l'actual.
+function openMealPlanner(weekId) {
+  // weekId només si és un string de data vàlid (YYYY-MM-DD). Si no (p. ex. el
+  // listener de click passa l'Event com a 1r arg), cau a la setmana actual.
+  const valid = (typeof weekId === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(weekId));
+  _mpViewedWeekId = valid ? weekId : _mpCurrentWeekId();
   renderMealPlanner();
   showScreen('meal-planner');
 }
@@ -265,10 +333,14 @@ function _mpGenerateShoppingList() {
   const enabled = all.filter(s => s.enabled !== false);
   const others = all.filter(s => s.enabled === false);
   if (typeof showIngredientPicker !== 'function') return;
+  const weekId = _mpViewedWeekId;   // captura la setmana en el moment de generar
   showIngredientPicker(null, { enabled, others }, {
     ingredients: items,
     title: 'Generar llista (' + items.length + ' ingredients)',
-    skipRecipeCount: true
+    skipRecipeCount: true,
+    // En CONFIRMAR (afegit real al BuyMe), marquem la setmana com a generada
+    // perquè el recordatori weeklyPlanReminder no la torni a demanar.
+    onAdded: () => mpMarkShoppingDone(weekId)
   });
 }
 

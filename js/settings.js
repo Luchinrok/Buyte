@@ -104,10 +104,29 @@ function onRemoteData(remoteData) {
 
   // Pla setmanal de menús: guarda d'objecte no buit (mateixa regla
   // conservadora; no esborrar el local des d'un dispositiu sense pla).
+  // FUSIÓ per setmana→dia→slot (no sobreescriure) perquè un snapshot ranci
+  // no esborri slots germans assignats localment entre dues edicions.
   if (remoteData.mealPlan && typeof remoteData.mealPlan === 'object'
       && !Array.isArray(remoteData.mealPlan)
       && Object.keys(remoteData.mealPlan).length > 0) {
-    localStorage.setItem('eatmefirst_meal_plan', JSON.stringify(remoteData.mealPlan));
+    const localPlan = JSON.parse(localStorage.getItem('eatmefirst_meal_plan') || '{}');
+    const merged = (typeof _mpMergePlans === 'function')
+      ? _mpMergePlans(localPlan, remoteData.mealPlan)
+      : remoteData.mealPlan;
+    localStorage.setItem('eatmefirst_meal_plan', JSON.stringify(merged));
+    // Si el planificador és visible, repinta perquè reflecteixi la fusió.
+    const mpScr = document.getElementById('screen-meal-planner');
+    if (mpScr && mpScr.classList.contains('active') && typeof renderMealPlanner === 'function') {
+      renderMealPlanner();
+    }
+  }
+
+  // Rastre "compra ja generada" per setmana del planificador: guarda
+  // d'objecte no buit (mateixa regla conservadora que mealPlan).
+  if (remoteData.mealplanShoppingDone && typeof remoteData.mealplanShoppingDone === 'object'
+      && !Array.isArray(remoteData.mealplanShoppingDone)
+      && Object.keys(remoteData.mealplanShoppingDone).length > 0) {
+    localStorage.setItem('eatmefirst_mealplan_shopping_done', JSON.stringify(remoteData.mealplanShoppingDone));
   }
 
   localStorage.setItem('eatmefirst_products', JSON.stringify(products));
@@ -148,7 +167,8 @@ function pushToServer() {
       popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : [],
       categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}'),
       monthlyBudget: Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0,
-      mealPlan: JSON.parse(localStorage.getItem('eatmefirst_meal_plan') || '{}')
+      mealPlan: JSON.parse(localStorage.getItem('eatmefirst_meal_plan') || '{}'),
+      mealplanShoppingDone: JSON.parse(localStorage.getItem('eatmefirst_mealplan_shopping_done') || '{}')
     });
   }
 }
@@ -213,7 +233,8 @@ async function createNewList() {
       popularCustom: (typeof getPopularProducts === 'function') ? getPopularProducts() : [],
       categoryOrderBySuper: JSON.parse(localStorage.getItem('eatmefirst_category_order_by_super') || '{}'),
       monthlyBudget: Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0,
-      mealPlan: JSON.parse(localStorage.getItem('eatmefirst_meal_plan') || '{}')
+      mealPlan: JSON.parse(localStorage.getItem('eatmefirst_meal_plan') || '{}'),
+      mealplanShoppingDone: JSON.parse(localStorage.getItem('eatmefirst_mealplan_shopping_done') || '{}')
     });
     await window.FBSync.connectToList(code, onRemoteData);
 

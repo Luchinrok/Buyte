@@ -738,6 +738,7 @@ const TRANSLATIONS = {
     notifTypeRebuy: 'Re-compra habitual',
     notifTypeBudget: 'Pressupost mensual',
     notifTypeLowStock: 'Estoc baix',
+    notifTypeWeeklyPlan: 'Compra de la setmana vinent',
     notifTestButton: 'Provar una notificació',
     notifTestMessage: "Aquesta és una prova! Si la veus, les notificacions funcionen.",
     notifInstallTip: "💡 Per rebre notificacions quan l'app està tancada, instal·la-la a la pantalla d'inici",
