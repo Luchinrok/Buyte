@@ -111,10 +111,17 @@ function _expensesGetData(rangeKey) {
     return Number.isFinite(d.getTime()) && inPeriod(d);
   });
 
+  // Import d'una línia (cistella exacta v2): el total REAL registrat
+  // (preu × unitats) si existeix; si no (entrades velles), el price
+  // per-unitat com a fallback. S'usa a TOTS els sumatoris perquè els
+  // desglossaments (per súper/categoria/producte/mes) segueixin sumant
+  // el mateix total.
+  const _lineAmount = (e) => (typeof e.totalPrice === 'number') ? e.totalPrice
+    : (typeof e.price === 'number' ? e.price : 0);
+
   // total i count del PERÍODE. count compta tots els ARTICLES del
-  // període; total només suma els que tenen price numèric.
-  const total = filtered.reduce((s, e) =>
-    s + (typeof e.price === 'number' ? e.price : 0), 0);
+  // període; total suma l'import real de cada línia.
+  const total = filtered.reduce((s, e) => s + _lineAmount(e), 0);
   const count = filtered.length;
 
   // Cistella mitjana (v1): no hi ha sessió de compra al model, així que
@@ -122,7 +129,12 @@ function _expensesGetData(rangeKey) {
   // "cistella". avgBasket = despesa total / nombre de cistelles.
   const basketKeys = {};
   filtered.forEach(e => {
-    const key = (e.date || '?') + '|' + (e.supermarket || '(sense super)');
+    // Cistella exacta v2: agrupa per basketId real (anada a comprar) quan
+    // existeix; si no (entrades velles o altes manuals), fallback al proxy
+    // (dia + súper). avgBasket = despesa total / nombre de cistelles.
+    const key = e.basketId
+      ? ('b:' + e.basketId)
+      : ((e.date || '?') + '|' + (e.supermarket || '(sense super)'));
     basketKeys[key] = true;
   });
   const basketCount = Object.keys(basketKeys).length;
@@ -133,7 +145,7 @@ function _expensesGetData(rangeKey) {
   filtered.forEach(e => {
     const key = e.supermarket || '(sense super)';
     if (!bySuperMap[key]) bySuperMap[key] = { name: key, total: 0, count: 0 };
-    bySuperMap[key].total += (typeof e.price === 'number' ? e.price : 0);
+    bySuperMap[key].total += _lineAmount(e);
     bySuperMap[key].count += 1;
   });
   const bySuper = Object.values(bySuperMap).sort((a, b) => b.total - a.total);
@@ -158,7 +170,7 @@ function _expensesGetData(rangeKey) {
         count: 0
       };
     }
-    byPopularMap[key].total += (typeof e.price === 'number' ? e.price : 0);
+    byPopularMap[key].total += _lineAmount(e);
     byPopularMap[key].count += 1;
   });
   const byPopular = Object.values(byPopularMap)
@@ -189,7 +201,7 @@ function _expensesGetData(rangeKey) {
         count: 0
       };
     }
-    byCategoryMap[catId].total += (typeof e.price === 'number' ? e.price : 0);
+    byCategoryMap[catId].total += _lineAmount(e);
     byCategoryMap[catId].count += 1;
   });
   const byCategory = Object.values(byCategoryMap).sort((a, b) => b.total - a.total);
@@ -214,7 +226,7 @@ function _expensesGetData(rangeKey) {
     if (!Number.isFinite(t)) return;
     const d = new Date(t);
     const idx = byMonth.findIndex(m => m.year === d.getFullYear() && m.month === d.getMonth());
-    if (idx >= 0) byMonth[idx].total += (typeof e.price === 'number' ? e.price : 0);
+    if (idx >= 0) byMonth[idx].total += _lineAmount(e);
   });
 
   // Pressupost mensual + despesa del MES NATURAL en curs (byMonth[últim],

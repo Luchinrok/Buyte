@@ -2056,7 +2056,10 @@ function tryQuickBuyShoppingItem(item) {
 //   product: el producte agrupat (existent si fused, nou si no)
 //   lotId:   id del lot afegit (necessari per a l'undo)
 //   fused:   true si s'ha afegit a un producte existent, false si nou
-function _quickBuyCore(item, prefill) {
+// basketId opcional: id de l'anada a comprar (cistella exacta v2). El passa
+// quickBuyMultipleSelected (un sol id per a tot el bloc "Comprat"); el camí
+// individual no en passa → cau al fallback proxy (dia+súper) a expenses.js.
+function _quickBuyCore(item, prefill, basketId) {
   if (!prefill || !prefill.location) return null;
 
   const today = new Date();
@@ -2158,6 +2161,10 @@ function _quickBuyCore(item, prefill) {
       popularId: prefill.popularId,
       name: prefill.name,
       price: prefill.price,
+      // totalPrice: total REAL de la línia (preu × unitats, via
+      // getEstimatedItemCost) — abans es descartava. Cistella exacta v2.
+      totalPrice: prefill.totalPrice,
+      basketId: basketId,
       weight: prefill.weight,
       days_calc: prefill.noExpiry ? null : prefill.days,
       days_real: null,
@@ -2226,12 +2233,16 @@ function quickBuyMultipleSelected() {
   const pairs = []; // { newProductId, originalItem }
   let needsFormCount = 0;
 
+  // Un sol basketId per a tota aquesta sessió de "Comprat" (cistella exacta
+  // v2): tots els ítems comprats en aquest bloc s'agrupen com una anada.
+  const basketId = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+
   items.forEach(item => {
     const prefill = _buildShoppingPrefill(item);
     const hasZone = !!prefill.location;
     const hasExpiry = !!prefill.days || !!prefill.noExpiry;
     if (hasZone && hasExpiry) {
-      const res = _quickBuyCore(item, prefill);
+      const res = _quickBuyCore(item, prefill, basketId);
       if (res) {
         pairs.push({ productId: res.product.id, lotId: res.lotId, fused: res.fused, originalItem: item });
         // Gamificació per cada producte (mateix tractament que saveNewProduct).

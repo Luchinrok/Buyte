@@ -107,6 +107,17 @@ function recordPurchase(payload) {
     supermarket: payload.supermarket || null,
     productId: payload.productId || null
   };
+  // Cistella exacta (Despeses v2, Fase 1): total REAL de la línia (preu ×
+  // unitats) i id de l'anada a comprar per agrupar. Opcionals: només
+  // s'escriuen si el caller els passa (no posar undefined → trencaria el
+  // sync a Firestore). Les entrades velles sense aquests camps cauen al
+  // fallback de _expensesGetData (price per-unitat + proxy dia+súper).
+  if (typeof payload.totalPrice === 'number' && payload.totalPrice >= 0) {
+    record.totalPrice = payload.totalPrice;
+  }
+  if (payload.basketId) {
+    record.basketId = payload.basketId;
+  }
   if (!Array.isArray(purchaseHistory[key])) purchaseHistory[key] = [];
   purchaseHistory[key].push(record);
   _phPurgeOld();

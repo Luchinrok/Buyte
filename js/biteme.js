@@ -4787,6 +4787,20 @@ function saveNewProduct() {
         if (Number.isFinite(d)) _daysCalc = d;
       }
       const _sm = (typeof getSupermarketById === 'function') ? getSupermarketById(fromShopping) : null;
+      const _unitPrice = (typeof price === 'number') ? price
+        : (typeof newProduct.price === 'number' ? newProduct.price : undefined);
+      // totalPrice de la línia (cistella exacta v2) = preu × unitats. En
+      // mode multiplicador cada iteració és 1 envàs (units=1). En mode
+      // 1-lot multipliquem per la qty NOMÉS si és un enter net d'unitats
+      // (no pes lliure "500g": parseInt donaria 500). Sense basketId: les
+      // altes manuals cauen al fallback proxy (dia+súper) a expenses.js.
+      let _unitsPerRecord = 1;
+      if (!isMultiplier) {
+        const _n = parseInt(qty, 10);
+        if (Number.isFinite(_n) && _n > 0 && String(_n) === String(qty).trim()) _unitsPerRecord = _n;
+      }
+      const _lineTotal = (typeof _unitPrice === 'number')
+        ? Math.round(_unitPrice * _unitsPerRecord * 100) / 100 : undefined;
       // N crides — 1 per cada lot creat (lots multiplicador són envasos
       // independents, cada un = una compra). Per a 1 sol lot, 1 crida.
       const _purchaseCount = lotsToCreate.length || 1;
@@ -4794,7 +4808,8 @@ function saveNewProduct() {
         recordPurchase({
           popularId: _matched ? _matched.id : null,
           name: newProduct.name,
-          price: (typeof price === 'number') ? price : (typeof newProduct.price === 'number' ? newProduct.price : undefined),
+          price: _unitPrice,
+          totalPrice: _lineTotal,
           weight: (isMultiplier ? weight : newProduct.weight) || undefined,
           days_calc: _daysCalc,
           days_real: null,
