@@ -99,6 +99,11 @@ function getPopularProducts() {
         // el sync a Firestore ("Unsupported field value: undefined").
         if (p.emoji) entry.emoji = p.emoji;
         if (typeof p.days === 'number') entry.days = p.days;
+        // noExpiry: els productes del catàleg sense caducitat (Sal, Sucre,
+        // Mel…) han de propagar-ho perquè el camí d'afegir (formulari +
+        // quick-buy) marqui el producte com a "no caduca". Vegeu biteme.js
+        // (applyKnownProductToForm / _buildShoppingPrefill llegeixen .noExpiry).
+        if (p.noExpiry) entry.noExpiry = true;
         if (typeof p.price === 'number') entry.price = p.price;
         if (p.weight) entry.weight = p.weight;
         custom.push(entry);
@@ -131,6 +136,7 @@ function getPopularProducts() {
     // evitar days: undefined a popularCustom, que peta el sync a Firestore.
     if (p.emoji) entry.emoji = p.emoji;
     if (typeof p.days === 'number') entry.days = p.days;
+    if (p.noExpiry) entry.noExpiry = true;   // propaga "no caduca" (mateixa raó que la branca d'injecció)
     if (typeof p.price === 'number') entry.price = p.price;
     if (p.weight) entry.weight = p.weight;
     return entry;
@@ -720,6 +726,12 @@ function renderPopularList() {
     const row = document.createElement('div');
     row.className = 'popular-row';
 
+    // Badge de dies: +Nd si caduca; ♾️ si és noExpiry (Sal, Sucre, Mel…);
+    // res si no tenim cap de les dues dades (evita pintar "+undefinedd").
+    const daysBadge = (typeof p.days === 'number')
+      ? `<span class="popular-days">+${p.days}d</span>`
+      : (p.noExpiry ? '<span class="popular-days">♾️</span>' : '');
+
     // Des de Configuració, clicar una fila obre l'edició del popular (gestió
     // del catàleg). Des del BuyMe, prefilla el formulari de la llista de la
     // compra. Des de la resta (add/home), prefilla el formulari de l'EatMe.
@@ -761,7 +773,7 @@ function renderPopularList() {
           <span class="popular-emoji">${p.emoji}</span>
           <span class="popular-name">${escapeHtml(p.name)}</span>
           ${locBadge(p.location)}
-          <span class="popular-days">+${p.days}d</span>
+          ${daysBadge}
         </button>
         ${arrowsHtml}
         <button class="popular-edit-btn" aria-label="Edit">✏️</button>
@@ -780,7 +792,7 @@ function renderPopularList() {
           <span class="popular-emoji">${p.emoji}</span>
           <span class="popular-name">${escapeHtml(p.name)}</span>
           ${locBadge(p.location)}
-          <span class="popular-days">+${p.days}d</span>
+          ${daysBadge}
         </button>
       `;
       row.querySelector('.popular-item-main').addEventListener('click', onRowClick);
