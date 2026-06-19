@@ -92,10 +92,13 @@ function getPopularProducts() {
         const entry = {
           id: 'pop-' + idx,
           name: name,
-          emoji: p.emoji,
-          days: p.days,
           location: location || 'pantry'
         };
+        // emoji/days només si existeixen: les entrades sense days (productes
+        // noExpiry del catàleg) NO han de generar days: undefined, que peta
+        // el sync a Firestore ("Unsupported field value: undefined").
+        if (p.emoji) entry.emoji = p.emoji;
+        if (typeof p.days === 'number') entry.days = p.days;
         if (typeof p.price === 'number') entry.price = p.price;
         if (p.weight) entry.weight = p.weight;
         custom.push(entry);
@@ -122,10 +125,12 @@ function getPopularProducts() {
     const entry = {
       id: 'pop-' + idx,
       name: name,
-      emoji: p.emoji,
-      days: p.days,
       location: location || 'pantry'
     };
+    // emoji/days només si existeixen (mateixa raó que la branca d'injecció):
+    // evitar days: undefined a popularCustom, que peta el sync a Firestore.
+    if (p.emoji) entry.emoji = p.emoji;
+    if (typeof p.days === 'number') entry.days = p.days;
     if (typeof p.price === 'number') entry.price = p.price;
     if (p.weight) entry.weight = p.weight;
     return entry;

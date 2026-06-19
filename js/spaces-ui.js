@@ -80,6 +80,12 @@ function renderSpaceSelectorBar() {
   const iconEl = document.getElementById('space-selector-icon');
   const nameEl = document.getElementById('space-selector-name');
   if (!iconEl || !nameEl) return;
+  // Amaga la barra quan només hi ha un Espai (o cap): el selector no
+  // aporta res. Reapareix sola quan se'n crea/uneix un segon, perquè
+  // renderSpaceSelectorBar es re-crida en tornar al launcher.
+  const bar = iconEl.closest('.space-bar');
+  const n = (SS && typeof SS.getSpaces === 'function') ? SS.getSpaces().length : 0;
+  if (bar) bar.style.display = (n <= 1) ? 'none' : 'flex';
   const active = SS && SS.getActiveSpace();
   if (!active) {
     iconEl.textContent = '📍';
@@ -91,8 +97,16 @@ function renderSpaceSelectorBar() {
 }
 
 
-function openSpacesScreen() {
+// origin: 'launcher' (des de la .space-bar de la home) o 'settings' (des
+// de la card "Els meus espais"). Fixa el back de #screen-spaces en
+// conseqüència (mateix patró que openSyncScreen). Default: 'launcher'.
+function openSpacesScreen(origin) {
   renderSpacesList();
+  const backBtn = document.querySelector('#screen-spaces .back-btn');
+  if (backBtn) {
+    const isSettings = origin === 'settings' || (typeof origin === 'string' && origin.indexOf('settings-') === 0);
+    backBtn.dataset.back = isSettings ? origin : 'launcher';
+  }
   showScreen('spaces');
 }
 
@@ -132,6 +146,11 @@ function renderSpacesList() {
         codeBtnsHtml += '<button type="button" class="space-share-btn" data-action="share" data-code="' + escapeHtml(space.syncCode) + '" data-space-name="' + escapeHtml(space.name || '') + '" aria-label="' + escapeHtml(t('spacesShareTooltip')) + '" title="' + escapeHtml(t('spacesShareTooltip')) + '">🔗</button>';
       }
     }
+    // Botó explícit "Canviar" només a les files NO actives (substitueix
+    // el switch en clicar el cos de la fila, que era fàcil de prémer
+    // sense voler).
+    const switchBtnHtml = isActive ? '' :
+      '<button type="button" class="space-switch-btn" data-action="switch" aria-label="' + escapeHtml(t('spacesSwitchBtn')) + '" title="' + escapeHtml(t('spacesSwitchBtn')) + '">➡️</button>';
     row.innerHTML =
       '<div class="space-row-icon">' + escapeHtml(space.icon || '🏠') + '</div>' +
       '<div class="space-row-info">' +
@@ -141,6 +160,7 @@ function renderSpacesList() {
         '<p class="space-row-code">' + escapeHtml(codeText) + '</p>' +
       '</div>' +
       '<div class="space-row-actions">' +
+        switchBtnHtml +
         codeBtnsHtml +
         '<button type="button" class="space-rename-btn" data-action="rename" aria-label="' + escapeHtml(t('spacesRenameTitle')) + '">✏️</button>' +
         '<button type="button" class="space-delete-btn" data-action="delete" aria-label="' + escapeHtml(deleteTitle) + '" title="' + escapeHtml(deleteTitle) + '"' + (cantDelete ? ' disabled' : '') + '>🗑️</button>' +
@@ -202,6 +222,7 @@ function _confirmDeleteSpace(spaceId) {
       SS.deleteSpace(spaceId);
       showToast(t('deleted'));
       renderSpacesList();
+      renderSpaceSelectorBar();   // el recompte ha canviat → re-avalua mostrar/amagar la barra (#3)
     }
   );
 }
@@ -233,20 +254,17 @@ function _onSpacesListClick(e) {
       return;
     }
     if (!id) return;
-    if (action === 'rename') _showRenameSpaceModal(id);
+    if (action === 'switch') _confirmSwitchToSpace(id);
+    else if (action === 'rename') _showRenameSpaceModal(id);
     else if (action === 'delete') {
       if (actionBtn.disabled) return;
       _confirmDeleteSpace(id);
     }
     return;
   }
-  // Click a la fila d'un Espai NO actiu → confirmació + switch real
-  // (backup, clear de claus per-espai i reload).
-  const row = e.target.closest('.space-row');
-  if (row && !row.classList.contains('is-active')) {
-    const id = row.dataset.spaceId;
-    if (id) _confirmSwitchToSpace(id);
-  }
+  // El switch només es fa amb el botó explícit "Canviar" (data-action
+  // 'switch'). Clicar el cos de la fila ja no fa res (evita switches
+  // accidentals).
 }
 if (typeof document !== 'undefined') {
   document.addEventListener('click', _onSpacesListClick);
@@ -737,6 +755,14 @@ function _confirmSwitchToSpace(spaceId) {
   if (!target) return;
   if (SS.getActiveSpaceId() === spaceId) return;
 
+  // Guard offline: switchToSpace esborra les dades locals per-espai i el
+  // reload posterior depèn de Firebase per regar les del núvol. Sense
+  // connexió, entrar a un Espai amb syncCode aterraria en buit. Bloquegem.
+  if (typeof navigator !== 'undefined' && navigator.onLine === false && target.syncCode) {
+    showToast(t('spacesSwitchOfflineBlocked', target.name || ''));
+    return;
+  }
+
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML =
@@ -922,6 +948,7 @@ function _showCreateSpaceModal() {
 
       close();
       renderSpacesList();
+      renderSpaceSelectorBar();   // nou Espai → re-avalua mostrar/amagar la barra (#3)
       // Modal de confirmació amb el codi destacat + botó per copiar-lo.
       // Important: en una creació nova, l'usuari NO ha de perdre aquest
       // codi (el necessitarà per connectar altres dispositius). Per
@@ -1060,6 +1087,7 @@ function _showJoinSpaceModal() {
       window.SpacesSystem.updateSpaceSyncCode(newSpace.id, code);
       close();
       renderSpacesList();
+      renderSpaceSelectorBar();   // nou Espai → re-avalua mostrar/amagar la barra (#3)
       showToast('✅ ' + t('spacesJoined', name));
     } catch (e) {
       console.error('[Spaces] Error verificant codi:', e);
@@ -1075,7 +1103,11 @@ function _showJoinSpaceModal() {
 // la resta d'attach* del mòdul Settings).
 function attachSpacesScreenListeners() {
   const sel = document.getElementById('btn-space-selector');
-  if (sel) sel.addEventListener('click', openSpacesScreen);
+  if (sel) sel.addEventListener('click', () => openSpacesScreen('launcher'));
+  // Card de gestió a Settings: sempre accessible (la .space-bar de la home
+  // s'amaga amb un sol Espai, vegeu renderSpaceSelectorBar #3).
+  const settingsCard = document.getElementById('settings-spaces');
+  if (settingsCard) settingsCard.addEventListener('click', () => openSpacesScreen('settings'));
   const c = document.getElementById('btn-create-space');
   if (c) c.addEventListener('click', _onSpacesCreateClick);
   const j = document.getElementById('btn-join-space');

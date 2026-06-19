@@ -1643,6 +1643,10 @@ h1 {
   background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
   box-shadow: 0 3px 10px rgba(229, 57, 53, 0.35);
 }
+.settings-card-spaces {
+  background: linear-gradient(135deg, #26A69A 0%, #00695C 100%);
+  box-shadow: 0 3px 10px rgba(38, 166, 154, 0.3);
+}
 
 /* Divisor visual entre les opcions parcials i el "Esborrar TOT" */
 .reset-data-divider {

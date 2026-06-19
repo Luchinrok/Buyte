@@ -862,6 +862,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inicia sincronització si ja teníem codi guardat
   initSync();
 
+  // Auto-restore en reconnectar: si el boot va ser offline (o es va
+  // perdre la connexió), FBSync.init() falla i syncEnabled queda false.
+  // En tornar la xarxa, reintentem initSync() perquè onRemoteData regui
+  // les dades del núvol. initSync és re-cridable amb seguretat
+  // (connectToList desconnecta el listener anterior).
+  try {
+    window.addEventListener('online', () => {
+      if (typeof syncEnabled !== 'undefined' && !syncEnabled && typeof initSync === 'function') {
+        initSync();
+      }
+    });
+  } catch (e) {}
+
   // Si acabem de fer un Switch d'Espai (vegeu SpacesSystem.switchToSpace),
   // donem 1.5 s perquè la snapshot inicial del nou Espai arribi del cloud
   // i, si segueix sense botigues, hi inicialitzem les del país. Així:

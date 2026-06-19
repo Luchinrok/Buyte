@@ -32,7 +32,12 @@ async function initFirebase() {
 
     window.__firestoreModule = firestoreModule;
     fbApp = initializeApp(firebaseConfig);
-    fbDb = firestoreModule.getFirestore(fbApp);
+    // ignoreUndefinedProperties: xarxa de seguretat perquè cap camp niat
+    // undefined (a createList/pushToServer) torni a petar el sync amb
+    // "Unsupported field value: undefined". initializeFirestore s'ha de
+    // cridar ABANS de cap getFirestore/lectura/escriptura — aquí és l'únic
+    // punt d'init, així que s'aplica a totes les operacions.
+    fbDb = firestoreModule.initializeFirestore(fbApp, { ignoreUndefinedProperties: true });
     fbReady = true;
     return true;
   } catch (e) {

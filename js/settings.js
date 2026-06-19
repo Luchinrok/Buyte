@@ -206,6 +206,24 @@ function openSyncScreen(origin) {
   showScreen('sync');
 }
 
+// Pont global → space.syncCode: propaga el codi de sync resultant a
+// l'Espai ACTIU (complement del sentit invers, que ja existeix a
+// switchToSpace/migració). Així la llista d'Espais reflecteix que l'Espai
+// actiu està sincronitzat (codi + botons 📋/🔗), no només la pantalla de
+// Sincronització clàssica. Re-renderitza la llista si està oberta.
+// Guarda si SpacesSystem no hi és. Persisteix al data layer (igual que
+// des de la Spaces UI: updateSpaceSyncCode → _spacesWrite → localStorage).
+function _syncCodeToActiveSpace(code) {
+  if (!window.SpacesSystem || typeof window.SpacesSystem.updateSpaceSyncCode !== 'function') return;
+  const activeId = window.SpacesSystem.getActiveSpaceId();
+  if (!activeId) return;
+  window.SpacesSystem.updateSpaceSyncCode(activeId, code);
+  const scr = document.getElementById('screen-spaces');
+  if (scr && scr.classList.contains('active') && typeof renderSpacesList === 'function') {
+    renderSpacesList();
+  }
+}
+
 async function createNewList() {
   showToast(t('syncConnecting'));
 
@@ -240,6 +258,7 @@ async function createNewList() {
 
     localStorage.setItem('eatmefirst_sync_code', code);
     syncEnabled = true;
+    _syncCodeToActiveSpace(code);   // reflecteix el codi a l'Espai actiu (pont global → space)
     updateSyncStatus();
     updateSyncScreen();
     showToast('✅ ' + t('syncCreated'));
@@ -293,6 +312,7 @@ async function _completeSyncJoin(code) {
     await window.FBSync.connectToList(code, onRemoteData);
     localStorage.setItem('eatmefirst_sync_code', code);
     syncEnabled = true;
+    _syncCodeToActiveSpace(code);   // reflecteix el codi a l'Espai actiu (pont global → space)
     updateSyncStatus();
     showScreen('sync');
     updateSyncScreen();
@@ -373,6 +393,14 @@ function disconnectSync() {
     if (window.FBSync) window.FBSync.disconnect();
     localStorage.removeItem('eatmefirst_sync_code');
     syncEnabled = false;
+    // Netejar el codi de l'Espai actiu NOMÉS si és el per defecte/home (el
+    // de la migració). Per a Espais creats/units des de la Spaces UI, el
+    // codi és la seva identitat compartida (altres dispositius l'usen): no
+    // el toquem — en tornar-hi via switchToSpace es reconnecta sol.
+    if (window.SpacesSystem && typeof window.SpacesSystem.getActiveSpaceId === 'function'
+        && window.SpacesSystem.getActiveSpaceId() === window.SpacesSystem.DEFAULT_HOME_ID) {
+      _syncCodeToActiveSpace(null);
+    }
     updateSyncStatus();
     updateSyncScreen();
     showToast(t('syncDisconnected'));
