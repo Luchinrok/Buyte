@@ -2237,6 +2237,10 @@ function quickBuyMultipleSelected() {
   // v2): tots els ítems comprats en aquest bloc s'agrupen com una anada.
   const basketId = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
 
+  // Total estimat de l'anada (Σ dels totalPrice de les línies realment
+  // comprades) — precarrega el modal de l'import del tiquet (Despeses v2 F2).
+  let estBasketTotal = 0;
+
   items.forEach(item => {
     const prefill = _buildShoppingPrefill(item);
     const hasZone = !!prefill.location;
@@ -2245,6 +2249,7 @@ function quickBuyMultipleSelected() {
       const res = _quickBuyCore(item, prefill, basketId);
       if (res) {
         pairs.push({ productId: res.product.id, lotId: res.lotId, fused: res.fused, originalItem: item });
+        if (typeof prefill.totalPrice === 'number' && prefill.totalPrice >= 0) estBasketTotal += prefill.totalPrice;
         // Gamificació per cada producte (mateix tractament que saveNewProduct).
         if (typeof bumpProductsAddedCounter === 'function') bumpProductsAddedCounter();
         if (typeof addXp === 'function') addXp(2, 'eatme-add');
@@ -2277,9 +2282,40 @@ function quickBuyMultipleSelected() {
       durationMs: 6000,
       onUndo: () => undoQuickBuyMultiple(pairs)
     });
+    // Cistella exacta v2 (Fase 2): demana l'import real del tiquet d'aquesta
+    // anada. Modal per sobre del toast; només al camí bulk.
+    _promptBasketTicketTotal(basketId, estBasketTotal);
   } else if (needsFormCount > 0) {
     showToast(needsFormCount + ' necessit' + (needsFormCount === 1 ? 'a' : 'en') + ' ompliment manual');
   }
+}
+
+// Cistella exacta (Despeses v2, Fase 2): després d'un "Comprat" en bloc,
+// demana l'import REAL del tiquet. El camp ve precarregat amb el total
+// estimat (Σ dels totalPrice de les línies comprades); acceptar sense
+// tocar-lo deixa l'estimat intacte. Si l'usuari escriu un valor > 0 diferent,
+// sobreescriu el totalPrice de TOTS els records d'aquest basketId (repartit
+// proporcionalment — vegeu updateBasketTotal). Cancel·lar / buit / no
+// numèric / ≤ 0 → no toca res. NOMÉS al camí bulk (no individual ni altes
+// manuals).
+function _promptBasketTicketTotal(basketId, estTotal) {
+  if (!basketId || typeof showInputModal !== 'function') return;
+  const est = (typeof estTotal === 'number' && estTotal >= 0) ? Math.round(estTotal * 100) / 100 : 0;
+  const apply = (raw) => {
+    const v = parseFloat(String(raw == null ? '' : raw).replace(',', '.'));
+    if (!Number.isFinite(v) || !(v > 0)) return;   // buit/no-num/≤0 → deixa l'estimat
+    const newTotal = Math.round(v * 100) / 100;
+    if (newTotal === est) return;                  // sense canvi → no toca res
+    if (typeof updateBasketTotal === 'function' && updateBasketTotal(basketId, newTotal)) {
+      // Refresca Despeses només si està a la vista.
+      const scr = document.getElementById('screen-expenses');
+      if (scr && scr.classList.contains('active') && typeof renderExpenses === 'function') {
+        renderExpenses();
+      }
+    }
+  };
+  showInputModal('🧾', t('ticketTotalTitle'), t('ticketTotalMsg'), t('ticketTotalPlaceholder'),
+    apply, { initialValue: est > 0 ? String(est) : '', confirmLabel: t('ticketTotalConfirm') });
 }
 
 function undoQuickBuyMultiple(pairs) {

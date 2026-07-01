@@ -26,6 +26,11 @@ const TRANSLATIONS = {
     emoji: 'Emoji',
     needName: 'Posa-li un nom!',
     weightInvalid: 'Format no vàlid. Exemples: 500g, 1L, 2kg',
+    // Cistella exacta (Despeses v2, Fase 2): modal de l'import del tiquet.
+    ticketTotalTitle: 'Total del tiquet',
+    ticketTotalMsg: "Import real del tiquet (en €). Si el total estimat ja és correcte, deixa'l tal com està.",
+    ticketTotalPlaceholder: 'Ex: 42.50',
+    ticketTotalConfirm: 'Desar',
     productNamePlaceholder: 'Nom del producte',
     added: 'afegit!',
     product: 'Producte',

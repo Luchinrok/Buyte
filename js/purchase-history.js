@@ -124,6 +124,56 @@ function recordPurchase(payload) {
   savePurchaseHistory();
 }
 
+// Cistella exacta (Despeses v2, Fase 2): sobreescriu el total REAL d'una
+// anada a comprar (basketId) quan l'usuari escriu l'import del tiquet just
+// després del "Comprat" en bloc. Reparteix `newTotal` entre TOTS els records
+// d'aquell basketId PROPORCIONALMENT al seu totalPrice estimat, de manera
+// que els desglossaments de Despeses (per producte/categoria/súper/mes)
+// segueixin quadrant amb el nou total.
+//
+// Repartiment: proporcional a l'estimat de cada línia. Si la suma dels
+// estimats és 0 (cap línia en tenia) → repartiment UNIFORME (evita la
+// divisió per zero; una línia amb estimat 0 dins d'un bloc amb suma > 0
+// rep, correctament, 0). Treballem en cèntims i donem el residu a l'última
+// línia perquè la suma exacta = newTotal (sense descquadres d'arrodoniment).
+//
+// No-op (retorna false) si el basketId no existeix o newTotal no és un
+// número > 0. Persisteix + sincronitza via savePurchaseHistory().
+function updateBasketTotal(basketId, newTotal) {
+  if (!basketId || typeof newTotal !== 'number' || !(newTotal > 0)) return false;
+  // Les línies d'una mateixa anada poden viure sota keys diferents (una per
+  // popularId/nom) → recorrem tot el map.
+  const recs = [];
+  for (const key in purchaseHistory) {
+    const list = purchaseHistory[key];
+    if (!Array.isArray(list)) continue;
+    list.forEach(r => { if (r && r.basketId === basketId) recs.push(r); });
+  }
+  if (recs.length === 0) return false;
+
+  const estOf = (r) => (typeof r.totalPrice === 'number' && r.totalPrice > 0) ? r.totalPrice : 0;
+  const sumEst = recs.reduce((s, r) => s + estOf(r), 0);
+
+  const cents = Math.round(newTotal * 100);
+  let assigned = 0;
+  recs.forEach((r, i) => {
+    let share;
+    if (i === recs.length - 1) {
+      share = cents - assigned; // residu → quadra exacte amb newTotal
+    } else if (sumEst > 0) {
+      share = Math.round(cents * (estOf(r) / sumEst)); // proporcional a l'estimat
+      assigned += share;
+    } else {
+      share = Math.round(cents / recs.length); // cap estimat → uniforme
+      assigned += share;
+    }
+    r.totalPrice = share / 100;
+  });
+
+  savePurchaseHistory();
+  return true;
+}
+
 // API per al commit 3 (vista d'edició). Retorna entrades ordenades
 // per data DESC (més recent primer).
 function getHistoryForPopular(popularIdOrNameKey) {
