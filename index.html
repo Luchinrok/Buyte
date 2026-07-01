@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260619-1">
+  <link rel="stylesheet" href="styles.css?v=20260701-1">
 </head>
 <body>
 
@@ -1704,6 +1704,13 @@
     <div class="shops-slider swiper" id="shops-slider">
       <div class="swiper-wrapper"></div>
     </div>
+
+    <!-- Cistella exacta v2 (Fase 2b): tanca l'anada oberta d'aquest súper i
+         treu un sol tiquet. Només visible amb sessió activa + ≥1 compra
+         (ho controla _updateFinishTripButton a js/buyme.js). -->
+    <button type="button" id="btn-finish-trip" class="finish-trip-btn" style="display:none">
+      🧾 <span data-i18n="finishShoppingTrip">He acabat la compra</span>
+    </button>
   </div>
 
   <!-- PANTALLA AFEGIR/EDITAR SUPERMERCAT -->
@@ -2201,15 +2208,15 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260619-1"></script>
   <script src="notifications.js?v=20260503-3"></script>
-  <script src="i18n.js?v=20260701-1"></script>
+  <script src="i18n.js?v=20260701-2"></script>
   <script src="js/core.js?v=20260610-2"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
-  <script src="js/biteme.js?v=20260619-1"></script>
+  <script src="js/biteme.js?v=20260701-1"></script>
   <script src="js/shops.js?v=20260503-3"></script>
-  <script src="js/buyme.js?v=20260701-1"></script>
+  <script src="js/buyme.js?v=20260701-2"></script>
   <script src="js/populars.js?v=20260619-3"></script>
   <script src="js/categories.js?v=20260509-3"></script>
-  <script src="js/purchase-history.js?v=20260701-1"></script>
+  <script src="js/purchase-history.js?v=20260701-2"></script>
   <script src="js/recent-purchases.js?v=20260611-1"></script>
   <script src="js/special-lists.js?v=20260503-3"></script>
   <script src="js/settings.js?v=20260619-1"></script>
@@ -2226,6 +2233,6 @@
   <script src="js/gamification.js?v=20260610-2"></script>
   <script src="js/patterns.js?v=20260505-5"></script>
   <script src="js/smart-notifications.js?v=20260617-1"></script>
-  <script src="app.js?v=20260619-1"></script>
+  <script src="app.js?v=20260701-1"></script>
 </body>
 </html>

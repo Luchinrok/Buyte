@@ -4801,6 +4801,12 @@ function saveNewProduct() {
       }
       const _lineTotal = (typeof _unitPrice === 'number')
         ? Math.round(_unitPrice * _unitsPerRecord * 100) / 100 : undefined;
+      // Cistella exacta v2 (Fase 2b): aquesta alta ve del BuyMe (fallback per
+      // formulari mancant d'una compra individual) → adjunta-la a la sessió
+      // d'anada d'aquell súper (la crea si cal), igual que el quick-buy. Així
+      // "He acabat la compra" inclou també els ítems completats a mà.
+      const _basketId = (fromShopping && typeof getOrCreateBasketSession === 'function')
+        ? getOrCreateBasketSession(fromShopping) : null;
       // N crides — 1 per cada lot creat (lots multiplicador són envasos
       // independents, cada un = una compra). Per a 1 sol lot, 1 crida.
       const _purchaseCount = lotsToCreate.length || 1;
@@ -4810,6 +4816,7 @@ function saveNewProduct() {
           name: newProduct.name,
           price: _unitPrice,
           totalPrice: _lineTotal,
+          basketId: _basketId || undefined,
           weight: (isMultiplier ? weight : newProduct.weight) || undefined,
           days_calc: _daysCalc,
           days_real: null,

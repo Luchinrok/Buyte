@@ -174,6 +174,35 @@ function updateBasketTotal(basketId, newTotal) {
   return true;
 }
 
+// Cistella exacta (Despeses v2, Fase 2b): total estimat d'una anada
+// (basketId) = Σ dels totalPrice dels seus records. Precarrega el popup del
+// tiquet que dispara "He acabat la compra". Ignora records sense totalPrice.
+function getBasketEstimatedTotal(basketId) {
+  if (!basketId) return 0;
+  let sum = 0;
+  for (const key in purchaseHistory) {
+    const list = purchaseHistory[key];
+    if (!Array.isArray(list)) continue;
+    list.forEach(r => {
+      if (r && r.basketId === basketId && typeof r.totalPrice === 'number' && r.totalPrice > 0) sum += r.totalPrice;
+    });
+  }
+  return Math.round(sum * 100) / 100;
+}
+
+// Nombre de records d'una anada (basketId) — per decidir si el botó "He
+// acabat la compra" és visible (≥1) i si cal treure tiquet.
+function getBasketRecordCount(basketId) {
+  if (!basketId) return 0;
+  let n = 0;
+  for (const key in purchaseHistory) {
+    const list = purchaseHistory[key];
+    if (!Array.isArray(list)) continue;
+    list.forEach(r => { if (r && r.basketId === basketId) n++; });
+  }
+  return n;
+}
+
 // API per al commit 3 (vista d'edició). Retorna entrades ordenades
 // per data DESC (més recent primer).
 function getHistoryForPopular(popularIdOrNameKey) {

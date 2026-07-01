@@ -31,6 +31,8 @@ const TRANSLATIONS = {
     ticketTotalMsg: "Import real del tiquet (en €). Si el total estimat ja és correcte, deixa'l tal com està.",
     ticketTotalPlaceholder: 'Ex: 42.50',
     ticketTotalConfirm: 'Desar',
+    // Cistella exacta (Despeses v2, Fase 2b): botó de tancament de l'anada.
+    finishShoppingTrip: 'He acabat la compra',
     productNamePlaceholder: 'Nom del producte',
     added: 'afegit!',
     product: 'Producte',

@@ -160,6 +160,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof quickBuyMultipleSelected === 'function') quickBuyMultipleSelected();
   });
 
+  // Cistella exacta v2 (Fase 2b): "He acabat la compra" → tanca l'anada
+  // oberta del súper visible i treu un sol tiquet.
+  const btnFinishTrip = document.getElementById('btn-finish-trip');
+  if (btnFinishTrip) btnFinishTrip.addEventListener('click', () => {
+    if (typeof _finishShoppingTrip === 'function') _finishShoppingTrip(currentSupermarketId);
+  });
+
   // Botó únic "Editar producte". Fase D v2: per a productes __v:2
   // obre un modal mínim (nom + emoji + categoria); per a legacy
   // reusa el formulari complet de screen-add. La distinció es fa

@@ -395,6 +395,42 @@ function _updateSupermarketHeader() {
   }
   _updateBuyMeViewToggleUI(currentSupermarketId);
   _updateBuyMeCostSummary(currentSupermarketId);
+  _updateFinishTripButton(currentSupermarketId);
+}
+
+// Mostra el botó "He acabat la compra" NOMÉS si hi ha una anada oberta en
+// aquest súper amb ≥1 compra registrada. S'amaga altrament. Idempotent;
+// cridat des de _updateSupermarketHeader (open · slide change · post-render,
+// que cobreix cada compra individual/bulk perquè totes re-renderitzen).
+function _updateFinishTripButton(supId) {
+  const btn = document.getElementById('btn-finish-trip');
+  if (!btn) return;
+  const session = supId ? getBasketSession(supId) : null;
+  const count = (session && typeof getBasketRecordCount === 'function')
+    ? getBasketRecordCount(session.basketId) : 0;
+  btn.style.display = (session && count > 0) ? 'block' : 'none';
+}
+
+// "He acabat la compra": tanca l'anada oberta d'aquell súper (neteja la
+// sessió i amaga el botó de seguida) i, si hi ha ≥1 compra, reutilitza el
+// popup de la Fase 2a amb el total estimat de la cistella (Σ dels totalPrice
+// dels seus records). Si no hi ha sessió o 0 compres, no treu tiquet.
+function _finishShoppingTrip(supId) {
+  const sid = supId || currentSupermarketId;
+  const session = sid ? getBasketSession(sid) : null;
+  if (!session) return;
+  const basketId = session.basketId;
+  const count = (typeof getBasketRecordCount === 'function') ? getBasketRecordCount(basketId) : 0;
+  // Prémer "He acabat" tanca l'anada de seguida (accepti o cancel·li el
+  // popup després). Segur fer-ho abans: el popup opera sobre els records
+  // per basketId, independent de la sessió; el basketId ja està desat als
+  // records. Si l'usuari torna a comprar en aquest súper, s'obrirà una
+  // anada nova.
+  clearBasketSession(sid);
+  _updateFinishTripButton(sid);
+  if (count === 0) return;   // res comprat → cap tiquet
+  const estTotal = (typeof getBasketEstimatedTotal === 'function') ? getBasketEstimatedTotal(basketId) : 0;
+  _promptBasketTicketTotal(basketId, estTotal);
 }
 
 // Sincronitza l'estat visual del toggle Cronològic/Per-categoria amb
@@ -1881,6 +1917,62 @@ function deleteShoppingItem() {
   );
 }
 
+// ============ SESSIÓ DE COMPRA PER SÚPER (Cistella exacta v2, Fase 2b) ============
+// Una "anada" a un súper agrupa totes les compres individuals (i, si n'hi
+// ha, la compra en bloc) sota un mateix basketId, perquè al final surti UN
+// sol popup de tiquet en prémer "He acabat la compra". Estat local (no
+// sincronitzat: és una anada física amb un dispositiu), map per súper a
+// localStorage. Es descarta sola si és d'un altre dia.
+const ACTIVE_BASKET_KEY = 'eatmefirst_active_basket';
+
+function _basketTodayYMD() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function _loadBasketSessions() {
+  try {
+    const raw = localStorage.getItem(ACTIVE_BASKET_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+  } catch (e) { return {}; }
+}
+
+function _saveBasketSessions(map) {
+  try { localStorage.setItem(ACTIVE_BASKET_KEY, JSON.stringify(map)); } catch (e) {}
+}
+
+// Sessió d'AVUI per aquell súper (sense crear). Retorna { basketId, startedAt }
+// o null si no n'hi ha o és d'un altre dia (sessió vella → es tracta com a
+// inexistent; es netejarà en el proper getOrCreate/clear).
+function getBasketSession(supId) {
+  if (!supId) return null;
+  const s = _loadBasketSessions()[supId];
+  if (!s || !s.basketId) return null;
+  if (s.startedAt !== _basketTodayYMD()) return null;
+  return s;
+}
+
+// Retorna el basketId de la sessió d'avui d'aquell súper; si no n'hi ha (o
+// la que hi havia és d'un altre dia), en crea una de nova i la desa.
+function getOrCreateBasketSession(supId) {
+  if (!supId) return null;
+  const map = _loadBasketSessions();
+  const s = map[supId];
+  const today = _basketTodayYMD();
+  if (s && s.basketId && s.startedAt === today) return s.basketId;
+  const basketId = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  map[supId] = { basketId: basketId, startedAt: today };
+  _saveBasketSessions(map);
+  return basketId;
+}
+
+function clearBasketSession(supId) {
+  if (!supId) return;
+  const map = _loadBasketSessions();
+  if (map[supId]) { delete map[supId]; _saveBasketSessions(map); }
+}
+
 // Quan l'usuari prem "Comprat" → si tenim prou dades (zona + caducitat),
 // crea el producte EatMe directament (compra ràpida amb undo). Si no,
 // cau al flux clàssic: obre el formulari prefillat perquè l'usuari
@@ -2006,7 +2098,13 @@ function tryQuickBuyShoppingItem(item) {
   const hasExpiry = typeof prefill.days === 'number' || !!prefill.noExpiry;
   if (!hasZone || !hasExpiry) return false;
 
-  const result = _quickBuyCore(item, prefill);
+  // Cistella exacta v2 (Fase 2b): assigna la compra individual a la sessió
+  // d'anada d'aquell súper (la crea al primer quick-buy). Així "He acabat la
+  // compra" podrà treure un sol tiquet per a tota l'anada.
+  const _supId = (item && item.supermarketId) || currentSupermarketId || null;
+  const basketId = _supId ? getOrCreateBasketSession(_supId) : null;
+
+  const result = _quickBuyCore(item, prefill, basketId);
   if (!result) return false;
 
   // Persistim, sincronitzem i re-renderitzem un sol cop per acció.
@@ -2233,9 +2331,17 @@ function quickBuyMultipleSelected() {
   const pairs = []; // { newProductId, originalItem }
   let needsFormCount = 0;
 
-  // Un sol basketId per a tota aquesta sessió de "Comprat" (cistella exacta
-  // v2): tots els ítems comprats en aquest bloc s'agrupen com una anada.
-  const basketId = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  // Cistella exacta v2: un sol basketId per a aquest bloc. Fase 2b —
+  // unificació amb el camí individual: si ja hi ha una anada oberta en
+  // aquest súper, el bulk s'HI SUMA (reusa el seu basketId) i NO treu el seu
+  // popup a l'instant → el tiquet únic el disparà "He acabat la compra". Si
+  // NO hi ha anada oberta, comportament Fase 2a: basketId propi + popup
+  // immediat al final.
+  const _supId = currentSupermarketId || null;
+  const _openSession = _supId ? getBasketSession(_supId) : null;
+  const basketId = _openSession
+    ? _openSession.basketId
+    : (Date.now() + '-' + Math.random().toString(36).slice(2, 8));
 
   // Total estimat de l'anada (Σ dels totalPrice de les línies realment
   // comprades) — precarrega el modal de l'import del tiquet (Despeses v2 F2).
@@ -2282,9 +2388,12 @@ function quickBuyMultipleSelected() {
       durationMs: 6000,
       onUndo: () => undoQuickBuyMultiple(pairs)
     });
-    // Cistella exacta v2 (Fase 2): demana l'import real del tiquet d'aquesta
-    // anada. Modal per sobre del toast; només al camí bulk.
-    _promptBasketTicketTotal(basketId, estBasketTotal);
+    // Cistella exacta v2: demana l'import real del tiquet NOMÉS si aquest
+    // bulk NO forma part d'una anada oberta (Fase 2a). Si hi ha sessió
+    // activa, el popup l'obrirà "He acabat la compra" (un sol tiquet).
+    if (!_openSession) {
+      _promptBasketTicketTotal(basketId, estBasketTotal);
+    }
   } else if (needsFormCount > 0) {
     showToast(needsFormCount + ' necessit' + (needsFormCount === 1 ? 'a' : 'en') + ' ompliment manual');
   }
