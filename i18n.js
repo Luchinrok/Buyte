@@ -33,6 +33,13 @@ const TRANSLATIONS = {
     ticketTotalConfirm: 'Desar',
     // Cistella exacta (Despeses v2, Fase 2b): botó de tancament de l'anada.
     finishShoppingTrip: 'He acabat la compra',
+    // Cistella exacta (Despeses v2, Fase 3): card "Compres recents" a Despeses.
+    expensesTripsTitle: 'Compres recents',
+    expensesTripEditTitle: 'Editar total de la compra',
+    expensesTripEditMsg: "Import total d'aquesta compra (en €). Es reparteix entre els articles.",
+    expensesTripDelete: 'Esborrar compra',
+    expensesTripDeleteTitle: 'Esborrar aquesta compra?',
+    expensesTripDeleteMsg: "S'esborraran tots els articles d'aquesta compra de l'historial de Despeses. No es pot desfer.",
     productNamePlaceholder: 'Nom del producte',
     added: 'afegit!',
     product: 'Producte',

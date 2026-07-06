@@ -7076,6 +7076,65 @@ body.selection-mode-active #shops-slider .arrow-btn {
   padding: 8px 0;
 }
 
+/* Cistella exacta v2 (Fase 3): card "Compres recents" a Despeses. Una fila
+   tocable per anada (editar total) + icona 🗑️ (esborrar). */
+.expenses-trip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.expenses-trip-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.expenses-trip-row:active { transform: scale(0.99); }
+.expenses-trip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.expenses-trip-date {
+  font-size: 11px;
+  color: var(--text-soft);
+  text-transform: capitalize;
+}
+.expenses-trip-sup {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.expenses-trip-meta {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+.expenses-trip-total {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.expenses-trip-del {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.expenses-trip-del:active { transform: scale(0.9); }
+
 .stats-avg-line {
   font-size: 13.5px;
   color: var(--text);

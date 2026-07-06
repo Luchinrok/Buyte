@@ -179,10 +179,19 @@ function updateBasketTotal(basketId, newTotal) {
     list.forEach(r => { if (r && r.basketId === basketId) recs.push(r); });
   }
   if (recs.length === 0) return false;
+  _distributeTotalAmongRecords(recs, newTotal);
+  savePurchaseHistory();
+  return true;
+}
 
+// Reparteix `newTotal` (€) entre `recs` PROPORCIONALMENT al totalPrice estimat
+// de cada línia; si la suma dels estimats és 0 → repartiment UNIFORME (evita
+// la divisió per zero). Treballa en cèntims i dona el residu a l'última línia
+// perquè la suma exacta = newTotal (sense descquadres d'arrodoniment). Muta
+// `r.totalPrice` de cada record. NO persisteix (el caller fa savePurchaseHistory).
+function _distributeTotalAmongRecords(recs, newTotal) {
   const estOf = (r) => (typeof r.totalPrice === 'number' && r.totalPrice > 0) ? r.totalPrice : 0;
   const sumEst = recs.reduce((s, r) => s + estOf(r), 0);
-
   const cents = Math.round(newTotal * 100);
   let assigned = 0;
   recs.forEach((r, i) => {
@@ -198,9 +207,49 @@ function updateBasketTotal(basketId, newTotal) {
     }
     r.totalPrice = share / 100;
   });
+}
 
+// Cistella exacta (Despeses v2, Fase 3): edita el total d'una anada des de
+// Despeses per la seva llista de recordIds (helper genèric: cobreix anades
+// AMB i SENSE basketId; les del proxy dia+súper no en tenen). Mateixa lògica
+// de repartiment que updateBasketTotal. Persisteix + sincronitza. No-op
+// (false) si la llista és buida, no troba cap record, o newTotal no és > 0.
+function updateBasketByRecordIds(recordIds, newTotal) {
+  if (!Array.isArray(recordIds) || recordIds.length === 0) return false;
+  if (typeof newTotal !== 'number' || !(newTotal > 0)) return false;
+  const idSet = new Set(recordIds);
+  const recs = [];
+  for (const key in purchaseHistory) {
+    const list = purchaseHistory[key];
+    if (!Array.isArray(list)) continue;
+    list.forEach(r => { if (r && idSet.has(r.recordId)) recs.push(r); });
+  }
+  if (recs.length === 0) return false;
+  _distributeTotalAmongRecords(recs, newTotal);
   savePurchaseHistory();
   return true;
+}
+
+// Cistella exacta (Despeses v2, Fase 3): esborra tots els records d'una anada
+// per la seva llista de recordIds (des de Despeses). Reutilitza la cerca de
+// removePurchaseRecord però amb UN sol savePurchaseHistory al final. Retorna
+// el nombre de records esborrats.
+function removeBasketByRecordIds(recordIds) {
+  if (!Array.isArray(recordIds) || recordIds.length === 0) return 0;
+  const idSet = new Set(recordIds);
+  let removed = 0;
+  for (const key in purchaseHistory) {
+    const list = purchaseHistory[key];
+    if (!Array.isArray(list)) continue;
+    const kept = list.filter(r => {
+      if (r && idSet.has(r.recordId)) { removed++; return false; }
+      return true;
+    });
+    if (kept.length === 0) delete purchaseHistory[key];
+    else if (kept.length !== list.length) purchaseHistory[key] = kept;
+  }
+  if (removed > 0) savePurchaseHistory();
+  return removed;
 }
 
 // Cistella exacta (Despeses v2, Fase 2b): total estimat d'una anada

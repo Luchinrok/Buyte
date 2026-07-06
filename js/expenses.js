@@ -234,6 +234,36 @@ function _expensesGetData(rangeKey) {
   const monthlyBudget = Number(localStorage.getItem('eatmefirst_monthly_budget')) || 0;
   const monthSpent = byMonth.length ? byMonth[byMonth.length - 1].total : 0;
 
+  // Compres recents / anades (Despeses v2, Fase 3): agrupa els records del
+  // període per anada — mateix criteri que la cistella mitjana: `b:basketId`
+  // si existeix, si no proxy (dia + súper). Cada anada porta els recordIds
+  // (per editar/esborrar via helpers genèrics). Ordenat per data DESC.
+  const tripsMap = {};
+  filtered.forEach(e => {
+    const hasBasket = !!e.basketId;
+    const key = hasBasket
+      ? ('b:' + e.basketId)
+      : ((e.date || '?') + '|' + (e.supermarket || '(sense super)'));
+    if (!tripsMap[key]) {
+      tripsMap[key] = {
+        key: key,
+        basketId: hasBasket ? e.basketId : null,
+        recordIds: [],
+        date: e.date || '',
+        supermarket: e.supermarket || null,
+        itemCount: 0,
+        total: 0
+      };
+    }
+    const trip = tripsMap[key];
+    if (e.recordId) trip.recordIds.push(e.recordId);
+    trip.itemCount += 1;
+    trip.total += _lineAmount(e);
+    // Data més recent del grup (rellevant per al proxy, tot i que hi comparteix dia).
+    if ((e.date || '') > trip.date) trip.date = e.date || trip.date;
+  });
+  const trips = Object.values(tripsMap).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
   return {
     rangeKey,
     total,
@@ -246,7 +276,8 @@ function _expensesGetData(rangeKey) {
     bySuper,
     byCategory,
     byPopular,
-    byMonth
+    byMonth,
+    trips
   };
 }
 
@@ -278,7 +309,8 @@ function renderExpenses() {
     _renderExpensesMonthlyCard(data),
     _renderExpensesBySupCard(data),
     _renderExpensesByCategoryCard(data),
-    _renderExpensesTopProductsCard(data)
+    _renderExpensesTopProductsCard(data),
+    _renderExpensesTripsCard(data)
   ].join('');
 }
 
@@ -432,6 +464,90 @@ function _renderExpensesTopProductsCard(data) {
     + '</div>';
 }
 
+// Formata la data d'una anada (string YYYY-MM-DD) de forma llegible.
+// Reutilitza parseDateLocal (core.js) per evitar desfasos UTC; mateix
+// toLocaleDateString('ca-ES') que la resta de l'app (patró biteme.js).
+function _expensesFormatTripDate(dateStr) {
+  const d = (typeof parseDateLocal === 'function') ? parseDateLocal(dateStr) : null;
+  if (!d || !Number.isFinite(d.getTime())) return dateStr || '';
+  try { return d.toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }); }
+  catch (e) { return dateStr || ''; }
+}
+
+// Card — Compres recents (anades). Una fila per anada del període (data ·
+// súper · N articles · total), editable (tap/✏️) i esborrable (🗑️). Si no
+// hi ha cap anada al període, no es pinta la card. Les files porten data-*
+// per identificar-les; el wiring va per delegació a _attachExpensesListeners.
+function _renderExpensesTripsCard(data) {
+  if (!data.trips || data.trips.length === 0) return '';
+  const rows = data.trips.map(tr => {
+    const dateLbl = _expensesFormatTripDate(tr.date);
+    const supLbl = tr.supermarket || '(sense súper)';
+    const items = tr.itemCount === 1 ? '1 article' : (tr.itemCount + ' articles');
+    return '<div class="expenses-trip-row" '
+      + 'data-trip-key="' + escapeHtml(tr.key) + '" '
+      + 'data-record-ids="' + escapeHtml(tr.recordIds.join(',')) + '" '
+      + 'data-basket-id="' + escapeHtml(tr.basketId || '') + '" '
+      + 'data-total="' + tr.total.toFixed(2) + '">'
+      + '<div class="expenses-trip-info">'
+      + '<span class="expenses-trip-date">' + escapeHtml(dateLbl) + '</span>'
+      + '<span class="expenses-trip-sup">🛒 ' + escapeHtml(supLbl) + '</span>'
+      + '<span class="expenses-trip-meta">' + items + '</span>'
+      + '</div>'
+      + '<span class="expenses-trip-total">' + fmtEur(tr.total) + '</span>'
+      + '<button type="button" class="expenses-trip-del" aria-label="' + escapeHtml(t('expensesTripDelete')) + '">🗑️</button>'
+      + '</div>';
+  }).join('');
+  return '<div class="stats-card-v2">'
+    + '<h3 class="stats-card-v2-title">🧾 <span>' + escapeHtml(t('expensesTripsTitle')) + '</span></h3>'
+    + '<div class="expenses-trip-list">' + rows + '</div>'
+    + '</div>';
+}
+
+// Editar el total d'una anada (Fase 3). Precarrega el total actual; si el
+// valor és > 0 i diferent → reparteix amb el helper adequat (per basketId si
+// en té, si no per recordIds). Cancel·lar/buit/≤0/igual → no toca res.
+function _promptEditTrip(rowEl) {
+  if (!rowEl) return;
+  const basketId = rowEl.dataset.basketId || '';
+  const recordIds = (rowEl.dataset.recordIds || '').split(',').filter(Boolean);
+  const curTotal = Math.round((parseFloat(rowEl.dataset.total) || 0) * 100) / 100;
+  const apply = (raw) => {
+    const v = parseFloat(String(raw == null ? '' : raw).replace(',', '.'));
+    if (!Number.isFinite(v) || !(v > 0)) return;
+    const newTotal = Math.round(v * 100) / 100;
+    if (newTotal === curTotal) return;
+    let ok = false;
+    if (basketId && typeof updateBasketTotal === 'function') {
+      ok = updateBasketTotal(basketId, newTotal);
+    } else if (typeof updateBasketByRecordIds === 'function') {
+      ok = updateBasketByRecordIds(recordIds, newTotal);
+    }
+    if (ok) renderExpenses();
+  };
+  if (typeof showInputModal === 'function') {
+    showInputModal('🧾', t('expensesTripEditTitle'), t('expensesTripEditMsg'), t('ticketTotalPlaceholder'),
+      apply, { initialValue: curTotal > 0 ? String(curTotal) : '', confirmLabel: t('ticketTotalConfirm') });
+  }
+}
+
+// Esborrar una anada (Fase 3). Confirmació abans; després treu tots els seus
+// records del purchase_history i re-renderitza.
+function _confirmDeleteTrip(rowEl) {
+  if (!rowEl) return;
+  const recordIds = (rowEl.dataset.recordIds || '').split(',').filter(Boolean);
+  if (recordIds.length === 0) return;
+  const doDelete = () => {
+    if (typeof removeBasketByRecordIds === 'function') removeBasketByRecordIds(recordIds);
+    renderExpenses();
+  };
+  if (typeof showConfirmDangerModal === 'function') {
+    showConfirmDangerModal('🗑️', t('expensesTripDeleteTitle'), t('expensesTripDeleteMsg'), doDelete);
+  } else {
+    doDelete();
+  }
+}
+
 // Obre el modal d'edició del pressupost mensual. Reusa showInputModal
 // (numèric, precarregat). Buit/0 = sense pressupost. Desa + sync + re-render.
 function _promptMonthlyBudget() {
@@ -466,10 +582,19 @@ function _promptMonthlyBudget() {
       });
     });
   });
-  // Delegació: el botó del pressupost es repinta a cada renderExpenses.
+  // Delegació: el botó del pressupost i les files d'anades es repinten a
+  // cada renderExpenses → un sol listener global, sense listeners per fila.
   document.addEventListener('click', (e) => {
-    if (e.target && e.target.closest && e.target.closest('#expenses-budget-edit')) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('#expenses-budget-edit')) {
       _promptMonthlyBudget();
+      return;
+    }
+    const tripRow = e.target.closest('.expenses-trip-row');
+    if (tripRow) {
+      // 🗑️ dins la fila → esborrar; qualsevol altre punt → editar.
+      if (e.target.closest('.expenses-trip-del')) _confirmDeleteTrip(tripRow);
+      else _promptEditTrip(tripRow);
     }
   });
 })();
