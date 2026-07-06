@@ -2139,7 +2139,7 @@ function tryQuickBuyShoppingItem(item) {
   showUndoableToast({
     message: message,
     durationMs: 5000,
-    onUndo: () => undoQuickBuy({ productId: product.id, lotId: result.lotId, fused: result.fused }, item)
+    onUndo: () => undoQuickBuy({ productId: product.id, lotId: result.lotId, fused: result.fused, recordId: result.recordId }, item)
   });
 
   return true;
@@ -2254,8 +2254,9 @@ function _quickBuyCore(item, prefill, basketId) {
   // útil per a un producte que no caduca.
   // productId apunta al producte AGRUPAT (mateix si fused). Fase F
   // afegirà lotId per a traçabilitat fina.
+  let recordId = null;
   if (typeof recordPurchase === 'function') {
-    recordPurchase({
+    recordId = recordPurchase({
       popularId: prefill.popularId,
       name: prefill.name,
       price: prefill.price,
@@ -2275,18 +2276,22 @@ function _quickBuyCore(item, prefill, basketId) {
     shoppingItems = shoppingItems.filter(it => it.id !== item.id);
   }
 
-  return { product: product, lotId: newLot ? newLot.id : null, fused: fused };
+  return { product: product, lotId: newLot ? newLot.id : null, fused: fused, recordId: recordId };
 }
 
 // Desfer una compra ràpida individual.
-// payload: { productId, lotId, fused } | string (compat legacy).
+// payload: { productId, lotId, fused, recordId } | string (compat legacy).
 //   - Si fused=true: treu només el lot afegit; el producte segueix amb
 //     els lots anteriors.
 //   - Si fused=false (o payload és l'id legacy): treu el producte sencer.
+//   - recordId: revoca també el registre de purchase_history (Despeses no
+//     ha de comptar una compra desfeta). Records vells sense recordId → no-op.
 function undoQuickBuy(payload, originalItem) {
   const productId = (payload && typeof payload === 'object') ? payload.productId : payload;
   const lotId = (payload && typeof payload === 'object') ? payload.lotId : null;
   const wasFused = !!(payload && typeof payload === 'object' && payload.fused);
+  const recordId = (payload && typeof payload === 'object') ? payload.recordId : null;
+  if (recordId && typeof removePurchaseRecord === 'function') removePurchaseRecord(recordId);
   if (Array.isArray(products)) {
     if (wasFused && lotId && typeof _removeLotFromProduct === 'function') {
       const prod = products.find(p => p.id === productId);
@@ -2313,7 +2318,20 @@ function undoQuickBuy(payload, originalItem) {
   }
   if (typeof renderShoppingItems === 'function') renderShoppingItems();
   if (typeof renderHome === 'function') renderHome();
+  // Refresca la visibilitat del botó "He acabat" (el count de l'anada pot
+  // haver baixat) explícitament, per si la pantalla activa no és el súper;
+  // i Despeses si està a la vista (el registre esborrat n'altera els totals).
+  if (typeof _updateFinishTripButton === 'function') _updateFinishTripButton(currentSupermarketId);
+  _refreshExpensesIfVisible();
   showToast('↺ ' + (originalItem ? originalItem.name : '') + ' restaurat al BuyMe');
+}
+
+// Repinta Despeses només si #screen-expenses és la pantalla activa.
+function _refreshExpensesIfVisible() {
+  const scr = document.getElementById('screen-expenses');
+  if (scr && scr.classList.contains('active') && typeof renderExpenses === 'function') {
+    renderExpenses();
+  }
 }
 
 // Compra ràpida en bloc des de la selecció múltiple del BuyMe.
@@ -2354,7 +2372,7 @@ function quickBuyMultipleSelected() {
     if (hasZone && hasExpiry) {
       const res = _quickBuyCore(item, prefill, basketId);
       if (res) {
-        pairs.push({ productId: res.product.id, lotId: res.lotId, fused: res.fused, originalItem: item });
+        pairs.push({ productId: res.product.id, lotId: res.lotId, fused: res.fused, recordId: res.recordId, originalItem: item });
         if (typeof prefill.totalPrice === 'number' && prefill.totalPrice >= 0) estBasketTotal += prefill.totalPrice;
         // Gamificació per cada producte (mateix tractament que saveNewProduct).
         if (typeof bumpProductsAddedCounter === 'function') bumpProductsAddedCounter();
@@ -2436,6 +2454,9 @@ function undoQuickBuyMultiple(pairs) {
     pairs.forEach(pair => {
       const productId = pair && (pair.productId || pair.newProductId);
       if (!productId) return;
+      // Revoca el registre de purchase_history d'aquesta compra (Despeses no
+      // ha de comptar-la). Pairs vells sense recordId → no-op.
+      if (pair.recordId && typeof removePurchaseRecord === 'function') removePurchaseRecord(pair.recordId);
       if (pair.fused && pair.lotId && typeof _removeLotFromProduct === 'function') {
         const prod = products.find(p => p.id === productId);
         if (prod) {
@@ -2460,6 +2481,8 @@ function undoQuickBuyMultiple(pairs) {
   }
   if (typeof renderShoppingItems === 'function') renderShoppingItems();
   if (typeof renderHome === 'function') renderHome();
+  if (typeof _updateFinishTripButton === 'function') _updateFinishTripButton(currentSupermarketId);
+  _refreshExpensesIfVisible();
   showToast('↺ ' + pairs.length + ' producte' + (pairs.length === 1 ? '' : 's') + ' restaurat' + (pairs.length === 1 ? '' : 's') + ' al BuyMe');
 }
 

@@ -99,6 +99,12 @@ function recordPurchase(payload) {
   if (!payload.name && !payload.popularId) return;
   const key = _phResolveKey(payload.popularId, payload.name);
   const record = {
+    // Id únic per record: permet a l'undo esborrar EXACTAMENT aquesta compra
+    // sense confondre-la amb altres del mateix producte/anada (productId no
+    // basta: en fusió el comparteixen diverses compres). Records vells sense
+    // recordId no es poden desfer (retrocompat: removePurchaseRecord no els
+    // troba → cap efecte).
+    recordId: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
     date: _phLocalYMD(new Date()),
     price: (typeof payload.price === 'number') ? payload.price : null,
     weight: payload.weight || null,
@@ -122,6 +128,29 @@ function recordPurchase(payload) {
   purchaseHistory[key].push(record);
   _phPurgeOld();
   savePurchaseHistory();
+  return record.recordId;
+}
+
+// Esborra el record amb aquest recordId (des de l'undo d'una compra: treure
+// el producte de l'EatMe ha de revocar també el registre de Despeses). Neteja
+// la key si queda buida. Persisteix + sincronitza via savePurchaseHistory
+// (l'esborrat es propaga per sobreescriptura; sense tombstone — limitació
+// preexistent). Retorna true si s'ha trobat i esborrat. Guarda si !recordId
+// (records vells sense id → cap efecte, retrocompat).
+function removePurchaseRecord(recordId) {
+  if (!recordId) return false;
+  for (const key in purchaseHistory) {
+    const list = purchaseHistory[key];
+    if (!Array.isArray(list)) continue;
+    const idx = list.findIndex(r => r && r.recordId === recordId);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+      if (list.length === 0) delete purchaseHistory[key];
+      savePurchaseHistory();
+      return true;
+    }
+  }
+  return false;
 }
 
 // Cistella exacta (Despeses v2, Fase 2): sobreescriu el total REAL d'una
