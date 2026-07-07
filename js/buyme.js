@@ -2323,7 +2323,7 @@ function undoQuickBuy(payload, originalItem) {
   // i Despeses si està a la vista (el registre esborrat n'altera els totals).
   if (typeof _updateFinishTripButton === 'function') _updateFinishTripButton(currentSupermarketId);
   _refreshExpensesIfVisible();
-  showToast('↺ ' + (originalItem ? originalItem.name : '') + ' restaurat al BuyMe');
+  showToast('↺ ' + (originalItem ? originalItem.name : '') + " restaurat a Compra'm");
 }
 
 // Repinta Despeses només si #screen-expenses és la pantalla activa.
@@ -2397,7 +2397,7 @@ function quickBuyMultipleSelected() {
 
   if (pairs.length > 0) {
     const nQ = pairs.length;
-    let msg = '✅ ' + nQ + ' producte' + (nQ === 1 ? '' : 's') + ' → EatMe';
+    let msg = '✅ ' + nQ + ' producte' + (nQ === 1 ? '' : 's') + " → Menja'm";
     if (needsFormCount > 0) {
       msg += '. ' + needsFormCount + ' necessit' + (needsFormCount === 1 ? 'a' : 'en') + ' ompliment manual';
     }
@@ -2483,7 +2483,7 @@ function undoQuickBuyMultiple(pairs) {
   if (typeof renderHome === 'function') renderHome();
   if (typeof _updateFinishTripButton === 'function') _updateFinishTripButton(currentSupermarketId);
   _refreshExpensesIfVisible();
-  showToast('↺ ' + pairs.length + ' producte' + (pairs.length === 1 ? '' : 's') + ' restaurat' + (pairs.length === 1 ? '' : 's') + ' al BuyMe');
+  showToast('↺ ' + pairs.length + ' producte' + (pairs.length === 1 ? '' : 's') + ' restaurat' + (pairs.length === 1 ? '' : 's') + " a Compra'm");
 }
 
 // Toast amb botó "Desfer". Diferent del showToast clàssic (que NO té botó).

@@ -113,7 +113,7 @@ function checkAlertsAndNotify(force) {
   if (alertProducts.length === 0) return false;
 
   const tFn = window.t || ((k) => k);
-  let title = '🚨 Buyte';
+  let title = '🚨 Festuc';
   let body;
   if (alertProducts.length === 1) {
     body = tFn('notifSingle', alertProducts[0].emoji + ' ' + alertProducts[0].name);
@@ -181,7 +181,7 @@ function scheduleDailyCheck() {
 
 function testNotification() {
   const tFn = window.t || ((k) => k);
-  return showNotification('🔔 Buyte', tFn('notifTestBody'), { tag: 'eatmefirst-test' });
+  return showNotification('🔔 Festuc', tFn('notifTestBody'), { tag: 'eatmefirst-test' });
 }
 
 async function initNotifications() {

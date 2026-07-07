@@ -640,7 +640,7 @@ function openCookConsumeModal() {
 
   let infoHtml = '';
   if (infoRows.length) {
-    const reason = (st) => st === 'manual' ? "ajusta-ho a l'EatMe"
+    const reason = (st) => st === 'manual' ? "ajusta-ho a Menja'm"
       : (st === 'non-quantifiable' ? 'al gust' : 'no en tens');
     let lis = '';
     infoRows.forEach(r => {

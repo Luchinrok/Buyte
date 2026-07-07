@@ -15,7 +15,7 @@ const BADGE_CATEGORIES = [
   { id: 'eco',          label: 'Eco-warrior',   emoji: '🌍' },
   { id: 'estalviador',  label: 'Estalviador',   emoji: '💰' },
   { id: 'mestre',       label: 'Mestre',        emoji: '⭐' },
-  { id: 'cookme',       label: 'CookMe',        emoji: '👨‍🍳' },
+  { id: 'cookme',       label: "Cuina'm",       emoji: '👨‍🍳' },
   { id: 'organitzador', label: 'Organitzador',  emoji: '🗂️' },
   { id: 'especial',     label: 'Especial',      emoji: '✨' }
 ];
@@ -23,13 +23,13 @@ const BADGE_CATEGORIES = [
 const BADGES = [
   // ============= INICI (6) =============
   { id: 'first-product', emoji: '🎯', name: 'Primer pas',
-    description: "Has afegit el teu primer producte a l'EatMe",
+    description: "Has afegit el teu primer producte a Menja'm",
     category: 'inici', xpReward: 50, type: 'products_added_total', value: 1 },
   { id: 'first-buyme', emoji: '🛒', name: 'Compra inicial',
-    description: 'Has afegit el primer producte al BuyMe',
+    description: "Has afegit el primer producte a Compra'm",
     category: 'inici', xpReward: 50, type: 'buyme_added_total', value: 1 },
   { id: 'first-cookme', emoji: '🍳', name: 'Primera cuina',
-    description: 'Has consultat la teva primera recepta al CookMe',
+    description: "Has consultat la teva primera recepta a Cuina'm",
     category: 'inici', xpReward: 50, type: 'cookme_views_total', value: 1 },
   { id: 'first-consumed', emoji: '✅', name: 'Primer aprofitament',
     description: 'Has consumit el teu primer producte sense malgastar-lo',
@@ -129,7 +129,7 @@ const BADGES = [
 
   // ============= COOKME (5) =============
   { id: 'cook-1',        emoji: '👨‍🍳', name: 'Aprenent xef',
-    description: 'Has cuinat 1 recepta (afegit ingredients al BuyMe)',
+    description: "Has cuinat 1 recepta (afegit ingredients a Compra'm)",
     category: 'cookme', xpReward: 50, type: 'recipes_cooked', value: 1 },
   { id: 'cook-5',        emoji: '🍳',   name: 'Cuiner casolà',
     description: 'Has cuinat 5 receptes',

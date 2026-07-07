@@ -664,7 +664,7 @@ function _evalShoppingPending() {
   if (!lastTs) return null;
   const daysSince = Math.floor((Date.now() - lastTs) / 86400000);
   if (daysSince < 3) return null;
-  return { title: '🛒 Buyte', body: '🛒 Tens ' + items.length + ' productes pendents al BuyMe' };
+  return { title: '🛒 Festuc', body: '🛒 Tens ' + items.length + " productes pendents a Compra'm" };
 }
 
 // 5. Motivació i ratxa: notifiquem en fites o quan estem a 1 dia d'una fita.

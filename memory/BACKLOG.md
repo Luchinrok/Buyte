@@ -22,7 +22,28 @@ Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté í
 
 Llista neta del que queda OBERT. El detall històric i els ítems resolts són més avall.
 
-**PROPER**: _(cap ítem viu)_ — **[Despeses v2] Cistella exacta ✅ COMPLET (06/07)** tanca l'últim ítem obert del backlog. No queden ítems 🟢/🟡 vius. El "Refactor de lots E/F/G/final" segueix **APARCAT** (es revisa només si torna a molestar). Quan aparegui feina nova, actualitzar aquest punter.
+**PROPER**: **[🚀 Llançament Google Play] Pas 2 — Motor multi-idioma** (vegeu la secció "🚀 Llançament al mercat"). El Pas 1 (Rebranding a Festuc) ja està ✅ FET (07/07). _(Nota: [Despeses v2] Cistella exacta ✅ COMPLET (06/07) va tancar l'antic backlog de features; el "Refactor de lots E/F/G/final" segueix APARCAT.)_
+
+---
+
+## 🚀 Llançament al mercat (Google Play)
+
+Objectiu: publicar **Festuc** com a PWA empaquetada a Google Play, multi-idioma (CA/ES/EN/FR).
+
+- **Pas 1 — Rebranding a Festuc** ✅ **FET (07/07)**. `appName` → `'Festuc'`; mòduls `shoppingListTitle`/`trackerTitle`/`cookmeTitle` → **Compra'm**/**Menja'm**/**Cuina'm**; **totes les frases que incrustaven BuyMe/EatMe/CookMe migrades** (toasts, plurals, insígnies, notificacions, modal d'ajuda del llindar); `<title>`/launcher/welcome/versió → Festuc. **Interns intactes** (noms de fitxers, IDs `#screen-*`, claus `eatmefirst_*`, funcions/variables, comentaris, `console.log('[Buyte]…')`). No existeix `manifest.json` ni meta tags PWA. (Fitxers: `i18n.js`, `index.html`, `notifications.js`, `smart-notifications.js`, `buyme.js`, `patterns.js`, `cookme.js`, `badges-data.js`, `app.js`.)
+- **Pas 2 — Motor multi-idioma** 🟢 **PENDENT** (← PROPER). Reactivar el sistema (l'**esquelet ja existeix**: `t()`, `translatePage()`, `data-i18n`, pantalla `#screen-language`, `renderLangListInto`, però capats a català). Feina: `TRANSLATIONS` → `{ ca, es, en, fr }`; `getCurrentLang()` amb `localStorage['eatmefirst_lang']` + `navigator.language` + fallback `ca`; `t()` amb cadena de fallback a `ca` (clau que falti no trenca); **selector d'idioma real** (`renderLangListInto` amb ca/es/en/fr + selecció → `setLanguage` → persisteix + `translatePage`); **mapa `lang→locale`** per substituir els ~11 `toLocaleDateString('ca-ES')` hardcodejats. L'idioma és preferència de **dispositiu** (com el tema) → probablement no sincronitzat.
+- **Pas 3 — Traduir la UI (~800 claus) a ES/EN/FR** 🟢 **PENDENT** + **migrar ~100-200 hardcodes** (toasts + constructors inline en català) a claus abans de poder traduir-los. Re-implementar plurals/gènere per idioma (les concatenacions `'producte'+(n===1?'':'s')` no serveixen tal qual a ES/EN/FR).
+- **Pas 4 — Traduir contingut de dades** 🟢 **PENDENT**: **80 receptes** (`recipes-data.js`: noms + ingredients + passos com a frases + tips — el bloc més gran), **~94 productes** (`POPULAR_PRODUCTS` a `core.js`), **~45 insígnies** (`badges-data.js`), categories/llistes/espais per defecte. Candidat a traducció automàtica + revisió humana (receptes sobretot).
+- **Pendent tècnic de llançament**: crear **`manifest.json`** (`name`/`short_name` "Festuc", icones, `theme_color`, `display`, etc.) — **necessari per empaquetar la PWA per a Google Play**; **NO existeix encara**.
+
+**Noms de subapartats decidits** (per al Pas 3), "Festuc" **NO es tradueix**:
+
+| Idioma | BuyMe | EatMe | CookMe |
+|---|---|---|---|
+| CA | Compra'm | Menja'm | Cuina'm |
+| ES | Cómprame | Cómeme | Cocíname |
+| EN | BuyMe | EatMe | CookMe |
+| FR | Achète-moi | Mange-moi | Cuisine-moi |
 
 - ~~🟢 **Populars: propagar `noExpiry` a les entrades de `getPopularProducts`**~~ **✅ FET (19/06)**. Propagat `noExpiry` a les **dues branques** de `getPopularProducts` (`if (p.noExpiry) entry.noExpiry = true;` després de la guarda de `days`): els productes del catàleg sense caducitat (Sal/Sucre/Mel/Pebre/Carbó…) ara es marquen **"no caduca"** en afegir-los. Els camins de formulari (`applyKnownProductToForm`/`findKnownProductByName`) i quick-buy (`_buildShoppingPrefill`/`_quickBuyCore`) **ja llegien** `.noExpiry`; només faltava propagar-lo des de l'entry. A més, arreglat el badge **"+undefinedd"** de `renderPopularList` (productes sense `days`): ara condicional → `+Nd` si caduca / ♾️ si `noExpiry` / res si cap. (Fitxer: `js/populars.js`.)
 

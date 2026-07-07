@@ -466,10 +466,10 @@ function analyzeForgottenItems(shopping) {
       type: 'forgottenItems',
       priority: 'medium',
       title: (item.emoji || '🛒') + ' ' + (item.name || 'Item'),
-      description: "Tens " + (item.name || 'aquest item').toLowerCase() + " al BuyMe des de fa " + days + " dies sense comprar-lo. Vols treure'l?",
+      description: "Tens " + (item.name || 'aquest item').toLowerCase() + " a Compra'm des de fa " + days + " dies sense comprar-lo. Vols treure'l?",
       emoji: item.emoji || '🛒',
       action: {
-        label: 'Esborrar del BuyMe',
+        label: "Esborrar de Compra'm",
         handler: 'patternRemoveShoppingItem',
         payload: { itemId: item.id }
       }
@@ -705,7 +705,7 @@ function patternRemoveShoppingItem(payload) {
   shoppingItems.splice(idx, 1);
   if (typeof saveShoppingData === 'function') saveShoppingData();
   if (typeof renderShoppingItems === 'function') renderShoppingItems();
-  if (typeof showToast === 'function') showToast('🗑️ Tret del BuyMe');
+  if (typeof showToast === 'function') showToast("🗑️ Tret de Compra'm");
 }
 
 function patternEnableWeeklyReminder(/* payload */) {
