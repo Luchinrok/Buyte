@@ -2796,11 +2796,19 @@ function formatFrozenInfo(product) {
 //                          (#FFA000 → #F57C00) — sense tirar a vermell
 //   red    → vermells — alineat amb .shelf-red
 //                       (#EF5350 → #C62828)
+// Paleta del festuc (mascota). El fruit interior (#nevi-body) i el seu
+// contorn (#nevi-divider) es tenyeixen per estat; la closca beix és fixa.
+// Els ulls es mantenen foscos a tots els estats; la boca canvia de forma
+// (somriu → recta → avall → ganyota) segons la urgència.
+// Colors idèntics als 4 botons/pills d'urgència (.levels-dot a styles.css):
+// body = to clar del gradient actiu del pill, border = to fosc (= vora del
+// pill). eyes = to molt fosc per-hue de cada estat. NOTA: la clau 'yellow'
+// és BLAVA (nom històric), coherent amb el pill "Atenció".
 const neviMoods = {
-  green: { body: '#C0DD97', border: '#639922', eyes: '#173404', mouth: 'M 25 54 Q 35 70 45 54' },
-  yellow:{ body: '#90CAF9', border: '#1565C0', eyes: '#0D47A1', mouth: 'M 25 58 Q 35 64 45 58' },
-  orange:{ body: '#FFCC80', border: '#F57C00', eyes: '#BF360C', mouth: 'M 26 61 L 44 61' },
-  red:   { body: '#F09595', border: '#C62828', eyes: '#501313', mouth: 'M 25 64 Q 35 56 45 64' }
+  green: { body: '#66BB6A', border: '#2E7D32', eyes: '#173404', mouth: 'M 26 55 Q 35 66 44 55' },
+  yellow:{ body: '#42A5F5', border: '#1565C0', eyes: '#0D2E5C', mouth: 'M 26 58 L 44 58' },
+  orange:{ body: '#FFA000', border: '#F57C00', eyes: '#5A2E00', mouth: 'M 26 60 Q 35 53 44 60' },
+  red:   { body: '#EF5350', border: '#C62828', eyes: '#5A1414', mouth: 'M 26 62 Q 35 55 44 62' }
 };
 
 // Missatges del mascot Nevi.

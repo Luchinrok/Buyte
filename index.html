@@ -739,11 +739,15 @@
          el nivell actiu. -->
     <div class="nevi-container">
       <svg class="nevi" viewBox="0 0 70 80" xmlns="http://www.w3.org/2000/svg">
-        <rect id="nevi-body" x="10" y="5" width="50" height="70" rx="8" fill="#C0DD97" stroke="#639922" stroke-width="2.5"/>
-        <line id="nevi-divider" x1="10" y1="30" x2="60" y2="30" stroke="#639922" stroke-width="2.5"/>
-        <circle id="nevi-eye-left" cx="25" cy="45" r="3" fill="#173404"/>
-        <circle id="nevi-eye-right" cx="45" cy="45" r="3" fill="#173404"/>
-        <path id="nevi-mouth" d="M 25 56 Q 35 68 45 56" stroke="#173404" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- Closca beix FIXA (no la toca setNevi) -->
+        <ellipse cx="35" cy="40" rx="30" ry="37" fill="#E7D3A8" stroke="#C9A96A" stroke-width="2.5"/>
+        <!-- Fruit interior: es tenyeix per estat (fill/stroke) -->
+        <path id="nevi-body" d="M 10 22 Q 24 34 35 33 Q 46 34 60 22 Q 55 52 46 66 Q 40 74 35 75 Q 30 74 24 66 Q 15 52 10 22 Z" fill="#8CBE3F" stroke="#639922" stroke-width="2.5"/>
+        <!-- Accent: contorn superior de l'obertura del fruit (rep stroke=m.border) -->
+        <path id="nevi-divider" d="M 10 22 Q 24 34 35 33 Q 46 34 60 22" fill="none" stroke="#639922" stroke-width="2.5" stroke-linecap="round"/>
+        <circle id="nevi-eye-left" cx="27" cy="45" r="3" fill="#173404"/>
+        <circle id="nevi-eye-right" cx="43" cy="45" r="3" fill="#173404"/>
+        <path id="nevi-mouth" d="M 26 55 Q 35 66 44 55" stroke="#173404" stroke-width="2.5" fill="none" stroke-linecap="round"/>
       </svg>
       <p id="nevi-message"></p>
     </div>
@@ -2211,7 +2215,7 @@
   <script src="i18n.js?v=20260707-1"></script>
   <script src="js/core.js?v=20260610-2"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
-  <script src="js/biteme.js?v=20260701-1"></script>
+  <script src="js/biteme.js?v=20260708-1"></script>
   <script src="js/shops.js?v=20260503-3"></script>
   <script src="js/buyme.js?v=20260707-1"></script>
   <script src="js/populars.js?v=20260619-3"></script>
