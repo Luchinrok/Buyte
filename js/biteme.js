@@ -323,13 +323,13 @@ function _calendarNavLabel() {
   const d = calendarState.currentDate;
   if (calendarState.mode === 'week') {
     const end = new Date(d); end.setDate(end.getDate() + 6);
-    const fmt = (x) => x.toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' });
+    const fmt = (x) => x.toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' });
     return fmt(d) + ' – ' + fmt(end);
   }
   if (calendarState.mode === 'month') {
-    return d.toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
+    return d.toLocaleDateString(getLocale(), { month: 'long', year: 'numeric' });
   }
-  return d.toLocaleDateString('ca-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  return d.toLocaleDateString(getLocale(), { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 // Productes que caduquen exactament un dia donat (Date local).
@@ -347,7 +347,7 @@ function _dayLabel(date) {
   if (diffDays === 0) return t('calendarToday');
   if (diffDays === 1) return t('calendarTomorrow');
   if (diffDays === -1) return t('calendarYesterday');
-  return date.toLocaleDateString('ca-ES', { weekday: 'long' });
+  return date.toLocaleDateString(getLocale(), { weekday: 'long' });
 }
 
 function _renderCalendarWeek(container, bounds) {
@@ -368,7 +368,7 @@ function _renderCalendarWeek(container, bounds) {
     name.textContent = _dayLabel(date);
     const dateLbl = document.createElement('span');
     dateLbl.className = 'calendar-day-date';
-    dateLbl.textContent = date.toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
+    dateLbl.textContent = date.toLocaleDateString(getLocale(), { day: 'numeric', month: 'long' });
     header.appendChild(name);
     header.appendChild(dateLbl);
     if (dayProducts.length > 0) {
@@ -476,7 +476,7 @@ function _renderCalendarDay(container) {
   dayName.textContent = _dayLabel(calendarState.currentDate);
   const dayDate = document.createElement('p');
   dayDate.className = 'calendar-day-large-date';
-  dayDate.textContent = calendarState.currentDate.toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  dayDate.textContent = calendarState.currentDate.toLocaleDateString(getLocale(), { day: 'numeric', month: 'long', year: 'numeric' });
   const cnt = document.createElement('p');
   cnt.className = 'calendar-day-large-count';
   cnt.textContent = dayProducts.length === 0
@@ -2772,7 +2772,7 @@ function formatFrozenInfo(product) {
   const ms = today - frozen;
   const days = Math.max(0, Math.floor(ms / 86400000));
   let dateStr;
-  try { dateStr = frozen.toLocaleDateString('ca-ES'); }
+  try { dateStr = frozen.toLocaleDateString(getLocale()); }
   catch (e) { dateStr = product.frozenDate; }
   let ago;
   if (days === 0) ago = 'avui';

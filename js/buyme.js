@@ -723,7 +723,7 @@ function getTotalEstimatedCost(items) {
 function _formatEur(amount) {
   const n = Number(amount) || 0;
   try {
-    return n.toLocaleString('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '€';
+    return n.toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '€';
   } catch (e) {
     return n.toFixed(2).replace('.', ',') + '€';
   }

@@ -470,7 +470,7 @@ function _renderExpensesTopProductsCard(data) {
 function _expensesFormatTripDate(dateStr) {
   const d = (typeof parseDateLocal === 'function') ? parseDateLocal(dateStr) : null;
   if (!d || !Number.isFinite(d.getTime())) return dateStr || '';
-  try { return d.toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }); }
+  try { return d.toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' }); }
   catch (e) { return dateStr || ''; }
 }
 

@@ -803,7 +803,7 @@ function renderAchievementsList() {
       const date = getBadgeUnlockDate(badge.id);
       let dateStr = '';
       if (date) {
-        try { dateStr = new Date(date).toLocaleDateString('ca-ES'); } catch (e) {}
+        try { dateStr = new Date(date).toLocaleDateString(getLocale()); } catch (e) {}
       }
       statusHtml = '<p class="badge-card-status badge-card-unlocked">✓ ' + escapeHtml(t('unlockedAt')) + ' ' + escapeHtml(dateStr) + '</p>';
     } else if (ev.hasProgress && ev.target > 0 && ev.current > 0) {

@@ -189,7 +189,7 @@ function updateSyncScreen() {
     conn.style.display = 'block';
     const code = window.FBSync.getCurrentListId();
     document.getElementById('sync-code-display').textContent = code;
-    document.getElementById('sync-last-update').textContent = t('syncLastUpdate', new Date().toLocaleTimeString());
+    document.getElementById('sync-last-update').textContent = t('syncLastUpdate', new Date().toLocaleTimeString(getLocale()));
   } else {
     notConn.style.display = 'block';
     conn.style.display = 'none';
@@ -1754,8 +1754,8 @@ function renderBackupsTab(area) {
 function _formatBackupDate(date) {
   // Català: dilluns 7 de maig, 14:23
   const day = date.getDate();
-  const month = date.toLocaleDateString('ca', { month: 'long' });
-  const time = date.toLocaleTimeString('ca', { hour: '2-digit', minute: '2-digit' });
+  const month = date.toLocaleDateString(getLocale(), { month: 'long' });
+  const time = date.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' });
   return day + ' ' + t('ofMonth') + ' ' + month + ', ' + time;
 }
 
@@ -2125,45 +2125,59 @@ function renderLangList() {
   renderLangListInto(document.getElementById('lang-list'));
 }
 
+// Banderes SVG inline (mateix estil que la CA original). Clau = idioma.
+const LANG_FLAGS = {
+  ca: '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="6" fill="#FCDD09"/><rect y="0.67" width="9" height="0.67" fill="#DA121A"/><rect y="2" width="9" height="0.67" fill="#DA121A"/><rect y="3.33" width="9" height="0.67" fill="#DA121A"/><rect y="4.67" width="9" height="0.67" fill="#DA121A"/></svg>',
+  es: '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="6" fill="#C60B1E"/><rect y="1.5" width="9" height="3" fill="#FFC400"/></svg>',
+  en: '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="6" fill="#012169"/><path d="M0 0 L9 6 M9 0 L0 6" stroke="#FFF" stroke-width="1.2"/><path d="M0 0 L9 6 M9 0 L0 6" stroke="#C8102E" stroke-width="0.7"/><path d="M4.5 0 V6 M0 3 H9" stroke="#FFF" stroke-width="2"/><path d="M4.5 0 V6 M0 3 H9" stroke="#C8102E" stroke-width="1.2"/></svg>',
+  fr: '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="3" height="6" fill="#0055A4"/><rect x="3" width="3" height="6" fill="#FFF"/><rect x="6" width="3" height="6" fill="#EF4135"/></svg>',
+};
+
 // Pinta la llista d'idiomes a un contenidor arbitrari. Permet reusar la
 // mateixa UI tant a la pantalla autònoma com dins de la sub-pantalla
-// "Regional" amb pestanyes.
+// "Regional" amb pestanyes. Itera els idiomes suportats; l'actiu porta ✓;
+// en clicar, canvia l'idioma (setLanguage re-renderitza) i repinta la llista.
 function renderLangListInto(container) {
   if (!container) return;
   container.innerHTML = '';
 
-  // Mentre fem el refactor només deixem català.
-  // La resta d'idiomes tornaran un cop polida l'app.
-  const FLAG_CA = '<svg viewBox="0 0 9 6" xmlns="http://www.w3.org/2000/svg"><rect width="9" height="6" fill="#FCDD09"/><rect y="0.67" width="9" height="0.67" fill="#DA121A"/><rect y="2" width="9" height="0.67" fill="#DA121A"/><rect y="3.33" width="9" height="0.67" fill="#DA121A"/><rect y="4.67" width="9" height="0.67" fill="#DA121A"/></svg>';
+  const langs = (typeof SUPPORTED_LANGS !== 'undefined') ? SUPPORTED_LANGS : ['ca'];
+  const current = (typeof getCurrentLang === 'function') ? getCurrentLang() : 'ca';
 
-  const btn = document.createElement('button');
-  btn.className = 'lang-item active';
+  langs.forEach(lang => {
+    const btn = document.createElement('button');
+    btn.className = 'lang-item' + (lang === current ? ' active' : '');
 
-  const flag = document.createElement('span');
-  flag.className = 'lang-flag';
-  flag.innerHTML = FLAG_CA;
+    const flag = document.createElement('span');
+    flag.className = 'lang-flag';
+    flag.innerHTML = LANG_FLAGS[lang] || '';
 
-  const info = document.createElement('div');
-  info.className = 'lang-info';
+    const info = document.createElement('div');
+    info.className = 'lang-info';
+    const name = document.createElement('div');
+    name.className = 'lang-name';
+    name.textContent = (typeof LANGUAGE_NAMES !== 'undefined' && LANGUAGE_NAMES[lang]) || lang;
+    info.appendChild(name);
 
-  const name = document.createElement('div');
-  name.className = 'lang-name';
-  name.textContent = 'Català';
+    btn.appendChild(flag);
+    btn.appendChild(info);
 
-  const check = document.createElement('span');
-  check.className = 'lang-check';
-  check.textContent = '✓';
+    if (lang === current) {
+      const check = document.createElement('span');
+      check.className = 'lang-check';
+      check.textContent = '✓';
+      btn.appendChild(check);
+    }
 
-  info.appendChild(name);
-  btn.appendChild(flag);
-  btn.appendChild(info);
-  btn.appendChild(check);
+    btn.addEventListener('click', () => {
+      if (lang === getCurrentLang()) return;
+      if (typeof setLanguage === 'function') setLanguage(lang);
+      renderLangListInto(container);   // repinta amb el nou actiu
+      showToast('✓ ' + ((typeof LANGUAGE_NAMES !== 'undefined' && LANGUAGE_NAMES[lang]) || lang));
+    });
 
-  btn.addEventListener('click', () => {
-    showToast('✓ Català');
+    container.appendChild(btn);
   });
-
-  container.appendChild(btn);
 }
 
 // === ESTADÍSTIQUES (visió "dades dures") ===
@@ -2925,4 +2939,38 @@ function translatePage() {
   updateLocationsCount();
   updatePopularCount();
   if (typeof updateRecipesCount === 'function') updateRecipesCount();
+}
+
+// Re-renderitza la pantalla ACTIVA en canviar d'idioma (decisió A del Pas 2):
+// translatePage ja refà els data-i18n estàtics + la home, però les pantalles
+// pintades per JS amb t() (Menja'm, Compra'm, Cuina'm, Despeses…) quedarien
+// en l'idioma vell fins a re-obrir-les. Aquí detectem la pantalla .active i
+// cridem el seu renderer (amb guardes + try/catch perquè cap fallada trenqui
+// el canvi d'idioma). Les pantalles sense renderer clar es queden amb el que
+// translatePage ja n'ha refet (data-i18n).
+function _rerenderActiveScreen() {
+  const active = document.querySelector('.screen.active');
+  if (!active) return;
+  const id = active.id;
+  const call = (fn, ...a) => { try { if (typeof window[fn] === 'function') window[fn](...a); } catch (e) { console.warn('[i18n] re-render', fn, e); } };
+  try {
+    switch (id) {
+      case 'screen-home':          call('renderHome'); break;
+      case 'screen-section':       call('renderSection'); break;
+      case 'screen-list':          if (typeof currentLevel !== 'undefined' && currentLevel) call('openShelf', currentLevel); break;
+      case 'screen-alerts':        call('renderAlerts'); break;
+      case 'screen-view-all':      call('renderViewAll'); break;
+      case 'screen-shopping':      call('renderSupermarkets'); break;
+      case 'screen-supermarket':   call('renderShoppingItems'); break;
+      case 'screen-cookme':        call('renderCookMe'); break;
+      case 'screen-meal-planner':  call('renderMealPlanner'); break;
+      case 'screen-expenses':      call('renderExpenses'); break;
+      case 'screen-impact':        call('renderImpact'); break;
+      case 'screen-popular':       call('renderPopularList'); break;
+      case 'screen-special-lists': call('renderSpecialLists'); break;
+      case 'screen-achievements':  call('renderAchievements'); break;
+      // screen-language, screen-settings*, etc.: coberts per data-i18n.
+      default: break;
+    }
+  } catch (e) { console.warn('[i18n] _rerenderActiveScreen', e); }
 }
