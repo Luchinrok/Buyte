@@ -157,7 +157,7 @@ function renderViewAll() {
   if (filteredProducts.length === 0) {
     const empty = document.createElement('p');
     empty.className = 'empty-state';
-    empty.textContent = hasQuery ? 'Cap producte coincideix amb la cerca.' : t('noProducts');
+    empty.textContent = hasQuery ? t('viewAllSearchEmpty') : t('noProducts');
     container.appendChild(empty);
     return;
   }
@@ -786,8 +786,8 @@ function _computeAggregatedQty(lots) {
 
   const measurableStr = measurableParts.join(' + ');
   if (percentCount === 0) return measurableStr;
-  if (measurableParts.length === 0) return percentCount + ' lot' + (percentCount === 1 ? '' : 's');
-  return measurableStr + ' (i ' + percentCount + ' lot' + (percentCount === 1 ? '' : 's') + ' més)';
+  if (measurableParts.length === 0) return t('aggQtyLotsOnly', percentCount);
+  return measurableStr + t('aggQtyMoreLots', percentCount);
 }
 
 // Transformació PURA d'un array de productes (legacy o v2 barrejats)
@@ -1510,11 +1510,11 @@ function _renderLotRow(lot) {
   // Data
   let dateText = '';
   if (lot.noExpiry) {
-    dateText = 'No caduca';
+    dateText = t('noExpiry');
   } else if (lot.date) {
     const d = new Date(lot.date);
     if (!isNaN(d.getTime())) {
-      dateText = 'Caduca ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+      dateText = t('lotExpiresShort', String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'));
     }
   }
 
@@ -1528,9 +1528,9 @@ function _renderLotRow(lot) {
     if (!isNaN(d.getTime())) {
       const now = new Date();
       const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
-      if (diffDays === 0) addedText = 'Comprat avui';
-      else if (diffDays === 1) addedText = 'Comprat ahir';
-      else addedText = 'Comprat fa ' + diffDays + ' dies';
+      if (diffDays === 0) addedText = t('lotAddedToday');
+      else if (diffDays === 1) addedText = t('lotAddedYesterday');
+      else addedText = t('lotAddedDaysAgo', diffDays);
     }
   }
 
@@ -1562,10 +1562,10 @@ function _renderLotRow(lot) {
   const lotIdAttr = lot.id ? ' data-lot-id="' + escapeHtml(lot.id) + '"' : '';
   const actionsHtml = lot.id
     ? '<div class="lot-actions">'
-      + '<button class="lot-action-btn lot-eat-btn" data-lot-action="eat" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Consumir">✓</button>'
-      + '<button class="lot-action-btn lot-trash-btn" data-lot-action="trash" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Llençar">🗑️</button>'
-      + '<button class="lot-action-btn lot-edit-btn" data-lot-action="edit" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Editar">✏️</button>'
-      + '<button class="lot-action-btn lot-more-btn" data-lot-action="more" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="Més accions">⋯</button>'
+      + '<button class="lot-action-btn lot-eat-btn" data-lot-action="eat" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="' + escapeHtml(t('lotAriaConsume')) + '">✓</button>'
+      + '<button class="lot-action-btn lot-trash-btn" data-lot-action="trash" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="' + escapeHtml(t('lotAriaTrash')) + '">🗑️</button>'
+      + '<button class="lot-action-btn lot-edit-btn" data-lot-action="edit" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="' + escapeHtml(t('lotAriaEdit')) + '">✏️</button>'
+      + '<button class="lot-action-btn lot-more-btn" data-lot-action="more" data-lot-id="' + escapeHtml(lot.id) + '" aria-label="' + escapeHtml(t('lotAriaMore')) + '">⋯</button>'
       + '</div>'
     : '';
   return '<div class="lot-row"' + lotIdAttr + '>'
@@ -1636,8 +1636,8 @@ function _openLotMoreMenu(anchorBtn, product, lot) {
   const menu = document.createElement('div');
   menu.className = 'lot-more-menu open';
   menu.innerHTML =
-      '<button type="button" data-action="move-lot">🚚 Moure</button>'
-    + '<button type="button" class="lot-delete-btn" data-action="delete-lot">❌ Esborrar lot</button>';
+      '<button type="button" data-action="move-lot">' + escapeHtml(t('lotMenuMove')) + '</button>'
+    + '<button type="button" class="lot-delete-btn" data-action="delete-lot">' + escapeHtml(t('lotMenuDelete')) + '</button>';
 
   document.body.appendChild(menu);
 
@@ -1673,8 +1673,8 @@ function openLotConsumeModal(product, lot, action) {
   overlay.className = 'modal-overlay';
 
   const isEat = (action === 'eat');
-  const verbInf = isEat ? 'Consumir' : 'Llençar';
-  const verbPp  = isEat ? 'consumit' : 'llençat';
+  const verbInf = isEat ? t('lotConsumeVerbEat') : t('lotConsumeVerbTrash');
+  const verbPp  = isEat ? t('lotConsumePpEat') : t('lotConsumePpTrash');
   const icon    = isEat ? '✓' : '🗑️';
 
   let bodyHtml;
@@ -1687,32 +1687,32 @@ function openLotConsumeModal(product, lot, action) {
     if (unit === 'kg' || unit === 'l') step = '0.1';
     else if (unit === 'g' || unit === 'ml') step = '50';
     const fmtNum = n => Number.isInteger(n) ? String(n) : String(Math.round(n * 1000) / 1000);
-    const unitLbl = unitDisplay || 'unitats';
-    bodyHtml = '<p class="modal-sub">Lot: ' + escapeHtml(fmtNum(qtyInit) + (unitDisplay || ' u')) + ' inicial, queda ' + escapeHtml(fmtNum(qtyRem) + (unitDisplay || ' u')) + '</p>'
+    const unitLbl = unitDisplay || t('lotConsumeUnitsFallback');
+    bodyHtml = '<p class="modal-sub">' + t('lotConsumeQtyInfo', escapeHtml(fmtNum(qtyInit) + (unitDisplay || ' u')), escapeHtml(fmtNum(qtyRem) + (unitDisplay || ' u'))) + '</p>'
       + '<div class="lot-consume-chips">'
       + '<button type="button" class="cook-chip" data-pct="25">25%</button>'
       + '<button type="button" class="cook-chip" data-pct="50">50%</button>'
       + '<button type="button" class="cook-chip" data-pct="75">75%</button>'
       + '<button type="button" class="cook-chip active" data-pct="100">100%</button>'
       + '</div>'
-      + '<p class="lot-consume-or">o</p>'
+      + '<p class="lot-consume-or">' + t('lotConsumeOr') + '</p>'
       + '<div class="lot-consume-input">'
-      + '<label>Quants ' + escapeHtml(unitLbl) + ' has ' + verbPp + '?</label>'
+      + '<label>' + t('lotConsumeHowMany', escapeHtml(unitLbl), verbPp) + '</label>'
       + '<div class="lot-consume-input-row">'
       + '<input type="number" id="lot-consume-amount" min="0" max="' + qtyRem + '" value="' + qtyRem + '" step="' + step + '" inputmode="decimal">'
       + (unitDisplay ? '<span class="lot-consume-unit">' + escapeHtml(unitDisplay) + '</span>' : '')
       + '</div></div>'
-      + '<p class="lot-consume-info">Quedaran: <span id="lot-remaining-after">0</span> ' + escapeHtml(unitLbl) + '</p>';
+      + '<p class="lot-consume-info">' + t('lotConsumeRemainQty') + '<span id="lot-remaining-after">0</span> ' + escapeHtml(unitLbl) + '</p>';
   } else {
     const pctRem = Number.isFinite(lot.percentRemaining) ? Math.round(lot.percentRemaining) : 100;
-    bodyHtml = '<p class="modal-sub">Lot: ' + pctRem + '% restant</p>'
+    bodyHtml = '<p class="modal-sub">' + t('lotConsumePctInfo', pctRem) + '</p>'
       + '<div class="lot-consume-chips">'
       + '<button type="button" class="cook-chip" data-pct="25">25%</button>'
       + '<button type="button" class="cook-chip" data-pct="50">50%</button>'
       + '<button type="button" class="cook-chip" data-pct="75">75%</button>'
       + '<button type="button" class="cook-chip active" data-pct="100">100%</button>'
       + '</div>'
-      + '<p class="lot-consume-info">Quedarà: <span id="lot-remaining-after">0</span>%</p>';
+      + '<p class="lot-consume-info">' + t('lotConsumeRemainPct') + '<span id="lot-remaining-after">0</span>%</p>';
   }
 
   overlay.innerHTML = '<div class="modal-content lot-consume-modal">'
@@ -1720,8 +1720,8 @@ function openLotConsumeModal(product, lot, action) {
     + '<p class="modal-title">' + icon + ' ' + verbInf + ' ' + escapeHtml(product.name) + '</p>'
     + bodyHtml
     + '<div class="modal-buttons">'
-    + '<button class="modal-cancel" id="lot-consume-cancel">Cancel·lar</button>'
-    + '<button class="modal-confirm" id="lot-consume-confirm">Confirmar</button>'
+    + '<button class="modal-cancel" id="lot-consume-cancel">' + escapeHtml(t('cancel')) + '</button>'
+    + '<button class="modal-confirm" id="lot-consume-confirm">' + escapeHtml(t('lotConsumeConfirm')) + '</button>'
     + '</div></div>';
 
   document.body.appendChild(overlay);
@@ -1806,16 +1806,16 @@ function openLotConsumeModal(product, lot, action) {
     const amount = selectedAmount;
     if (lot.consumptionMode === 'quantity') {
       if (!Number.isFinite(amount) || amount <= 0) {
-        showToast('Quantitat invàlida');
+        showToast(t('toastQtyInvalid'));
         return;
       }
       if (amount > (lot.qtyRemaining || 0) + 0.0001) {
-        showToast('Quantitat superior al disponible (' + _formatLotQty(lot) + ')');
+        showToast(t('toastQtyTooHigh', _formatLotQty(lot)));
         return;
       }
     } else {
       if (!Number.isFinite(amount) || amount <= 0 || amount > 100) {
-        showToast('Percentatge invàlid');
+        showToast(t('toastPctInvalid'));
         return;
       }
     }
@@ -1893,7 +1893,7 @@ function _confirmLotConsume(product, lot, action, amount) {
     products = products.filter(p => p.id !== realProduct.id);
     saveData();
     if (typeof updateStatsSub === 'function') updateStatsSub();
-    showToast('✓ Producte consumit del tot');
+    showToast(t('toastProductFullyConsumed'));
     if (typeof renderHome === 'function') renderHome();
     navigateAfterAction();
     currentProduct = null;
@@ -1906,7 +1906,7 @@ function _confirmLotConsume(product, lot, action, amount) {
   saveData();
   if (typeof updateStatsSub === 'function') updateStatsSub();
   openProduct(realProduct.id);
-  showToast(action === 'eat' ? '✓ Lot consumit' : '🗑️ Lot llençat');
+  showToast(action === 'eat' ? t('toastLotConsumed') : t('toastLotTrashed'));
   // Encara queden lots: avisa si l'estoc ha baixat fins al llindar.
   _evaluateLowStock(realProduct, prevBase);
 }
@@ -1943,14 +1943,14 @@ function openLotEditModal(product, lot) {
     else if (unit === 'g' || unit === 'ml') step = '50';
     const qtyRem = Number.isFinite(lot.qtyRemaining) ? lot.qtyRemaining : 0;
     qtyFieldHtml = '<div class="lot-edit-field">'
-      + '<label>Quantitat actual</label>'
+      + '<label>' + t('lotCurrentQty') + '</label>'
       + '<div class="lot-consume-input-row">'
       + '<input type="number" id="lot-edit-qty" min="0" step="' + step + '" value="' + qtyRem + '" inputmode="decimal">'
       + (unitDisplay ? '<span class="lot-consume-unit">' + escapeHtml(unitDisplay) + '</span>' : '')
       + '</div></div>';
   } else {
     const pct = Number.isFinite(lot.percentRemaining) ? Math.round(lot.percentRemaining) : 100;
-    qtyFieldHtml = '<div class="lot-edit-field"><label>Quantitat actual</label>'
+    qtyFieldHtml = '<div class="lot-edit-field"><label>' + t('lotCurrentQty') + '</label>'
       + '<div class="lot-consume-chips" id="lot-edit-qty-chips">'
       + [100, 75, 50, 25].map(v =>
           '<button type="button" class="cook-chip' + (v === pct ? ' active' : '') + '" data-pct="' + v + '">' + v + '%</button>'
@@ -1969,7 +1969,7 @@ function openLotEditModal(product, lot) {
     const matched = smList.find(s => s && s.name === currentSmName);
     if (matched) currentSmId = matched.id;
   }
-  const smPickerOptions = [{ id: '', icon: '🚫', label: '(Cap)' }]
+  const smPickerOptions = [{ id: '', icon: '🚫', label: t('lotSupermarketNone') }]
     .concat(smList.map(sm => ({ id: sm.id, icon: sm.emoji || '🛒', label: sm.name })));
 
   const dateVal = lot.date || '';
@@ -1978,19 +1978,19 @@ function openLotEditModal(product, lot) {
   const weightVal = lot.weight ? String(lot.weight) : '';
 
   overlay.innerHTML = '<div class="modal-content lot-edit-modal">'
-    + '<p class="modal-title">✏️ Editar lot</p>'
+    + '<p class="modal-title">' + t('lotEditTitle') + '</p>'
     + qtyFieldHtml
     + '<div class="lot-edit-field">'
-    + '<label>Data de caducitat</label>'
+    + '<label>' + t('expiryDate') + '</label>'
     + '<input type="date" id="lot-edit-date" value="' + escapeHtml(dateVal) + '"' + (noExpiry ? ' disabled' : '') + '>'
     + '<label class="lot-noexpiry-toggle">'
-    + '<input type="checkbox" id="lot-edit-noexpiry"' + (noExpiry ? ' checked' : '') + '> No caduca'
+    + '<input type="checkbox" id="lot-edit-noexpiry"' + (noExpiry ? ' checked' : '') + '> ' + t('noExpiry')
     + '</label></div>'
-    + '<div class="lot-edit-field"><label>Preu (€)</label>'
+    + '<div class="lot-edit-field"><label>' + t('lotPriceLabel') + '</label>'
     + '<input type="text" id="lot-edit-price" inputmode="decimal" value="' + escapeHtml(priceVal) + '"></div>'
-    + '<div class="lot-edit-field"><label>Contingut per envàs (opcional)</label>'
+    + '<div class="lot-edit-field"><label>' + t('lotContentLabel') + '</label>'
     + '<input type="text" id="lot-edit-weight" placeholder="500g, 1L, 1kg..." maxlength="15" value="' + escapeHtml(weightVal) + '"></div>'
-    + '<div class="lot-edit-field"><label>Supermercat</label>'
+    + '<div class="lot-edit-field"><label>' + t('lotSupermarketLabel') + '</label>'
     + '<div class="category-picker-wrap">'
     + '<button type="button" class="category-picker-btn" id="lot-edit-supermarket-picker-btn">'
     + '<span class="picker-icon"></span>'
@@ -2000,8 +2000,8 @@ function openLotEditModal(product, lot) {
     + '<div class="category-picker-dropdown" id="lot-edit-supermarket-picker-dropdown" hidden></div>'
     + '</div></div>'
     + '<div class="modal-buttons">'
-    + '<button class="modal-cancel" id="lot-edit-cancel">Cancel·lar</button>'
-    + '<button class="modal-confirm" id="lot-edit-confirm">Desar canvis</button>'
+    + '<button class="modal-cancel" id="lot-edit-cancel">' + escapeHtml(t('cancel')) + '</button>'
+    + '<button class="modal-confirm" id="lot-edit-confirm">' + escapeHtml(t('lotSaveChanges')) + '</button>'
     + '</div></div>';
 
   document.body.appendChild(overlay);
@@ -2143,7 +2143,7 @@ function _confirmLotEdit(product, lot, v) {
   if (!Array.isArray(realProduct.lots) || realProduct.lots.length === 0) {
     products = products.filter(p => p.id !== realProduct.id);
     saveData();
-    showToast('Producte eliminat');
+    showToast(t('toastProductDeleted'));
     if (typeof renderHome === 'function') renderHome();
     navigateAfterAction();
     currentProduct = null;
@@ -2155,7 +2155,7 @@ function _confirmLotEdit(product, lot, v) {
 
   saveData();
   openProduct(realProduct.id);
-  showToast('✓ Lot actualitzat');
+  showToast(t('toastLotUpdated'));
   _evaluateLowStock(realProduct, prevBase);
 }
 
@@ -2187,16 +2187,16 @@ function openProductEditModal(product, restoreState) {
   const currentEmojiSelected = initialEmoji;
 
   overlay.innerHTML = '<div class="modal-content product-edit-modal">'
-    + '<p class="modal-title">✏️ Editar producte</p>'
-    + '<div class="lot-edit-field"><label>Nom</label>'
+    + '<p class="modal-title">' + t('productEditTitle') + '</p>'
+    + '<div class="lot-edit-field"><label>' + t('productEditName') + '</label>'
     + '<input type="text" id="product-edit-name" value="' + escapeHtml(initialName) + '"></div>'
-    + '<div class="lot-edit-field"><label>Emoji</label>'
+    + '<div class="lot-edit-field"><label>' + t('emoji') + '</label>'
     + '<button type="button" class="emoji-button" id="product-edit-emoji-btn">'
     + '<span class="emoji-button-current" id="product-edit-emoji-display">' + escapeHtml(currentEmojiSelected) + '</span>'
     + '</button>'
     + '</div>'
     + (catOptions.length > 0
-        ? '<div class="lot-edit-field"><label>Categoria</label>'
+        ? '<div class="lot-edit-field"><label>' + t('productEditCategory') + '</label>'
           + '<div class="category-picker-wrap">'
           + '<button type="button" class="category-picker-btn" id="product-edit-category-picker-btn">'
           + '<span class="picker-icon"></span>'
@@ -2206,10 +2206,10 @@ function openProductEditModal(product, restoreState) {
           + '<div class="category-picker-dropdown" id="product-edit-category-picker-dropdown" hidden></div>'
           + '</div></div>'
         : '')
-    + '<p class="lot-edit-note">ℹ️ Quantitat, preu, data i supermercat es gestionen per lot.</p>'
+    + '<p class="lot-edit-note">' + t('productEditNote') + '</p>'
     + '<div class="modal-buttons">'
-    + '<button class="modal-cancel" id="product-edit-cancel">Cancel·lar</button>'
-    + '<button class="modal-confirm" id="product-edit-confirm">Desar canvis</button>'
+    + '<button class="modal-cancel" id="product-edit-cancel">' + escapeHtml(t('cancel')) + '</button>'
+    + '<button class="modal-confirm" id="product-edit-confirm">' + escapeHtml(t('lotSaveChanges')) + '</button>'
     + '</div></div>';
 
   document.body.appendChild(overlay);
@@ -2254,7 +2254,7 @@ function openProductEditModal(product, restoreState) {
       categoryId: catBtn ? (catBtn.dataset.value || null) : null
     };
     if (!values.name) {
-      showToast('El nom és obligatori');
+      showToast(t('toastNameRequired'));
       return;
     }
     destroyCatPicker();
@@ -2290,12 +2290,12 @@ function _confirmProductEdit(product, v) {
 
   saveData();
   openProduct(realProduct.id);
-  showToast('✓ Producte actualitzat');
+  showToast(t('toastProductUpdated'));
 }
 
 function _deleteLot(product, lotId) {
   if (!product || !lotId) return;
-  _confirmModal('Esborrar aquest lot?', () => {
+  _confirmModal(t('lotDeleteConfirm'), () => {
     // Re-busca referència viva al moment de confirmar (fix Fase D v2).
     const realProduct = products.find(p => p.id === product.id);
     if (!realProduct) {
@@ -2306,7 +2306,7 @@ function _deleteLot(product, lotId) {
     if (!Array.isArray(realProduct.lots) || realProduct.lots.length === 0) {
       products = products.filter(p => p.id !== realProduct.id);
       saveData();
-      showToast('Producte eliminat');
+      showToast(t('toastProductDeleted'));
       if (typeof renderHome === 'function') renderHome();
       navigateAfterAction();
       currentProduct = null;
@@ -2314,8 +2314,8 @@ function _deleteLot(product, lotId) {
     }
     saveData();
     openProduct(realProduct.id);
-    showToast('Lot eliminat');
-  }, { title: 'Esborrar lot', confirmLabel: 'Esborrar', cancelLabel: 'Cancel·lar', danger: true });
+    showToast(t('toastLotDeleted'));
+  }, { title: t('lotDeleteTitle'), confirmLabel: t('delete'), cancelLabel: t('cancel'), danger: true });
 }
 
 // =============================================================
@@ -2351,7 +2351,7 @@ function _openMoveLotModal(product, lot) {
     spaceOptions.push({
       id: activeSpace.id,
       icon: activeSpace.icon || '🏠',
-      label: activeSpace.name + ' (actual)'
+      label: activeSpace.name + t('moveLotSpaceCurrent')
     });
   }
   allSpaces.forEach(s => {
@@ -2361,7 +2361,7 @@ function _openMoveLotModal(product, lot) {
   });
 
   if (spaceOptions.length === 0) {
-    showToast('No hi ha cap espai disponible');
+    showToast(t('toastNoSpaceAvailable'));
     return;
   }
 
@@ -2371,27 +2371,26 @@ function _openMoveLotModal(product, lot) {
   // la fila del lot al detall).
   const lotQtyDisplay = _formatLotQty(lot) || ((lot.percentRemaining || 100) + '%');
   overlay.innerHTML = '<div class="modal-content move-lot-modal">'
-    + '<p class="modal-title">🚚 Moure lot</p>'
-    + '<p class="modal-sub">' + escapeHtml(lotQtyDisplay) + ' de '
-    + escapeHtml((product.emoji || '') + ' ' + (product.name || '')) + '</p>'
-    + '<div class="lot-edit-field"><label>Espai destí</label>'
+    + '<p class="modal-title">' + t('moveLotTitle') + '</p>'
+    + '<p class="modal-sub">' + t('moveLotSub', escapeHtml(lotQtyDisplay), escapeHtml((product.emoji || '') + ' ' + (product.name || ''))) + '</p>'
+    + '<div class="lot-edit-field"><label>' + t('moveLotTargetSpace') + '</label>'
     + '<div class="category-picker-wrap">'
     + '<button type="button" class="category-picker-btn" id="move-lot-space-picker-btn">'
     + '<span class="picker-icon"></span><span class="picker-label"></span><span class="picker-arrow">▾</span>'
     + '</button>'
     + '<div class="category-picker-dropdown" id="move-lot-space-picker-dropdown" hidden></div>'
     + '</div></div>'
-    + '<div class="lot-edit-field"><label>Ubicació destí</label>'
+    + '<div class="lot-edit-field"><label>' + t('moveLotTargetLocation') + '</label>'
     + '<div class="category-picker-wrap">'
     + '<button type="button" class="category-picker-btn" id="move-lot-location-picker-btn" disabled>'
-    + '<span class="picker-icon">⏳</span><span class="picker-label">Carregant…</span><span class="picker-arrow">▾</span>'
+    + '<span class="picker-icon">⏳</span><span class="picker-label">' + t('moveLotLoading') + '</span><span class="picker-arrow">▾</span>'
     + '</button>'
     + '<div class="category-picker-dropdown" id="move-lot-location-picker-dropdown" hidden></div>'
     + '</div></div>'
-    + '<p class="lot-edit-note">ℹ️ Si al destí ja existeix un producte amb el mateix nom i emoji, el lot s\'hi fusionarà automàticament.</p>'
+    + '<p class="lot-edit-note">' + t('moveLotFusionNote') + '</p>'
     + '<div class="modal-buttons">'
-    + '<button class="modal-cancel" id="move-lot-cancel">Cancel·lar</button>'
-    + '<button class="modal-confirm" id="move-lot-confirm" disabled>Moure</button>'
+    + '<button class="modal-cancel" id="move-lot-cancel">' + escapeHtml(t('cancel')) + '</button>'
+    + '<button class="modal-confirm" id="move-lot-confirm" disabled>' + escapeHtml(t('moveLotConfirm')) + '</button>'
     + '</div></div>';
 
   document.body.appendChild(overlay);
@@ -2422,7 +2421,7 @@ function _openMoveLotModal(product, lot) {
     if (locBtn) {
       locBtn.disabled = true;
       const iconEl = locBtn.querySelector('.picker-icon'); if (iconEl) iconEl.textContent = '⏳';
-      const lblEl = locBtn.querySelector('.picker-label'); if (lblEl) lblEl.textContent = 'Carregant…';
+      const lblEl = locBtn.querySelector('.picker-label'); if (lblEl) lblEl.textContent = t('moveLotLoading');
     }
 
     const sameSpace = spaceId === (activeSpace && activeSpace.id);
@@ -2459,7 +2458,7 @@ function _openMoveLotModal(product, lot) {
     if (locOptions.length === 0) {
       if (locBtn) {
         const iconEl = locBtn.querySelector('.picker-icon'); if (iconEl) iconEl.textContent = '⚠️';
-        const lblEl = locBtn.querySelector('.picker-label'); if (lblEl) lblEl.textContent = 'Cap ubicació disponible';
+        const lblEl = locBtn.querySelector('.picker-label'); if (lblEl) lblEl.textContent = t('moveLotNoLocation');
       }
       currentTargetLocationId = null;
       refreshConfirm();
@@ -2531,7 +2530,7 @@ async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
   if (sameSpace) {
     // ----- CAS A: same-space → operació local -----
     if (realLot.location === targetLocationId) {
-      showToast('El lot ja és en aquesta ubicació');
+      showToast(t('toastLotSameLocation'));
       return;
     }
 
@@ -2571,7 +2570,7 @@ async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
     }
 
     saveData();
-    showToast('✓ Lot mogut');
+    showToast(t('toastLotMoved'));
     if (originRemoved) {
       if (typeof renderHome === 'function') renderHome();
       navigateAfterAction();
@@ -2585,13 +2584,13 @@ async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
   // ----- CAS B: cross-space → FBSync read/write al destí -----
   const target = SS ? SS.getSpaceById(targetSpaceId) : null;
   if (!target || !target.syncCode || !window.FBSync) {
-    showToast('No s\'ha pogut connectar al destí');
+    showToast(t('toastMoveLotNoConnect'));
     return;
   }
 
   const progressOv = document.createElement('div');
   progressOv.className = 'modal-overlay';
-  progressOv.innerHTML = '<div class="modal-content"><p class="modal-title">📦 Movent lot…</p>'
+  progressOv.innerHTML = '<div class="modal-content"><p class="modal-title">' + t('moveLotProgressTitle') + '</p>'
     + '<p class="modal-sub">' + escapeHtml((target.icon || '') + ' ' + (target.name || '')) + '</p></div>';
   document.body.appendChild(progressOv);
 
@@ -2662,7 +2661,7 @@ async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
     saveData();
 
     if (progressOv.parentNode) document.body.removeChild(progressOv);
-    showToast('✓ Lot mogut a ' + (target.icon || '') + ' ' + (target.name || ''));
+    showToast(t('toastLotMovedTo', (target.icon || '') + ' ' + (target.name || '')));
     if (originRemoved) {
       if (typeof renderHome === 'function') renderHome();
       navigateAfterAction();
@@ -2674,13 +2673,13 @@ async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
     console.error('[_executeMoveLot] error cross-space:', e);
     if (progressOv.parentNode) document.body.removeChild(progressOv);
     // Missatge més específic segons l'estat de xarxa i el tipus d'error.
-    let msg = 'Error movent el lot';
+    let msg = t('toastMoveLotError');
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      msg = 'Sense connexió — el lot no s\'ha mogut';
+      msg = t('toastMoveLotOffline');
     } else if (e && /init failed/i.test(String(e.message || e))) {
-      msg = 'No s\'ha pogut connectar a Firebase';
+      msg = t('toastMoveLotFirebase');
     } else if (e && /permission/i.test(String(e.message || e))) {
-      msg = 'Sense permís per a l\'espai destí';
+      msg = t('toastMoveLotNoPermission');
     }
     showToast(msg);
   }
@@ -2775,14 +2774,14 @@ function formatFrozenInfo(product) {
   try { dateStr = frozen.toLocaleDateString(getLocale()); }
   catch (e) { dateStr = product.frozenDate; }
   let ago;
-  if (days === 0) ago = 'avui';
-  else if (days === 1) ago = 'fa 1 dia';
-  else if (days < 60) ago = 'fa ' + days + ' dies';
+  if (days === 0) ago = t('frozenAgoToday');
+  else if (days === 1) ago = t('frozenAgoOneDay');
+  else if (days < 60) ago = t('frozenAgoDays', days);
   else {
     const months = Math.floor(days / 30);
-    ago = 'fa ' + months + (months === 1 ? ' mes' : ' mesos');
+    ago = t('frozenAgoMonths', months);
   }
-  return '❄️ Congelat el ' + dateStr + ' (' + ago + ')';
+  return t('frozenLabel', dateStr, ago);
 }
 
 // NEVI — colors del cos i la vora del mascot per nivell. Han de
@@ -3316,10 +3315,10 @@ function renderAlerts() {
 // Empty states per nivell — icona + títol + missatge curt amb to
 // positiu (especialment a Alerta: és bo no tenir res aquí).
 const SHELF_EMPTY_STATES = {
-  green:  { icon: '🌿', title: 'Cap producte tranquil aquí', message: 'Tot el que tens està més proper a caducar' },
-  yellow: { icon: '✨', title: 'Res a vigilar de moment!',   message: 'No hi ha productes en aquest rang de dates' },
-  orange: { icon: '🌟', title: 'Cap urgència!',              message: 'No tens res que caduqui aviat' },
-  red:    { icon: '🎉', title: 'Excel·lent!',                 message: 'No tens cap producte caducat ni que caduqui avui' }
+  green:  { icon: '🌿', titleKey: 'shelfEmptyGreenTitle',  msgKey: 'shelfEmptyGreenMsg' },
+  yellow: { icon: '✨', titleKey: 'shelfEmptyYellowTitle', msgKey: 'shelfEmptyYellowMsg' },
+  orange: { icon: '🌟', titleKey: 'shelfEmptyOrangeTitle', msgKey: 'shelfEmptyOrangeMsg' },
+  red:    { icon: '🎉', titleKey: 'shelfEmptyRedTitle',    msgKey: 'shelfEmptyRedMsg' }
 };
 
 // Ordre dels nivells al cub: el mateix que l'ordre dels prestatges
@@ -3352,8 +3351,8 @@ function _renderShelfProducts(slide, level, cat) {
     const titleEl = emptyEl.querySelector('.empty-state-title');
     const msgEl = emptyEl.querySelector('.empty-state-message');
     if (iconEl) iconEl.textContent = state.icon;
-    if (titleEl) titleEl.textContent = state.title;
-    if (msgEl) msgEl.textContent = state.message;
+    if (titleEl) titleEl.textContent = t(state.titleKey);
+    if (msgEl) msgEl.textContent = t(state.msgKey);
     emptyEl.style.display = 'flex';
   } else {
     emptyEl.style.display = 'none';
@@ -4221,26 +4220,25 @@ function _updateAddProductPreview() {
 
   const qtyAsInt = parseInt(qty, 10);
   if (!Number.isFinite(qtyAsInt) || qtyAsInt < 0) {
-    previewEl.textContent = 'Quantitat no vàlida';
+    previewEl.textContent = t('addPreviewInvalidQty');
     return;
   }
 
   if (multiLots && qtyAsInt > 1) {
     if (weight) {
-      previewEl.textContent = 'Es crearan ' + qtyAsInt + ' lots de ' + weight + ' cadascun';
+      previewEl.textContent = t('addPreviewMultiWithWeight', qtyAsInt, weight);
     } else {
-      previewEl.textContent = 'Es crearan ' + qtyAsInt + ' lots independents';
+      previewEl.textContent = t('addPreviewMultiNoWeight', qtyAsInt);
     }
     return;
   }
 
   // Mode comptador (1 lot amb N unitats) — cas per defecte
   if (qtyAsInt > 1) {
-    previewEl.textContent = 'Es crearà 1 lot amb ' + qtyAsInt + ' unitats'
-      + (weight ? ' de ' + weight + ' cadascuna' : '');
+    previewEl.textContent = t('addPreviewSingleCounter', qtyAsInt, weight);
   } else {
     // 1 unitat o 0
-    previewEl.textContent = weight ? 'Es crearà 1 lot de ' + weight : 'Es crearà 1 lot';
+    previewEl.textContent = t('addPreviewSingleLot', weight);
   }
 }
 
@@ -4859,12 +4857,12 @@ function saveNewProduct() {
 function _buildAddToast(name, emoji, isMultiplier, qtyAsInt, weight, fusedInto, defaultSuffix) {
   if (isMultiplier && qtyAsInt > 1) {
     if (fusedInto) {
-      return '✅ ' + qtyAsInt + ' lots afegits a ' + name + ' (' + fusedInto.lots.length + ' lots en total)';
+      return t('addToastMultiFused', qtyAsInt, name, fusedInto.lots.length);
     }
-    return '✅ ' + qtyAsInt + ' lots de ' + weight + ' afegits a ' + name;
+    return t('addToastMultiNew', qtyAsInt, weight, name);
   }
   if (fusedInto) {
-    return '✅ Lot afegit a ' + name + ' (' + fusedInto.lots.length + ' lots)';
+    return t('addToastSingleFused', name, fusedInto.lots.length);
   }
   return '✅ ' + (emoji || '') + ' ' + name + ' ' + defaultSuffix;
 }
