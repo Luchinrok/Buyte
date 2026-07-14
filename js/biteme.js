@@ -1489,8 +1489,8 @@ function _renderLotsSection(product) {
   });
 
   const title = lots.length === 1
-    ? '📦 Lot'
-    : '📦 Lots (' + lots.length + ')';
+    ? t('lotsSectionOne')
+    : t('lotsSectionMany', lots.length);
   const rowsHtml = sorted.map(_renderLotRow).join('');
   return '<div class="lots-section">'
     + '<h3 class="lots-section-title">' + title + '</h3>'
@@ -3059,9 +3059,9 @@ function _ensureZonesSwiper() {
         // Swiper passa l'índex REAL aquí (no els duplicats), així que
         // mapeja directament a SECTION_ORDER.
         const cat = SECTION_ORDER[index] || '';
-        const labelKey = cat === 'fridge' ? 'locFridge'
-          : cat === 'freezer' ? 'locFreezer'
-          : cat === 'pantry' ? 'locPantry' : '';
+        const labelKey = cat === 'fridge' ? 'catFridge'
+          : cat === 'freezer' ? 'catFreezer'
+          : cat === 'pantry' ? 'catPantry' : '';
         const label = labelKey ? t(labelKey) : cat;
         return '<button class="' + className + '" type="button" data-zone="' + cat + '" aria-label="' + escapeHtml(label) + '">' + escapeHtml(label) + '</button>';
       }

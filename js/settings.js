@@ -2927,9 +2927,18 @@ function translatePage() {
     const key = el.getAttribute('data-i18n');
     el.textContent = t(key);
   });
-
-  const nameInput = document.getElementById('input-name');
-  if (nameInput) nameInput.placeholder = t('productNamePlaceholder');
+  // Atributs traduïbles (a més del textContent): placeholder, title i
+  // aria-label. Abans només es reaplicava el textContent, així que en
+  // canviar d'idioma els placeholders/aria es quedaven en l'idioma vell.
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.setAttribute('title', t(el.getAttribute('data-i18n-title')));
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+  });
 
   document.documentElement.lang = getCurrentLang();
   renderHome();
