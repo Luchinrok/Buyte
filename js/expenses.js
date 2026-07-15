@@ -195,7 +195,7 @@ function _expensesGetData(rangeKey) {
       const cat = (_CS && typeof _CS.getCategoryById === 'function') ? _CS.getCategoryById(catId) : null;
       byCategoryMap[catId] = {
         id: catId,
-        name: cat ? cat.name : 'Altres',
+        name: (window.categoryLabel ? window.categoryLabel(cat || catId) : (cat ? cat.name : 'Altres')),
         icon: cat ? cat.icon : '📦',
         total: 0,
         count: 0

@@ -1023,7 +1023,7 @@ function _renderShopPageItems(smId, listEl, mode) {
     );
     header.innerHTML = `
       <span class="cat-section-icon">${escapeHtml(cat.icon || '📦')}</span>
-      <span class="cat-section-name">${escapeHtml(cat.name || cat.id)}</span>
+      <span class="cat-section-name">${escapeHtml(window.categoryLabel ? window.categoryLabel(cat) : (cat.name || cat.id))}</span>
       <span class="cat-section-count">(${groupItems.length})</span>
       ${moveBtnsHtml}
     `;

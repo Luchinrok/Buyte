@@ -2180,7 +2180,7 @@ function openProductEditModal(product, restoreState) {
       );
     }
   }
-  const catOptions = cats.map(c => ({ id: c.id, icon: c.icon || '📦', label: c.name || c.id }));
+  const catOptions = cats.map(c => ({ id: c.id, icon: c.icon || '📦', label: (window.categoryLabel ? window.categoryLabel(c) : (c.name || c.id)) }));
 
   // Mateix patró visual que el botó d'emoji del formulari Afegir
   // (#btn-pick-emoji). Reusa .emoji-button + .emoji-button-current.

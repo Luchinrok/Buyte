@@ -536,10 +536,36 @@ function runCatalogV3Migration() {
   return { skipped: false, updated };
 }
 
+// Etiqueta a MOSTRAR d'una categoria (DISPLAY-ONLY). Accepta l'objecte
+// categoria O el seu id/codi (`cat_dairy`…). Categories de SISTEMA (id
+// conegut de DEFAULT_CATEGORIES) → traducció via t(id) (la clau i18n ÉS
+// l'id). Categories CUSTOM de l'usuari (cat_user_*) → el `name` tal qual,
+// sense traduir. Fallback segur al nom o l'id. NO toca dades, claus ni
+// comparacions: només serveix per pintar.
+const _SYSTEM_CATEGORY_IDS = new Set(DEFAULT_CATEGORIES.map(c => c.id));
+function categoryLabel(catOrId) {
+  if (!catOrId) return '';
+  const isStr = (typeof catOrId === 'string');
+  const id = isStr ? catOrId : (catOrId && catOrId.id);
+  if (id && _SYSTEM_CATEGORY_IDS.has(id) && typeof t === 'function') {
+    const label = t(id);
+    if (label && label !== id) return label;   // traducció de sistema
+  }
+  if (!isStr && catOrId.name) return catOrId.name;   // custom (objecte)
+  if (isStr) {
+    const cat = getCategoryById(id);
+    return (cat && cat.name) || id;                  // custom (per id)
+  }
+  return id || '';
+}
+
+window.categoryLabel = categoryLabel;
+
 window.CategoriesSystem = {
   DEFAULT_CATEGORIES,
   EMOJI_TO_CATEGORY,
   KEYWORDS_TO_CATEGORY,
+  categoryLabel,
   getCategories,
   saveCategories,
   getCategoryById,

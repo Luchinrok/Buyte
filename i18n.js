@@ -1018,6 +1018,20 @@ const TRANSLATIONS = {
     lotsSectionMany: (n) => '📦 Lots (' + n + ')',
     editPurchasesBtn: 'Editar compres',
     editPurchasesTitle: 'Editar últimes compres',
+    // Categories de producte (display-only via categoryLabel; la clau ÉS l'id).
+    cat_dairy: 'Làctics',
+    cat_meat: 'Carns',
+    cat_fish: 'Peixos i marisc',
+    cat_vegetables: 'Verdures',
+    cat_fruits: 'Fruites',
+    cat_bakery: 'Forn i pa',
+    cat_grains: 'Arròs i pasta',
+    cat_canned: 'Conserves',
+    cat_sweets: 'Dolços i postres',
+    cat_drinks: 'Begudes',
+    cat_frozen: 'Congelats',
+    cat_spices: 'Espècies i condiments',
+    cat_other: 'Altres',
   },
 
   // Pas 3 — traducció per blocs. Les claus que falten cauen a `ca` via el
@@ -1219,7 +1233,21 @@ const TRANSLATIONS = {
     lotsSectionOne: '📦 Lote',
     lotsSectionMany: (n) => '📦 Lotes (' + n + ')',
     editPurchasesBtn: 'Editar compras',
-    editPurchasesTitle: 'Editar últimas compras'
+    editPurchasesTitle: 'Editar últimas compras',
+    // Categorías de producto (display-only)
+    cat_dairy: 'Lácteos',
+    cat_meat: 'Carnes',
+    cat_fish: 'Pescado y marisco',
+    cat_vegetables: 'Verduras',
+    cat_fruits: 'Frutas',
+    cat_bakery: 'Panadería',
+    cat_grains: 'Arroz y pasta',
+    cat_canned: 'Conservas',
+    cat_sweets: 'Dulces y postres',
+    cat_drinks: 'Bebidas',
+    cat_frozen: 'Congelados',
+    cat_spices: 'Especias y condimentos',
+    cat_other: 'Otros'
   },
 
   en: {
@@ -1419,7 +1447,21 @@ const TRANSLATIONS = {
     lotsSectionOne: '📦 Batch',
     lotsSectionMany: (n) => '📦 Batches (' + n + ')',
     editPurchasesBtn: 'Edit purchases',
-    editPurchasesTitle: 'Edit recent purchases'
+    editPurchasesTitle: 'Edit recent purchases',
+    // Product categories (display-only)
+    cat_dairy: 'Dairy',
+    cat_meat: 'Meat',
+    cat_fish: 'Fish & seafood',
+    cat_vegetables: 'Vegetables',
+    cat_fruits: 'Fruit',
+    cat_bakery: 'Bakery & bread',
+    cat_grains: 'Rice & pasta',
+    cat_canned: 'Canned goods',
+    cat_sweets: 'Sweets & desserts',
+    cat_drinks: 'Drinks',
+    cat_frozen: 'Frozen',
+    cat_spices: 'Spices & seasonings',
+    cat_other: 'Other'
   },
 
   fr: {
@@ -1619,7 +1661,21 @@ const TRANSLATIONS = {
     lotsSectionOne: '📦 Lot',
     lotsSectionMany: (n) => '📦 Lots (' + n + ')',
     editPurchasesBtn: 'Modifier les achats',
-    editPurchasesTitle: 'Modifier les achats récents'
+    editPurchasesTitle: 'Modifier les achats récents',
+    // Catégories de produit (display-only)
+    cat_dairy: 'Produits laitiers',
+    cat_meat: 'Viandes',
+    cat_fish: 'Poisson et fruits de mer',
+    cat_vegetables: 'Légumes',
+    cat_fruits: 'Fruits',
+    cat_bakery: 'Boulangerie',
+    cat_grains: 'Riz et pâtes',
+    cat_canned: 'Conserves',
+    cat_sweets: 'Sucreries et desserts',
+    cat_drinks: 'Boissons',
+    cat_frozen: 'Surgelés',
+    cat_spices: 'Épices et condiments',
+    cat_other: 'Autres'
   }
 
 };
