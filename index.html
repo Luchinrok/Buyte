@@ -407,14 +407,14 @@
       <span class="rp-summary-meta"></span>
     </div>
     <div class="rp-filter-bar">
-      <button class="rp-filter-btn active" data-range="today" type="button">Avui</button>
-      <button class="rp-filter-btn" data-range="week" type="button">Setmana</button>
-      <button class="rp-filter-btn" data-range="month" type="button">Mes</button>
-      <button class="rp-filter-btn" data-range="custom" type="button">Personalitzar</button>
+      <button class="rp-filter-btn active" data-range="today" type="button" data-i18n="calendarToday"></button>
+      <button class="rp-filter-btn" data-range="week" type="button" data-i18n="rpFilterWeek"></button>
+      <button class="rp-filter-btn" data-range="month" type="button" data-i18n="rpFilterMonth"></button>
+      <button class="rp-filter-btn" data-range="custom" type="button" data-i18n="rpFilterCustom"></button>
     </div>
     <div class="rp-list" id="rp-list"></div>
     <footer class="rp-footer">
-      <button class="rp-cancel-btn" type="button">Tornar</button>
+      <button class="rp-cancel-btn" type="button" data-i18n="rpBack"></button>
       <button class="rp-save-btn" type="button" disabled>Desar canvis</button>
     </footer>
   </div>
@@ -932,25 +932,25 @@
   <div id="screen-manage-categories" class="screen">
     <header class="top-bar">
       <button class="back-btn" data-back="popular" aria-label="Back">‹</button>
-      <h1>🏷️ Categories</h1>
+      <h1>🏷️ <span data-i18n="catMgmtTitle"></span></h1>
       <div style="width:40px"></div>
     </header>
 
     <div class="info-banner banner-info">
       <div class="info-banner-icon">ℹ️</div>
       <div class="info-banner-content">
-        <strong>Personalitza les teves categories</strong>
-        <p>Pots crear, editar o eliminar categories. Si elimines una, els seus productes passaran a "Altres".</p>
+        <strong data-i18n="catMgmtBannerTitle"></strong>
+        <p data-i18n="catMgmtBannerText"></p>
       </div>
     </div>
 
     <div id="categories-mgmt-list" class="categories-mgmt-list"></div>
 
-    <button id="btn-create-category" class="primary-btn create-cat-btn">➕ Crear nova categoria</button>
+    <button id="btn-create-category" class="primary-btn create-cat-btn">➕ <span data-i18n="catMgmtCreateBtn"></span></button>
 
     <div class="categories-advanced-section">
-      <button id="btn-rerun-migration" class="secondary-btn">🔄 Re-categoritzar tots els productes</button>
-      <p class="categories-advanced-help">Torna a aplicar la categorització automàtica als productes populars que NO tinguis assignats manualment. Les teves assignacions manuals es mantenen.</p>
+      <button id="btn-rerun-migration" class="secondary-btn">🔄 <span data-i18n="catMgmtRerunBtn"></span></button>
+      <p class="categories-advanced-help" data-i18n="catMgmtRerunHelp"></p>
     </div>
   </div>
 
@@ -961,22 +961,22 @@
   <div id="screen-category-edit" class="screen">
     <header class="top-bar">
       <button class="back-btn" data-back="manage-categories" aria-label="Back">‹</button>
-      <h1 id="category-edit-title">Categoria</h1>
+      <h1 id="category-edit-title" data-i18n="catEditTitleDefault"></h1>
       <div style="width:40px"></div>
     </header>
 
     <div class="form-group">
-      <label for="input-category-name">Nom de la categoria</label>
+      <label for="input-category-name" data-i18n="catNameLabel"></label>
       <input type="text" id="input-category-name" maxlength="30" autocomplete="off" placeholder="Ex: Sense gluten">
     </div>
 
     <div class="form-group">
-      <label>Icona</label>
+      <label data-i18n="catIconLabel"></label>
       <div id="category-emoji-picker" class="category-emoji-picker"></div>
     </div>
 
-    <button class="primary-btn" id="btn-save-category">Guardar</button>
-    <button class="danger-btn" id="btn-delete-category" style="display:none;margin-top:10px">🗑️ Eliminar categoria</button>
+    <button class="primary-btn" id="btn-save-category" data-i18n="save"></button>
+    <button class="danger-btn" id="btn-delete-category" style="display:none;margin-top:10px">🗑️ <span data-i18n="catDeleteBtn"></span></button>
   </div>
 
   <!-- PANTALLA SELECCIONAR EMOJI -->
@@ -1187,7 +1187,7 @@
     </header>
     <p class="section-hint" data-i18n="popularHint"></p>
 
-    <input type="search" id="popular-search" class="popular-search" autocomplete="off">
+    <input type="search" id="popular-search" class="popular-search" autocomplete="off" data-i18n-placeholder="searchPlaceholder">
 
     <!-- Pestanyes de categories (FASE 2). Scroll horitzontal estil
          WhatsApp. Es generen dinàmicament des de renderCategoryTabs()
@@ -1197,7 +1197,7 @@
       <div class="categories-tabs-scroll" id="categories-tabs-scroll"></div>
     </div>
     <div class="categories-quick-actions">
-      <button type="button" class="categories-manage-btn" id="btn-manage-categories" title="Gestionar categories">⚙️ Gestionar</button>
+      <button type="button" class="categories-manage-btn" id="btn-manage-categories" data-i18n-title="manageCategoriesTitle">⚙️ <span data-i18n="manageCategoriesBtn"></span></button>
     </div>
 
     <!-- Barra d'acció a dalt: Afegir + Ordenar. Sempre visible quan
@@ -2212,17 +2212,17 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260619-1"></script>
   <script src="notifications.js?v=20260707-1"></script>
-  <script src="i18n.js?v=20260714-3"></script>
+  <script src="i18n.js?v=20260715-1"></script>
   <script src="js/core.js?v=20260610-2"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260714-2"></script>
   <script src="js/shops.js?v=20260503-3"></script>
-  <script src="js/buyme.js?v=20260714-1"></script>
-  <script src="js/populars.js?v=20260714-1"></script>
+  <script src="js/buyme.js?v=20260715-1"></script>
+  <script src="js/populars.js?v=20260715-1"></script>
   <script src="js/categories.js?v=20260714-1"></script>
   <script src="js/purchase-history.js?v=20260706-2"></script>
-  <script src="js/recent-purchases.js?v=20260611-1"></script>
-  <script src="js/special-lists.js?v=20260503-3"></script>
+  <script src="js/recent-purchases.js?v=20260715-1"></script>
+  <script src="js/special-lists.js?v=20260715-1"></script>
   <script src="js/settings.js?v=20260714-1"></script>
   <script src="js/backup.js?v=20260508-2"></script>
   <script src="js/spaces.js?v=20260508-4"></script>

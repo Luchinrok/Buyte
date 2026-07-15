@@ -77,12 +77,12 @@
     const hh = String(d.getHours()).padStart(2, '0');
     const mm = String(d.getMinutes()).padStart(2, '0');
     const sameDay = d.toDateString() === now.toDateString();
-    if (sameDay) return 'Avui ' + hh + ':' + mm;
+    if (sameDay) return t('rpTimeToday', hh + ':' + mm);
     const today0 = new Date(now); today0.setHours(0, 0, 0, 0);
     const d0 = new Date(d); d0.setHours(0, 0, 0, 0);
     const diffDays = Math.round((today0.getTime() - d0.getTime()) / 86400000);
-    if (diffDays === 1) return 'Ahir ' + hh + ':' + mm;
-    if (diffDays >= 2 && diffDays <= 7) return 'Fa ' + diffDays + ' dies';
+    if (diffDays === 1) return t('rpTimeYesterday', hh + ':' + mm);
+    if (diffDays >= 2 && diffDays <= 7) return t('rpTimeDaysAgo', diffDays);
     return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
   }
 
@@ -102,7 +102,7 @@
       };
       btn.textContent = fmt(_rpCustomRange.from) + ' - ' + fmt(_rpCustomRange.to);
     } else {
-      btn.textContent = 'Personalitzar';
+      btn.textContent = t('rpFilterCustom');
     }
   }
 
@@ -111,7 +111,7 @@
     if (!btn) return;
     const count = Object.keys(_rpEditStates).length;
     btn.disabled = count === 0;
-    btn.textContent = count > 0 ? ('Desar canvis (' + count + ')') : 'Desar canvis';
+    btn.textContent = t('rpSaveChanges', count);
   }
 
   // === Resum financer (rang actiu + count + total dels filtrats) ===
@@ -136,21 +136,20 @@
     }, 0);
     const count = filtered.length;
     let label;
-    if (_rpCurrentRange === 'today') label = 'Avui';
-    else if (_rpCurrentRange === 'week') label = 'Última setmana';
-    else if (_rpCurrentRange === 'month') label = 'Últim mes';
+    if (_rpCurrentRange === 'today') label = t('calendarToday');
+    else if (_rpCurrentRange === 'week') label = t('rpRangeWeek');
+    else if (_rpCurrentRange === 'month') label = t('rpRangeMonth');
     else if (_rpCurrentRange === 'custom' && _rpCustomRange.from && _rpCustomRange.to) {
       const fmt = (ymd) => { const p = ymd.split('-'); return p[2] + '/' + p[1]; };
       label = fmt(_rpCustomRange.from) + ' - ' + fmt(_rpCustomRange.to);
     } else {
-      label = 'Personalitzat';
+      label = t('rpRangeCustom');
     }
     const labelEl = summary.querySelector('.rp-summary-label');
     const metaEl = summary.querySelector('.rp-summary-meta');
     if (labelEl) labelEl.textContent = label;
     if (metaEl) {
-      const compresWord = count === 1 ? 'compra' : 'compres';
-      metaEl.textContent = count + ' ' + compresWord + ' · ' + total.toFixed(2) + '€';
+      metaEl.textContent = t('rpSummaryMeta', count, total.toFixed(2));
     }
   }
 
@@ -161,7 +160,7 @@
     if (!list) return;
     const filtered = _rpFilterProducts(_rpCurrentRange);
     if (filtered.length === 0) {
-      list.innerHTML = '<div class="rp-empty">No hi ha compres en aquest rang.</div>';
+      list.innerHTML = '<div class="rp-empty">' + escapeHtml(t('rpNoInRange')) + '</div>';
       return;
     }
     list.innerHTML = '';
@@ -170,9 +169,9 @@
     // de cada producte amb label inline.
     const header = document.createElement('div');
     header.className = 'rp-table-header';
-    header.innerHTML = '<div class="rp-col-product">Producte</div>'
+    header.innerHTML = '<div class="rp-col-product">' + escapeHtml(t('product')) + '</div>'
       + '<div class="rp-col-price">€</div>'
-      + '<div class="rp-col-weight">Pes</div>';
+      + '<div class="rp-col-weight">' + escapeHtml(t('rpColWeight')) + '</div>';
     list.appendChild(header);
     filtered.forEach(p => list.appendChild(_rpBuildRow(p)));
   }
@@ -238,7 +237,7 @@
     colExpiry.className = 'rp-col-expiry';
     const expiryLabel = document.createElement('span');
     expiryLabel.className = 'rp-col-label';
-    expiryLabel.textContent = 'Caducitat';
+    expiryLabel.textContent = t('rpExpiryLabel');
     const dateInput = document.createElement('input');
     dateInput.type = 'date';
     dateInput.value = p.date || '';
@@ -246,7 +245,7 @@
     dateInput.addEventListener('input', () => _rpOnFieldChange(p, 'date', dateInput.value));
     const badge = document.createElement('span');
     badge.className = 'rp-no-expiry-badge';
-    badge.textContent = 'No caduca';
+    badge.textContent = t('noExpiry');
     badge.style.display = p.noExpiry ? '' : 'none';
     const toggleLabel = document.createElement('label');
     toggleLabel.className = 'rp-toggle-small';
@@ -262,7 +261,7 @@
       if (v) _rpOnFieldChange(p, 'date', '');
     });
     toggleLabel.appendChild(toggleInput);
-    toggleLabel.appendChild(document.createTextNode(' No caduca'));
+    toggleLabel.appendChild(document.createTextNode(' ' + t('noExpiry')));
     colExpiry.appendChild(expiryLabel);
     colExpiry.appendChild(dateInput);
     colExpiry.appendChild(badge);
@@ -479,7 +478,7 @@
     // tornés sense recarregar veuria el total stale.)
     _rpUpdateSummary();
     if (typeof showToast === 'function') {
-      showToast('✓ ' + count + (count === 1 ? ' producte actualitzat' : ' productes actualitzats'));
+      showToast(t('rpUpdated', count));
     }
     // Quedar-se a la pantalla — l'usuari probablement vol seguir
     // editant més productes. _rpRender repinta amb els valors recent
@@ -501,12 +500,12 @@
     overlay.className = 'modal-overlay';
     overlay.innerHTML =
       '<div class="modal-content rp-range-modal">' +
-        '<p class="modal-title">Rang personalitzat</p>' +
-        '<div class="rp-range-field"><label>Des de</label><input type="date" id="rp-range-from" value="' + defaultFrom + '"></div>' +
-        '<div class="rp-range-field"><label>Fins a</label><input type="date" id="rp-range-to" value="' + defaultTo + '"></div>' +
+        '<p class="modal-title">' + escapeHtml(t('rpRangeTitle')) + '</p>' +
+        '<div class="rp-range-field"><label>' + escapeHtml(t('rpRangeFrom')) + '</label><input type="date" id="rp-range-from" value="' + defaultFrom + '"></div>' +
+        '<div class="rp-range-field"><label>' + escapeHtml(t('rpRangeTo')) + '</label><input type="date" id="rp-range-to" value="' + defaultTo + '"></div>' +
         '<div class="modal-buttons">' +
-          '<button class="modal-cancel" id="rp-range-cancel">Cancel·lar</button>' +
-          '<button class="modal-confirm" id="rp-range-apply">Aplicar</button>' +
+          '<button class="modal-cancel" id="rp-range-cancel">' + escapeHtml(t('cancel')) + '</button>' +
+          '<button class="modal-confirm" id="rp-range-apply">' + escapeHtml(t('rpRangeApply')) + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(overlay);
@@ -516,11 +515,11 @@
       const from = overlay.querySelector('#rp-range-from').value;
       const to = overlay.querySelector('#rp-range-to').value;
       if (!from || !to) {
-        if (typeof showToast === 'function') showToast('Has d\'omplir les dues dates');
+        if (typeof showToast === 'function') showToast(t('rpBothDates'));
         return;
       }
       if (from > to) {
-        if (typeof showToast === 'function') showToast('"Des de" ha d\'anar abans de "Fins a"');
+        if (typeof showToast === 'function') showToast(t('rpRangeOrderError'));
         return;
       }
       _rpCustomRange = { from, to };
@@ -542,14 +541,13 @@
   function _rpConfirmDiscard(count, onConfirm) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    const word = count === 1 ? 'canvi' : 'canvis';
     overlay.innerHTML =
       '<div class="modal-content">' +
-        '<p class="modal-title">Canvis sense desar</p>' +
-        '<p class="modal-sub">Tens ' + count + ' ' + word + ' sense desar. Si surts es perdran.</p>' +
+        '<p class="modal-title">' + escapeHtml(t('rpDiscardTitle')) + '</p>' +
+        '<p class="modal-sub">' + escapeHtml(t('rpDiscardMsg', count)) + '</p>' +
         '<div class="modal-buttons">' +
-          '<button class="modal-cancel" id="rp-discard-cancel">Quedar-me</button>' +
-          '<button class="modal-confirm modal-confirm-danger" id="rp-discard-confirm">Sortir sense desar</button>' +
+          '<button class="modal-cancel" id="rp-discard-cancel">' + escapeHtml(t('rpDiscardStay')) + '</button>' +
+          '<button class="modal-confirm modal-confirm-danger" id="rp-discard-confirm">' + escapeHtml(t('rpDiscardLeave')) + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(overlay);

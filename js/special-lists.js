@@ -226,7 +226,7 @@ function addCustomSpecialList() {
     '📋',
     t('newListName') || 'Nova llista',
     null,
-    'Nom de la llista...',
+    t('newListPlaceholder'),
     (name) => {
       if (!name) return;
       specialListsData.push({

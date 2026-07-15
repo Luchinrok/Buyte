@@ -169,7 +169,7 @@ function deletePopularItem(idx) {
   if (!item) return;
   showConfirmDangerModal(
     item.emoji || '🗑️',
-    item.name || 'Producte popular',
+    item.name || t('popularItemFallback'),
     t('confirmDeletePopular'),
     () => {
       // Re-llegim per si la llista ha canviat entre el click i el confirm.
@@ -309,7 +309,7 @@ function _populatePopularCategorySelect(item) {
   });
 
   // "Detecció automàtica" sempre primer; després totes les categories.
-  const opts = [{ id: '', icon: '📋', name: 'Detecció automàtica' }];
+  const opts = [{ id: '', icon: '📋', name: t('popularCategoryAuto') }];
   cats.forEach(c => opts.push({ id: c.id, icon: c.icon || '📦', name: (window.categoryLabel ? window.categoryLabel(c) : (c.name || c.id)) }));
 
   dropdown.innerHTML = opts.map(o =>
@@ -347,7 +347,7 @@ function _setPopularCategoryPickerSelection(catId) {
   const labelEl = btn.querySelector('.picker-label');
   if (!catId) {
     if (iconEl) iconEl.textContent = '📋';
-    if (labelEl) labelEl.textContent = 'Detecció automàtica';
+    if (labelEl) labelEl.textContent = t('popularCategoryAuto');
     return;
   }
   const cat = (typeof window.CategoriesSystem.getCategoryById === 'function')
@@ -532,7 +532,7 @@ function deletePopularEdit() {
   if (!item) return;
   showConfirmDangerModal(
     item.emoji || '🗑️',
-    item.name || 'Producte popular',
+    item.name || t('popularItemFallback'),
     t('confirmDeletePopular'),
     () => {
       const fresh = getPopularProducts();
@@ -616,7 +616,7 @@ function renderCategoryTabs() {
   // la nota a tryQuickBuyShoppingItem a buyme.js sobre caches velles).
   let html = '<button type="button" class="cat-tab' + (active === 'all' ? ' cat-tab-active' : '') + '" data-cat-id="all">' +
              '<span class="cat-tab-icon">📋</span>' +
-             '<span class="cat-tab-name">Tots</span>' +
+             '<span class="cat-tab-name">' + escapeHtml(t('popularCatTabAll')) + '</span>' +
              '</button>';
   cats.forEach(c => {
     const isAct = c.id === active;
@@ -697,7 +697,7 @@ function renderPopularList() {
     const empty = document.createElement('p');
     empty.className = 'empty-state';
     // Missatge específic per categoria (l'app és Catalan-only a runtime).
-    if (isCatFiltering) empty.textContent = 'No hi ha productes en aquesta categoria.';
+    if (isCatFiltering) empty.textContent = t('popularNoInCategory');
     else empty.textContent = q ? t('noResults') : t('noPopular');
     container.appendChild(empty);
     updatePopularButtons();
@@ -883,7 +883,7 @@ function renderCategoriesList() {
   const container = document.getElementById('categories-mgmt-list');
   if (!container) return;
   if (!window.CategoriesSystem || typeof window.CategoriesSystem.getCategories !== 'function') {
-    container.innerHTML = '<p class="empty-state">Sistema de categories no disponible</p>';
+    container.innerHTML = '<p class="empty-state">' + escapeHtml(t('catSystemUnavailable')) + '</p>';
     return;
   }
 
@@ -911,12 +911,12 @@ function renderCategoriesList() {
     const isFirstMovable = cat.id === firstMovableId;
     const isLastMovable = cat.id === lastMovableId;
     const n = counts[cat.id] || 0;
-    const countLabel = n === 0 ? 'Sense productes' : (n === 1 ? '1 producte' : n + ' productes');
+    const countLabel = t('catCountLabel', n);
     // Fletxes només per a categories movibles (no cat_other). Disabled
     // a la primera (no es pot pujar) i a l'última (no es pot baixar).
     const moveBtns = isCatchAll ? '' : (
-      '<button type="button" class="cat-move-btn cat-move-up" data-cat-id="' + escapeHtml(cat.id) + '"' + (isFirstMovable ? ' disabled' : '') + ' aria-label="Pujar">▲</button>' +
-      '<button type="button" class="cat-move-btn cat-move-down" data-cat-id="' + escapeHtml(cat.id) + '"' + (isLastMovable ? ' disabled' : '') + ' aria-label="Baixar">▼</button>'
+      '<button type="button" class="cat-move-btn cat-move-up" data-cat-id="' + escapeHtml(cat.id) + '"' + (isFirstMovable ? ' disabled' : '') + ' aria-label="' + escapeHtml(t('catMoveUp')) + '">▲</button>' +
+      '<button type="button" class="cat-move-btn cat-move-down" data-cat-id="' + escapeHtml(cat.id) + '"' + (isLastMovable ? ' disabled' : '') + ' aria-label="' + escapeHtml(t('catMoveDown')) + '">▼</button>'
     );
     return (
       '<div class="category-row" data-cat-id="' + escapeHtml(cat.id) + '">' +
@@ -924,7 +924,7 @@ function renderCategoriesList() {
           '<span class="category-row-icon">' + escapeHtml(cat.icon || '📦') + '</span>' +
           '<div class="category-row-text">' +
             '<strong class="category-row-name">' + escapeHtml(window.categoryLabel ? window.categoryLabel(cat) : (cat.name || cat.id)) + '</strong>' +
-            '<small class="category-row-count">' + countLabel + (isCatchAll ? ' · Sistema' : '') + '</small>' +
+            '<small class="category-row-count">' + countLabel + (isCatchAll ? t('catSystemSuffix') : '') + '</small>' +
           '</div>' +
         '</div>' +
         '<div class="category-row-actions">' +
@@ -972,7 +972,7 @@ function openCategoryEdit(catId) {
 
   // Títol + camps
   const titleEl = document.getElementById('category-edit-title');
-  if (titleEl) titleEl.textContent = isNew ? '➕ Nova categoria' : ('✏️ Editar "' + (cat ? (window.categoryLabel ? window.categoryLabel(cat) : cat.name) : '') + '"');
+  if (titleEl) titleEl.textContent = isNew ? t('catNewTitle') : t('catEditTitle', (cat ? (window.categoryLabel ? window.categoryLabel(cat) : cat.name) : ''));
   const nameInput = document.getElementById('input-category-name');
   if (nameInput) nameInput.value = (cat && cat.name) || '';
   selectedCategoryEmoji = (cat && cat.icon) || '📦';
@@ -1021,7 +1021,7 @@ function saveCategoryEdit() {
   const nameInput = document.getElementById('input-category-name');
   const name = nameInput ? String(nameInput.value || '').trim() : '';
   if (!name) {
-    showToast('Cal posar un nom');
+    showToast(t('catNeedName'));
     if (nameInput) try { nameInput.focus(); } catch (e) {}
     return;
   }
@@ -1030,14 +1030,14 @@ function saveCategoryEdit() {
   try {
     if (editingCategoryId) {
       window.CategoriesSystem.updateCategory(editingCategoryId, { name, icon });
-      showToast('✅ "' + name + '" actualitzada');
+      showToast(t('catUpdated', name));
     } else {
       window.CategoriesSystem.createCategory(name, icon);
-      showToast('✅ Categoria "' + name + '" creada');
+      showToast(t('catCreated', name));
     }
   } catch (err) {
     console.warn('[Categories] save error', err);
-    showToast('Error guardant la categoria');
+    showToast(t('catSaveError'));
     return;
   }
 
@@ -1073,7 +1073,7 @@ function deleteCategoryFromEdit() {
   const cat = window.CategoriesSystem.getCategoryById(editingCategoryId);
   if (!cat) return;
   if (cat.isCatchAll) {
-    showToast('No es pot eliminar la categoria "Altres"');
+    showToast(t('catCannotDeleteOther'));
     return;
   }
   _confirmDeleteCategory(cat, () => {
@@ -1086,7 +1086,7 @@ function deleteCategoryFromList(catId) {
   const cat = window.CategoriesSystem.getCategoryById(catId);
   if (!cat) return;
   if (cat.isCatchAll) {
-    showToast('No es pot eliminar la categoria "Altres"');
+    showToast(t('catCannotDeleteOther'));
     return;
   }
   _confirmDeleteCategory(cat, null);
@@ -1100,11 +1100,9 @@ function _confirmDeleteCategory(cat, onAfter) {
   const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
     ? window.CategoriesSystem.getItemCategories() : {};
   const affected = Object.values(itemCats).filter(cid => cid === cat.id).length;
-  const tail = affected > 0
-    ? ' ' + affected + ' producte' + (affected === 1 ? '' : 's') + ' passar' + (affected === 1 ? 'à' : 'an') + ' a "Altres".'
-    : '';
-  const _catLbl = (window.categoryLabel ? window.categoryLabel(cat) : (cat.name || 'Categoria'));
-  const msg = 'Eliminar la categoria "' + _catLbl + '"?' + tail + ' Aquesta acció no es pot desfer.';
+  const tail = affected > 0 ? t('catDeleteTail', affected) : '';
+  const _catLbl = (window.categoryLabel ? window.categoryLabel(cat) : (cat.name || t('catEditTitleDefault')));
+  const msg = t('catDeleteConfirm', _catLbl, tail);
   showConfirmDangerModal(
     cat.icon || '🏷️',
     _catLbl,
@@ -1113,10 +1111,10 @@ function _confirmDeleteCategory(cat, onAfter) {
       try {
         window.CategoriesSystem.deleteCategory(cat.id);
       } catch (err) {
-        showToast(err && err.message ? err.message : 'Error eliminant la categoria');
+        showToast(err && err.message ? err.message : t('catDeleteError'));
         return;
       }
-      showToast('Categoria "' + _catLbl + '" eliminada');
+      showToast(t('catDeleted', _catLbl));
       // Si la categoria eliminada era el filtre actiu de pestanyes, tornem a "Tots".
       if (typeof popularCategoryFilter !== 'undefined' && popularCategoryFilter === cat.id) {
         popularCategoryFilter = 'all';
@@ -1157,12 +1155,12 @@ function _confirmDeleteCategory(cat, onAfter) {
     const rerunBtn = document.getElementById('btn-rerun-migration');
     if (rerunBtn) rerunBtn.addEventListener('click', () => {
       if (!window.CategoriesSystem || typeof window.CategoriesSystem.migrateExistingPopulars !== 'function') {
-        showToast('Sistema de categories no disponible');
+        showToast(t('catSystemUnavailable'));
         return;
       }
       const onConfirm = () => {
         const result = window.CategoriesSystem.migrateExistingPopulars();
-        showToast('✅ ' + result.migrated + '/' + result.total + ' productes re-categoritzats');
+        showToast(t('catRecategorized', result.migrated, result.total));
         renderCategoriesList();
         if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
         const popScreen = document.getElementById('screen-popular');
@@ -1171,9 +1169,9 @@ function _confirmDeleteCategory(cat, onAfter) {
       if (typeof showConfirmModal === 'function') {
         showConfirmModal(
           '🔄',
-          'Re-categoritzar tots els productes?',
-          'L\'app tornarà a aplicar la detecció automàtica als productes que NO tinguis categoritzats manualment. Les teves assignacions manuals es mantindran intactes.',
-          { confirmLabel: 'Re-categoritzar', cancelLabel: 'Cancel·lar' },
+          t('catRerunTitle'),
+          t('catRerunMsg'),
+          { confirmLabel: t('catRerunConfirm'), cancelLabel: t('cancel') },
           onConfirm
         );
       } else {
