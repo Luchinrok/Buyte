@@ -164,7 +164,7 @@ function _expensesGetData(rangeKey) {
       const popular = popById.get(key);
       byPopularMap[key] = {
         id: key,
-        name: popular ? popular.name : 'Producte desconegut',
+        name: popular ? popular.name : t('expensesUnknownProduct'),
         emoji: popular ? popular.emoji : '📦',
         total: 0,
         count: 0
@@ -315,26 +315,23 @@ function renderExpenses() {
 }
 
 function _expensesRangeLabel(rangeKey) {
-  if (rangeKey === 'week') return 'Aquesta setmana';
-  if (rangeKey === 'month') return 'Aquest mes';
-  return 'Tot el temps';
+  if (rangeKey === 'week') return t('thisWeek');
+  if (rangeKey === 'month') return t('thisMonth');
+  return t('expensesRangeAll');
 }
 
 // Card 1 — Total del període. Mostra 0,00 € + 0 compres si no hi ha
 // res al període (però sí al history global) — això és intencional
 // per evidenciar que no s'ha comprat res últimament.
 function _renderExpensesTotalCard(data) {
-  const articles = data.count === 1 ? 'article' : 'articles';
-  const compresAvg = data.basketCount === 1 ? 'compra' : 'compres';
   // Compra mitjana: només si hi ha alguna compra al període.
   const basketLine = data.basketCount > 0
-    ? '<p class="stats-card-v2-sub">🧺 Compra mitjana: ' + fmtEur(data.avgBasket)
-        + ' ' + data.basketCount + ' ' + compresAvg + '</p>'
+    ? '<p class="stats-card-v2-sub">' + t('expensesAvgBasket', fmtEur(data.avgBasket), data.basketCount) + '</p>'
     : '';
   return '<div class="stats-card-v2">'
     + '<h3 class="stats-card-v2-title">💰 <span>' + escapeHtml(_expensesRangeLabel(data.rangeKey)) + '</span></h3>'
     + '<p style="font-size:36px;font-weight:800;color:var(--primary);margin:8px 0 4px;">' + fmtEur(data.total) + '</p>'
-    + '<p class="stats-card-v2-sub">en ' + data.count + ' ' + articles + '</p>'
+    + '<p class="stats-card-v2-sub">' + t('expensesInArticles', data.count) + '</p>'
     + basketLine
     + '</div>';
 }
@@ -347,9 +344,9 @@ function _renderExpensesBudgetCard(data) {
   const budget = data.monthlyBudget;
   if (!(budget > 0)) {
     return '<div class="stats-card-v2">'
-      + '<h3 class="stats-card-v2-title">🎯 <span>Pressupost mensual</span></h3>'
-      + '<div class="stats-chart-empty">Encara no has fixat cap pressupost</div>'
-      + '<button type="button" class="primary-btn" id="expenses-budget-edit" style="margin-top:10px">🎯 Fixa un pressupost mensual</button>'
+      + '<h3 class="stats-card-v2-title">🎯 <span>' + escapeHtml(t('expensesBudgetTitle')) + '</span></h3>'
+      + '<div class="stats-chart-empty">' + escapeHtml(t('expensesBudgetEmpty')) + '</div>'
+      + '<button type="button" class="primary-btn" id="expenses-budget-edit" style="margin-top:10px">' + escapeHtml(t('expensesBudgetSet')) + '</button>'
       + '</div>';
   }
   const spent = data.monthSpent;
@@ -358,16 +355,16 @@ function _renderExpensesBudgetCard(data) {
   const barClass = ratio >= 1 ? 'budget-bar-over' : (ratio >= 0.8 ? 'budget-bar-near' : 'budget-bar-ok');
   let statusLine;
   if (ratio >= 1) {
-    statusLine = '<p class="stats-card-v2-sub" style="color:#C62828">⚠️ Has superat el pressupost en ' + fmtEur(spent - budget) + '</p>';
+    statusLine = '<p class="stats-card-v2-sub" style="color:#C62828">' + t('expensesBudgetOver', fmtEur(spent - budget)) + '</p>';
   } else {
-    statusLine = '<p class="stats-card-v2-sub">Et queden ' + fmtEur(budget - spent) + '</p>';
+    statusLine = '<p class="stats-card-v2-sub">' + t('expensesBudgetLeft', fmtEur(budget - spent)) + '</p>';
   }
   return '<div class="stats-card-v2">'
-    + '<h3 class="stats-card-v2-title">🎯 <span>Pressupost mensual</span></h3>'
-    + '<p class="stats-card-v2-sub" style="font-size:15px">Gastat <strong>' + fmtEur(spent) + '</strong> de <strong>' + fmtEur(budget) + '</strong></p>'
+    + '<h3 class="stats-card-v2-title">🎯 <span>' + escapeHtml(t('expensesBudgetTitle')) + '</span></h3>'
+    + '<p class="stats-card-v2-sub" style="font-size:15px">' + t('expensesBudgetSpent', fmtEur(spent), fmtEur(budget)) + '</p>'
     + '<div class="impact-card-progress-track" style="margin:8px 0"><div class="budget-bar ' + barClass + '" style="width:' + pct + '%"></div></div>'
     + statusLine
-    + '<button type="button" class="secondary-btn" id="expenses-budget-edit" style="margin-top:10px">🎯 Edita pressupost</button>'
+    + '<button type="button" class="secondary-btn" id="expenses-budget-edit" style="margin-top:10px">' + escapeHtml(t('expensesBudgetEdit')) + '</button>'
     + '</div>';
 }
 
@@ -377,8 +374,8 @@ function _renderExpensesMonthlyCard(data) {
   const maxEur = Math.max(0, ...data.byMonth.map(m => m.total));
   if (maxEur <= 0) {
     return '<div class="stats-card-v2">'
-      + '<h3 class="stats-card-v2-title">📊 <span>Evolució 6 mesos</span></h3>'
-      + '<div class="stats-chart-empty">Encara no hi ha prou dades</div>'
+      + '<h3 class="stats-card-v2-title">📊 <span>' + escapeHtml(t('expensesMonthlyTitle')) + '</span></h3>'
+      + '<div class="stats-chart-empty">' + escapeHtml(t('expensesMonthlyEmpty')) + '</div>'
       + '</div>';
   }
   const bars = data.byMonth.map(m => {
@@ -390,7 +387,7 @@ function _renderExpensesMonthlyCard(data) {
       + '</div>';
   }).join('');
   return '<div class="stats-card-v2">'
-    + '<h3 class="stats-card-v2-title">📊 <span>Evolució 6 mesos</span></h3>'
+    + '<h3 class="stats-card-v2-title">📊 <span>' + escapeHtml(t('expensesMonthlyTitle')) + '</span></h3>'
     + '<div class="stats-bar-chart">' + bars + '</div>'
     + '</div>';
 }
@@ -400,8 +397,8 @@ function _renderExpensesMonthlyCard(data) {
 function _renderExpensesBySupCard(data) {
   if (data.bySuper.length === 0) {
     return '<div class="stats-card-v2">'
-      + '<h3 class="stats-card-v2-title">🛒 <span>Per supermercat</span></h3>'
-      + '<div class="stats-chart-empty">Cap compra al període seleccionat</div>'
+      + '<h3 class="stats-card-v2-title">🛒 <span>' + escapeHtml(t('expensesBySupTitle')) + '</span></h3>'
+      + '<div class="stats-chart-empty">' + escapeHtml(t('expensesNoPeriodData')) + '</div>'
       + '</div>';
   }
   const rows = data.bySuper.map(s =>
@@ -413,7 +410,7 @@ function _renderExpensesBySupCard(data) {
     + '</div>'
   ).join('');
   return '<div class="stats-card-v2">'
-    + '<h3 class="stats-card-v2-title">🛒 <span>Per supermercat</span></h3>'
+    + '<h3 class="stats-card-v2-title">🛒 <span>' + escapeHtml(t('expensesBySupTitle')) + '</span></h3>'
     + '<div class="stats-zone-list">' + rows + '</div>'
     + '</div>';
 }
@@ -423,8 +420,8 @@ function _renderExpensesBySupCard(data) {
 function _renderExpensesByCategoryCard(data) {
   if (!data.byCategory || data.byCategory.length === 0) {
     return '<div class="stats-card-v2">'
-      + '<h3 class="stats-card-v2-title">🏷️ <span>Per categoria</span></h3>'
-      + '<div class="stats-chart-empty">Cap compra al període seleccionat</div>'
+      + '<h3 class="stats-card-v2-title">🏷️ <span>' + escapeHtml(t('expensesByCatTitle')) + '</span></h3>'
+      + '<div class="stats-chart-empty">' + escapeHtml(t('expensesNoPeriodData')) + '</div>'
       + '</div>';
   }
   const rows = data.byCategory.map(c =>
@@ -436,7 +433,7 @@ function _renderExpensesByCategoryCard(data) {
     + '</div>'
   ).join('');
   return '<div class="stats-card-v2">'
-    + '<h3 class="stats-card-v2-title">🏷️ <span>Per categoria</span></h3>'
+    + '<h3 class="stats-card-v2-title">🏷️ <span>' + escapeHtml(t('expensesByCatTitle')) + '</span></h3>'
     + '<div class="stats-zone-list">' + rows + '</div>'
     + '</div>';
 }
@@ -446,20 +443,19 @@ function _renderExpensesByCategoryCard(data) {
 function _renderExpensesTopProductsCard(data) {
   if (data.byPopular.length === 0) {
     return '<div class="stats-card-v2">'
-      + '<h3 class="stats-card-v2-title">🏆 <span>Top productes</span></h3>'
-      + '<div class="stats-chart-empty">Cap compra al període seleccionat</div>'
+      + '<h3 class="stats-card-v2-title">🏆 <span>' + escapeHtml(t('expensesTopTitle')) + '</span></h3>'
+      + '<div class="stats-chart-empty">' + escapeHtml(t('expensesNoPeriodData')) + '</div>'
       + '</div>';
   }
   const rows = data.byPopular.map(p => {
-    const compres = p.count === 1 ? 'compra' : 'compres';
     return '<div class="stats-top-row">'
       + '<span class="stats-top-emoji">' + p.emoji + '</span>'
       + '<span class="stats-top-name">' + escapeHtml(p.name) + '</span>'
-      + '<span class="stats-top-count">' + fmtEur(p.total) + ' ' + p.count + ' ' + compres + '</span>'
+      + '<span class="stats-top-count">' + t('expensesTopCount', fmtEur(p.total), p.count) + '</span>'
       + '</div>';
   }).join('');
   return '<div class="stats-card-v2">'
-    + '<h3 class="stats-card-v2-title">🏆 <span>Top productes</span></h3>'
+    + '<h3 class="stats-card-v2-title">🏆 <span>' + escapeHtml(t('expensesTopTitle')) + '</span></h3>'
     + '<div class="stats-top-list">' + rows + '</div>'
     + '</div>';
 }
@@ -482,8 +478,8 @@ function _renderExpensesTripsCard(data) {
   if (!data.trips || data.trips.length === 0) return '';
   const rows = data.trips.map(tr => {
     const dateLbl = _expensesFormatTripDate(tr.date);
-    const supLbl = tr.supermarket || '(sense súper)';
-    const items = tr.itemCount === 1 ? '1 article' : (tr.itemCount + ' articles');
+    const supLbl = tr.supermarket || t('expensesNoSuper');
+    const items = t('expensesTripItems', tr.itemCount);
     return '<div class="expenses-trip-row" '
       + 'data-trip-key="' + escapeHtml(tr.key) + '" '
       + 'data-record-ids="' + escapeHtml(tr.recordIds.join(',')) + '" '
@@ -561,10 +557,10 @@ function _promptMonthlyBudget() {
     renderExpenses();
   };
   if (typeof showInputModal === 'function') {
-    showInputModal('🎯', 'Pressupost mensual', 'Límit de despesa per mes (en €). Deixa-ho buit per treure el pressupost.',
-      'Ex: 300', apply, { initialValue: current > 0 ? String(current) : '', confirmLabel: 'Desar' });
+    showInputModal('🎯', t('expensesBudgetTitle'), t('expensesBudgetModalMsg'),
+      t('expensesBudgetModalPlaceholder'), apply, { initialValue: current > 0 ? String(current) : '', confirmLabel: t('expensesBudgetSave') });
   } else {
-    const raw = window.prompt('Pressupost mensual (€):', current > 0 ? String(current) : '');
+    const raw = window.prompt(t('expensesBudgetPrompt'), current > 0 ? String(current) : '');
     if (raw !== null) apply(raw);
   }
 }
