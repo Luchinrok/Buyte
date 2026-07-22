@@ -4275,16 +4275,35 @@ function findKnownProductByName(name) {
   const q = normalizeForSearch(name);
   if (!q) return null;
   const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
-  const fromPopular = populars.find(p => p && p.name && normalizeForSearch(p.name) === q);
+  // Índex multi-idioma del catàleg (un cop): resol el popular si el nom donat
+  // casa amb QUALSEVOL idioma del catàleg per a aquella entrada (ex. "lait"/
+  // "leche"/"milk"/"llet" → el mateix producte), a més del match exacte contra
+  // el name persistit. Mateixa normalització que la cerca (normalizeForSearch).
+  const _nameIdx = (typeof buildPopularNameIndex === 'function') ? buildPopularNameIndex() : null;
+  const _matches = (p) => {
+    if (!p || !p.name) return false;
+    if (normalizeForSearch(p.name) === q) return true;              // match exacte (name persistit)
+    return (typeof popularSearchNames === 'function')
+      ? popularSearchNames(p, _nameIdx).some(nm => normalizeForSearch(nm) === q)
+      : false;
+  };
+  const fromPopular = populars.find(_matches);
   if (fromPopular) {
+    // Completa des del catàleg els camps que la cache pugui no tenir (algunes
+    // entrades existents no porten `days`) — fallback segur, sense persistir res.
+    const canon = (_nameIdx && typeof fromPopular.name === 'string') ? _nameIdx[fromPopular.name.toLowerCase()] : null;
+    const pick = (a, b) => (a != null ? a : ((b != null) ? b : undefined));
     return {
-      name: fromPopular.name,
-      emoji: fromPopular.emoji,
-      days: fromPopular.days,
-      location: fromPopular.location,
-      price: fromPopular.price,
-      weight: fromPopular.weight,
-      noExpiry: !!fromPopular.noExpiry,
+      // Nom en l'idioma ACTIU (el que l'usuari veu a l'app). La canonicalització
+      // al blur hi escriurà aquest nom → es desa el que es mostra, no cap nom
+      // amagat en un altre idioma. Vegeu popularDisplayName (populars.js).
+      name: (typeof popularDisplayName === 'function') ? popularDisplayName(fromPopular, _nameIdx) : fromPopular.name,
+      emoji: pick(fromPopular.emoji, canon && canon.emoji),
+      days: pick(fromPopular.days, canon && canon.days),
+      location: pick(fromPopular.location, canon && canon.location),
+      price: pick(fromPopular.price, canon && canon.price),
+      weight: pick(fromPopular.weight, canon && canon.weight),
+      noExpiry: !!(fromPopular.noExpiry != null ? fromPopular.noExpiry : (canon && canon.noExpiry)),
       source: 'popular'
     };
   }
@@ -5028,11 +5047,23 @@ function searchProductHistory(query) {
   const q = normalizeForSearch(query);
   if (!q) return [];
 
+  // Índex multi-idioma del catàleg (un cop): permet trobar un popular per
+  // QUALSEVOL idioma (ex. "lait"/"leche"/"milk"/"llet") encara que el name
+  // persistit estigui congelat en un altre. El nom mostrat/aplicat és el de
+  // l'idioma actiu (popularDisplayName). Vegeu populars.js. Porto price/weight
+  // al suggeriment perquè el prefill via el fallback `|| m` (setupAutocompleteFor)
+  // segueixi complet quan findKnownProductByName no casa (nom en un altre idioma).
+  const _nameIdx = (typeof buildPopularNameIndex === 'function') ? buildPopularNameIndex() : null;
+  const _searchNames = (p) => (typeof popularSearchNames === 'function')
+    ? popularSearchNames(p, _nameIdx) : [p && p.name].filter(Boolean);
+  const _dispName = (p) => (typeof popularDisplayName === 'function')
+    ? popularDisplayName(p, _nameIdx) : (p ? p.name : '');
+
   // Combina historial + productes populars (cerca insensible a accents/majúscules)
   const fromHistory = productHistory.filter(p => p && p.name && normalizeForSearch(p.name).includes(q));
   const fromPopular = getPopularProducts()
-    .filter(p => p && p.name && normalizeForSearch(p.name).includes(q))
-    .map(p => ({ name: p.name, emoji: p.emoji, days: p.days, location: p.location, noExpiry: !!p.noExpiry, isPopular: true }));
+    .filter(p => p && p.name && _searchNames(p).some(nm => normalizeForSearch(nm).includes(q)))
+    .map(p => ({ name: _dispName(p), emoji: p.emoji, days: p.days, location: p.location, price: p.price, weight: p.weight, noExpiry: !!p.noExpiry, isPopular: true }));
 
   // Combinem sense duplicats (mateix nom normalitzat — síndria == Síndria == sindria)
   const result = [...fromHistory];

@@ -21,6 +21,51 @@ function buildPopularNameIndex() {
   return idx;
 }
 
+// Nom de DISPLAY d'un producte popular en l'idioma actiu (peça transversal
+// "noms de producte multi-idioma", Opció A). El nom persistit a la cache
+// (eatmefirst_popular_custom) queda congelat en l'idioma actiu del moment en
+// què s'hi va injectar. Aquest helper el resol EN TEMPS DE RENDER: si el nom
+// frisat casa amb una entrada del catàleg multi-idioma (buildPopularNameIndex,
+// per QUALSEVOL idioma), retorna el nom del catàleg en l'idioma actiu (fallback
+// en→ca→es→nom original); si NO casa (producte escrit o renombrat per l'usuari)
+// retorna entry.name tal qual.
+//
+// ⚠️ PUR i EN MEMÒRIA: no escriu mai a localStorage, no crida savePopularProducts
+// ni pushToServer. El name persistit NO es toca. Passa `nameIndex` (una crida a
+// buildPopularNameIndex) per memoïtzar-lo un cop per render i no per fila.
+function popularDisplayName(entry, nameIndex) {
+  if (!entry || typeof entry.name !== 'string') return (entry && entry.name) || '';
+  const idx = nameIndex || buildPopularNameIndex();
+  const canon = idx[entry.name.toLowerCase()];
+  if (!canon) return entry.name;   // nom d'usuari (no és del catàleg) → tal qual
+  const lang = (typeof getCurrentLang === 'function') ? getCurrentLang() : 'ca';
+  return canon[lang] || canon.en || canon.ca || canon.es || entry.name;
+}
+if (typeof window !== 'undefined') window.popularDisplayName = popularDisplayName;
+
+// Noms cercables d'un producte popular, per a la cerca multi-idioma de la
+// llista: (a) el name persistit, (b) el nom mostrat (idioma actiu) i (c) TOTS
+// els noms del catàleg per a aquesta entrada (tots els idiomes), si casa. Així
+// "lait"/"leche"/"milk"/"llet" troben el mateix producte sigui quin sigui
+// l'idioma actiu. Els productes d'usuari (sense match al catàleg) queden amb
+// només el seu name. PUR: no toca res persistit. Passa `nameIndex` per
+// memoïtzar (un cop per render).
+function popularSearchNames(entry, nameIndex) {
+  const out = [];
+  if (entry && typeof entry.name === 'string') out.push(entry.name);
+  const disp = popularDisplayName(entry, nameIndex);
+  if (disp && disp !== (entry && entry.name)) out.push(disp);
+  const canon = (entry && typeof entry.name === 'string')
+    ? (nameIndex || buildPopularNameIndex())[entry.name.toLowerCase()] : null;
+  if (canon) {
+    ['ca','es','en','fr','it','de','pt','nl','ja','zh','ko'].forEach(lg => {
+      if (typeof canon[lg] === 'string') out.push(canon[lg]);
+    });
+  }
+  return out;
+}
+if (typeof window !== 'undefined') window.popularSearchNames = popularSearchNames;
+
 function getPopularProducts() {
   const lang = getCurrentLang();
   const canonicalByName = buildPopularNameIndex();
@@ -669,6 +714,10 @@ function renderPopularList() {
   const container = document.getElementById('popular-list');
   container.innerHTML = '';
   const allItems = getPopularProducts();
+  // Índex multi-idioma del catàleg, construït UN COP per render (no per fila):
+  // el passem a popularDisplayName() per mostrar els noms de catàleg en
+  // l'idioma actiu sense re-congelar el nom persistit.
+  const _nameIdx = buildPopularNameIndex();
   // Cerca insensible a accents + majúscules + espais (reutilitza el
   // helper compartit normalizeForSearch definit a biteme.js i exposat
   // a window). Cobreix accents agudes/greus/dièresi via NFD + regex de
@@ -678,7 +727,9 @@ function renderPopularList() {
   const isCatFiltering = (catFilter && catFilter !== 'all');
 
   // Filtrat combinat: text + categoria. Apliquem-los seqüencialment.
-  let items = q ? allItems.filter(p => normalizeForSearch(p.name).includes(q)) : allItems.slice();
+  let items = q
+    ? allItems.filter(p => popularSearchNames(p, _nameIdx).some(nm => normalizeForSearch(nm).includes(q)))
+    : allItems.slice();
   if (isCatFiltering && window.CategoriesSystem) {
     const itemCats = (typeof window.CategoriesSystem.getItemCategories === 'function')
       ? window.CategoriesSystem.getItemCategories() : {};
@@ -754,7 +805,7 @@ function renderPopularList() {
         // nom — `p` ja porta tots els camps. Les guardes
         // d'applyKnownProductToForm (omple només camps buits / qty=="1")
         // eviten la doble aplicació amb el que openAddForm ja ha posat.
-        openAddForm({ name: p.name, emoji: p.emoji });
+        openAddForm({ name: popularDisplayName(p, _nameIdx), emoji: p.emoji });
         if (typeof applyKnownProductToForm === 'function') {
           applyKnownProductToForm(p);
         }
@@ -771,7 +822,7 @@ function renderPopularList() {
       row.innerHTML = `
         <button class="popular-item-main">
           <span class="popular-emoji">${p.emoji}</span>
-          <span class="popular-name">${escapeHtml(p.name)}</span>
+          <span class="popular-name">${escapeHtml(popularDisplayName(p, _nameIdx))}</span>
           ${locBadge(p.location)}
           ${daysBadge}
         </button>
@@ -790,7 +841,7 @@ function renderPopularList() {
       row.innerHTML = `
         <button class="popular-item-main popular-item-full">
           <span class="popular-emoji">${p.emoji}</span>
-          <span class="popular-name">${escapeHtml(p.name)}</span>
+          <span class="popular-name">${escapeHtml(popularDisplayName(p, _nameIdx))}</span>
           ${locBadge(p.location)}
           ${daysBadge}
         </button>

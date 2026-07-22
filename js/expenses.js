@@ -156,6 +156,11 @@ function _expensesGetData(rangeKey) {
     ? (getPopularProducts() || []) : [];
   const popById = new Map();
   populars.forEach(p => { if (p && p.id) popById.set(p.id, p); });
+  // Índex multi-idioma del catàleg (un cop): mostra el nom del popular en
+  // l'idioma actiu via popularDisplayName, sense re-congelar el nom persistit.
+  const _popNameIdx = (typeof buildPopularNameIndex === 'function') ? buildPopularNameIndex() : null;
+  const _popName = (p) => (p && typeof popularDisplayName === 'function')
+    ? popularDisplayName(p, _popNameIdx) : (p ? p.name : '');
 
   const byPopularMap = {};
   filtered.forEach(e => {
@@ -164,7 +169,7 @@ function _expensesGetData(rangeKey) {
       const popular = popById.get(key);
       byPopularMap[key] = {
         id: key,
-        name: popular ? popular.name : t('expensesUnknownProduct'),
+        name: popular ? _popName(popular) : t('expensesUnknownProduct'),
         emoji: popular ? popular.emoji : '📦',
         total: 0,
         count: 0
