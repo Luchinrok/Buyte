@@ -10,7 +10,12 @@
 // Construeix un mapa nom-en-minúscules → entrada canònica del catàleg,
 // indexant TOTS els noms en TOTS els idiomes per cada producte. Així podem
 // trobar la zona canònica encara que la cache vingui en un altre idioma.
+let _popularNameIndexCache = null;
 function buildPopularNameIndex() {
+  // POPULAR_PRODUCTS és un catàleg constant → memoïtzem l'índex una sola vegada
+  // per sessió (abans es reconstruïa per render; ara els display sites poden
+  // cridar productDisplayName sense passar índex sense cost per fila).
+  if (_popularNameIndexCache) return _popularNameIndexCache;
   const idx = {};
   const langs = ['ca','es','en','fr','it','de','pt','nl','ja','zh','ko'];
   POPULAR_PRODUCTS.forEach(p => {
@@ -18,6 +23,7 @@ function buildPopularNameIndex() {
       if (p[lg]) idx[p[lg].toLowerCase()] = p;
     });
   });
+  _popularNameIndexCache = idx;
   return idx;
 }
 
@@ -65,6 +71,53 @@ function popularSearchNames(entry, nameIndex) {
   return out;
 }
 if (typeof window !== 'undefined') window.popularSearchNames = popularSearchNames;
+
+// Nom de DISPLAY per a un nom cru (string) — variant de popularDisplayName per
+// als punts que només tenen el nom persistit (files de la compra, rebost,
+// fitxa…): si el nom casa amb el catàleg, el retorna en l'idioma actiu; si no
+// (nom d'usuari), tal qual. PUR. Índex memoïtzat globalment (no cal passar-lo).
+function productDisplayName(name, nameIndex) {
+  if (typeof name !== 'string' || !name) return name || '';
+  return popularDisplayName({ name: name }, nameIndex);
+}
+if (typeof window !== 'undefined') window.productDisplayName = productDisplayName;
+
+// Resol l'entrada de popular (getPopularProducts) el nom de la qual casa amb
+// `name` en QUALSEVOL idioma del catàleg (o el name persistit). Lookup pur per
+// a preu/dies/zona multi-idioma. NO fa cookmeSameProduct (stemming) — això
+// queda per als callers com a fallback posterior (no el toquem).
+function resolvePopularByName(name, list, nameIndex) {
+  if (!name) return null;
+  const norm = (typeof normalizeForSearch === 'function')
+    ? normalizeForSearch : (s => String(s || '').toLowerCase().trim());
+  const q = norm(name);
+  if (!q) return null;
+  const populars = list || ((typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : []);
+  const idx = nameIndex || buildPopularNameIndex();
+  return populars.find(p => p && p.name &&
+    popularSearchNames(p, idx).some(nm => norm(nm) === q)) || null;
+}
+if (typeof window !== 'undefined') window.resolvePopularByName = resolvePopularByName;
+
+// Índex nom→popular MULTI-IDIOMA: registra cada nom cercable (tots els idiomes
+// del catàleg) de cada popular, en minúscules+trim (mateixa normalització que
+// els lookups de cost existents), apuntant a l'entrada. Drop-in per als índexs
+// per-nom-exacte perquè un ítem en qualsevol idioma resolgui preu/dies/zona.
+// PUR. La primera clau guanya (no es trepitja).
+function buildPopularLookupIndex(list, nameIndex) {
+  const populars = list || ((typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : []);
+  const idx = nameIndex || buildPopularNameIndex();
+  const out = {};
+  populars.forEach(p => {
+    if (!p) return;
+    popularSearchNames(p, idx).forEach(nm => {
+      const k = String(nm || '').toLowerCase().trim();
+      if (k && !(k in out)) out[k] = p;
+    });
+  });
+  return out;
+}
+if (typeof window !== 'undefined') window.buildPopularLookupIndex = buildPopularLookupIndex;
 
 function getPopularProducts() {
   const lang = getCurrentLang();

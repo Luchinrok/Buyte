@@ -58,7 +58,7 @@ function buildWhatIHaveRow(p) {
   row.innerHTML = `
     <span class="view-all-emoji">${p.emoji}</span>
     <div class="view-all-info">
-      <p class="view-all-name">${formatProductLine(p.name, p.qty)}</p>
+      <p class="view-all-name">${formatProductLine(window.productDisplayName ? window.productDisplayName(p.name) : p.name, p.qty)}</p>
       <p class="view-all-meta">${locLabel}${locLabel ? ' ' : ''}<span class="${daysClass}">${daysText(days)}</span></p>
     </div>
     <span class="view-all-arrow">›</span>
@@ -695,8 +695,11 @@ function getEstimatedItemCost(item, popularByName) {
 function getTotalEstimatedCost(items) {
   if (!items || items.length === 0) return null;
   const populars = (typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : [];
-  const popularByName = {};
-  populars.forEach(p => { if (p && p.name) popularByName[p.name.toLowerCase()] = p; });
+  // Índex nom→popular MULTI-IDIOMA (un ítem en qualsevol idioma resol preu/dies/
+  // zona encara que el nom persistit del popular estigui congelat en un altre).
+  const popularByName = (typeof buildPopularLookupIndex === 'function')
+    ? buildPopularLookupIndex(populars)
+    : (function () { const o = {}; populars.forEach(p => { if (p && p.name) o[p.name.toLowerCase()] = p; }); return o; })();
   let total = 0;
   let countWithPrice = 0;
   let countWithoutPrice = 0;
@@ -795,7 +798,7 @@ function _buildShoppingItemRow(item, opts) {
       if (popular && popular.weight) weightText = String(popular.weight);
     }
   }
-  const nameLine = _formatShoppingNameWithWeight(item.name, item.qty, weightText);
+  const nameLine = _formatShoppingNameWithWeight(window.productDisplayName ? window.productDisplayName(item.name) : item.name, item.qty, weightText);
 
   const div = document.createElement('div');
   div.className = 'shopping-item' + (mode === 'edit' ? ' shopping-item-edit-mode' : '');
@@ -949,8 +952,11 @@ function _renderShopPageItems(smId, listEl, mode) {
   // al càlcul del cost individual (getEstimatedItemCost), així que ho
   // fem AbANS de bifurcar segons mode.
   const populars = (typeof getPopularProducts === 'function') ? (getPopularProducts() || []) : [];
-  const popularByName = {};
-  populars.forEach(p => { if (p && p.name) popularByName[p.name.toLowerCase()] = p; });
+  // Índex nom→popular MULTI-IDIOMA (un ítem en qualsevol idioma resol preu/dies/
+  // zona encara que el nom persistit del popular estigui congelat en un altre).
+  const popularByName = (typeof buildPopularLookupIndex === 'function')
+    ? buildPopularLookupIndex(populars)
+    : (function () { const o = {}; populars.forEach(p => { if (p && p.name) o[p.name.toLowerCase()] = p; }); return o; })();
 
   const viewMode = getBuyMeViewMode(smId);
   const useCategory = viewMode === 'category'
@@ -1409,7 +1415,12 @@ function _autofillShoppingFromPopular(name) {
     ? window.normalizeForSearch
     : (s => String(s || '').toLowerCase().trim());
   const key = norm(name);
-  const popular = populars.find(p => p && p.name && norm(p.name) === key);
+  let popular = populars.find(p => p && p.name && norm(p.name) === key);
+  // Multi-idioma: si el nom exacte no casa (ítem/nom en un altre idioma que el
+  // persistit del popular), resol per qualsevol idioma del catàleg.
+  if (!popular && typeof resolvePopularByName === 'function') {
+    popular = resolvePopularByName(name, populars);
+  }
   if (!popular) return;
 
   // Canonicalització: si l'usuari ha escrit 'sindria' i el popular és
@@ -1419,8 +1430,10 @@ function _autofillShoppingFromPopular(name) {
   // dateStr/noExpiry — aquest canvi a nameInput.value NO afecta la
   // lògica canReplace ni el flow de re-autofill al canviar nom.
   const nameInput = document.getElementById('input-shopping-name');
-  if (nameInput && nameInput.value.trim() !== popular.name) {
-    nameInput.value = popular.name;
+  // Canonicalitza al nom en l'idioma ACTIU (el que l'usuari veu), no al persistit.
+  const _dispName = (typeof popularDisplayName === 'function') ? popularDisplayName(popular) : popular.name;
+  if (nameInput && nameInput.value.trim() !== _dispName) {
+    nameInput.value = _dispName;
   }
 
   const snap = _lastAutofillSnapshot;
@@ -1543,6 +1556,10 @@ function openShoppingItemEdit(item) {
     const populars = getPopularProducts() || [];
     const key = String(item.name).toLowerCase().trim();
     let popular = populars.find(p => p.name && p.name.toLowerCase().trim() === key);
+    // Multi-idioma: resol per qualsevol idioma del catàleg abans del fallback stemmed.
+    if (!popular && typeof resolvePopularByName === 'function') {
+      popular = resolvePopularByName(item.name, populars) || popular;
+    }
     // Fallback "mateix producte" (tokens stemmed): "albergínies" → catàleg "Albergínia".
     if (!popular && typeof cookmeSameProduct === 'function') {
       popular = populars.find(p => p && p.name && cookmeSameProduct(item.name, p.name)) || popular;
@@ -1839,7 +1856,7 @@ function showAlreadyHaveModal(itemName, existingProducts, onConfirm) {
   overlay.className = 'modal-overlay';
   const list = existingProducts.slice(0, 3).map(p => {
     const days = daysUntil(p.date);
-    return `<div class="already-have-row">${p.emoji} ${formatProductLine(p.name, p.qty)} <span class="already-have-days">${daysText(days)}</span></div>`;
+    return `<div class="already-have-row">${p.emoji} ${formatProductLine(window.productDisplayName ? window.productDisplayName(p.name) : p.name, p.qty)} <span class="already-have-days">${daysText(days)}</span></div>`;
   }).join('');
 
   overlay.innerHTML = `
@@ -1878,7 +1895,7 @@ function showDuplicateShoppingModal(existingItem, onMerge, onCreateAnyway) {
       <div class="modal-emoji-big">⚠️</div>
       <p class="modal-title">${t('duplicateTitle')}</p>
       <p class="modal-sub">${t('duplicateSub')}</p>
-      <div class="already-have-list"><div class="already-have-row">${existingItem.emoji || '🛒'} ${formatProductLine(existingItem.name, existingItem.qty)}</div></div>
+      <div class="already-have-list"><div class="already-have-row">${existingItem.emoji || '🛒'} ${formatProductLine(window.productDisplayName ? window.productDisplayName(existingItem.name) : existingItem.name, existingItem.qty)}</div></div>
       <div class="modal-buttons modal-buttons-col">
         <button class="modal-confirm" id="dup-merge-btn">${t('mergeBtn')}</button>
         <button class="modal-confirm" id="dup-create-btn">${t('createAnywayBtn')}</button>
@@ -1995,6 +2012,14 @@ function _buildShoppingPrefill(item) {
   let fromHistory = (Array.isArray(productHistory) ? productHistory : [])
     .find(p => p.name && p.name.toLowerCase().trim() === key);
 
+  // Multi-idioma: si el nom exacte no casa (ítem en un altre idioma, p. ex. una
+  // llista especial en català comprada amb la UI en francès), resol el popular
+  // per qualsevol idioma del catàleg → recupera dies/preu/zona/pes. Abans del
+  // fallback stemmed cookmeSameProduct (que no toquem).
+  if (!fromPopular && typeof resolvePopularByName === 'function') {
+    fromPopular = resolvePopularByName(item.name, populars) || fromPopular;
+  }
+
   // Fallback "mateix producte" (tokens stemmed): "albergínies" → catàleg "Albergínia".
   if (typeof cookmeSameProduct === 'function') {
     if (!fromPopular)
@@ -2018,8 +2043,9 @@ function _buildShoppingPrefill(item) {
   // _buildLotFromNewProduct); NO es persisteix com a camp del producte.
   let totalPrice;
   if (typeof getEstimatedItemCost === 'function') {
-    const popIndex = {};
-    populars.forEach(p => { if (p && p.name) popIndex[p.name.toLowerCase().trim()] = p; });
+    const popIndex = (typeof buildPopularLookupIndex === 'function')
+      ? buildPopularLookupIndex(populars)
+      : (function () { const o = {}; populars.forEach(p => { if (p && p.name) o[p.name.toLowerCase().trim()] = p; }); return o; })();
     const est = getEstimatedItemCost(item, popIndex);
     if (est !== null && est !== undefined) totalPrice = est;
   }
@@ -2051,7 +2077,9 @@ function _buildShoppingPrefill(item) {
   }
 
   return {
-    name:  (fromPopular && fromPopular.name)  || item.name,
+    // Nom en l'idioma ACTIU quan casa amb el catàleg (el que l'usuari veu); si
+    // no (producte d'usuari), el nom de l'ítem tal qual. Coherent amb el display.
+    name:  fromPopular ? ((typeof popularDisplayName === 'function') ? popularDisplayName(fromPopular) : fromPopular.name) : item.name,
     emoji: (fromPopular && fromPopular.emoji) || item.emoji,
     qty: prefillQty,
     days: itemDays || (fromPopular && fromPopular.days) || (fromHistory && fromHistory.days) || null,
@@ -2549,7 +2577,7 @@ function prefillShoppingItemFromPopular(p) {
   if (titleEl) titleEl.textContent = t('newShoppingItem');
 
   // Camps específics de l'item del super (no presents al popular): buidats.
-  document.getElementById('input-shopping-name').value = p.name || '';
+  document.getElementById('input-shopping-name').value = (window.popularDisplayName ? window.popularDisplayName(p) : p.name) || '';
   document.getElementById('input-shopping-qty').value = '';
   document.getElementById('input-shopping-notes').value = '';
 

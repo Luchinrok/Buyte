@@ -124,7 +124,14 @@ function _getFilteredViewAllProducts() {
   const q = _getViewAllSearchQuery();
   if (!q) return products;
   const nq = normalizeForSearch(q);
-  return products.filter(p => normalizeForSearch(p.name).includes(nq));
+  // Cerca multi-idioma: casa pel nom persistit O per qualsevol idioma del catàleg
+  // (ex. "lait"/"leche"/"milk" troben el producte tot i estar desat en català).
+  const _idx = (typeof buildPopularNameIndex === 'function') ? buildPopularNameIndex() : null;
+  return products.filter(p => {
+    if (normalizeForSearch(p.name).includes(nq)) return true;
+    return (typeof popularSearchNames === 'function') &&
+      popularSearchNames(p, _idx).some(nm => normalizeForSearch(nm).includes(nq));
+  });
 }
 
 function renderViewAll() {
@@ -521,7 +528,7 @@ function buildViewAllRow(p) {
   row.innerHTML = `
     <span class="view-all-emoji">${p.emoji}</span>
     <div class="view-all-info">
-      <p class="view-all-name">${formatProductLine(p.name, _displayProductQty(p.qty))}</p>
+      <p class="view-all-name">${formatProductLine(window.productDisplayName ? window.productDisplayName(p.name) : p.name, _displayProductQty(p.qty))}</p>
       <p class="view-all-meta">${loc ? loc.emoji + ' ' + getLocationName(loc) : ''} · ${daysText(days)}</p>
     </div>
     <span class="view-all-arrow">›</span>
@@ -3304,7 +3311,7 @@ function renderAlerts() {
     item.className = 'product-item product-item-alert product-item-' + p.level;
     const locLabel = p.loc ? p.loc.emoji + ' ' + getLocationName(p.loc) + ' ' : '';
     item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div></div><span class="product-item-arrow">›</span>';
-    item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, _displayProductQty(p.qty));
+    item.querySelector('.product-item-name').innerHTML = formatProductLine(window.productDisplayName ? window.productDisplayName(p.name) : p.name, _displayProductQty(p.qty));
     item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
     item.addEventListener('click', () => { productDetailBack = 'alerts'; openProduct(p.id); });
     list.appendChild(item);
@@ -3373,7 +3380,7 @@ function _renderShelfProducts(slide, level, cat) {
       const isFreezer = p.loc && p.loc.category === 'freezer';
       const frozenLine = isFreezer ? formatFrozenInfo(p) : null;
       item.innerHTML = '<span class="product-item-emoji">' + p.emoji + '</span><div class="product-item-info"><div class="product-item-name"></div><div class="product-item-days"></div>' + (frozenLine ? '<div class="product-item-frozen"></div>' : '') + '</div><span class="product-item-arrow">›</span>';
-      item.querySelector('.product-item-name').innerHTML = formatProductLine(p.name, _displayProductQty(p.qty));
+      item.querySelector('.product-item-name').innerHTML = formatProductLine(window.productDisplayName ? window.productDisplayName(p.name) : p.name, _displayProductQty(p.qty));
       item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
       if (frozenLine) {
         const frozenEl = item.querySelector('.product-item-frozen');
@@ -3747,7 +3754,7 @@ function openProduct(id) {
   const days = daysUntil(p.date);
   const loc = getLocationById(p.location || 'fridge');
   document.getElementById('product-emoji').textContent = p.emoji;
-  document.getElementById('product-name').innerHTML = formatProductLine(p.name, _displayProductQty(p.qty));
+  document.getElementById('product-name').innerHTML = formatProductLine(window.productDisplayName ? window.productDisplayName(p.name) : p.name, _displayProductQty(p.qty));
   const locStr = loc ? loc.emoji + ' ' + getLocationName(loc) + ' ' : '';
   document.getElementById('product-days').textContent = locStr + daysText(days);
 
