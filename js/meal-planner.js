@@ -202,7 +202,7 @@ function _mpWeekHeaderLabel(weekId) {
   let range;
   const _months = t('mealPlanMonths');
   if (monday.getMonth() === sunday.getMonth()) {
-    range = monday.getDate() + '–' + sunday.getDate() + ' de ' + _months[monday.getMonth()];
+    range = monday.getDate() + '–' + sunday.getDate() + t('mpMonthConnector') + _months[monday.getMonth()];
   } else {
     range = monday.getDate() + ' ' + _months[monday.getMonth()]
       + ' – ' + sunday.getDate() + ' ' + _months[sunday.getMonth()];
