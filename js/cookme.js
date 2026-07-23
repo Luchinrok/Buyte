@@ -636,12 +636,12 @@ function openCookConsumeModal() {
       + '<span class="cook-row-unit">' + escapeHtml(r.unit || '') + '</span>'
       + '</label>';
   });
-  if (!okHtml) okHtml = '<p class="modal-sub">Cap ingredient descomptable automàticament.</p>';
+  if (!okHtml) okHtml = '<p class="modal-sub">' + escapeHtml(t('cookNoDiscountable')) + '</p>';
 
   let infoHtml = '';
   if (infoRows.length) {
-    const reason = (st) => st === 'manual' ? "ajusta-ho a Menja'm"
-      : (st === 'non-quantifiable' ? 'al gust' : 'no en tens');
+    const reason = (st) => st === 'manual' ? t('cookReasonManual')
+      : (st === 'non-quantifiable' ? t('cookReasonNonQuant') : t('cookReasonNoStock'));
     let lis = '';
     infoRows.forEach(r => {
       const ing = r.ingredient || {};
@@ -649,7 +649,7 @@ function openCookConsumeModal() {
       lis += '<li>' + em + escapeHtml(cookmeCapitalize(ing.name || ''))
         + ' <span class="cook-info-reason">— ' + escapeHtml(reason(r.status)) + '</span></li>';
     });
-    infoHtml = '<p class="modal-sub cook-info-title">No es descompten:</p>'
+    infoHtml = '<p class="modal-sub cook-info-title">' + escapeHtml(t('cookNotDiscounted')) + '</p>'
       + '<ul class="cook-info-list">' + lis + '</ul>';
   }
 
@@ -657,13 +657,13 @@ function openCookConsumeModal() {
   overlay.className = 'modal-overlay';
   overlay.innerHTML =
     '<div class="modal-content">'
-    + '<p class="modal-title">🍳 He cuinat</p>'
+    + '<p class="modal-title">' + escapeHtml(t('haveCookedBtn')) + '</p>'
     + '<p class="modal-sub">' + escapeHtml(recipe.name || '') + ' · ' + currentServings + ' ' + escapeHtml(peopleLabel) + '</p>'
     + '<div class="cook-rows">' + okHtml + '</div>'
     + infoHtml
     + '<div class="modal-buttons">'
     + '<button class="modal-cancel" id="cook-cancel-btn">' + t('cancel') + '</button>'
-    + '<button class="modal-confirm" id="cook-confirm-btn">🍳 He cuinat</button>'
+    + '<button class="modal-confirm" id="cook-confirm-btn">' + escapeHtml(t('haveCookedBtn')) + '</button>'
     + '</div>'
     + '</div>';
   document.body.appendChild(overlay);
@@ -698,9 +698,9 @@ function openCookConsumeModal() {
     if (typeof addXp === 'function') addXp(25, 'cookme-cooked');
 
     const n = res.consumed.length;
-    let msg = '🍳 Cuinat! ' + n + (n === 1 ? ' ingredient descomptat' : ' ingredients descomptats');
+    let msg = t('cookedToast', n);
     if (res.shorts && res.shorts.length) {
-      msg += ' · no n\'hi havia prou de: ' + res.shorts.map(s => s.name).join(', ');
+      msg += t('cookedShortsPrefix') + res.shorts.map(s => s.name).join(', ');
     }
     showToast(msg);
     close();

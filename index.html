@@ -493,7 +493,7 @@
       </button>
       <button type="button" id="btn-open-meal-planner" class="cookme-add-recipe-btn">
         <span style="font-size:20px;margin-right:8px">📅</span>
-        <span>Planificador</span>
+        <span data-i18n="mealPlanner">Planificador</span>
       </button>
     </div>
 
@@ -555,12 +555,12 @@
   <div id="screen-meal-planner" class="screen">
     <header class="top-bar">
       <button class="back-btn" data-back="cookme" aria-label="Back">‹</button>
-      <h1>📅 Planificador</h1>
+      <h1>📅 <span data-i18n="mealPlanner">Planificador</span></h1>
       <div style="width:40px"></div>
     </header>
     <div id="meal-planner-list" class="meal-planner-list"></div>
     <div class="meal-planner-footer">
-      <button type="button" id="btn-generate-shopping" class="primary-btn">🛒 Generar llista de la compra</button>
+      <button type="button" id="btn-generate-shopping" class="primary-btn" data-i18n="mpGenerateShoppingBtn">🛒 Generar llista de la compra</button>
     </div>
   </div>
 
@@ -588,7 +588,7 @@
       <div class="recipe-ingredients-card" id="recipe-ingredients-list"></div>
       <div class="recipe-action-row">
         <button id="recipe-add-missing" class="recipe-add-missing-btn" type="button" style="display:none"></button>
-        <button id="recipe-cooked" class="recipe-add-missing-btn" type="button" style="display:none">🍳 He cuinat</button>
+        <button id="recipe-cooked" class="recipe-add-missing-btn" type="button" style="display:none" data-i18n="haveCookedBtn">🍳 He cuinat</button>
       </div>
     </div>
 
@@ -2212,7 +2212,7 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260619-1"></script>
   <script src="notifications.js?v=20260707-1"></script>
-  <script src="i18n.js?v=20260723-1"></script>
+  <script src="i18n.js?v=20260723-2"></script>
   <script src="js/core.js?v=20260610-2"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260723-1"></script>
@@ -2231,8 +2231,8 @@
   <script src="js/impact.js?v=20260611-1"></script>
   <script src="js/expenses.js?v=20260722-2"></script>
   <script src="js/recipes-data.js?v=20260605-1"></script>
-  <script src="js/cookme.js?v=20260707-1"></script>
-  <script src="js/meal-planner.js?v=20260617-3"></script>
+  <script src="js/cookme.js?v=20260723-1"></script>
+  <script src="js/meal-planner.js?v=20260723-1"></script>
   <script src="js/badges-data.js?v=20260707-1"></script>
   <script src="js/gamification.js?v=20260710-1"></script>
   <script src="js/patterns.js?v=20260707-1"></script>

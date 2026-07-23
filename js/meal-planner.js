@@ -21,23 +21,22 @@ const MEAL_PLAN_SHOPPING_DONE_KEY = 'eatmefirst_mealplan_shopping_done';
 
 // Ordre i etiquetes dels dies (Dilluns-first).
 const MEAL_PLAN_DAYS = [
-  { id: 'mon', label: 'Dilluns' },
-  { id: 'tue', label: 'Dimarts' },
-  { id: 'wed', label: 'Dimecres' },
-  { id: 'thu', label: 'Dijous' },
-  { id: 'fri', label: 'Divendres' },
-  { id: 'sat', label: 'Dissabte' },
-  { id: 'sun', label: 'Diumenge' }
+  { id: 'mon', key: 'mpDayMon' },
+  { id: 'tue', key: 'mpDayTue' },
+  { id: 'wed', key: 'mpDayWed' },
+  { id: 'thu', key: 'mpDayThu' },
+  { id: 'fri', key: 'mpDayFri' },
+  { id: 'sat', key: 'mpDaySat' },
+  { id: 'sun', key: 'mpDaySun' }
 ];
 
 const MEAL_PLAN_SLOTS = [
-  { id: 'esmorzar', label: 'Esmorzar', emoji: '🌅' },
-  { id: 'dinar', label: 'Dinar', emoji: '🍽️' },
-  { id: 'sopar', label: 'Sopar', emoji: '🌙' }
+  { id: 'esmorzar', key: 'mpSlotEsmorzar', emoji: '🌅' },
+  { id: 'dinar', key: 'mpSlotDinar', emoji: '🍽️' },
+  { id: 'sopar', key: 'mpSlotSopar', emoji: '🌙' }
 ];
 
-const MEAL_PLAN_MONTHS = ['gener', 'febrer', 'març', 'abril', 'maig', 'juny',
-  'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'];
+// Els noms de mes viuen a t('mealPlanMonths') (array); es resolen al render.
 
 // Setmana actualment visualitzada (weekId del dilluns). Es fixa a la
 // setmana en curs en obrir el planificador.
@@ -201,18 +200,19 @@ function _mpWeekHeaderLabel(weekId) {
   const monday = _mpParseYMD(weekId);
   const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);
   let range;
+  const _months = t('mealPlanMonths');
   if (monday.getMonth() === sunday.getMonth()) {
-    range = monday.getDate() + '–' + sunday.getDate() + ' de ' + MEAL_PLAN_MONTHS[monday.getMonth()];
+    range = monday.getDate() + '–' + sunday.getDate() + ' de ' + _months[monday.getMonth()];
   } else {
-    range = monday.getDate() + ' ' + MEAL_PLAN_MONTHS[monday.getMonth()]
-      + ' – ' + sunday.getDate() + ' ' + MEAL_PLAN_MONTHS[sunday.getMonth()];
+    range = monday.getDate() + ' ' + _months[monday.getMonth()]
+      + ' – ' + sunday.getDate() + ' ' + _months[sunday.getMonth()];
   }
   const curMonday = _mpParseYMD(_mpCurrentWeekId());
   const diffWeeks = Math.round((monday.getTime() - curMonday.getTime()) / (7 * 86400000));
   let rel = '';
-  if (diffWeeks === 0) rel = 'Aquesta setmana';
-  else if (diffWeeks === 1) rel = 'Setmana vinent';
-  else if (diffWeeks === -1) rel = 'Setmana passada';
+  if (diffWeeks === 0) rel = t('thisWeek');
+  else if (diffWeeks === 1) rel = t('mpWeekNext');
+  else if (diffWeeks === -1) rel = t('mpWeekPrev');
   return { range, rel };
 }
 
@@ -246,29 +246,29 @@ function renderMealPlanner() {
 
   // Capçalera de setmana amb fletxes.
   const navHtml = '<div class="mp-week-nav">'
-    + '<button type="button" class="mp-week-arrow" data-mp-week="prev" aria-label="Setmana anterior">‹</button>'
+    + '<button type="button" class="mp-week-arrow" data-mp-week="prev" aria-label="' + escapeHtml(t('mpWeekPrevAria')) + '">‹</button>'
     + '<div class="mp-week-label">'
       + '<span class="mp-week-range">' + escapeHtml(head.range) + '</span>'
       + (head.rel ? '<span class="mp-week-rel">' + escapeHtml(head.rel) + '</span>' : '')
     + '</div>'
-    + '<button type="button" class="mp-week-arrow" data-mp-week="next" aria-label="Setmana següent">›</button>'
+    + '<button type="button" class="mp-week-arrow" data-mp-week="next" aria-label="' + escapeHtml(t('mpWeekNextAria')) + '">›</button>'
     + '</div>';
 
   const daysHtml = MEAL_PLAN_DAYS.map((d, i) => {
     const dayDate = new Date(monday); dayDate.setDate(dayDate.getDate() + i);
     const isToday = _mpLocalYMD(dayDate) === todayYMD;
-    const dayTitle = d.label + ' ' + dayDate.getDate();
+    const dayTitle = t(d.key) + ' ' + dayDate.getDate();
     const rows = MEAL_PLAN_SLOTS.map(s => {
       const recipeId = week[d.id][s.id];
       const name = _mpRecipeName(recipeId);
       const assigned = !!name;
       const valueHtml = assigned
         ? '<span class="mp-slot-recipe">' + escapeHtml(name) + '</span>'
-          + '<button type="button" class="mp-slot-clear" data-mp-clear="1" data-day="' + d.id + '" data-slot="' + s.id + '" aria-label="Treure">×</button>'
-        : '<span class="mp-slot-empty">— Assignar</span>';
+          + '<button type="button" class="mp-slot-clear" data-mp-clear="1" data-day="' + d.id + '" data-slot="' + s.id + '" aria-label="' + escapeHtml(t('mpSlotClearAria')) + '">×</button>'
+        : '<span class="mp-slot-empty">' + escapeHtml(t('mpAssign')) + '</span>';
       return '<div class="mp-slot-row' + (assigned ? ' is-assigned' : '') + '" data-day="' + d.id + '" data-slot="' + s.id + '">'
         + '<span class="mp-slot-emoji">' + s.emoji + '</span>'
-        + '<span class="mp-slot-label">' + s.label + '</span>'
+        + '<span class="mp-slot-label">' + escapeHtml(t(s.key)) + '</span>'
         + valueHtml
         + '</div>';
     }).join('');
@@ -322,7 +322,7 @@ function _mpCollectPlanIngredients() {
 function _mpGenerateShoppingList() {
   const items = _mpCollectPlanIngredients();
   if (items.length === 0) {
-    showToast('Cap recepta planificada');
+    showToast(t('mpNoRecipesPlanned'));
     return;
   }
   const all = (typeof supermarkets !== 'undefined' && Array.isArray(supermarkets)) ? supermarkets : [];
@@ -336,7 +336,7 @@ function _mpGenerateShoppingList() {
   const weekId = _mpViewedWeekId;   // captura la setmana en el moment de generar
   showIngredientPicker(null, { enabled, others }, {
     ingredients: items,
-    title: 'Generar llista (' + items.length + ' ingredients)',
+    title: t('mpGenerateListN', items.length),
     skipRecipeCount: true,
     // En CONFIRMAR (afegit real al BuyMe), marquem la setmana com a generada
     // perquè el recordatori weeklyPlanReminder no la torni a demanar.
@@ -348,7 +348,7 @@ function _mpGenerateShoppingList() {
 function openRecipeSelector(day, slot) {
   const recipes = (typeof getAllRecipes === 'function') ? (getAllRecipes() || []) : [];
   const slotMeta = MEAL_PLAN_SLOTS.find(s => s.id === slot);
-  const slotLabel = slotMeta ? (slotMeta.emoji + ' ' + slotMeta.label) : slot;
+  const slotLabel = slotMeta ? (slotMeta.emoji + ' ' + t(slotMeta.key)) : slot;
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -363,7 +363,7 @@ function openRecipeSelector(day, slot) {
   overlay.innerHTML =
     '<div class="modal-content mp-recipe-modal">'
     + '<p class="modal-title">' + escapeHtml(slotLabel) + '</p>'
-    + '<input type="search" class="modal-input" id="mp-recipe-search" placeholder="Cerca una recepta…" autocomplete="off">'
+    + '<input type="search" class="modal-input" id="mp-recipe-search" placeholder="' + escapeHtml(t('mpRecipeSearchPlaceholder')) + '" autocomplete="off">'
     + '<div class="mp-recipe-list" id="mp-recipe-list">' + listHtml + '</div>'
     + '<button class="secondary-btn" id="mp-recipe-cancel">' + (typeof t === 'function' ? t('cancel') : 'Cancel·la') + '</button>'
     + '</div>';
