@@ -2156,6 +2156,27 @@ const RECIPE_CATEGORIES = [
   { id: 'postre',    name: 'Postre',             icon: '🍓' }
 ];
 
+// Nom visible d'una categoria de recepta (display-only, com categoryLabel a
+// categories.js). Si l'id és conegut → t('recipeCat_'+id); si no es reconeix,
+// retorna el name/id tal qual. Pur, en memòria: NO toca dades ni comparacions.
+const _RECIPE_CATEGORY_IDS = new Set(RECIPE_CATEGORIES.map(c => c.id));
+function recipeCategoryLabel(catOrId) {
+  if (!catOrId) return '';
+  const isStr = (typeof catOrId === 'string');
+  const id = isStr ? catOrId : (catOrId && catOrId.id);
+  if (id && _RECIPE_CATEGORY_IDS.has(id) && typeof t === 'function') {
+    const key = 'recipeCat_' + id;
+    const label = t(key);
+    if (label && label !== key) return label;   // traducció trobada
+  }
+  if (!isStr && catOrId.name) return catOrId.name;             // no reconegut (objecte)
+  if (isStr) {
+    const cat = RECIPE_CATEGORIES.find(c => c.id === id);
+    return (cat && cat.name) || id;                            // no reconegut (per id)
+  }
+  return id || '';
+}
+
 function _populateRecipeCategorySelect(currentValue) {
   const btn = document.getElementById('recipe-edit-category-picker-btn');
   const dropdown = document.getElementById('recipe-edit-category-picker-dropdown');
@@ -2163,7 +2184,7 @@ function _populateRecipeCategorySelect(currentValue) {
   dropdown.innerHTML = RECIPE_CATEGORIES.map(o =>
     '<button type="button" class="category-option" data-cat-id="' + escapeHtml(o.id) + '">' +
       '<span class="cat-option-icon">' + escapeHtml(o.icon) + '</span>' +
-      '<span class="cat-option-name">' + escapeHtml(o.name) + '</span>' +
+      '<span class="cat-option-name">' + escapeHtml(recipeCategoryLabel(o)) + '</span>' +
     '</button>'
   ).join('');
   const initial = currentValue && RECIPE_CATEGORIES.some(c => c.id === currentValue)
@@ -2187,7 +2208,7 @@ function _setRecipeCategoryPickerSelection(catId) {
   const iconEl = btn.querySelector('.picker-icon');
   const labelEl = btn.querySelector('.picker-label');
   if (iconEl) iconEl.textContent = cat.icon;
-  if (labelEl) labelEl.textContent = cat.name;
+  if (labelEl) labelEl.textContent = recipeCategoryLabel(cat);
 }
 
 function _toggleRecipeCategoryPickerDropdown() {

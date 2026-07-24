@@ -1094,6 +1094,13 @@ const TRANSLATIONS = {
     cat_frozen: 'Congelats',
     cat_spices: 'Espècies i condiments',
     cat_other: 'Altres',
+    // Categories de recepta (display-only via recipeCategoryLabel; la clau ÉS l'id).
+    recipeCat_esmorzar: 'Esmorzar',
+    recipeCat_primer: 'Primer / Amanida',
+    recipeCat_pasta: 'Pasta i arrossos',
+    'recipeCat_carn-peix': 'Carn i peix',
+    'recipeCat_plat-unic': 'Plat únic',
+    recipeCat_postre: 'Postre',
     // ===== Compra'm / Populars (Fase 0 migració de hardcodes) =====
     // Compra'm — resum de cost
     buymeCostApprox: (v) => 'Aprox. ' + v,
@@ -1381,6 +1388,13 @@ const TRANSLATIONS = {
     cat_frozen: 'Congelados',
     cat_spices: 'Especias y condimentos',
     cat_other: 'Otros',
+    // Categorías de receta (display-only)
+    recipeCat_esmorzar: 'Desayuno',
+    recipeCat_primer: 'Entrante / Ensalada',
+    recipeCat_pasta: 'Pasta y arroces',
+    'recipeCat_carn-peix': 'Carne y pescado',
+    'recipeCat_plat-unic': 'Plato único',
+    recipeCat_postre: 'Postre',
     // ===== Compra'm / Populars =====
     shoppingListTitle: 'Cómprame',
     shoppingListIntro: 'Crea listas de la compra para cada supermercado. Cuando compres un producto, pulsa "Comprado" y pasará al seguimiento de caducidades.',
@@ -1900,6 +1914,13 @@ const TRANSLATIONS = {
     cat_frozen: 'Frozen',
     cat_spices: 'Spices & seasonings',
     cat_other: 'Other',
+    // Recipe categories (display-only)
+    recipeCat_esmorzar: 'Breakfast',
+    recipeCat_primer: 'Starter / Salad',
+    recipeCat_pasta: 'Pasta & rice',
+    'recipeCat_carn-peix': 'Meat & fish',
+    'recipeCat_plat-unic': 'One-dish meal',
+    recipeCat_postre: 'Dessert',
     // ===== Compra'm / Populars =====
     shoppingListTitle: 'BuyMe',
     shoppingListIntro: 'Create shopping lists for each supermarket. When you buy a product, tap "Bought" and it moves to expiry tracking.',
@@ -2419,6 +2440,13 @@ const TRANSLATIONS = {
     cat_frozen: 'Surgelés',
     cat_spices: 'Épices et condiments',
     cat_other: 'Autres',
+    // Catégories de recette (display-only)
+    recipeCat_esmorzar: 'Petit-déjeuner',
+    recipeCat_primer: 'Entrée / Salade',
+    recipeCat_pasta: 'Pâtes et riz',
+    'recipeCat_carn-peix': 'Viande et poisson',
+    'recipeCat_plat-unic': 'Plat unique',
+    recipeCat_postre: 'Dessert',
     // ===== Compra'm / Populars =====
     shoppingListTitle: 'Achète-moi',
     shoppingListIntro: 'Crée des listes de courses pour chaque supermarché. Quand tu achètes un produit, appuie sur « Acheté » et il passe au suivi des péremptions.',
