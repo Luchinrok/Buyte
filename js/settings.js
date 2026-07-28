@@ -2305,13 +2305,12 @@ function computeStatsMonthly(history) {
 }
 
 function monthShortLetter(idx) {
-  const labels = ['G', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
-  return labels[idx] || '?';
+  const labels = t('monthsInitial');
+  return (Array.isArray(labels) ? labels[idx] : '') || '?';
 }
 function monthFullName(idx) {
-  const names = ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny',
-                 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'];
-  return names[idx] || '';
+  const names = t('monthsFull');
+  return (Array.isArray(names) ? names[idx] : '') || '';
 }
 
 // CARD 2 — Gràfic línia % aprofitament

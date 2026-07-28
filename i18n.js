@@ -765,6 +765,10 @@ const TRANSLATIONS = {
     mpSlotDinar: 'Dinar',
     mpSlotSopar: 'Sopar',
     mealPlanMonths: ['gener', 'febrer', 'març', 'abril', 'maig', 'juny', 'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'],
+    // Mesos per al gràfic d'estadístiques (Configuració → Activitat). NO és
+    // mealPlanMonths: aquí van en MAJÚSCULA (sencer) i inicial d'una lletra.
+    monthsFull: ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny', 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'],
+    monthsInitial: ['G', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'],
     mpMonthConnector: ' de ',
     mpWeekNext: 'Setmana vinent',
     mpWeekPrev: 'Setmana passada',
