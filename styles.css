@@ -8924,39 +8924,48 @@ body.selection-mode-active #shops-slider .arrow-btn {
 }
 
 /* ===== SMART NOTIFICATIONS — Pantalla de configuració ===== */
+/* Banner de permís compacte: una sola fila (icona · text · botó petit).
+   Fa wrap en pantalla estreta perquè el botó caigui a sota si no hi cap. */
 .perm-banner {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  text-align: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  text-align: left;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px 18px;
-  margin-bottom: 14px;
+  border-radius: 12px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
   transition: background 0.2s, border-color 0.2s;
 }
 
 .perm-banner-icon {
-  font-size: 32px;
+  font-size: 18px;
   line-height: 1;
-  margin-bottom: 6px;
+  margin: 0;
+  flex-shrink: 0;
 }
 
-.perm-banner-body { width: 100%; }
+.perm-banner-body {
+  flex: 1;
+  min-width: 120px;
+}
 
 .perm-banner-title {
-  font-size: 14px;
-  font-weight: 700;
-  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
   color: var(--text);
+  line-height: 1.3;
 }
 
 .perm-banner-help {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-soft);
-  margin: 4px 0 0;
-  line-height: 1.4;
+  margin: 2px 0 0;
+  line-height: 1.35;
 }
 .perm-banner-help:empty { display: none; }
 
@@ -8977,14 +8986,27 @@ body.selection-mode-active #shops-slider .arrow-btn {
   border-color: rgba(244, 67, 54, 0.45);
 }
 
+/* Botó del banner: pastilla estreta i discreta, no ample. Reutilitza el
+   color/tipografia de .primary-btn/.secondary-btn; només n'ajusta la mida. */
 .perm-banner .primary-btn,
-.perm-banner .secondary-btn { margin: 12px 0 0; max-width: 280px; }
+.perm-banner .secondary-btn {
+  margin: 0;
+  width: auto;
+  max-width: none;
+  min-height: 0;
+  flex-shrink: 0;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+}
 
 .smart-notif-prompt-hint {
-  font-size: 11.5px;
-  text-align: center;
+  font-size: 11px;
+  text-align: left;
   color: var(--text-soft);
-  margin: -8px 0 14px;
+  margin: 2px 2px 12px;
   font-style: italic;
 }
 
