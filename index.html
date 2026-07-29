@@ -1377,6 +1377,11 @@
 
   <!-- PANTALLA BENVINGUDA (primer cop) -->
   <div id="screen-welcome" class="screen">
+    <!-- Selector d'idioma discret (cantonada superior dreta). El pinta
+         renderWelcomeLangSwitch() (shops.js). Per defecte mostra el detectat
+         del navegador; en triar-ne un, setLanguage() re-tradueix l'onboarding
+         a l'instant sense perdre el país destacat. -->
+    <div class="welcome-lang-switch" id="welcome-lang-switch"></div>
     <div class="welcome-content">
       <div class="welcome-emoji">👋</div>
       <h1 class="welcome-title">Festuc</h1>

@@ -2977,6 +2977,15 @@ function _rerenderActiveScreen() {
       case 'screen-popular':       call('renderPopularList'); break;
       case 'screen-special-lists': call('renderSpecialLists'); break;
       case 'screen-achievements':  call('renderAchievements'); break;
+      // Benvinguda: translatePage ja refà els data-i18n (subtítol, pregunta),
+      // però la llista de països i el selector d'idioma es pinten per JS amb
+      // t()/getCurrentLang() i cal repintar-los perquè segueixin l'idioma nou.
+      // renderWelcomeCountryList llegeix currentCountry tal qual: no es perd
+      // el país destacat.
+      case 'screen-welcome':
+        call('renderWelcomeCountryList');
+        call('renderWelcomeLangSwitch');
+        break;
       // screen-language, screen-settings*, etc.: coberts per data-i18n.
       default: break;
     }

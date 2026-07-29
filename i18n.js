@@ -2019,7 +2019,20 @@ const TRANSLATIONS = {
     changeCountryTitle: '¿Cambiar de país?',
     changeCountrySub: 'Se desactivarán los supermercados actuales y aparecerán los del nuevo país. No se pierde nada, puedes volver a activarlos más tarde.',
     changeCountryConfirm: 'Sí, cambiar',
-    welcomeReady: '¡Todo listo! ¡Empezamos!'
+    welcomeReady: '¡Todo listo! ¡Empezamos!',
+    welcomeSubtitle: 'La app que te recuerda qué tienes y qué debes comprar',
+    welcomeCountryQuestion: '¿Dónde vives? Te mostraremos los supermercados de tu país',
+    countryES: 'España',
+    countryFR: 'Francia',
+    countryIT: 'Italia',
+    countryDE: 'Alemania',
+    countryPT: 'Portugal',
+    countryNL: 'Países Bajos',
+    countryGB: 'Reino Unido',
+    countryUS: 'Estados Unidos',
+    countryJP: 'Japón',
+    countryCN: 'China',
+    countryKR: 'Corea del Sur'
   },
 
   en: {
@@ -2860,7 +2873,20 @@ const TRANSLATIONS = {
     changeCountryTitle: 'Change country?',
     changeCountrySub: "Your current supermarkets will be turned off and the new country's will appear. Nothing is lost — you can turn them back on later.",
     changeCountryConfirm: 'Yes, change',
-    welcomeReady: "All set! Let's go!"
+    welcomeReady: "All set! Let's go!",
+    welcomeSubtitle: 'The app that reminds you what you have and what to buy',
+    welcomeCountryQuestion: "Where do you live? We'll show you the supermarkets in your country",
+    countryES: 'Spain',
+    countryFR: 'France',
+    countryIT: 'Italy',
+    countryDE: 'Germany',
+    countryPT: 'Portugal',
+    countryNL: 'Netherlands',
+    countryGB: 'United Kingdom',
+    countryUS: 'United States',
+    countryJP: 'Japan',
+    countryCN: 'China',
+    countryKR: 'South Korea'
   },
 
   fr: {
@@ -3701,7 +3727,20 @@ const TRANSLATIONS = {
     changeCountryTitle: 'Changer de pays ?',
     changeCountrySub: "Les supermarchés actuels seront désactivés et ceux du nouveau pays apparaîtront. Rien n'est perdu, tu pourras les réactiver plus tard.",
     changeCountryConfirm: 'Oui, changer',
-    welcomeReady: "Tout est prêt ! C'est parti !"
+    welcomeReady: "Tout est prêt ! C'est parti !",
+    welcomeSubtitle: "L'appli qui te rappelle ce que tu as et ce que tu dois acheter",
+    welcomeCountryQuestion: "Où habites-tu ? Nous te montrerons les supermarchés de ton pays",
+    countryES: 'Espagne',
+    countryFR: 'France',
+    countryIT: 'Italie',
+    countryDE: 'Allemagne',
+    countryPT: 'Portugal',
+    countryNL: 'Pays-Bas',
+    countryGB: 'Royaume-Uni',
+    countryUS: 'États-Unis',
+    countryJP: 'Japon',
+    countryCN: 'Chine',
+    countryKR: 'Corée du Sud'
   }
 
 };

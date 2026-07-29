@@ -147,8 +147,39 @@ function showWelcomeIfNeeded() {
   currentCountry = langToCountry[lang] || 'ES';
 
   renderWelcomeCountryList();
+  renderWelcomeLangSwitch();
   showScreen('welcome');
   return true;
+}
+
+// Selector d'idioma discret de la benvinguda (cantonada superior dreta).
+// Pinta una pastilla per idioma suportat amb la seva bandera; l'actiu porta
+// la classe .active. En triar-ne un, setLanguage() persisteix + re-tradueix,
+// i _rerenderActiveScreen() repinta la benvinguda (llista de països + aquest
+// selector) en el nou idioma. NO recalcula currentCountry des de l'idioma:
+// el país destacat es manté intacte en canviar d'idioma.
+function renderWelcomeLangSwitch() {
+  const container = document.getElementById('welcome-lang-switch');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const langs = (typeof SUPPORTED_LANGS !== 'undefined') ? SUPPORTED_LANGS : ['ca'];
+  const current = (typeof getCurrentLang === 'function') ? getCurrentLang() : 'ca';
+  const flags = (typeof LANG_FLAGS !== 'undefined') ? LANG_FLAGS : {};
+  const names = (typeof LANGUAGE_NAMES !== 'undefined') ? LANGUAGE_NAMES : {};
+
+  langs.forEach(lang => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'welcome-lang-btn' + (lang === current ? ' active' : '');
+    btn.setAttribute('aria-label', names[lang] || lang);
+    btn.innerHTML = flags[lang] || (names[lang] || lang);
+    btn.addEventListener('click', () => {
+      if (lang === getCurrentLang()) return;
+      if (typeof setLanguage === 'function') setLanguage(lang);
+    });
+    container.appendChild(btn);
+  });
 }
 
 function renderWelcomeCountryList() {
