@@ -38,7 +38,7 @@ const BADGES = [
     description: 'Has afegit el teu primer producte al rebost',
     category: 'inici', xpReward: 50, type: 'pantry_added', value: 1 },
   { id: 'first-week', emoji: '📅', name: 'Primera setmana',
-    description: 'Has fet servir Buyte durant 7 dies',
+    description: 'Has fet servir Festuc durant 7 dies',
     category: 'inici', xpReward: 50, type: 'app_age_days', value: 7 },
 
   // ============= CONSTÀNCIA (7) =============
@@ -160,7 +160,7 @@ const BADGES = [
 
   // ============= ESPECIALS (4) =============
   { id: 'app-anniversary', emoji: '🎂', name: 'Aniversari',
-    description: 'Fa un any que fas servir Buyte',
+    description: 'Fa un any que fas servir Festuc',
     category: 'especial', xpReward: 500, type: 'app_age_days', value: 365 },
   { id: 'nightowl', emoji: '🌙', name: 'Noctàmbul',
     description: "Has fet servir l'app entre la mitjanit i les 5 del matí",

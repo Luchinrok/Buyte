@@ -750,7 +750,7 @@ function _evalBadgeProgress() {
   const remaining = Math.max(1, best.ev.target - best.ev.current);
   return {
     title: '🎯 ' + t('appName'),
-    body: t('snBadgeProgress', Math.ceil(remaining), best.badge.name)
+    body: t('snBadgeProgress', Math.ceil(remaining), (typeof badgeLabel === 'function' ? badgeLabel(best.badge) : best.badge.name))
   };
 }
 

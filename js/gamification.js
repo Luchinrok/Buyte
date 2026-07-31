@@ -583,6 +583,34 @@ function _buildRewardToast(opts) {
   return overlay;
 }
 
+// Display-only: nom/descripció d'insígnia traduïts. Mirall de categoryLabel
+// (categories.js) i recipeCategoryLabel (cookme.js): les claus
+// 'badge_<id>_name' / 'badge_<id>_desc' viuen a i18n.js; si no hi són,
+// fallback al text original de badges-data.js. PUR: no toca res persistit,
+// l'id és intacte.
+function badgeLabel(badge) {
+  if (!badge || !badge.id) return (badge && badge.name) || '';
+  const k = 'badge_' + badge.id + '_name';
+  const v = t(k);
+  return (v === k) ? (badge.name || '') : v;
+}
+function badgeDesc(badge) {
+  if (!badge || !badge.id) return (badge && badge.description) || '';
+  const k = 'badge_' + badge.id + '_desc';
+  const v = t(k);
+  return (v === k) ? (badge.description || '') : v;
+}
+// Display-only: etiqueta de categoria d'insígnia traduïda. Clau
+// 'badgeCat_<id>' a i18n.js; fallback al label original de BADGE_CATEGORIES.
+// PUR: l'id de categoria és intacte (el filtratge segueix per cat.id).
+function badgeCategoryLabel(cat) {
+  if (!cat || !cat.id) return (cat && cat.label) || '';
+  const k = 'badgeCat_' + cat.id;
+  const v = t(k);
+  return (v === k) ? (cat.label || '') : v;
+}
+if (typeof window !== 'undefined') { window.badgeLabel = badgeLabel; window.badgeDesc = badgeDesc; window.badgeCategoryLabel = badgeCategoryLabel; }
+
 function _showBadgeUnlockToast(badge, onDone) {
   _buildRewardToast({
     cls: 'reward-toast-badge',
@@ -590,8 +618,8 @@ function _showBadgeUnlockToast(badge, onDone) {
       '<span class="reward-toast-emoji">' + (badge.emoji || '🏅') + '</span>' +
       '<div class="reward-toast-body">' +
         '<p class="reward-toast-title">' + escapeHtml(t('badgeUnlocked')) + '</p>' +
-        '<p class="reward-toast-name">' + escapeHtml(badge.name || '') + '</p>' +
-        '<p class="reward-toast-desc">' + escapeHtml(badge.description || '') + '</p>' +
+        '<p class="reward-toast-name">' + escapeHtml(badgeLabel(badge)) + '</p>' +
+        '<p class="reward-toast-desc">' + escapeHtml(badgeDesc(badge)) + '</p>' +
       '</div>',
     autoDismissMs: 4000,
     onDone: onDone,
@@ -771,7 +799,7 @@ function renderAchievementsFilters() {
     btn.type = 'button';
     btn.className = 'achievements-filter' + (achievementsFilter === cat.id ? ' active' : '');
     btn.dataset.filter = cat.id;
-    btn.textContent = cat.emoji + ' ' + cat.label;
+    btn.textContent = cat.emoji + ' ' + badgeCategoryLabel(cat);
     btn.addEventListener('click', () => {
       achievementsFilter = cat.id;
       renderAchievementsFilters();
@@ -823,8 +851,8 @@ function renderAchievementsList() {
     card.innerHTML =
       '<div class="badge-emoji' + (unlocked ? '' : ' locked') + '">' + (badge.emoji || '🏅') + '</div>' +
       '<div class="badge-card-body">' +
-        '<p class="badge-card-name">' + escapeHtml(badge.name) + '</p>' +
-        '<p class="badge-card-desc">' + escapeHtml(badge.description) + '</p>' +
+        '<p class="badge-card-name">' + escapeHtml(badgeLabel(badge)) + '</p>' +
+        '<p class="badge-card-desc">' + escapeHtml(badgeDesc(badge)) + '</p>' +
         statusHtml +
       '</div>';
     list.appendChild(card);
