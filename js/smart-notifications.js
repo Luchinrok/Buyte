@@ -233,13 +233,12 @@ function _computeExpiredBanners() {
     const d = _smartDaysUntil(p.date);
     if (!isFinite(d) || d >= 0) return;
     const days = Math.abs(d);
-    const dayWord = days === 1 ? 'dia' : 'dies';
     out.push({
       id: 'expired-' + p.id,
       type: 'expired',
       emoji: '🚨',
       productId: p.id,
-      body: '🚨 Ja ha caducat fa ' + days + ' ' + dayWord + ': ' + (p.emoji || '') + ' ' + (p.name || ''),
+      body: t('snExpiredOne', days, p.emoji || '', p.name || ''),
       _days: d
     });
   });
@@ -259,10 +258,10 @@ function _computeExpiryBanners() {
     let body, emoji;
     if (d === 0) {
       emoji = '🚨';
-      body = "🚨 Avui caduca: " + (p.emoji || '') + ' ' + (p.name || '');
+      body = t('snExpiresTodayOne', p.emoji || '', p.name || '');
     } else if (d === 1) {
       emoji = '⏰';
-      body = "⏰ Demà caduca: " + (p.emoji || '') + ' ' + (p.name || '');
+      body = t('snExpiresTomorrowOne', p.emoji || '', p.name || '');
     } else {
       return;
     }
@@ -309,7 +308,7 @@ function getActiveBanners() {
           id: aggId,
           type: 'expired',
           emoji: '🚨',
-          body: '🚨 ' + expiredList.length + ' productes ja han caducat'
+          body: t('snExpiredManyBanner', expiredList.length)
           // sense productId → el banner action obrirà #screen-alerts.
           // Dismiss de l'agregat NO afecta els dismisses individuals
           // (ids diferents), i viceversa.
@@ -340,7 +339,7 @@ function getActiveBanners() {
           id: aggId,
           type: 'expiry',
           emoji: '🚨',
-          body: '🚨 ' + today.length + ' productes caduquen avui'
+          body: t('snExpiresTodayManyBanner', today.length)
         });
       }
     } else {
@@ -355,7 +354,7 @@ function getActiveBanners() {
           id: aggId,
           type: 'expiry',
           emoji: '⏰',
-          body: '⏰ ' + tomorrow.length + ' productes caduquen demà'
+          body: t('snExpiresTomorrowManyBanner', tomorrow.length)
         });
       }
     } else {
@@ -430,7 +429,7 @@ function getActiveBanners() {
           id: bid,
           type: 'pattern-suggestion',
           emoji: '🧠',
-          body: '🧠 ' + (s.title || 'Tinc un suggeriment per tu'),
+          body: '🧠 ' + (s.title || t('snSuggestionFallback')),
           patternId: s.id
         });
         break; // només 1
@@ -452,7 +451,7 @@ function getActiveBanners() {
 // evitar push duplicats el mateix dia.
 function sendSmartNotification(typeId, data) {
   if (typeof hasNotificationPermission === 'function' && hasNotificationPermission()) {
-    const title = (data && data.title) || '🔔 Buyte';
+    const title = (data && data.title) || ('🔔 ' + t('appName'));
     const body = (data && data.body) || '';
     try { window.Notif.showNotification(title, body, { tag: 'buyte-' + typeId }); }
     catch (e) {}
@@ -604,15 +603,15 @@ function _evalExpiry() {
 
   let body;
   if (today.length === 1 && tomorrow.length === 0) {
-    body = '🚨 Avui caduca: ' + (today[0].emoji || '') + ' ' + (today[0].name || '');
+    body = t('snExpiresTodayOne', today[0].emoji || '', today[0].name || '');
   } else if (today.length > 1 && tomorrow.length === 0) {
-    body = '🚨 Avui caduquen ' + today.length + ' productes';
+    body = t('snExpiresTodayManyPush', today.length);
   } else if (today.length === 0 && tomorrow.length === 1) {
-    body = '⏰ Demà caduca: ' + (tomorrow[0].emoji || '') + ' ' + (tomorrow[0].name || '');
+    body = t('snExpiresTomorrowOne', tomorrow[0].emoji || '', tomorrow[0].name || '');
   } else if (today.length === 0 && tomorrow.length > 1) {
-    body = '⏰ Demà caduquen ' + tomorrow.length + ' productes';
+    body = t('snExpiresTomorrowManyPush', tomorrow.length);
   } else {
-    body = '⏰ ' + today.length + ' caduquen avui, ' + tomorrow.length + ' demà';
+    body = t('snExpiresMixedPush', today.length, tomorrow.length);
   }
   // Metadata per a la navegació del botó "Veure": un sol producte → detall;
   // múltiples → llista d'alertes (EatMe).
@@ -620,7 +619,7 @@ function _evalExpiry() {
   const meta = (all.length === 1)
     ? { productId: all[0].id }
     : { productIds: all.map(p => p.id) };
-  return Object.assign({ title: '🚨 Buyte', body: body }, meta);
+  return Object.assign({ title: '🚨 ' + t('appName'), body: body }, meta);
 }
 
 // 2. Recordatori del dinar (productes que caduquen aviat)
@@ -633,7 +632,7 @@ function _evalMealReminder() {
     .slice(0, 3);
   if (list.length === 0) return null;
   const names = list.map(x => (x.p.emoji || '') + ' ' + (x.p.name || '') + ' (' + x.d + 'd)').join(', ');
-  return { title: '💡 Buyte', body: '💡 Avui consumeix: ' + names };
+  return { title: '💡 ' + t('appName'), body: t('snMealReminder', names) };
 }
 
 // 3. Inspiració culinària (receptes que pots fer al 100%)
@@ -647,13 +646,13 @@ function _evalCookmeInspiration() {
   if (ready.length === 0) return null;
   let body;
   if (ready.length === 1) {
-    body = "🍳 Avui pots fer '" + (ready[0].r.name || '') + "' amb el que tens";
+    body = t('snCookOne', ready[0].r.name || '');
   } else if (ready.length <= 3) {
-    body = '🍳 Tens ' + ready.length + ' receptes a punt!';
+    body = t('snCookFew', ready.length);
   } else {
-    body = '🍳 Tens ' + ready.length + ' receptes a punt — cuina alguna cosa avui!';
+    body = t('snCookMany', ready.length);
   }
-  return { title: '🍳 Buyte', body: body };
+  return { title: '🍳 ' + t('appName'), body: body };
 }
 
 // 4. Llista de la compra pendent (≥ 3 dies des de l'última actualització)
@@ -664,7 +663,7 @@ function _evalShoppingPending() {
   if (!lastTs) return null;
   const daysSince = Math.floor((Date.now() - lastTs) / 86400000);
   if (daysSince < 3) return null;
-  return { title: '🛒 Festuc', body: '🛒 Tens ' + items.length + " productes pendents a Compra'm" };
+  return { title: '🛒 ' + t('appName'), body: t('snShoppingPending', items.length) };
 }
 
 // 5. Motivació i ratxa: notifiquem en fites o quan estem a 1 dia d'una fita.
@@ -678,9 +677,9 @@ function _evalStreakMotivation() {
   const oneAway = next && (next - streak === 1);
   if (!isMilestone && !oneAway) return null;
   const body = isMilestone
-    ? '🔥 ' + streak + ' dies sense malgastar! Mantén la ratxa!'
-    : '🔥 ' + streak + ' dies! Demà arribes a ' + next + '!';
-  return { title: '🔥 Buyte', body: body };
+    ? t('snStreakMilestone', streak)
+    : t('snStreakOneAway', streak, next);
+  return { title: '🔥 ' + t('appName'), body: body };
 }
 
 // 6. Reactivació: l'usuari no ha obert l'app fa ≥ 3 dies
@@ -699,11 +698,11 @@ function _evalReactivation() {
   }).length;
   let body;
   if (expiring > 0) {
-    body = '👋 Tens ' + expiring + (expiring === 1 ? ' producte' : ' productes') + ' que caduquen aviat. Vine a veure\'ls!';
+    body = t('snReactExpiring', expiring);
   } else {
-    body = "👋 Fa " + days + " dies que no obres l'app. Tot bé pel rebost?";
+    body = t('snReactNone', days);
   }
-  return { title: '👋 Buyte', body: body };
+  return { title: '👋 ' + t('appName'), body: body };
 }
 
 // 7. Resum setmanal (cada diumenge a la nit per defecte)
@@ -729,8 +728,8 @@ function _evalWeeklyRecap() {
   const pct = Math.round((consumedCount / totalCount) * 100);
   const fmt = (n) => (Math.round(n * 100) / 100).toString().replace('.', ',');
   return {
-    title: '📊 Buyte',
-    body: '📊 Aquesta setmana: ' + fmt(saved) + '€ aprofitats, ' + pct + '% aprofitament'
+    title: '📊 ' + t('appName'),
+    body: t('snWeeklyRecap', fmt(saved), pct)
   };
 }
 
@@ -750,8 +749,8 @@ function _evalBadgeProgress() {
   if (!best) return null;
   const remaining = Math.max(1, best.ev.target - best.ev.current);
   return {
-    title: '🎯 Buyte',
-    body: "🎯 Estàs a " + Math.ceil(remaining) + " d'aconseguir '" + best.badge.name + "'!"
+    title: '🎯 ' + t('appName'),
+    body: t('snBadgeProgress', Math.ceil(remaining), best.badge.name)
   };
 }
 
@@ -763,8 +762,8 @@ function _evalPatternSuggestions() {
   try { high = getHighPrioritySuggestions(); } catch (e) { return null; }
   if (!high || high.length === 0) return null;
   return {
-    title: '🧠 Buyte',
-    body: '🧠 He après alguna cosa de tu! Tinc un suggeriment per estalviar.'
+    title: '🧠 ' + t('appName'),
+    body: t('snPatternSuggestPush')
   };
 }
 
@@ -836,8 +835,8 @@ function _evalRebuyOverdue() {
 
   if (!best) return null;
   return {
-    title: '🔄 Buyte',
-    body: '🔄 Fa ' + best.daysSince + ' dies que no compres ' + best.emoji + ' ' + best.name,
+    title: '🔄 ' + t('appName'),
+    body: t('snRebuyOverdue', best.daysSince, best.emoji, best.name),
     name: best.name,
     emoji: best.emoji,
     popularId: best.popularId
@@ -898,11 +897,11 @@ function _evalBudgetAlert() {
   const eur = (n) => (typeof fmtEur === 'function') ? fmtEur(n) : (Math.round(n * 100) / 100) + '€';
   let body;
   if (info.level === 100) {
-    body = '💰 Has superat el pressupost (' + eur(info.monthSpent) + ' de ' + eur(info.budget) + ')';
+    body = t('snBudgetOver', eur(info.monthSpent), eur(info.budget));
   } else {
-    body = '💰 Has gastat el ' + info.pct + '% del pressupost (' + eur(info.monthSpent) + ' de ' + eur(info.budget) + ')';
+    body = t('snBudgetPct', info.pct, eur(info.monthSpent), eur(info.budget));
   }
-  return { title: '💰 Buyte', body: body, level: info.level };
+  return { title: '💰 ' + t('appName'), body: body, level: info.level };
 }
 
 // Escriu l'state de reconeixement del nivell de pressupost (mes actual).
@@ -931,11 +930,11 @@ function _evalLowStock() {
 
   let body;
   if (low.length === 1) {
-    body = '📉 Et queda poc de ' + (low[0].emoji || '📦') + ' ' + (low[0].name || '');
+    body = t('snLowStockOne', low[0].emoji || '📦', low[0].name || '');
   } else {
-    body = '📉 ' + low.length + ' productes sota l\'estoc mínim';
+    body = t('snLowStockMany', low.length);
   }
-  return { title: '📉 Buyte', body: body, lowIds: low.map(p => p.id) };
+  return { title: '📉 ' + t('appName'), body: body, lowIds: low.map(p => p.id) };
 }
 
 // Reconeix el conjunt de low-stock (overwrite). Escrit fora de _eval
@@ -960,8 +959,8 @@ function _evalWeeklyPlanReminder() {
   if (!mpWeekHasPlan(wId)) return null;     // la setmana vinent no té cap recepta
   if (mpIsShoppingDone(wId)) return null;   // ja s'ha generat la compra
   return {
-    title: '📅 Buyte',
-    body: '📅 Tens menús per a la setmana vinent — vols generar la compra?',
+    title: '📅 ' + t('appName'),
+    body: t('snWeeklyPlanReminder'),
     weekId: wId
   };
 }
@@ -1100,7 +1099,7 @@ function _smartBannerAction(banner) {
         if (typeof showIngredientPicker === 'function') {
           showIngredientPicker(null, { enabled, others }, {
             ingredients: low.map(p => ({ name: p.name, emoji: p.emoji })),
-            title: 'Estoc baix (' + low.length + ')',
+            title: t('snLowStockPickerTitle', low.length),
             preselectAll: true,
             skipRecipeCount: true
           });

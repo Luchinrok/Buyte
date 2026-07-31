@@ -398,26 +398,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (multiLotsInfoBtn) {
     multiLotsInfoBtn.addEventListener('click', () => {
       if (typeof _showInfoModal !== 'function') return;
-      _showInfoModal('📦', 'Crear envasos separats', [
-        '**Marcat:** cada envàs és un lot independent, amb la seva pròpia caducitat. Exemple: compres 4 paquets de formatge → es creen 4 lots separats.',
-        '**Desmarcat:** tots els envasos formen part del mateix lot. Exemple: compres un pack de 4 iogurts → 1 lot amb qty=4.'
-      ]);
+      _showInfoModal('📦', t('infoSeparatePackagesTitle'), t('infoSeparatePackagesBody'));
     });
   }
 
   // Botó ℹ️ del llindar minStock (a #screen-add i a #screen-popular-edit).
   // Tots dos obren el mateix modal informatiu. Reutilitza _showInfoModal.
-  const minStockInfoText = [
-    'Quan l\'estoc baixi a aquest número o menys, t\'oferirà afegir-lo a Compra\'m.',
-    '**0** = només avisa quan se t\'acaba del tot.',
-    'Exemple: posa **5** a l\'aigua per tenir temps d\'anar a comprar abans de quedar-te sense.'
-  ];
+  const minStockInfoText = t('infoMinStockBody');
   ['minstock-info', 'popular-minstock-info'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) {
       btn.addEventListener('click', () => {
         if (typeof _showInfoModal !== 'function') return;
-        _showInfoModal('🔔', 'Llindar d\'avís', minStockInfoText);
+        _showInfoModal('🔔', t('infoMinStockTitle'), minStockInfoText);
       });
     }
   });

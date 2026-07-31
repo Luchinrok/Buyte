@@ -312,7 +312,7 @@ function renderMonthlyChart(history) {
     col.className = 'impact-chart-col';
     const savedH = Math.max(2, Math.round((m.savedEur / maxEur) * 100));
     const wastedH = Math.max(2, Math.round((m.wastedEur / maxEur) * 100));
-    const tip = m.fullLabel + ': ' + fmtEur(m.savedEur) + ' aprofitat, ' + fmtEur(m.wastedEur) + ' llençat';
+    const tip = t('impactChartTip', m.fullLabel, fmtEur(m.savedEur), fmtEur(m.wastedEur));
     col.innerHTML = `
       <div class="impact-chart-bars" title="${escapeHtml(tip)}">
         <div class="impact-bar impact-bar-saved" style="height:${m.savedEur > 0 ? savedH : 0}%"></div>

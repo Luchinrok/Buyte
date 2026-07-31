@@ -25,7 +25,7 @@
         <h1 class="launcher-title">Festuc</h1>
         <p class="launcher-subtitle" data-i18n="launcherSubtitle"></p>
       </div>
-      <button id="launcher-menu-btn" class="icon-btn icon-btn-fun" aria-label="Menú">
+      <button id="launcher-menu-btn" class="icon-btn icon-btn-fun" aria-label="Menú" data-i18n-aria="ariaMenu">
         <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
           <g class="gear-spin">
             <path d="M 16 2 L 18 2 L 18.6 5.5 C 19.7 5.8 20.7 6.2 21.6 6.7 L 24.5 4.7 L 25.9 6.1 L 27.3 7.5 L 25.3 10.4 C 25.8 11.3 26.2 12.3 26.5 13.4 L 30 14 L 30 16 L 30 18 L 26.5 18.6 C 26.2 19.7 25.8 20.7 25.3 21.6 L 27.3 24.5 L 25.9 25.9 L 24.5 27.3 L 21.6 25.3 C 20.7 25.8 19.7 26.2 18.6 26.5 L 18 30 L 16 30 L 14 30 L 13.4 26.5 C 12.3 26.2 11.3 25.8 10.4 25.3 L 7.5 27.3 L 6.1 25.9 L 4.7 24.5 L 6.7 21.6 C 6.2 20.7 5.8 19.7 5.5 18.6 L 2 18 L 2 16 L 2 14 L 5.5 13.4 C 5.8 12.3 6.2 11.3 6.7 10.4 L 4.7 7.5 L 6.1 6.1 L 7.5 4.7 L 10.4 6.7 C 11.3 6.2 12.3 5.8 13.4 5.5 L 14 2 Z" fill="currentColor"/>
@@ -851,7 +851,7 @@
       <label data-i18n="productName" for="input-popular-name"></label>
       <div class="name-emoji-row">
         <input type="text" id="input-popular-name" autocomplete="off">
-        <button type="button" class="emoji-button" id="btn-pick-popular-emoji" aria-label="Triar emoji">
+        <button type="button" class="emoji-button" id="btn-pick-popular-emoji" aria-label="Triar emoji" data-i18n-aria="chooseEmoji">
           <span class="emoji-button-current" id="popular-emoji-current">🥛</span>
         </button>
       </div>
@@ -891,7 +891,7 @@
       <div class="form-group">
         <div class="toggle-with-info">
           <label data-i18n="minStockLabel" for="input-popular-minstock"></label>
-          <button type="button" class="info-btn" id="popular-minstock-info" aria-label="Més informació">ℹ️</button>
+          <button type="button" class="info-btn" id="popular-minstock-info" aria-label="Més informació" data-i18n-aria="ariaMoreInfo">ℹ️</button>
         </div>
         <input type="number" id="input-popular-minstock" min="0" placeholder="0" inputmode="numeric">
         <p class="form-hint" data-i18n="minStockHintPopular"></p>
@@ -967,7 +967,7 @@
 
     <div class="form-group">
       <label for="input-category-name" data-i18n="catNameLabel"></label>
-      <input type="text" id="input-category-name" maxlength="30" autocomplete="off" placeholder="Ex: Sense gluten">
+      <input type="text" id="input-category-name" maxlength="30" autocomplete="off" placeholder="Ex: Sense gluten" data-i18n-placeholder="phCategoryExample">
     </div>
 
     <div class="form-group">
@@ -1057,7 +1057,7 @@
       <label data-i18n="productName" for="input-name"></label>
       <div class="name-emoji-row">
         <input type="text" id="input-name" autocomplete="off" data-i18n-placeholder="productNamePlaceholder">
-        <button type="button" class="emoji-button" id="btn-pick-emoji" aria-label="Triar emoji">
+        <button type="button" class="emoji-button" id="btn-pick-emoji" aria-label="Triar emoji" data-i18n-aria="chooseEmoji">
           <span class="emoji-button-current" id="emoji-button-current">🥛</span>
         </button>
       </div>
@@ -1094,7 +1094,7 @@
           <input type="checkbox" id="input-multi-lots">
           <span data-i18n="multiLotToggle"></span>
         </label>
-        <button type="button" class="info-btn" id="multi-lots-info" aria-label="Més informació">ℹ️</button>
+        <button type="button" class="info-btn" id="multi-lots-info" aria-label="Més informació" data-i18n-aria="ariaMoreInfo">ℹ️</button>
       </div>
     </div>
 
@@ -1578,12 +1578,12 @@
 
     <div class="form-group">
       <label data-i18n="itemName" for="input-special-item-name"></label>
-      <input type="text" id="input-special-item-name" placeholder="Iogurts, llet...">
+      <input type="text" id="input-special-item-name" placeholder="Iogurts, llet..." data-i18n-placeholder="phItemExample">
     </div>
 
     <div class="form-group">
       <label data-i18n="itemEmoji"></label>
-      <button type="button" class="emoji-button emoji-button-compact" id="btn-pick-special-item-emoji" aria-label="Triar emoji">
+      <button type="button" class="emoji-button emoji-button-compact" id="btn-pick-special-item-emoji" aria-label="Triar emoji" data-i18n-aria="chooseEmoji">
         <span class="emoji-button-current" id="special-item-emoji-current">🥛</span>
       </button>
     </div>
@@ -1737,7 +1737,7 @@
 
     <div class="form-group">
       <label data-i18n="supermarketEmoji"></label>
-      <button type="button" class="emoji-button emoji-button-compact" id="btn-pick-supermarket-emoji" aria-label="Triar emoji">
+      <button type="button" class="emoji-button emoji-button-compact" id="btn-pick-supermarket-emoji" aria-label="Triar emoji" data-i18n-aria="chooseEmoji">
         <span class="emoji-button-current" id="supermarket-emoji-current">🛒</span>
       </button>
     </div>
@@ -1762,8 +1762,8 @@
     <div class="form-group">
       <label data-i18n="itemName" for="input-shopping-name"></label>
       <div class="name-emoji-row">
-        <input type="text" id="input-shopping-name" placeholder="Iogurts, llet...">
-        <button type="button" class="emoji-button" id="btn-pick-shopping-emoji" aria-label="Triar icona">
+        <input type="text" id="input-shopping-name" placeholder="Iogurts, llet..." data-i18n-placeholder="phItemExample">
+        <button type="button" class="emoji-button" id="btn-pick-shopping-emoji" aria-label="Triar icona" data-i18n-aria="ariaPickIcon">
           <span class="emoji-button-current" id="shopping-emoji-current">🥛</span>
         </button>
       </div>
@@ -2199,7 +2199,7 @@
        Només una mode pot estar activa alhora; el botó Moure
        despatxa segons quina ho està (vegeu app.js). -->
   <div id="selection-toolbar" class="selection-toolbar" style="display:none">
-    <button type="button" class="selection-toolbar-cancel" id="btn-selection-cancel" aria-label="Cancel·lar">✕</button>
+    <button type="button" class="selection-toolbar-cancel" id="btn-selection-cancel" aria-label="Cancel·lar" data-i18n-aria="cancel">✕</button>
     <span class="selection-toolbar-count" id="selection-count">0</span>
     <button type="button" class="selection-toolbar-move" id="btn-selection-move">📦 <span data-i18n="moveSelected"></span></button>
     <!-- Compra ràpida en bloc: només visible quan ShoppingSelection és activa.
@@ -2217,7 +2217,7 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260619-1"></script>
   <script src="notifications.js?v=20260707-1"></script>
-  <script src="i18n.js?v=20260730-1"></script>
+  <script src="i18n.js?v=20260730-4"></script>
   <script src="js/core.js?v=20260610-2"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260723-1"></script>
@@ -2233,15 +2233,15 @@
   <script src="js/spaces.js?v=20260508-4"></script>
   <script src="js/spaces-ui.js?v=20260619-3"></script>
   <script src="js/modals.js?v=20260503-3"></script>
-  <script src="js/impact.js?v=20260611-1"></script>
+  <script src="js/impact.js?v=20260730-1"></script>
   <script src="js/expenses.js?v=20260722-2"></script>
   <script src="js/recipes-data.js?v=20260605-1"></script>
   <script src="js/cookme.js?v=20260724-1"></script>
   <script src="js/meal-planner.js?v=20260723-2"></script>
   <script src="js/badges-data.js?v=20260707-1"></script>
   <script src="js/gamification.js?v=20260710-1"></script>
-  <script src="js/patterns.js?v=20260707-1"></script>
-  <script src="js/smart-notifications.js?v=20260707-1"></script>
-  <script src="app.js?v=20260707-1"></script>
+  <script src="js/patterns.js?v=20260730-1"></script>
+  <script src="js/smart-notifications.js?v=20260730-1"></script>
+  <script src="app.js?v=20260730-1"></script>
 </body>
 </html>

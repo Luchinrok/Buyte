@@ -331,14 +331,11 @@ function analyzeFrequentlyTrashed(history) {
       type: 'frequentlyTrashed',
       priority: 'high',
       title: rec.emoji + ' ' + rec.name,
-      description: 'Has llençat ' + rec.name.toLowerCase() + ' ' + rec.count + ' cops aquest mes. '
-        + (rec.count >= 5
-            ? "Suggerim comprar-ne menys o avisar-te abans que caduqui."
-            : "Compra'n menys o adapta la quantitat."),
+      description: t('patFreqTrashedDesc', rec.name.toLowerCase(), rec.count),
       emoji: rec.emoji,
       showAsBanner: true,
       action: {
-        label: 'Activa avís 4 dies abans',
+        label: t('patFreqTrashedAction'),
         handler: 'patternEnableEarlyAlert',
         payload: { productName: rec.name }
       }
@@ -375,10 +372,10 @@ function analyzeLastMinuteConsume(history) {
       type: 'lastMinuteConsume',
       priority: 'high',
       title: rec.emoji + ' ' + rec.name,
-      description: "Sempre menges " + rec.name.toLowerCase() + " l'últim dia. Vols comprar-ne quantitats més petites?",
+      description: t('patLastMinuteDesc', rec.name.toLowerCase()),
       emoji: rec.emoji,
       action: {
-        label: 'Editar producte popular',
+        label: t('patLastMinuteAction'),
         handler: 'patternOpenPopularEditor',
         payload: { productName: rec.name }
       }
@@ -428,8 +425,8 @@ function analyzeSavingsTrend(history) {
       id: 'pattern-savingsTrend-up',
       type: 'savingsTrend',
       priority: 'info',
-      title: 'Has millorat un ' + diff + '%!',
-      description: 'Aquesta setmana has aprofitat un ' + diff + '% més de menjar que la setmana passada. Bona feina! 🎉',
+      title: t('patSavingsUpTitle', diff),
+      description: t('patSavingsUpDesc', diff),
       emoji: '🎉',
       action: null
     })];
@@ -440,8 +437,8 @@ function analyzeSavingsTrend(history) {
       id: 'pattern-savingsTrend-down',
       type: 'savingsTrend',
       priority: 'high',
-      title: 'Estem llençant un ' + drop + '% més',
-      description: "Aquesta setmana has llençat un " + drop + "% més que la setmana passada. Què ha passat? Revisa què tens a punt de caducar.",
+      title: t('patSavingsDownTitle', drop),
+      description: t('patSavingsDownDesc', drop),
       emoji: '⚠️',
       showAsBanner: true,
       action: null
@@ -466,10 +463,10 @@ function analyzeForgottenItems(shopping) {
       type: 'forgottenItems',
       priority: 'medium',
       title: (item.emoji || '🛒') + ' ' + (item.name || 'Item'),
-      description: "Tens " + (item.name || 'aquest item').toLowerCase() + " a Compra'm des de fa " + days + " dies sense comprar-lo. Vols treure'l?",
+      description: t('patForgottenDesc', (item.name || 'aquest item').toLowerCase(), days),
       emoji: item.emoji || '🛒',
       action: {
-        label: "Esborrar de Compra'm",
+        label: t('patForgottenAction'),
         handler: 'patternRemoveShoppingItem',
         payload: { itemId: item.id }
       }
@@ -483,8 +480,6 @@ function analyzeForgottenItems(shopping) {
 // i interval mediana ∈ [5, 10] dies suggereix compra setmanal. Usem el dia
 // de la setmana més freqüent com a etiqueta. (No tenim historial de compres
 // real — usem el de consum com a proxy.)
-const _CA_WEEKDAYS = ['diumenge', 'dilluns', 'dimarts', 'dimecres', 'dijous', 'divendres', 'dissabte'];
-
 function _median(arr) {
   if (!arr.length) return null;
   const s = arr.slice().sort((a, b) => a - b);
@@ -526,17 +521,17 @@ function analyzeWeeklyShopping(history /*, shopping */) {
     for (let i = 0; i < 7; i++) {
       if (weekdayCounts[i] > bestCount) { bestCount = weekdayCounts[i]; bestDay = i; }
     }
-    const dayLabel = _CA_WEEKDAYS[bestDay];
+    const dayLabel = t('patWeekdays')[bestDay];
     const id = 'pattern-weeklyShopping-' + rec.name.toLowerCase().trim().replace(/\s+/g, '-');
     out.push(_makeSuggestion({
       id,
       type: 'weeklyShopping',
       priority: 'medium',
       title: rec.emoji + ' ' + rec.name,
-      description: 'Cada ' + dayLabel + ' sembla que toca ' + rec.name.toLowerCase() + '. Vols un recordatori automàtic?',
+      description: t('patWeeklyShopDesc', dayLabel, rec.name.toLowerCase()),
       emoji: rec.emoji,
       action: {
-        label: 'Activa recordatori setmanal',
+        label: t('patWeeklyShopAction'),
         handler: 'patternEnableWeeklyReminder',
         payload: { productName: rec.name, dayOfWeek: bestDay }
       }
@@ -548,13 +543,6 @@ function analyzeWeeklyShopping(history /*, shopping */) {
 // 4. CATEGORIES PREFERIDES
 // Distribució per categoria d'emoji dels productes consumits l'última setmana.
 // Si una categoria és >70% del total, suggerim varietat.
-const _CA_CATEGORY_LABEL = {
-  dairy: 'lacti', redMeat: 'carn vermella', whiteMeat: 'carn blanca',
-  fish: 'peix', fruit: 'fruita', vegetable: 'verdura',
-  bread: 'pa', pasta: 'pasta', drinks: 'begudes',
-  sweets: 'dolços', canned: 'conserves', default: 'altres'
-};
-
 function analyzeCategoryBalance(history) {
   if (!Array.isArray(history)) history = _loadConsumptionHistorySafe();
   const cutoff = Date.now() - 7 * 86400000;
@@ -572,11 +560,12 @@ function analyzeCategoryBalance(history) {
   });
   if (total < 5) return [];
 
+  const catLabels = t('patCategoryLabels');
   const ranked = Object.keys(counts)
     .map(k => ({ cat: k, count: counts[k], pct: Math.round((counts[k] / total) * 100) }))
     .sort((a, b) => b.count - a.count);
   const summary = ranked.slice(0, 3)
-    .map(r => r.pct + '% ' + (_CA_CATEGORY_LABEL[r.cat] || r.cat))
+    .map(r => r.pct + '% ' + (catLabels[r.cat] || r.cat))
     .join(' · ');
 
   // Si la més gran té >70% suggerim equilibri; si no, només resum informatiu.
@@ -589,9 +578,8 @@ function analyzeCategoryBalance(history) {
       id: 'pattern-categoryBalance-skewed',
       type: 'categoryBalance',
       priority: 'info',
-      title: 'Aquesta setmana: ' + summary,
-      description: 'Has consumit principalment ' + (_CA_CATEGORY_LABEL[top.cat] || top.cat)
-        + '. Pots provar més ' + (_CA_CATEGORY_LABEL[missing] || missing) + '?',
+      title: t('patCategoryBalanceTitle', summary),
+      description: t('patCategoryBalanceSkewedDesc', catLabels[top.cat] || top.cat, catLabels[missing] || missing),
       emoji: '🥗',
       action: null
     })];
@@ -600,8 +588,8 @@ function analyzeCategoryBalance(history) {
     id: 'pattern-categoryBalance-summary',
     type: 'categoryBalance',
     priority: 'info',
-    title: 'Aquesta setmana: ' + summary,
-    description: 'Bona variació al teu plat aquesta setmana 👌',
+    title: t('patCategoryBalanceTitle', summary),
+    description: t('patCategoryBalanceOkDesc'),
     emoji: '🥗',
     action: null
   })];
@@ -632,11 +620,11 @@ function analyzeActiveHours(/* activity */) {
     id: 'pattern-activeHours-' + bestHour,
     type: 'activeHours',
     priority: 'low',
-    title: '⏰ Hora preferida: ' + hh + ':00',
-    description: "Veig que sempre obres l'app cap a les " + hh + 'h. Adaptem les notificacions a aquesta hora?',
+    title: t('patActiveHoursTitle', hh),
+    description: t('patActiveHoursDesc', hh),
     emoji: '⏰',
     action: {
-      label: 'Sí, adaptar',
+      label: t('patActiveHoursAction'),
       handler: 'patternAdaptNotifHours',
       payload: { hour: bestHour }
     }
@@ -671,10 +659,10 @@ function analyzeFavoriteRecipes(/* recipeUsage */) {
     type: 'favoriteRecipes',
     priority: 'low',
     title: (best.r.emoji || '🍽️') + ' ' + (best.r.name || ''),
-    description: "Sembla que t'agrada " + (best.r.name || '') + ". Ara mateix tens els ingredients per fer-la!",
+    description: t('patFavRecipeDesc', best.r.name || ''),
     emoji: best.r.emoji || '🍽️',
     action: {
-      label: 'Veure recepta',
+      label: t('patFavRecipeAction'),
       handler: 'patternOpenRecipe',
       payload: { recipeId: best.r.id }
     }
@@ -686,14 +674,14 @@ function analyzeFavoriteRecipes(/* recipeUsage */) {
 // La pantalla de Suggeriments farà: resolvePatternHandler(action.handler)(action.payload, suggestion).
 
 function patternEnableEarlyAlert(/* payload */) {
-  if (typeof showToast === 'function') showToast('🔔 Avís activat (pendent FASE 7)');
+  if (typeof showToast === 'function') showToast(t('patToastAlertOn'));
 }
 
 function patternOpenPopularEditor(payload) {
   if (typeof openPopular === 'function') {
     openPopular('add');
   } else if (typeof showToast === 'function') {
-    showToast('⚙️ Edita "' + (payload && payload.productName || '') + '" als populars');
+    showToast(t('patToastEditPopular', payload && payload.productName || ''));
   }
 }
 
@@ -705,14 +693,14 @@ function patternRemoveShoppingItem(payload) {
   shoppingItems.splice(idx, 1);
   if (typeof saveShoppingData === 'function') saveShoppingData();
   if (typeof renderShoppingItems === 'function') renderShoppingItems();
-  if (typeof showToast === 'function') showToast("🗑️ Tret de Compra'm");
+  if (typeof showToast === 'function') showToast(t('patToastRemovedBuyme'));
 }
 
 function patternEnableWeeklyReminder(/* payload */) {
   // Recordatori per producte: encara no tenim infraestructura per a custom
   // reminders. Per ara confirmem la intenció — quan tinguem el sistema de
   // recordatoris personalitzats, aquí es crearà l'entrada.
-  if (typeof showToast === 'function') showToast('📅 Recordatori setmanal anotat');
+  if (typeof showToast === 'function') showToast(t('patToastWeeklyReminder'));
 }
 
 function patternAdaptNotifHours(payload) {
@@ -724,7 +712,7 @@ function patternAdaptNotifHours(payload) {
   });
   if (typeof showToast === 'function') {
     const hh = String(payload.hour).padStart(2, '0');
-    showToast('⏰ Notificacions ajustades a les ' + hh + ':00');
+    showToast(t('patToastNotifAdjusted', hh));
   }
 }
 
