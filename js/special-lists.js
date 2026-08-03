@@ -264,7 +264,7 @@ function renderSpecialDetail() {
     if (specialListItemMode === 'edit') {
       row.style.gridTemplateColumns = 'auto 1fr 80px auto';
       row.innerHTML = '<span class="special-item-emoji">' + item.emoji + '</span>'
-        + '<span class="special-item-name">' + escapeHtml(item.name) + '</span>'
+        + '<span class="special-item-name">' + escapeHtml(productDisplayName(item.name)) + '</span>'
         + '<input type="text" class="special-qty-input" placeholder="' + (t('quantity') || 'Qty') + '" value="' + escapeHtml(item.qty || '') + '" maxlength="15">'
         + '<button class="popular-delete-btn">✕</button>';
       row.querySelector('.special-qty-input').addEventListener('input', (e) => {
@@ -278,7 +278,7 @@ function renderSpecialDetail() {
       });
     } else {
       row.innerHTML = '<span class="special-item-emoji">' + item.emoji + '</span>'
-        + '<span class="special-item-name">' + formatProductLine(item.name, item.qty) + '</span>';
+        + '<span class="special-item-name">' + formatProductLine(productDisplayName(item.name), item.qty) + '</span>';
     }
     container.appendChild(row);
   });
@@ -357,7 +357,7 @@ function showSpecialSelectionStep() {
         <span class="checkmark"></span>
       </label>
       <span class="special-item-emoji">${it.emoji}</span>
-      <span class="special-item-name">${escapeHtml(it.name)}</span>
+      <span class="special-item-name">${escapeHtml(productDisplayName(it.name))}</span>
       <input type="text" class="special-qty-input" data-idx="${idx}" placeholder="${t('quantity') || 'Qty'}" value="${escapeHtml(it.qty || '')}" maxlength="15">
     </div>
   `).join('');

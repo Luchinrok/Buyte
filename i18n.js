@@ -1369,6 +1369,13 @@ const TRANSLATIONS = {
   // Pas 3 — traducció per blocs. Les claus que falten cauen a `ca` via el
   // fallback de t(). Bloc Menja'm/BiteMe traduït (ES/EN/FR).
   es: {
+    // ===== Noms de llista especial (Pas 4, bloc 2) =====
+    listBBQ: 'Barbacoa',
+    listBirthday: 'Cumpleaños',
+    listBreakfast: 'Desayuno',
+    listCalcotada: 'Calçotada',
+    listPasta: 'Noche de pasta',
+    listPicnic: 'Pícnic',
     // ===== Categories d'insígnia (Pas 4, bloc 1) =====
     badgeCat_inici: 'Inicio',
     badgeCat_constancia: 'Constancia',
@@ -2705,6 +2712,13 @@ const TRANSLATIONS = {
   },
 
   en: {
+    // ===== Noms de llista especial (Pas 4, bloc 2) =====
+    listBBQ: 'Barbecue',
+    listBirthday: 'Birthday',
+    listBreakfast: 'Breakfast',
+    listCalcotada: 'Calçotada',
+    listPasta: 'Pasta night',
+    listPicnic: 'Picnic',
     // ===== Categories d'insígnia (Pas 4, bloc 1) =====
     badgeCat_inici: 'Start',
     badgeCat_constancia: 'Consistency',
@@ -4041,6 +4055,13 @@ const TRANSLATIONS = {
   },
 
   fr: {
+    // ===== Noms de llista especial (Pas 4, bloc 2) =====
+    listBBQ: 'Barbecue',
+    listBirthday: 'Anniversaire',
+    listBreakfast: 'Petit-déjeuner',
+    listCalcotada: 'Calçotada',
+    listPasta: 'Soirée pâtes',
+    listPicnic: 'Pique-nique',
     // ===== Categories d'insígnia (Pas 4, bloc 1) =====
     badgeCat_inici: 'Début',
     badgeCat_constancia: 'Régularité',
