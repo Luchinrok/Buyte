@@ -658,7 +658,7 @@ function openCookConsumeModal() {
   overlay.innerHTML =
     '<div class="modal-content">'
     + '<p class="modal-title">' + escapeHtml(t('haveCookedBtn')) + '</p>'
-    + '<p class="modal-sub">' + escapeHtml(recipe.name || '') + ' · ' + currentServings + ' ' + escapeHtml(peopleLabel) + '</p>'
+    + '<p class="modal-sub">' + escapeHtml(recipeName(recipe)) + ' · ' + currentServings + ' ' + escapeHtml(peopleLabel) + '</p>'
     + '<div class="cook-rows">' + okHtml + '</div>'
     + infoHtml
     + '<div class="modal-buttons">'
@@ -1062,7 +1062,7 @@ function buildCookMeCard(r) {
     editedBadge +
     '<div class="cookme-card-emoji">' + (r.recipe.emoji || '🍽️') + '</div>' +
     '<div class="cookme-card-body">' +
-      '<p class="cookme-card-title">' + escapeHtml(r.recipe.name || '') + customTag + '</p>' +
+      '<p class="cookme-card-title">' + escapeHtml(recipeName(r.recipe)) + customTag + '</p>' +
       '<p class="cookme-card-meta">⏱️ ' + (r.recipe.time || 0) + ' ' + escapeHtml(t('minutes')) +
         ' · 🍴 ' + (r.recipe.servings || 1) + ' ' + escapeHtml(peopleLabel) + '</p>' +
       badgeHtml +
@@ -1113,6 +1113,28 @@ function cookmeCapitalize(s) {
   const str = String(s);
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+// ── Display-only de receptes (Pas 4). Claus 'recipe_<id>_name/_steps/_tip' a
+// i18n.js; fallback al text real de recipes-data.js. PUR: ids intactes, res
+// persistit tocat. Receptes custom (sense clau) → text de l'usuari tal qual.
+function recipeName(recipe) {
+  if (!recipe || !recipe.id) return (recipe && recipe.name) || '';
+  const k = 'recipe_' + recipe.id + '_name';
+  const v = t(k);
+  return (v === k) ? (recipe.name || '') : v;
+}
+function recipeSteps(recipe) {
+  if (!recipe || !recipe.id) return (recipe && recipe.steps) || [];
+  const v = t('recipe_' + recipe.id + '_steps');
+  return Array.isArray(v) ? v : (recipe.steps || []);
+}
+function recipeTip(recipe) {
+  if (!recipe || !recipe.id) return (recipe && recipe.tip) || '';
+  const k = 'recipe_' + recipe.id + '_tip';
+  const v = t(k);
+  return (v === k) ? (recipe.tip || '') : v;
+}
+if (typeof window !== 'undefined') { window.recipeName = recipeName; window.recipeSteps = recipeSteps; window.recipeTip = recipeTip; }
 
 // Format compacte: enter si està prou a prop, si no 1 decimal amb coma.
 function cookmeFormatNumber(n) {
@@ -1188,13 +1210,13 @@ function renderRecipeDetail() {
 
   // Capçalera + hero
   const titleEl = document.getElementById('recipe-detail-title');
-  if (titleEl) titleEl.textContent = recipe.name || '';
+  if (titleEl) titleEl.textContent = recipeName(recipe);
 
   const emojiEl = document.getElementById('recipe-hero-emoji');
   if (emojiEl) emojiEl.textContent = recipe.emoji || '🍽️';
 
   const nameEl = document.getElementById('recipe-hero-name');
-  if (nameEl) nameEl.textContent = recipe.name || '';
+  if (nameEl) nameEl.textContent = recipeName(recipe);
 
   const diffKey = recipe.difficulty === 'fàcil' ? 'easyDiff'
     : recipe.difficulty === 'mitjana' ? 'mediumDiff'
@@ -1269,7 +1291,7 @@ function renderRecipeDetail() {
   const stepsEl = document.getElementById('recipe-steps-list');
   if (stepsEl) {
     stepsEl.innerHTML = '';
-    (recipe.steps || []).forEach((step, idx) => {
+    recipeSteps(recipe).forEach((step, idx) => {
       const li = document.createElement('li');
       li.className = 'recipe-step';
       li.innerHTML =
@@ -1283,8 +1305,9 @@ function renderRecipeDetail() {
   const tipBox = document.getElementById('recipe-tip');
   const tipText = document.getElementById('recipe-tip-text');
   if (tipBox && tipText) {
-    if (recipe.tip) {
-      tipText.textContent = recipe.tip;
+    const _tip = recipeTip(recipe);
+    if (_tip) {
+      tipText.textContent = _tip;
       tipBox.style.display = 'flex';
     } else {
       tipBox.style.display = 'none';
@@ -1387,7 +1410,7 @@ function showIngredientPicker(recipe, supers, opts) {
     '<div class="modal-content modal-content-tall">' +
       '<div class="modal-emoji-big">🛒</div>' +
       '<p class="modal-title">' + escapeHtml(opts.title || t('selectAllToBuy')) + '</p>' +
-      ((recipe && recipe.name) ? '<p class="modal-sub">' + escapeHtml(recipe.name) + '</p>' : '') +
+      ((recipe && recipe.name) ? '<p class="modal-sub">' + escapeHtml(recipeName(recipe)) + '</p>' : '') +
       '<div class="ingredient-pick-list">' + ingHtml + '</div>' +
       '<p class="modal-section-label">' + escapeHtml(t('whichSuper')) + '</p>' +
       supersHtml +
