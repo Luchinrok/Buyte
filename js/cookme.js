@@ -612,7 +612,7 @@ function openCookConsumeModal() {
     const em = ing.emoji ? (ing.emoji + ' ') : '';
     okHtml += '<label class="cook-row" data-idx="' + idx + '">'
       + '<input type="checkbox" class="cook-row-check" checked>'
-      + '<span class="cook-row-name">' + em + escapeHtml(cookmeCapitalize(ing.name || '')) + '</span>'
+      + '<span class="cook-row-name">' + em + escapeHtml(cookmeIngredientDisplay(ing.name)) + '</span>'
       + '<input type="number" class="cook-row-amount" value="' + numVal(r.amount) + '" step="any" min="0" inputmode="decimal">'
       + '<span class="cook-row-unit">' + escapeHtml(r.unit || '') + '</span>'
       + '</label>';
@@ -627,7 +627,7 @@ function openCookConsumeModal() {
     infoRows.forEach(r => {
       const ing = r.ingredient || {};
       const em = ing.emoji ? (ing.emoji + ' ') : '';
-      lis += '<li>' + em + escapeHtml(cookmeCapitalize(ing.name || ''))
+      lis += '<li>' + em + escapeHtml(cookmeIngredientDisplay(ing.name))
         + ' <span class="cook-info-reason">— ' + escapeHtml(reason(r.status)) + '</span></li>';
     });
     infoHtml = '<p class="modal-sub cook-info-title">' + escapeHtml(t('cookNotDiscounted')) + '</p>'
@@ -828,16 +828,7 @@ function renderCookMe() {
     if (!lists.length) return;
 
     let filtered = _filterRecipesForTab(results, filter);
-    if (q) {
-      filtered = filtered.filter(r => {
-        if (cookmeNormalize(r.recipe.name).includes(q)) return true;
-        const ings = r.recipe.ingredients || [];
-        for (let i = 0; i < ings.length; i++) {
-          if (cookmeNormalize(ings[i].name).includes(q)) return true;
-        }
-        return false;
-      });
-    }
+    if (q) filtered = filtered.filter(r => _recipeMatchesSearch(r.recipe, q));
     if (cookmeProductFilter) {
       filtered = filtered.filter(r => _ingredientsMatchProductFilter(r.recipe.ingredients, cookmeProductFilter));
     }
@@ -871,6 +862,32 @@ function renderCookMe() {
   });
 
   _updateCookMeProductFilterChip();
+}
+
+// Cerca multi-idioma (substring, SENSE stemming): la consulta `q` ja ve
+// normalitzada amb cookmeNormalize (minúscules, sense accents). Casa contra:
+//  (a) el nom de la recepta en l'idioma actiu (recipeName, Pas 4) i el ca
+//      original (perquè escriure en català segueixi funcionant);
+//  (b) per cada ingredient, els noms resolts pel catàleg en TOTS els idiomes
+//      (popularSearchNames, que ja inclou el name cru + tots els idiomes de
+//      l'entrada si catalogEntryForName la resol) + el name cru com a fallback.
+// Així "atún" (app en ES) troba la recepta d'ingredient "tonyina".
+function _recipeMatchesSearch(recipe, q) {
+  if (!recipe) return false;
+  if (cookmeNormalize(recipeName(recipe)).includes(q)) return true;   // idioma actiu
+  if (cookmeNormalize(recipe.name || '').includes(q)) return true;    // ca original
+  const ings = recipe.ingredients || [];
+  for (let i = 0; i < ings.length; i++) {
+    const nm = (ings[i] && ings[i].name) || '';
+    if (nm && cookmeNormalize(nm).includes(q)) return true;           // fallback (name cru)
+    if (typeof popularSearchNames === 'function') {
+      const names = popularSearchNames({ name: nm });                 // tots els idiomes del catàleg
+      for (let j = 0; j < names.length; j++) {
+        if (cookmeNormalize(names[j]).includes(q)) return true;
+      }
+    }
+  }
+  return false;
 }
 
 // Aplica el filtre del filtre indicat a la llista pre-calculada de
@@ -1009,7 +1026,7 @@ function buildCookMeCard(r) {
   } else {
     const missingNames = r.missing.slice(0, 3).map(i => {
       const em = i.emoji ? (i.emoji + ' ') : '';
-      return em + escapeHtml(cookmeCapitalize(i.name || ''));
+      return em + escapeHtml(cookmeIngredientDisplay(i.name));
     }).join(', ');
     const more = r.missing.length > 3 ? ' +' + (r.missing.length - 3) : '';
     const cls = r.canMake ? 'cookme-badge-soft' : 'cookme-badge-missing';
@@ -1093,6 +1110,16 @@ function cookmeCapitalize(s) {
   if (!s) return '';
   const str = String(s);
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// Nom d'ingredient a MOSTRAR en l'idioma actiu (display-only): resol el nom cru
+// pel catàleg (productDisplayName) i capitalitza. Fallback al name tal qual si no
+// casa (ingredient d'usuari) o si el helper no està carregat. NO toca res
+// persistit ni el name de la recepta — només el text pintat.
+function cookmeIngredientDisplay(name) {
+  const d = (typeof window !== 'undefined' && window.productDisplayName)
+    ? window.productDisplayName(name) : name;
+  return cookmeCapitalize(d || '');
 }
 
 // ── Display-only de receptes (Pas 4). Claus 'recipe_<id>_name/_steps/_tip' a
@@ -1234,7 +1261,7 @@ function renderRecipeDetail() {
       row.innerHTML =
         '<span class="recipe-ingredient-icon">' + checkIcon + '</span>' +
         '<span class="recipe-ingredient-emoji">' + (ing.emoji || '') + '</span>' +
-        '<span class="recipe-ingredient-name">' + escapeHtml(cookmeCapitalize(ing.name || '')) + '</span>' +
+        '<span class="recipe-ingredient-name">' + escapeHtml(cookmeIngredientDisplay(ing.name)) + '</span>' +
         qty;
       ingList.appendChild(row);
     });
@@ -1359,7 +1386,7 @@ function showIngredientPicker(recipe, supers, opts) {
     return '<label class="ingredient-pick-row ' + (has ? 'have' : 'missing') + (isChecked ? ' checked' : '') + '" data-idx="' + idx + '">' +
       '<input type="checkbox" class="ingredient-pick-cb"' + (isChecked ? ' checked' : '') + '>' +
       '<span class="ingredient-pick-emoji">' + (ing.emoji || '') + '</span>' +
-      '<span class="ingredient-pick-name">' + escapeHtml(cookmeCapitalize(ing.name || '')) + '</span>' +
+      '<span class="ingredient-pick-name">' + escapeHtml(cookmeIngredientDisplay(ing.name)) + '</span>' +
       qtyHtml +
       '</label>';
   }).join('');

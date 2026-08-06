@@ -1377,15 +1377,21 @@
 
   <!-- PANTALLA BENVINGUDA (primer cop) -->
   <div id="screen-welcome" class="screen">
-    <!-- Selector d'idioma discret (cantonada superior dreta). El pinta
-         renderWelcomeLangSwitch() (shops.js). Per defecte mostra el detectat
-         del navegador; en triar-ne un, setLanguage() re-tradueix l'onboarding
-         a l'instant sense perdre el país destacat. -->
-    <div class="welcome-lang-switch" id="welcome-lang-switch"></div>
     <div class="welcome-content">
       <div class="welcome-emoji">👋</div>
       <h1 class="welcome-title">Festuc</h1>
       <p class="welcome-subtitle" data-i18n="welcomeSubtitle"></p>
+
+      <!-- Idioma: mateixa prominència visual que el país. Reutilitza el
+           selector de Configuració (renderLangListInto → .lang-item) via
+           renderWelcomeLangList() (shops.js). Precarregat amb l'idioma
+           detectat del navegador (_resolveLang); en triar-ne un, setLanguage()
+           re-tradueix la resta de l'onboarding a l'instant sense perdre el
+           país destacat. -->
+      <p class="welcome-question" data-i18n="welcomeLangQuestion"></p>
+      <div class="lang-list welcome-lang-list" id="welcome-lang-list">
+        <!-- Es genera dinàmicament (renderLangListInto) -->
+      </div>
 
       <p class="welcome-question" data-i18n="welcomeCountryQuestion"></p>
 
@@ -2217,18 +2223,18 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260619-1"></script>
   <script src="notifications.js?v=20260707-1"></script>
-  <script src="i18n.js?v=20260805-2"></script>
+  <script src="i18n.js?v=20260806-1"></script>
   <script src="js/core.js?v=20260806-2"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260806-1"></script>
-  <script src="js/shops.js?v=20260503-3"></script>
+  <script src="js/shops.js?v=20260806-1"></script>
   <script src="js/buyme.js?v=20260723-1"></script>
   <script src="js/populars.js?v=20260806-2"></script>
   <script src="js/categories.js?v=20260714-1"></script>
   <script src="js/purchase-history.js?v=20260706-2"></script>
   <script src="js/recent-purchases.js?v=20260715-1"></script>
   <script src="js/special-lists.js?v=20260803-1"></script>
-  <script src="js/settings.js?v=20260728-1"></script>
+  <script src="js/settings.js?v=20260806-1"></script>
   <script src="js/backup.js?v=20260508-2"></script>
   <script src="js/spaces.js?v=20260508-4"></script>
   <script src="js/spaces-ui.js?v=20260619-3"></script>

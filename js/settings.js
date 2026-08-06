@@ -2984,7 +2984,7 @@ function _rerenderActiveScreen() {
       // el país destacat.
       case 'screen-welcome':
         call('renderWelcomeCountryList');
-        call('renderWelcomeLangSwitch');
+        call('renderWelcomeLangList');
         break;
       // screen-language, screen-settings*, etc.: coberts per data-i18n.
       default: break;
