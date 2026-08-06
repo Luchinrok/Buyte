@@ -154,6 +154,27 @@ function catalogEntryForName(name) {
 }
 if (typeof window !== 'undefined') window.catalogEntryForName = catalogEntryForName;
 
+// Índex slug → entrada de catàleg (Fase 2, sub-pas 1). El slug és el camp
+// estable i immutable de POPULAR_PRODUCTS (core.js), a diferència del `pop-N`
+// (posició d'array). Memoïtzat un cop; el catàleg és constant. Cap consumidor
+// encara — additiu, no canvia cap comportament.
+let _popularSlugIndexCache = null;
+function buildPopularSlugIndex() {
+  if (_popularSlugIndexCache) return _popularSlugIndexCache;
+  const idx = Object.create(null);
+  POPULAR_PRODUCTS.forEach(p => {
+    if (p && typeof p.slug === 'string' && p.slug && !(p.slug in idx)) idx[p.slug] = p;
+  });
+  _popularSlugIndexCache = idx;
+  return idx;
+}
+// Resol un slug a la seva entrada de catàleg. null si no existeix.
+function catalogEntryForSlug(slug) {
+  if (typeof slug !== 'string' || !slug) return null;
+  return buildPopularSlugIndex()[slug] || null;
+}
+if (typeof window !== 'undefined') window.catalogEntryForSlug = catalogEntryForSlug;
+
 // Entrada de catàleg d'un PRODUCTE del rebost: 1) popularId 'pop-N' → catàleg[N];
 // 2) name → índex tolerant; 3) null (text lliure d'usuari). Independent d'idioma.
 function productCatalogEntry(p) {
