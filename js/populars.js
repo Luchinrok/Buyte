@@ -11,17 +11,70 @@
 // indexant TOTS els noms en TOTS els idiomes per cada producte. Així podem
 // trobar la zona canònica encara que la cache vingui en un altre idioma.
 let _popularNameIndexCache = null;
+let _popularIndexCollisions = null;
+let _popularWeakOnlyKeys = null;
+// Nuclis que canvien de significat quan se separen del qualificador: no s'han
+// de registrar mai com a clau feble. 'noix' = nucli de "Noix de coco" (coco),
+// però "Noix" tot sol en francès són NOUS → un producte francès "Noix"
+// resoldria erròniament a Coco (display i matcher). Ampliar aquesta llista si
+// afegim idiomes/entrades amb el mateix problema.
+const WEAK_KEY_BLOCKLIST = new Set(['noix']);
 function buildPopularNameIndex() {
-  // POPULAR_PRODUCTS és un catàleg constant → memoïtzem l'índex una sola vegada
-  // per sessió (abans es reconstruïa per render; ara els display sites poden
-  // cridar productDisplayName sense passar índex sense cost per fila).
+  // Catàleg constant → memoïtzem un cop. Índex TOLERANT: per cada entrada
+  // registra, per força (2=forta: nom lowercased/normalitzat/join de tokens;
+  // 1=feble: token solt = paraula significativa d'un compost o stem sing/plural),
+  // les claus de TOTS els idiomes. Si dues entrades reclamen la mateixa clau a
+  // la força màxima → forat (mai un match erroni). Resol via catalogEntryForName.
   if (_popularNameIndexCache) return _popularNameIndexCache;
-  const idx = {};
-  const langs = ['ca','es','en','fr','it','de','pt','nl','ja','zh','ko'];
+  // Només els 4 idiomes de l'app (SUPPORTED_LANGS). Els altres 7 no s'usen ni
+  // al display ni al match i només generarien forats (p. ex. pt 'Massa' de
+  // Pasta xocava amb ca 'Massa'). popularSearchNames segueix llegint els 11
+  // idiomes de l'ENTRADA resolta (no de les claus), així la cerca no pateix.
+  const langs = ['ca','es','en','fr'];
+  const norm = (typeof cookmeNormalize === 'function') ? cookmeNormalize : (s => String(s || '').toLowerCase().trim());
+  const toks = (typeof cookmeCanonTokens === 'function') ? cookmeCanonTokens : null;
+  const claims = Object.create(null);
+  const add = (key, entry, str) => {
+    if (!key) return;
+    let c = claims[key]; if (!c) c = claims[key] = { s2: new Set(), s1: new Set() };
+    c[str === 2 ? 's2' : 's1'].add(entry);
+  };
   POPULAR_PRODUCTS.forEach(p => {
     langs.forEach(lg => {
-      if (p[lg]) idx[p[lg].toLowerCase()] = p;
+      const v = p[lg];
+      if (typeof v !== 'string' || !v) return;
+      add(v.toLowerCase(), p, 2);   // clau raw (retrocompat)
+      add(norm(v), p, 2);           // normalitzada (sense accents)
+      if (toks) {
+        const T = toks(v);
+        if (T.length) add(T.slice().sort().join(' '), p, 2);  // join canònic (força forta)
+      }
+      // Clau FEBLE només per al nucli d'un compost amb connectiu ("Oli d'oliva"
+      // → 'oli'). Els noms nom+adjectiu ("Crema catalana", "Peix fresc", "Salsa
+      // romesco") no tenen connectiu → cap clau feble → no capturen un "Salsa"
+      // o "Crema" genèric de l'usuari. Els noms d'una sola paraula ja resolen
+      // per la clau forta de join (el join d'un token és el seu propi stem).
+      if (typeof cookmeNucleusTokens === 'function') {
+        cookmeNucleusTokens(v).forEach(tk => { if (!WEAK_KEY_BLOCKLIST.has(tk)) add(tk, p, 1); });
+      }
     });
+  });
+  const idx = Object.create(null);
+  _popularIndexCollisions = [];
+  _popularWeakOnlyKeys = [];
+  const labelOf = e => e.ca || e.en || e.es || '?';
+  Object.keys(claims).forEach(key => {
+    const c = claims[key];
+    const top = c.s2.size ? c.s2 : c.s1;
+    if (top.size === 1) {
+      const entry = top.values().next().value;
+      idx[key] = entry;
+      // Clau resolta NOMÉS per força feble (cap reclamant fort): assignada en
+      // silenci; potencial match erroni (p. ex. 'crem' ← Crema catalana).
+      if (c.s2.size === 0) _popularWeakOnlyKeys.push({ key: key, entry: labelOf(entry) });
+    } else {
+      _popularIndexCollisions.push({ key: key, entries: Array.from(top).map(labelOf) });
+    }
   });
   _popularNameIndexCache = idx;
   return idx;
@@ -41,8 +94,7 @@ function buildPopularNameIndex() {
 // buildPopularNameIndex) per memoïtzar-lo un cop per render i no per fila.
 function popularDisplayName(entry, nameIndex) {
   if (!entry || typeof entry.name !== 'string') return (entry && entry.name) || '';
-  const idx = nameIndex || buildPopularNameIndex();
-  const canon = idx[entry.name.toLowerCase()];
+  const canon = catalogEntryForName(entry.name);   // resolució tolerant (idioma/sing-plural/compost)
   if (!canon) return entry.name;   // nom d'usuari (no és del catàleg) → tal qual
   const lang = (typeof getCurrentLang === 'function') ? getCurrentLang() : 'ca';
   return canon[lang] || canon.en || canon.ca || canon.es || entry.name;
@@ -62,7 +114,7 @@ function popularSearchNames(entry, nameIndex) {
   const disp = popularDisplayName(entry, nameIndex);
   if (disp && disp !== (entry && entry.name)) out.push(disp);
   const canon = (entry && typeof entry.name === 'string')
-    ? (nameIndex || buildPopularNameIndex())[entry.name.toLowerCase()] : null;
+    ? catalogEntryForName(entry.name) : null;
   if (canon) {
     ['ca','es','en','fr','it','de','pt','nl','ja','zh','ko'].forEach(lg => {
       if (typeof canon[lg] === 'string') out.push(canon[lg]);
@@ -81,6 +133,79 @@ function productDisplayName(name, nameIndex) {
   return popularDisplayName({ name: name }, nameIndex);
 }
 if (typeof window !== 'undefined') window.productDisplayName = productDisplayName;
+
+// Resol un NOM (string) a la seva entrada de catàleg (POPULAR_PRODUCTS) de forma
+// tolerant: normalitzat exacte → join de tokens → token únic. null si no casa.
+function catalogEntryForName(name) {
+  if (typeof name !== 'string' || !name) return null;
+  const idx = buildPopularNameIndex();
+  const norm = (typeof cookmeNormalize === 'function') ? cookmeNormalize : (s => String(s || '').toLowerCase().trim());
+  const nk = norm(name);
+  if (idx[nk]) return idx[nk];
+  if (typeof cookmeCanonTokens === 'function') {
+    const T = cookmeCanonTokens(name);
+    if (T.length) {
+      const join = T.slice().sort().join(' ');
+      if (idx[join]) return idx[join];
+      if (T.length === 1 && idx[T[0]]) return idx[T[0]];
+    }
+  }
+  return null;
+}
+if (typeof window !== 'undefined') window.catalogEntryForName = catalogEntryForName;
+
+// Entrada de catàleg d'un PRODUCTE del rebost: 1) popularId 'pop-N' → catàleg[N];
+// 2) name → índex tolerant; 3) null (text lliure d'usuari). Independent d'idioma.
+function productCatalogEntry(p) {
+  if (!p) return null;
+  const pid = p.popularId;
+  if (typeof pid === 'string') {
+    const m = pid.match(/^pop-(\d+)$/);
+    if (m) {
+      const e = POPULAR_PRODUCTS[+m[1]];
+      if (e) {
+        // Guarda: pop-N és una POSICIÓ D'ARRAY; una inserció futura al catàleg
+        // desplaçaria tots els popularId desats. Verifica que el name resolgui a
+        // la MATEIXA entrada (per l'índex, qualsevol dels 4 idiomes); si no,
+        // ignora el popularId i cau al nom (evita mostrar un altre producte).
+        const byName = (typeof p.name === 'string' && p.name) ? catalogEntryForName(p.name) : null;
+        if (byName && byName === e) return e;
+        if (byName && byName !== e && typeof console !== 'undefined' && console.warn) {
+          console.warn('[productCatalogEntry] popularId incoherent', { popularId: pid, name: p.name });
+        }
+        // byName null (name no resol) o incoherent → no confiïs en popularId.
+      }
+    }
+  }
+  if (typeof p.name === 'string') { const e = catalogEntryForName(p.name); if (e) return e; }
+  return null;
+}
+if (typeof window !== 'undefined') window.productCatalogEntry = productCatalogEntry;
+
+// Nom CANÒNIC ca del catàleg per a un producte (o el name cru si no resol).
+// Clau d'identitat independent d'idioma per al matcher de receptes.
+function productCanonicalCa(p) {
+  const e = productCatalogEntry(p);
+  return (e && typeof e.ca === 'string') ? e.ca : ((p && p.name) || '');
+}
+if (typeof window !== 'undefined') window.productCanonicalCa = productCanonicalCa;
+
+// Display d'un PRODUCTE del rebost en l'idioma actiu, resolent primer per
+// popularId i després per name (tolerant). Display-only: no toca res persistit.
+function productDisplayNameFor(p) {
+  const e = productCatalogEntry(p);
+  if (e) {
+    const lang = (typeof getCurrentLang === 'function') ? getCurrentLang() : 'ca';
+    return e[lang] || e.en || e.ca || e.es || (p && p.name) || '';
+  }
+  return (p && p.name) || '';
+}
+if (typeof window !== 'undefined') window.productDisplayNameFor = productDisplayNameFor;
+
+// Diagnòstic (console): col·lisions de l'índex (claus descartades per ambigüitat).
+if (typeof window !== 'undefined') window.getPopularIndexCollisions = () => (buildPopularNameIndex(), _popularIndexCollisions || []);
+// Diagnòstic: claus resoltes NOMÉS per força feble (sense cap reclamant fort).
+if (typeof window !== 'undefined') window.getPopularWeakOnlyKeys = () => (buildPopularNameIndex(), _popularWeakOnlyKeys || []);
 
 // Resol l'entrada de popular (getPopularProducts) el nom de la qual casa amb
 // `name` en QUALSEVOL idioma del catàleg (o el name persistit). Lookup pur per
@@ -136,7 +261,7 @@ function getPopularProducts() {
       let migrated = false;
       custom.forEach(it => {
         if (!it || !it.name) return;
-        const canon = canonicalByName[it.name.toLowerCase()];
+        const canon = catalogEntryForName(it.name);
         if (canon && canon.location && it.location !== canon.location) {
           it.location = canon.location;
           migrated = true;

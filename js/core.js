@@ -55,108 +55,181 @@ const POPULAR_PRODUCTS = [
   // `days`, perquè el formulari d'edició assigna `days:7` per defecte
   // quan no en troba — la migració v3 a categories.js neteja el cache
   // d'usuaris que poden tenir aquesta combinació inconsistent).
-  { ca: 'Embotit', en: 'Cold cuts', emoji: '🥓', days: 7, location: 'fridge', price: 2.50, weight: '200g' },
-  { ca: 'Fruita', en: 'Fruit', emoji: '🍎', days: 7, location: 'fruit_bowl', price: 1.50, weight: '1kg' },
-  { ca: 'Suc', en: 'Juice', emoji: '🧃', days: 10, location: 'pantry', price: 1.80, weight: '1L' },
-  { ca: 'Tovalloletes', en: 'Wet wipes', emoji: '🧻', price: 1.20, noExpiry: true },
-  { ca: 'Pastís', en: 'Cake', emoji: '🎂', days: 3, location: 'fridge', price: 12.00 },
-  { ca: 'Espelmes', en: 'Candles', emoji: '🕯️', price: 2.00, noExpiry: true },
-  { ca: 'Globus', en: 'Balloons', emoji: '🎈', price: 3.50, noExpiry: true },
-  { ca: 'Aperitius', en: 'Snacks', emoji: '🥨', days: 60, location: 'pantry', price: 2.50, weight: '200g' },
-  { ca: 'Refrescos', en: 'Soft drinks', emoji: '🥤', days: 180, location: 'pantry', price: 1.50, weight: '2L' },
-  { ca: 'Olives', en: 'Olives', emoji: '🫒', days: 90, location: 'pantry', price: 1.80, weight: '350g' },
-  { ca: 'Plats i gots', en: 'Plates and cups', emoji: '🍽️', price: 3.00, noExpiry: true },
-  { ca: 'Regal', en: 'Gift', emoji: '🎁', price: 15.00, noExpiry: true },
-  { ca: 'Patates xips', en: 'Potato chips', emoji: '🥔', days: 90, location: 'pantry', price: 1.80, weight: '160g' },
-  { ca: 'Calçots', en: 'Calçots', emoji: '🌱', days: 4, location: 'fridge', price: 0.50 },
-  { ca: 'Salsa romesco', en: 'Romesco sauce', emoji: '🥫', days: 30, location: 'fridge', price: 3.50, weight: '200g' },
-  { ca: 'Carn brasa', en: 'Grilling meat', emoji: '🥩', days: 3, location: 'fridge', price: 12.00, weight: '1kg' },
-  { ca: 'Botifarra', en: 'Catalan sausage', emoji: '🌭', days: 5, location: 'fridge', price: 4.50, weight: '500g' },
-  { ca: 'Vi', en: 'Wine', emoji: '🍷', days: 730, location: 'pantry', price: 5.00, weight: '750ml' },
-  { ca: 'Mongetes', en: 'Beans', emoji: '🫘', days: 365, location: 'pantry', price: 2.00, weight: '400g' },
-  { ca: 'Crema catalana', en: 'Catalan cream', emoji: '🍮', days: 5, location: 'fridge', price: 3.00, weight: '4u' },
-  { ca: 'Cafè', en: 'Coffee', emoji: '☕', days: 365, location: 'pantry', price: 4.50, weight: '250g' },
-  { ca: 'Melmelada', en: 'Jam', emoji: '🍓', days: 180, location: 'pantry', price: 2.50, weight: '340g' },
-  { ca: 'Cereals', en: 'Cereals', emoji: '🥣', days: 180, location: 'pantry', price: 3.00, weight: '500g' },
-  { ca: 'Carn vermella', en: 'Red meat', emoji: '🥩', days: 3, location: 'fridge', price: 14.00, weight: '1kg' },
-  { ca: 'Salsitxes', en: 'Sausages', emoji: '🌭', days: 7, location: 'fridge', price: 3.50, weight: '400g' },
-  { ca: 'Hamburgueses', en: 'Burgers', emoji: '🍔', days: 5, location: 'fridge', price: 5.00, weight: '4u' },
-  { ca: 'Carbó', en: 'Charcoal', emoji: '🪵', location: 'pantry', price: 6.00, weight: '3kg', noExpiry: true },
-  { ca: 'Cervesa', en: 'Beer', emoji: '🍺', days: 365, location: 'pantry', price: 6.00, weight: '6x33cl' },
-  { ca: 'Amanida', en: 'Salad', emoji: '🥗', days: 5, location: 'fridge', price: 1.80, weight: '250g' },
-  { ca: 'Espaguetis', en: 'Spaghetti', emoji: '🍝', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
-  { ca: 'Tomàquet fregit', en: 'Fried tomato', emoji: '🥫', days: 30, location: 'pantry', price: 1.50, weight: '350g' },
-  { ca: 'All', en: 'Garlic', emoji: '🧄', days: 90, location: 'pantry', price: 0.80, weight: '3u' },
-  { ca: 'Vi negre', en: 'Red wine', emoji: '🍷', days: 730, location: 'pantry', price: 5.00, weight: '750ml' },
-  { ca: 'Formatge ratllat', en: 'Grated cheese', emoji: '🧀', days: 30, location: 'fridge', price: 2.50, weight: '150g' },
+  { ca: 'Embotit', en: 'Cold cuts', es: 'Embutido', fr: 'Charcuterie', emoji: '🥓', days: 7, location: 'fridge', price: 2.50, weight: '200g' },
+  { ca: 'Fruita', en: 'Fruit', es: 'Fruta', fr: 'Fruits', emoji: '🍎', days: 7, location: 'fruit_bowl', price: 1.50, weight: '1kg' },
+  { ca: 'Suc', en: 'Juice', es: 'Zumo', fr: 'Jus', emoji: '🧃', days: 10, location: 'pantry', price: 1.80, weight: '1L' },
+  { ca: 'Tovalloletes', en: 'Wet wipes', es: 'Toallitas', fr: 'Lingettes', emoji: '🧻', price: 1.20, noExpiry: true },
+  { ca: 'Pastís', en: 'Cake', es: 'Pastel', fr: 'Gâteau', emoji: '🎂', days: 3, location: 'fridge', price: 12.00 },
+  { ca: 'Espelmes', en: 'Candles', es: 'Velas', fr: 'Bougies', emoji: '🕯️', price: 2.00, noExpiry: true },
+  { ca: 'Globus', en: 'Balloons', es: 'Globos', fr: 'Ballons', emoji: '🎈', price: 3.50, noExpiry: true },
+  { ca: 'Aperitius', en: 'Snacks', es: 'Aperitivos', fr: 'Apéritifs', emoji: '🥨', days: 60, location: 'pantry', price: 2.50, weight: '200g' },
+  { ca: 'Refrescos', en: 'Soft drinks', es: 'Refrescos', fr: 'Sodas', emoji: '🥤', days: 180, location: 'pantry', price: 1.50, weight: '2L' },
+  { ca: 'Olives', en: 'Olives', es: 'Aceitunas', fr: 'Olives', emoji: '🫒', days: 90, location: 'pantry', price: 1.80, weight: '350g' },
+  { ca: 'Plats i gots', en: 'Plates and cups', es: 'Platos y vasos', fr: 'Assiettes et gobelets', emoji: '🍽️', price: 3.00, noExpiry: true },
+  { ca: 'Regal', en: 'Gift', es: 'Regalo', fr: 'Cadeau', emoji: '🎁', price: 15.00, noExpiry: true },
+  { ca: 'Patates xips', en: 'Potato chips', es: 'Patatas fritas', fr: 'Chips', emoji: '🥔', days: 90, location: 'pantry', price: 1.80, weight: '160g' },
+  { ca: 'Calçots', en: 'Calçots', es: 'Calçots', fr: 'Calçots', emoji: '🌱', days: 4, location: 'fridge', price: 0.50 },
+  { ca: 'Salsa romesco', en: 'Romesco sauce', es: 'Salsa romesco', fr: 'Sauce romesco', emoji: '🥫', days: 30, location: 'fridge', price: 3.50, weight: '200g' },
+  { ca: 'Carn brasa', en: 'Grilling meat', es: 'Carne para brasa', fr: 'Viande à griller', emoji: '🥩', days: 3, location: 'fridge', price: 12.00, weight: '1kg' },
+  { ca: 'Botifarra', en: 'Catalan sausage', es: 'Butifarra', fr: 'Botifarra', emoji: '🌭', days: 5, location: 'fridge', price: 4.50, weight: '500g' },
+  { ca: 'Vi', en: 'Wine', es: 'Vino', fr: 'Vin', emoji: '🍷', days: 730, location: 'pantry', price: 5.00, weight: '750ml' },
+  { ca: 'Mongetes', en: 'Beans', es: 'Judías', fr: 'Haricots', emoji: '🫘', days: 365, location: 'pantry', price: 2.00, weight: '400g' },
+  { ca: 'Crema catalana', en: 'Catalan cream', es: 'Crema catalana', fr: 'Crème catalane', emoji: '🍮', days: 5, location: 'fridge', price: 3.00, weight: '4u' },
+  { ca: 'Cafè', en: 'Coffee', es: 'Café', fr: 'Café', emoji: '☕', days: 365, location: 'pantry', price: 4.50, weight: '250g' },
+  { ca: 'Melmelada', en: 'Jam', es: 'Mermelada', fr: 'Confiture', emoji: '🍓', days: 180, location: 'pantry', price: 2.50, weight: '340g' },
+  { ca: 'Cereals', en: 'Cereals', es: 'Cereales', fr: 'Céréales', emoji: '🥣', days: 180, location: 'pantry', price: 3.00, weight: '500g' },
+  { ca: 'Carn vermella', en: 'Red meat', es: 'Carne roja', fr: 'Viande rouge', emoji: '🥩', days: 3, location: 'fridge', price: 14.00, weight: '1kg' },
+  { ca: 'Salsitxes', en: 'Sausages', es: 'Salchichas', fr: 'Saucisses', emoji: '🌭', days: 7, location: 'fridge', price: 3.50, weight: '400g' },
+  { ca: 'Hamburgueses', en: 'Burgers', es: 'Hamburguesas', fr: 'Hamburgers', emoji: '🍔', days: 5, location: 'fridge', price: 5.00, weight: '4u' },
+  { ca: 'Carbó', en: 'Charcoal', es: 'Carbón', fr: 'Charbon', emoji: '🪵', location: 'pantry', price: 6.00, weight: '3kg', noExpiry: true },
+  { ca: 'Cervesa', en: 'Beer', es: 'Cerveza', fr: 'Bière', emoji: '🍺', days: 365, location: 'pantry', price: 6.00, weight: '6x33cl' },
+  { ca: 'Amanida', en: 'Salad', es: 'Ensalada', fr: 'Salade', emoji: '🥗', days: 5, location: 'fridge', price: 1.80, weight: '250g' },
+  { ca: 'Espaguetis', en: 'Spaghetti', es: 'Espaguetis', fr: 'Spaghettis', emoji: '🍝', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
+  { ca: 'Tomàquet fregit', en: 'Fried tomato', es: 'Tomate frito', fr: 'Tomate frite', emoji: '🥫', days: 30, location: 'pantry', price: 1.50, weight: '350g' },
+  { ca: 'All', en: 'Garlic', es: 'Ajo', fr: 'Ail', emoji: '🧄', days: 90, location: 'pantry', price: 0.80, weight: '3u' },
+  { ca: 'Vi negre', en: 'Red wine', es: 'Vino tinto', fr: 'Vin rouge', emoji: '🍷', days: 730, location: 'pantry', price: 5.00, weight: '750ml' },
+  { ca: 'Formatge ratllat', en: 'Grated cheese', es: 'Queso rallado', fr: 'Fromage râpé', emoji: '🧀', days: 30, location: 'fridge', price: 2.50, weight: '150g' },
   // --- Ampliació catàleg receptes (06/06/2026) ---
   // Verdures per peça (sense weight = comptables, com Enciam)
-  { ca: 'Albergínia', en: 'Eggplant', emoji: '🍆', days: 7, location: 'fridge', price: 0.80 },
-  { ca: 'Carbassó', en: 'Zucchini', emoji: '🥒', days: 7, location: 'fridge', price: 0.80 },
-  { ca: 'Cogombre', en: 'Cucumber', emoji: '🥒', days: 7, location: 'fridge', price: 0.70 },
-  { ca: 'Col', en: 'Cabbage', emoji: '🥬', days: 12, location: 'fridge', price: 1.20 },
-  { ca: 'Pebrot', en: 'Bell pepper', emoji: '🫑', days: 8, location: 'fridge', price: 0.90 },
-  { ca: 'Porro', en: 'Leek', emoji: '🧅', days: 8, location: 'fridge', price: 0.90 },
-  { ca: 'Verdures', en: 'Vegetables', emoji: '🥬', days: 6, location: 'fridge', price: 2.00 },
+  { ca: 'Albergínia', en: 'Eggplant', es: 'Berenjena', fr: 'Aubergine', emoji: '🍆', days: 7, location: 'fridge', price: 0.80 },
+  { ca: 'Carbassó', en: 'Zucchini', es: 'Calabacín', fr: 'Courgette', emoji: '🥒', days: 7, location: 'fridge', price: 0.80 },
+  { ca: 'Cogombre', en: 'Cucumber', es: 'Pepino', fr: 'Concombre', emoji: '🥒', days: 7, location: 'fridge', price: 0.70 },
+  { ca: 'Col', en: 'Cabbage', es: 'Col', fr: 'Chou', emoji: '🥬', days: 12, location: 'fridge', price: 1.20 },
+  { ca: 'Pebrot', en: 'Bell pepper', es: 'Pimiento', fr: 'Poivron', emoji: '🫑', days: 8, location: 'fridge', price: 0.90 },
+  { ca: 'Porro', en: 'Leek', es: 'Puerro', fr: 'Poireau', emoji: '🧅', days: 8, location: 'fridge', price: 0.90 },
+  { ca: 'Verdures', en: 'Vegetables', es: 'Verduras', fr: 'Légumes', emoji: '🥬', days: 6, location: 'fridge', price: 2.00 },
   // Verdures per pes/bossa (amb weight)
-  { ca: 'Espinacs', en: 'Spinach', emoji: '🥬', days: 5, location: 'fridge', price: 1.50, weight: '200g' },
-  { ca: 'Bolets', en: 'Mushrooms', emoji: '🍄', days: 5, location: 'fridge', price: 1.80, weight: '250g' },
+  { ca: 'Espinacs', en: 'Spinach', es: 'Espinacas', fr: 'Épinards', emoji: '🥬', days: 5, location: 'fridge', price: 1.50, weight: '200g' },
+  { ca: 'Bolets', en: 'Mushrooms', es: 'Setas', fr: 'Champignons', emoji: '🍄', days: 5, location: 'fridge', price: 1.80, weight: '250g' },
   // Fruita (fruitera, per peça)
-  { ca: 'Alvocat', en: 'Avocado', emoji: '🥑', days: 5, location: 'fruit_bowl', price: 1.00 },
-  { ca: 'Llimona', en: 'Lemon', emoji: '🍋', days: 14, location: 'fruit_bowl', price: 0.40 },
-  { ca: 'Mango', en: 'Mango', emoji: '🥭', days: 5, location: 'fruit_bowl', price: 1.20 },
-  { ca: 'Pinya', en: 'Pineapple', emoji: '🍍', days: 5, location: 'fruit_bowl', price: 1.80 },
-  { ca: 'Coco', en: 'Coconut', emoji: '🥥', days: 14, location: 'fruit_bowl', price: 1.50 },
+  { ca: 'Alvocat', en: 'Avocado', es: 'Aguacate', fr: 'Avocat', emoji: '🥑', days: 5, location: 'fruit_bowl', price: 1.00 },
+  { ca: 'Llimona', en: 'Lemon', es: 'Limón', fr: 'Citron', emoji: '🍋', days: 14, location: 'fruit_bowl', price: 0.40 },
+  { ca: 'Mango', en: 'Mango', es: 'Mango', fr: 'Mangue', emoji: '🥭', days: 5, location: 'fruit_bowl', price: 1.20 },
+  { ca: 'Pinya', en: 'Pineapple', es: 'Piña', fr: 'Ananas', emoji: '🍍', days: 5, location: 'fruit_bowl', price: 1.80 },
+  { ca: 'Coco', en: 'Coconut', es: 'Coco', fr: 'Noix de coco', emoji: '🥥', days: 14, location: 'fruit_bowl', price: 1.50 },
   // Carn i embotits (nevera, amb weight)
-  { ca: 'Bacó', en: 'Bacon', emoji: '🥓', days: 14, location: 'fridge', price: 2.00, weight: '150g' },
-  { ca: 'Pernil dolç', en: 'Cooked ham', emoji: '🥓', days: 7, location: 'fridge', price: 2.50, weight: '200g' },
-  { ca: 'Costelles', en: 'Ribs', emoji: '🥩', days: 3, location: 'fridge', price: 7.00, weight: '1kg' },
-  { ca: 'Filet', en: 'Fillet', emoji: '🥩', days: 3, location: 'fridge', price: 8.00, weight: '500g' },
+  { ca: 'Bacó', en: 'Bacon', es: 'Bacón', fr: 'Lard', emoji: '🥓', days: 14, location: 'fridge', price: 2.00, weight: '150g' },
+  { ca: 'Pernil dolç', en: 'Cooked ham', es: 'Jamón cocido', fr: 'Jambon blanc', emoji: '🥓', days: 7, location: 'fridge', price: 2.50, weight: '200g' },
+  { ca: 'Costelles', en: 'Ribs', es: 'Costillas', fr: 'Côtes', emoji: '🥩', days: 3, location: 'fridge', price: 7.00, weight: '1kg' },
+  { ca: 'Filet', en: 'Fillet', es: 'Filete', fr: 'Filet', emoji: '🥩', days: 3, location: 'fridge', price: 8.00, weight: '500g' },
   // Peix i marisc (nevera, amb weight)
-  { ca: 'Salmó', en: 'Salmon', emoji: '🐟', days: 2, location: 'fridge', price: 9.00, weight: '500g' },
-  { ca: 'Gambes', en: 'Prawns', emoji: '🦐', days: 2, location: 'fridge', price: 8.00, weight: '500g' },
-  { ca: 'Calamars', en: 'Squid', emoji: '🦑', days: 2, location: 'fridge', price: 5.00, weight: '500g' },
+  { ca: 'Salmó', en: 'Salmon', es: 'Salmón', fr: 'Saumon', emoji: '🐟', days: 2, location: 'fridge', price: 9.00, weight: '500g' },
+  { ca: 'Gambes', en: 'Prawns', es: 'Gambas', fr: 'Gambas', emoji: '🦐', days: 2, location: 'fridge', price: 8.00, weight: '500g' },
+  { ca: 'Calamars', en: 'Squid', es: 'Calamares', fr: 'Calamars', emoji: '🦑', days: 2, location: 'fridge', price: 5.00, weight: '500g' },
   // Lactis (nevera, amb weight)
-  { ca: 'Mozzarella', en: 'Mozzarella', emoji: '🧀', days: 14, location: 'fridge', price: 1.20, weight: '125g' },
-  { ca: 'Nata', en: 'Cream', emoji: '🥛', days: 10, location: 'fridge', price: 1.50, weight: '200ml' },
+  { ca: 'Mozzarella', en: 'Mozzarella', es: 'Mozzarella', fr: 'Mozzarella', emoji: '🧀', days: 14, location: 'fridge', price: 1.20, weight: '125g' },
+  { ca: 'Nata', en: 'Cream', es: 'Nata', fr: 'Crème', emoji: '🥛', days: 10, location: 'fridge', price: 1.50, weight: '200ml' },
   // Rebost: secs i envasats (amb weight)
-  { ca: 'Farina', en: 'Flour', emoji: '🌾', days: 365, location: 'pantry', price: 0.80, weight: '1kg' },
-  { ca: 'Avena', en: 'Oats', emoji: '🌾', days: 365, location: 'pantry', price: 1.50, weight: '500g' },
-  { ca: 'Llenties', en: 'Lentils', emoji: '🫘', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
-  { ca: 'Pinyons', en: 'Pine nuts', emoji: '🌰', days: 180, location: 'pantry', price: 3.00, weight: '100g' },
-  { ca: 'Llet de coco', en: 'Coconut milk', emoji: '🥥', days: 365, location: 'pantry', price: 1.50, weight: '400ml' },
-  { ca: 'Maionesa', en: 'Mayonnaise', emoji: '🥫', days: 90, location: 'pantry', price: 1.80, weight: '400ml' },
+  { ca: 'Farina', en: 'Flour', es: 'Harina', fr: 'Farine', emoji: '🌾', days: 365, location: 'pantry', price: 0.80, weight: '1kg' },
+  { ca: 'Avena', en: 'Oats', es: 'Avena', fr: 'Flocons d\'avoine', emoji: '🌾', days: 365, location: 'pantry', price: 1.50, weight: '500g' },
+  { ca: 'Llenties', en: 'Lentils', es: 'Lentejas', fr: 'Lentilles', emoji: '🫘', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
+  { ca: 'Pinyons', en: 'Pine nuts', es: 'Piñones', fr: 'Pignons', emoji: '🌰', days: 180, location: 'pantry', price: 3.00, weight: '100g' },
+  { ca: 'Llet de coco', en: 'Coconut milk', es: 'Leche de coco', fr: 'Lait de coco', emoji: '🥥', days: 365, location: 'pantry', price: 1.50, weight: '400ml' },
+  { ca: 'Maionesa', en: 'Mayonnaise', es: 'Mayonesa', fr: 'Mayonnaise', emoji: '🥫', days: 90, location: 'pantry', price: 1.80, weight: '400ml' },
   // Pa i masses
   { ca: "Pa d'hamburguesa", en: 'Burger buns', emoji: '🍔', days: 7, location: 'pantry', price: 1.20, weight: '4u' },
-  { ca: 'Tortilla', en: 'Tortillas', emoji: '🫓', days: 30, location: 'pantry', price: 1.50, weight: '6u' },
-  { ca: 'Wrap', en: 'Wraps', emoji: '🌯', days: 30, location: 'pantry', price: 2.00, weight: '6u' },
-  { ca: 'Massa de pizza', en: 'Pizza dough', emoji: '🍕', days: 14, location: 'fridge', price: 1.50, weight: '1u' },
+  { ca: 'Tortilla', en: 'Tortillas', es: 'Tortillas', fr: 'Tortillas', emoji: '🫓', days: 30, location: 'pantry', price: 1.50, weight: '6u' },
+  { ca: 'Wrap', en: 'Wraps', es: 'Wraps', fr: 'Wraps', emoji: '🌯', days: 30, location: 'pantry', price: 2.00, weight: '6u' },
+  { ca: 'Massa de pizza', en: 'Pizza dough', es: 'Masa de pizza', fr: 'Pâte à pizza', emoji: '🍕', days: 14, location: 'fridge', price: 1.50, weight: '1u' },
   { ca: "Massa d'empanada", en: 'Empanada dough', emoji: '🥟', days: 14, location: 'fridge', price: 2.00, weight: '1u' },
-  { ca: 'Massa', en: 'Dough', emoji: '🥖', days: 7, location: 'fridge', price: 1.50, weight: '1u' },
+  { ca: 'Massa', en: 'Dough', es: 'Masa', fr: 'Pâte', emoji: '🥖', days: 7, location: 'fridge', price: 1.50, weight: '1u' },
   // Al gust (noExpiry)
-  { ca: 'Sal', en: 'Salt', emoji: '🧂', location: 'pantry', price: 0.50, weight: '1kg', noExpiry: true },
-  { ca: 'Sucre', en: 'Sugar', emoji: '🍬', location: 'pantry', price: 0.90, weight: '1kg', noExpiry: true },
-  { ca: 'Mel', en: 'Honey', emoji: '🍯', location: 'pantry', price: 4.00, weight: '500g', noExpiry: true },
-  { ca: 'Pebre', en: 'Pepper', emoji: '🧂', location: 'pantry', price: 1.50, weight: '50g', noExpiry: true },
-  { ca: 'Canyella', en: 'Cinnamon', emoji: '🟤', location: 'pantry', price: 1.50, weight: '50g', noExpiry: true },
-  { ca: 'Curry', en: 'Curry', emoji: '🍛', location: 'pantry', price: 1.80, weight: '50g', noExpiry: true },
-  { ca: 'Safrà', en: 'Saffron', emoji: '🌼', location: 'pantry', price: 3.00, weight: '2g', noExpiry: true },
-  { ca: 'Herbes', en: 'Herbs', emoji: '🌿', location: 'pantry', price: 1.20, weight: '20g', noExpiry: true },
-  { ca: 'Alfàbrega', en: 'Basil', emoji: '🌿', days: 7, location: 'fridge', price: 1.20 },
+  { ca: 'Sal', en: 'Salt', es: 'Sal', fr: 'Sel', emoji: '🧂', location: 'pantry', price: 0.50, weight: '1kg', noExpiry: true },
+  { ca: 'Sucre', en: 'Sugar', es: 'Azúcar', fr: 'Sucre', emoji: '🍬', location: 'pantry', price: 0.90, weight: '1kg', noExpiry: true },
+  { ca: 'Mel', en: 'Honey', es: 'Miel', fr: 'Miel', emoji: '🍯', location: 'pantry', price: 4.00, weight: '500g', noExpiry: true },
+  { ca: 'Pebre', en: 'Pepper', es: 'Pimienta', fr: 'Poivre', emoji: '🧂', location: 'pantry', price: 1.50, weight: '50g', noExpiry: true },
+  { ca: 'Canyella', en: 'Cinnamon', es: 'Canela', fr: 'Cannelle', emoji: '🟤', location: 'pantry', price: 1.50, weight: '50g', noExpiry: true },
+  { ca: 'Curry', en: 'Curry', es: 'Curry', fr: 'Curry', emoji: '🍛', location: 'pantry', price: 1.80, weight: '50g', noExpiry: true },
+  { ca: 'Safrà', en: 'Saffron', es: 'Azafrán', fr: 'Safran', emoji: '🌼', location: 'pantry', price: 3.00, weight: '2g', noExpiry: true },
+  { ca: 'Herbes', en: 'Herbs', es: 'Hierbas', fr: 'Herbes', emoji: '🌿', location: 'pantry', price: 1.20, weight: '20g', noExpiry: true },
+  { ca: 'Alfàbrega', en: 'Basil', es: 'Albahaca', fr: 'Basilic', emoji: '🌿', days: 7, location: 'fridge', price: 1.20 },
   // Ingredients de receptes que faltaven (10/06/2026)
-  { ca: 'Iogurt',        en: 'Yogurt',      emoji: '🥛', days: 21,  location: 'fridge', price: 1.50, weight: '4x125g' },
-  { ca: 'Peix',          en: 'Fish',        emoji: '🐟', days: 2,   location: 'fridge', price: 9.00, weight: '500g' },
-  { ca: 'Tonyina',       en: 'Tuna',        emoji: '🐟', days: 730, location: 'pantry', price: 2.50, weight: '3x80g' },
-  { ca: 'Carn',          en: 'Meat',        emoji: '🥩', days: 3,   location: 'fridge', price: 8.00, weight: '500g' },
+  { ca: 'Iogurt',        en: 'Yogurt', es: 'Yogur', fr: 'Yaourt',      emoji: '🥛', days: 21,  location: 'fridge', price: 1.50, weight: '4x125g' },
+  { ca: 'Peix',          en: 'Fish', es: 'Pescado', fr: 'Poisson',        emoji: '🐟', days: 2,   location: 'fridge', price: 9.00, weight: '500g' },
+  { ca: 'Tonyina',       en: 'Tuna', es: 'Atún', fr: 'Thon',        emoji: '🐟', days: 730, location: 'pantry', price: 2.50, weight: '3x80g' },
+  { ca: 'Carn',          en: 'Meat', es: 'Carne', fr: 'Viande',        emoji: '🥩', days: 3,   location: 'fridge', price: 8.00, weight: '500g' },
   { ca: "Flocs d'avena", en: 'Oat flakes',  emoji: '🌾', days: 365, location: 'pantry', price: 1.80, weight: '500g' },
-  { ca: 'Formatge feta', en: 'Feta cheese', emoji: '🧀', days: 30,  location: 'fridge', price: 2.50, weight: '200g' },
-  { ca: 'Fruits secs',   en: 'Nuts',        emoji: '🥜', days: 180, location: 'pantry', price: 3.00, weight: '200g' },
-  { ca: 'Pa torrat',     en: 'Toast',       emoji: '🍞', days: 60,  location: 'pantry', price: 1.50, weight: '200g' },
+  { ca: 'Formatge feta', en: 'Feta cheese', es: 'Queso feta', fr: 'Feta', emoji: '🧀', days: 30,  location: 'fridge', price: 2.50, weight: '200g' },
+  { ca: 'Fruits secs',   en: 'Nuts', es: 'Frutos secos', fr: 'Fruits secs',        emoji: '🥜', days: 180, location: 'pantry', price: 3.00, weight: '200g' },
+  { ca: 'Pa torrat',     en: 'Toast', es: 'Pan tostado', fr: 'Pain grillé',       emoji: '🍞', days: 60,  location: 'pantry', price: 1.50, weight: '200g' },
   // Tipus de pasta com a productes propis (sense sinònim → 'pasta'; 10/06/2026)
-  { ca: 'Macarrons',          en: 'Macaroni',       emoji: '🍝', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
-  { ca: 'Fideus',             en: 'Noodles',        emoji: '🍝', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
-  { ca: 'Plaques de lasanya', en: 'Lasagna sheets', emoji: '🍝', days: 730, location: 'pantry', price: 1.50, weight: '500g' }
+  { ca: 'Macarrons',          en: 'Macaroni', es: 'Macarrones', fr: 'Macaronis',       emoji: '🍝', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
+  { ca: 'Fideus',             en: 'Noodles', es: 'Fideos', fr: 'Vermicelles',        emoji: '🍝', days: 730, location: 'pantry', price: 1.20, weight: '500g' },
+  { ca: 'Plaques de lasanya', en: 'Lasagna sheets', es: 'Placas de lasaña', fr: 'Feuilles de lasagne', emoji: '🍝', days: 730, location: 'pantry', price: 1.50, weight: '500g' }
 ];
+
+// ============================================
+//   Normalització / stem / tokens canònics — COMPARTITS
+//   Extrets de cookme.js perquè populars.js (buildPopularNameIndex, carregat
+//   ABANS de cookme.js) i cookme.js comparteixin la MATEIXA tokenització.
+//   NO duplicar: definits aquí, usats a tot arreu.
+// ============================================
+// Normalitza un text: minúscules + sense accents + sense espais finals.
+function cookmeNormalize(s) {
+  return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+// Mapa de sinònims (token normalitzat → token canònic). Buit a propòsit:
+// cada tipus de pasta és un producte propi. Es manté per al lookup `[tk] || tk`.
+const COOKME_INGREDIENT_SYNONYMS = {};
+// Stopwords que no aporten identitat a un nom d'ingredient/producte. Cobreixen
+// els 4 idiomes de l'app (ca/es/en/fr) perquè l'índex tokenitza noms en tots 4:
+// sense les no-catalanes, articles/connectors com 'and','of','du','los' s'hi
+// colaven com a token feble (Plats i gots → 'and'/'et'). Les de longitud 1
+// ('a','e','y','à'→'a') ja cauen pel filtre length>=2; s'inclouen per claredat.
+const COOKME_STOPWORDS = new Set([
+  // Català
+  'de','d','del','dels','la','el','els','l','amb','al','als','a','i','per','en','o','un','una','gust',
+  // Castellà
+  'y','con','e','lo','los','las',
+  // Anglès
+  'and','or','the','of','with',
+  // Francès
+  'et','ou','du','des','aux','une',
+  // Italià (pot arribar via ingredients/sinònims)
+  'il'
+]);
+// Marca de compost qualificat ("llet de coco", "oli d'oliva"): conté connectiu.
+const COOKME_CONNECTIVE = /\b(?:de|d|amb)\b/;
+// Plega singular↔plural català al seu "stem" (ceba/cebes→ceb, poma/pomes→pom,
+// ous/ou→ou). NO col·lisiona pa≠pasta, oli≠olives, mel≠melmelada.
+function cookmeStem(tok) {
+  let t = tok;
+  if (t.length >= 4 && t.endsWith('es')) t = t.slice(0, -2);
+  else if (t.length >= 3 && t.endsWith('s')) t = t.slice(0, -1);
+  if (t.length >= 3 && t.endsWith('a')) t = t.slice(0, -1);
+  return t.replace(/gu$/, 'g').replace(/qu$/, 'c').replace(/j$/, 'g');
+}
+// Tokens canònics d'un nom: normalitza, parteix per no-alfanumèric, descarta
+// tokens curts (<2) i stopwords, aplica sinònims i el stem de plural.
+function cookmeCanonTokens(name) {
+  return cookmeNormalize(name)
+    .split(/[^a-z0-9]+/)
+    .filter(tk => tk.length >= 2 && !COOKME_STOPWORDS.has(tk))
+    .map(tk => COOKME_INGREDIENT_SYNONYMS[tk] || tk)
+    .map(cookmeStem);
+}
+// Nucli d'un compost QUALIFICAT amb connectiu (nucli + de/d'/amb + qualificador):
+// els tokens ABANS del primer connectiu. "Oli d'oliva"→['oli'], "Plaques de
+// lasanya"→['plac'], "Suc de taronja"→['suc']. Si el nom NO té connectiu (és
+// nom + adjectiu: "Crema catalana", "Peix fresc", "Salsa romesco") torna []
+// —no volem que l'adjectiu ni el nom sol es registrin com a clau feble i
+// capturin un producte que no toca. Mateix filtre/stem que cookmeCanonTokens.
+function cookmeNucleusTokens(name) {
+  const n = cookmeNormalize(name);
+  if (!COOKME_CONNECTIVE.test(n)) return [];
+  const out = [];
+  const parts = n.split(/[^a-z0-9]+/);
+  for (let i = 0; i < parts.length; i++) {
+    const w = parts[i];
+    if (!w) continue;
+    if (w === 'de' || w === 'd' || w === 'amb') break;   // primer connectiu → tall
+    out.push(w);
+  }
+  return out
+    .filter(tk => tk.length >= 2 && !COOKME_STOPWORDS.has(tk))
+    .map(tk => COOKME_INGREDIENT_SYNONYMS[tk] || tk)
+    .map(cookmeStem);
+}
 
 // Catàleg d'emojis organitzat per categoria. Es fa servir tant per l'EMOJI
 // picker (tabs de categoria) com per al cercador.

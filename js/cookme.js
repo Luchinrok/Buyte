@@ -183,46 +183,11 @@ let cookmeSort = 'percent';
 //   { emoji: '🥩', name: 'Carn picada', productId: '...' } | null
 let cookmeProductFilter = null;
 
-// Normalitza un text: minúscules + sense accents + sense espais finals.
-function cookmeNormalize(s) {
-  return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-}
-
-// Mapa de sinònims (token normalitzat → token canònic). Sense sinònims actius:
-// cada tipus de pasta (espaguetis, macarrons, fideus, lasanya…) és un producte
-// propi, no tots "pasta". Es manté el mapa (buit) perquè cookmeCanonTokens hi
-// faci el lookup `[tk] || tk` sense canvis. NO toca el DATA de les receptes.
-const COOKME_INGREDIENT_SYNONYMS = {};
-
-// Stopwords catalanes que no aporten identitat a un nom d'ingredient/producte.
-const COOKME_STOPWORDS = new Set(['de','d','del','dels','la','el','els','l','amb','al','als','a','i','per','en','o','un','una','gust']);
-
-// Marca de compost qualificat ("llet de coco", "oli d'oliva"): conté connectiu.
-const COOKME_CONNECTIVE = /\b(?:de|d|amb)\b/;
-
-// Plega singular↔plural català al seu "stem" per poder comparar per igualtat.
-// Cobreix el plural femení -a↔-es amb els canvis ortogràfics habituals
-// (gu→g, qu→c, j→g): ceba/cebes→ceb, taronja/taronges→tarong,
-// pastanaga/pastanagues→pastanag, poma/pomes→pom, ous/ou→ou. NO col·lisiona
-// els perillosos: pa≠pasta (pa/past), oli≠olives (oli/oliv), mel≠melmelada.
-function cookmeStem(tok) {
-  let t = tok;
-  if (t.length >= 4 && t.endsWith('es')) t = t.slice(0, -2);
-  else if (t.length >= 3 && t.endsWith('s')) t = t.slice(0, -1);
-  if (t.length >= 3 && t.endsWith('a')) t = t.slice(0, -1);
-  return t.replace(/gu$/, 'g').replace(/qu$/, 'c').replace(/j$/, 'g');
-}
-
-// Tokens canònics d'un nom: normalitza (minúscules/sense accents), parteix
-// per no-alfanumèric, descarta tokens curts (<2) i stopwords, aplica
-// sinònims i el stem de plural. És la base del match per paraula completa.
-function cookmeCanonTokens(name) {
-  return cookmeNormalize(name)
-    .split(/[^a-z0-9]+/)
-    .filter(tk => tk.length >= 2 && !COOKME_STOPWORDS.has(tk))
-    .map(tk => COOKME_INGREDIENT_SYNONYMS[tk] || tk)
-    .map(cookmeStem);
-}
+// Normalitzacio / stem / tokens canonics: ara COMPARTITS a js/core.js
+// (cookmeNormalize, cookmeStem, cookmeCanonTokens, COOKME_INGREDIENT_SYNONYMS,
+// COOKME_STOPWORDS, COOKME_CONNECTIVE) -- core.js es carrega abans que aquest
+// fitxer i que populars.js, aixi el matcher i buildPopularNameIndex comparteixen
+// la MATEIXA tokenitzacio. No duplicar aqui.
 
 // Famílies d'ingredients INTERCANVIABLES — NOMÉS per al matcher de receptes
 // (findProductForIngredient). Qualsevol membre al rebost satisfà qualsevol
@@ -267,18 +232,34 @@ function cookmeSameFamily(a, b) {
 // tard).
 function findProductForIngredient(ingredient, userProducts) {
   if (!ingredient || !userProducts || userProducts.length === 0) return null;
-  const Ti = cookmeCanonTokens(ingredient.name);
+  // Resol l'ingredient al seu ca CANÒNIC (independent d'idioma) i, si casa, a
+  // la seva entrada de catàleg per poder fer match per IDENTITAT. Així un
+  // producte desat en un altre idioma (Tuna, Pan, Mayonnaise) casa amb
+  // l'ingredient en ca (tonyina, pa, maionesa). El camí de tokens queda com a
+  // fallback per a text lliure (no-catàleg).
+  const _cat = (typeof window !== 'undefined' && window.productCatalogEntry) ? window.productCatalogEntry : null;
+  const _ca  = (typeof window !== 'undefined' && window.productCanonicalCa) ? window.productCanonicalCa : null;
+  const ingEntry = _cat ? _cat({ name: ingredient.name }) : null;
+  const ingCa = _ca ? _ca({ name: ingredient.name }) : ingredient.name;
+  const Ti = cookmeCanonTokens(ingCa);
   if (!Ti.length) return null;
   const subset = (a, b) => a.every(tk => b.includes(tk));
-  const ingIsCompound = COOKME_CONNECTIVE.test(cookmeNormalize(ingredient.name)) && Ti.length >= 2;
+  const ingIsCompound = COOKME_CONNECTIVE.test(cookmeNormalize(ingCa)) && Ti.length >= 2;
   for (let i = 0; i < userProducts.length; i++) {
-    const Tp = cookmeCanonTokens(userProducts[i].name);
+    const prod = userProducts[i];
+    // Match per IDENTITAT de catàleg (idioma-independent): salta els tokens.
+    if (ingEntry && _cat) {
+      const pe = _cat(prod);
+      if (pe && pe === ingEntry) return prod;
+    }
+    const prodCa = _ca ? _ca(prod) : prod.name;
+    const Tp = cookmeCanonTokens(prodCa);
     if (!Tp.length) continue;
     // Família intercanviable (NOMÉS receptes): qualsevol pasta satisfà qualsevol
     // ingredient de pasta, també els compostos ("plaques de lasanya").
-    if (cookmeSameFamily(ingredient.name, userProducts[i].name)) return userProducts[i];
-    if (ingIsCompound) { if (subset(Ti, Tp)) return userProducts[i]; }
-    else if (subset(Ti, Tp) || subset(Tp, Ti)) return userProducts[i];
+    if (cookmeSameFamily(ingCa, prodCa)) return prod;
+    if (ingIsCompound) { if (subset(Ti, Tp)) return prod; }
+    else if (subset(Ti, Tp) || subset(Tp, Ti)) return prod;
   }
   return null;
 }
