@@ -1496,6 +1496,12 @@ function addItemsToShop(supermarketId, items, opts) {
   const populars = (typeof getPopularProducts === 'function') ? getPopularProducts() : [];
   items.forEach(ing => {
     const product = { name: cookmeCapitalize(ing.name || ''), emoji: ing.emoji || '🛒' };
+    // Fase 2, sub-pas 2: ancora la identitat de catàleg de l'ingredient (slug) a
+    // l'ítem de compra. Es resol pel nom (Fase 1); null si és text lliure.
+    if (typeof catalogEntryForName === 'function') {
+      const _e = catalogEntryForName(ing.name);
+      if (_e && _e.slug) product.slug = _e.slug;
+    }
     const pop = Array.isArray(populars)
       ? (populars.find(p => p && p.name && cookmeSameProduct(ing.name, p.name)) || null)
       : null;

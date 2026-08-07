@@ -2099,7 +2099,11 @@ function _buildShoppingPrefill(item) {
     originalWeight: originalWeight,
     weight: prefillWeight,
     minStock: (fromPopular && typeof fromPopular.minStock === 'number') ? fromPopular.minStock : undefined,
-    popularId: (fromPopular && fromPopular.id) || null
+    popularId: (fromPopular && fromPopular.id) || null,
+    // Fase 2, sub-pas 2: conserva el slug que addToShoppingList va ancorar a
+    // l'ítem (p. ex. ingredient de recepta). null si l'ítem no en tenia →
+    // _resolveCatalogSlug el re-derivarà del popularId/nom.
+    slug: (item && item.slug) || null
   };
 }
 
@@ -2211,6 +2215,10 @@ function _quickBuyCore(item, prefill, basketId) {
     qty: prefill.qty || '',
     addedAt: new Date().toISOString(),
     popularId: prefill.popularId || null,
+    // Fase 2, sub-pas 2: propaga el slug de l'ítem de compra (_buildShoppingPrefill)
+    // fins al producte. _resolveCatalogSlug el pren com a primera prioritat; si és
+    // null, el re-deriva del popularId/nom. Així no es perd pel camí.
+    slug: prefill.slug || null,
     supermarket: supermarket
   };
   if (typeof prefill.price === 'number' && prefill.price >= 0) productData.price = prefill.price;
@@ -2659,6 +2667,7 @@ function addToShoppingList(supermarketId, product, qty, weight) {
   const newItem = {
     id, supermarketId,
     name: product.name,
+    slug: (product && product.slug) || null,   // Fase 2, sub-pas 2: identitat de catàleg (null si text lliure)
     emoji: product.emoji,
     qty: qty || '',
     notes: '',

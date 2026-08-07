@@ -186,15 +186,21 @@ function productCatalogEntry(p) {
       const e = POPULAR_PRODUCTS[+m[1]];
       if (e) {
         // Guarda: pop-N és una POSICIÓ D'ARRAY; una inserció futura al catàleg
-        // desplaçaria tots els popularId desats. Verifica que el name resolgui a
-        // la MATEIXA entrada (per l'índex, qualsevol dels 4 idiomes); si no,
-        // ignora el popularId i cau al nom (evita mostrar un altre producte).
+        // desplaçaria tots els popularId desats. Desconfia del popularId NOMÉS
+        // quan hi ha contradicció REAL: el nom resol a una entrada DIFERENT
+        // (pop-N desplaçat, o producte renombrat a un altre producte del
+        // catàleg). Si el nom no resol a res, confia en el popularId: és l'única
+        // pista bona que tenim (producte del catàleg amb el nom retocat per
+        // l'usuari). Coherent (byName === e) o nom no resol (byName null) → e.
         const byName = (typeof p.name === 'string' && p.name) ? catalogEntryForName(p.name) : null;
-        if (byName && byName === e) return e;
-        if (byName && byName !== e && typeof console !== 'undefined' && console.warn) {
-          console.warn('[productCatalogEntry] popularId incoherent', { popularId: pid, name: p.name });
+        if (byName && byName !== e) {
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn('[productCatalogEntry] popularId incoherent', { popularId: pid, name: p.name });
+          }
+          // contradicció real → cau a la resolució per nom (sota), que retorna byName
+        } else {
+          return e;
         }
-        // byName null (name no resol) o incoherent → no confiïs en popularId.
       }
     }
   }
@@ -1004,7 +1010,10 @@ function renderPopularList() {
         // nom — `p` ja porta tots els camps. Les guardes
         // d'applyKnownProductToForm (omple només camps buits / qty=="1")
         // eviten la doble aplicació amb el que openAddForm ja ha posat.
-        openAddForm({ name: popularDisplayName(p, _nameIdx), emoji: p.emoji });
+        // Fase 2, sub-pas 2: propaga el popularId (p.id, p. ex. 'pop-21') perquè
+        // el producte nou desi la identitat de catàleg; saveNewProduct en deriva
+        // el slug. Sense això, un producte del picker quedava amb popularId:null.
+        openAddForm({ name: popularDisplayName(p, _nameIdx), emoji: p.emoji, popularId: p.id });
         if (typeof applyKnownProductToForm === 'function') {
           applyKnownProductToForm(p);
         }

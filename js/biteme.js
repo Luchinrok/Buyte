@@ -1204,6 +1204,21 @@ function _buildLotFromNewProduct(productData) {
   return lot;
 }
 
+// Slug de catàleg per a un producte que estem creant/movent (Fase 2, sub-pas 2).
+// Prioritat: slug explícit del productData → resolució per catàleg (popularId o
+// nom, via els helpers de Fase 1) → null (text lliure). NO inventa res: si el
+// producte no resol a cap entrada del catàleg, retorna null. Additiu: el `name`
+// persistit NO es toca; només afegim aquest identificador estable al costat.
+function _resolveCatalogSlug(productData) {
+  if (!productData) return null;
+  if (typeof productData.slug === 'string' && productData.slug) return productData.slug;
+  if (typeof window !== 'undefined' && typeof window.productCatalogEntry === 'function') {
+    const e = window.productCatalogEntry({ name: productData.name, popularId: productData.popularId });
+    if (e && typeof e.slug === 'string' && e.slug) return e.slug;
+  }
+  return null;
+}
+
 // Crea un producte v2 amb un únic lot. Mateix esquema que
 // _migrateLegacyProduct però partint de productData + el lot ja
 // construït. Mirrors copiats del lot (date, location, etc.) i del
@@ -1212,6 +1227,7 @@ function _createV2ProductWithLot(productData, lot) {
   const product = {
     id: (productData && productData.id) || (Date.now().toString() + Math.random().toString(36).slice(2, 6)),
     popularId: (productData && productData.popularId) || null,
+    slug: _resolveCatalogSlug(productData),
     name: productData ? productData.name : '',
     emoji: (productData && productData.emoji) || '🥫',
     __v: 2,
@@ -2288,6 +2304,9 @@ function _confirmProductEdit(product, v) {
   }
 
   realProduct.name = v.name;
+  // Fase 2, sub-pas 2: refresca el slug amb el nom nou + popularId actual
+  // (mateix criteri que A2; l'edició inline no passa per _createV2ProductWithLot).
+  realProduct.slug = _resolveCatalogSlug({ name: realProduct.name, popularId: realProduct.popularId });
   if (v.emoji) realProduct.emoji = v.emoji;
 
   if (v.categoryId && window.CategoriesSystem && typeof window.CategoriesSystem.setItemCategory === 'function') {
@@ -2551,6 +2570,7 @@ async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
       const newProduct = {
         id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         popularId: realProduct.popularId || null,
+        slug: _resolveCatalogSlug(realProduct),
         name: realProduct.name,
         emoji: realProduct.emoji,
         __v: 2,
@@ -2638,6 +2658,7 @@ async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
       const newProduct = {
         id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         popularId: realProduct.popularId || null,
+        slug: _resolveCatalogSlug(realProduct),
         name: realProduct.name,
         emoji: realProduct.emoji,
         __v: 2,
@@ -4026,6 +4047,12 @@ function recordConsumption(product, action, percent) {
 // Estat global d'edició: si està definit, saveNewProduct() actualitza el
 // producte existent en lloc de crear-ne un de nou.
 let editingProductId = null;
+// Fase 2, sub-pas 2: popularId de catàleg del prefill (picker de populars /
+// prefill de Compra'm), propagat a saveNewProduct. Fins ara saveNewProduct
+// construïa productData SENSE popularId → tot producte afegit pel formulari
+// quedava amb popularId:null encara que vingués del catàleg (l'origen dels
+// productes sense ancoratge, com l'Oli). El slug es resol per catàleg després.
+let pendingAddPopularId = null;
 
 // Obre el formulari en mode "editar producte existent" reutilitzant screen-add.
 function openEditProductForm(product) {
@@ -4048,6 +4075,9 @@ function openAddForm(prefill) {
   // Qualsevol altra entrada (afegir nou, prefill de popular, escaneig...)
   // surt del mode edició automàticament.
   editingProductId = (prefill && prefill._editingId) ? prefill._editingId : null;
+  // Identitat de catàleg del prefill (Fase 2, sub-pas 2). Es reseteja a null si
+  // no ve al prefill (text lliure). La llegeix saveNewProduct en crear.
+  pendingAddPopularId = (prefill && prefill.popularId) || null;
 
   // Reset del snapshot d'autoomplert: qualsevol obertura del formulari
   // comença net (no recordem el match aplicat a una obertura anterior).
@@ -4663,6 +4693,11 @@ function saveNewProduct() {
       const p = products[idx];
       const oldLocation = p.location;
       p.name = name;
+      // Fase 2, sub-pas 2: l'edició NO passa per _createV2ProductWithLot, així
+      // que refresquem el slug amb el nom nou + el popularId actual. Si el nom
+      // nou no resol i no hi ha popularId vàlid → null (ancoratge perdut, que és
+      // correcte); no conservem un slug estancat que ja no hi casa.
+      p.slug = _resolveCatalogSlug({ name: name, popularId: p.popularId });
       p.emoji = selectedEmoji;
       p.date = noExpiryChecked ? null : date;
       p.noExpiry = noExpiryChecked;
@@ -4733,6 +4768,10 @@ function saveNewProduct() {
   };
   if (price !== null) productData.price = price;
   if (weight) productData.weight = weight;
+  // Fase 2, sub-pas 2: propaga el popularId del prefill (picker de populars /
+  // Compra'm) que fins ara es perdia. _createV2ProductWithLot en derivarà el
+  // slug per catàleg. Text lliure sense prefill → null (comportament anterior).
+  if (pendingAddPopularId) productData.popularId = pendingAddPopularId;
   // frozenDate: si el producte es crea directament al congelador,
   // registrem la data d'avui com a "data de congelació". Productes a
   // altres zones no en tenen — només es crea si la primera ubicació
@@ -4969,18 +5008,38 @@ function addToCustomPopular(name, emoji, days, location, noExpiry, price, weight
       if (!existing.weight && hasWeight) existing.weight = weight;
     }
   } else {
-    const entry = {
-      id: 'pop-learned-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-      name,
-      emoji: safeEmoji,
-      days: safeDays,
-      location: safeLoc,
-      noExpiry: noExp,
-      autoCreated: true
-    };
-    if (hasPrice) entry.price = price;
-    if (hasWeight) entry.weight = weight;
-    list.push(entry);
+    // Fase 2, sub-pas 2: abans de crear un pop-learned duplicat, mira si el nom
+    // JA resol a una entrada del catàleg (Fase 1: idioma/plural/nucli de compost
+    // — "Atún"→Tonyina, "Tomàquet"→Tomàquets, "Oli"→Oli d'oliva). Si resol,
+    // atribuïm l'aprenentatge a aquella entrada (omplint NOMÉS camps buits, sense
+    // clobbering de la veritat canònica) i NO creem duplicat. La igualtat exacta
+    // de dalt queda com a segon filtre per als noms que NO resolen al catàleg.
+    const catEntry = (typeof catalogEntryForName === 'function') ? catalogEntryForName(name) : null;
+    if (catEntry) {
+      const target = list.find(p => p && p.name && catalogEntryForName(p.name) === catEntry) || null;
+      if (target) {
+        if (!target.emoji) target.emoji = safeEmoji;
+        if (!target.location) target.location = safeLoc;
+        if (typeof target.days !== 'number' || target.days <= 0) target.days = safeDays;
+        if (typeof target.price !== 'number' && hasPrice) target.price = price;
+        if (!target.weight && hasWeight) target.weight = weight;
+      }
+      // Resol al catàleg però no és a `list` (rar): no creem res — un forat és
+      // preferible a un duplicat (mateix criteri que la Fase 1).
+    } else {
+      const entry = {
+        id: 'pop-learned-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        name,
+        emoji: safeEmoji,
+        days: safeDays,
+        location: safeLoc,
+        noExpiry: noExp,
+        autoCreated: true
+      };
+      if (hasPrice) entry.price = price;
+      if (hasWeight) entry.weight = weight;
+      list.push(entry);
+    }
   }
   if (typeof savePopularProducts === 'function') savePopularProducts(list);
 }
