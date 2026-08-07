@@ -12,7 +12,14 @@
        scripts de l'app, perquè els mòduls (biteme.js, buyme.js)
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+  <!-- Swiper CSS AUTO-ALLOTJAT i carregat de manera NO bloquejant. Cap carrusel
+       es pinta a l'arrencada: benvinguda i launcher no en tenen; els sliders
+       (zones/levels/shops/cookme) són pantalles secundàries que s'inicialitzen
+       sota demanda. media="print" el treu del camí crític del primer pintat i
+       onload el reactiva → el primer pintat NO espera cap recurs de tercers
+       (fora el DNS+TLS de jsDelivr del camí crític). <noscript> com a fallback. -->
+  <link rel="stylesheet" href="vendor/swiper-bundle.min.css?v=20260807-1" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="vendor/swiper-bundle.min.css?v=20260807-1"></noscript>
   <link rel="stylesheet" href="styles.css?v=20260807-2">
 </head>
 <body>
