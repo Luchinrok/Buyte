@@ -1,7 +1,12 @@
-/* ============================================
-   EATMEFIRST - Traduccions (només català)
-   La resta d'idiomes es recuperarà més endavant.
-   ============================================ */
+/* ============================================================================
+   Festuc — i18n.source.js  ·  FONT ÚNICA de traduccions (ca/es/en/fr)
+   ----------------------------------------------------------------------------
+   ⚠️  Aquest fitxer NO es serveix ni es carrega. És la font. Edita AQUÍ i,
+       després, regenera els fitxers que sí es carreguen:
+           pwsh tools/split-i18n.ps1
+       → genera i18n-core.js + i18n/{ca,es,en,fr}.js (amb gate de paritat).
+   NO editis mai i18n-core.js ni i18n/*.js directament: es regeneren.
+   ============================================================================ */
 
 const TRANSLATIONS = {
 

@@ -2258,7 +2258,7 @@
        (totes dins de funcions `_ensure*Swiper` / l'escàner), i l'escàner a més
        té guarda `typeof Html5Qrcode === 'undefined'`. Amb `defer` es baixen en
        paral·lel PERÒ surten de la cadena serial d'scripts clàssics, així que
-       deixen d'endarrerir i18n.js/core.js/app.js (i de posar 2 connexions
+       deixen d'endarrerir i18n-core.js/core.js/app.js (i de posar 2 connexions
        cross-origin —unpkg + jsDelivr— al davant del parser). S'executen després
        del parse i abans de DOMContentLoaded, per tant ja hi són quan corre
        l'init d'app.js (que va a DOMContentLoaded) i quan l'usuari hi interactua. -->
@@ -2266,7 +2266,17 @@
   <script defer src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260619-1"></script>
   <script src="notifications.js?v=20260707-1"></script>
-  <script src="i18n.js?v=20260806-1"></script>
+  <!-- i18n partit (font única: i18n.source.js, no servida; regenera amb
+       tools/split-i18n.ps1). i18n-core.js defineix
+       TRANSLATIONS={} + el runtime (t/setLanguage/translatePage…); cada
+       i18n/{lang}.js pobla TRANSLATIONS.{lang}. Sub-pas 1: encara es carreguen
+       els 4 estàticament (cap canvi de comportament). core PRIMER, després els
+       blocs; tots ABANS de core.js/app.js, que usen t(). -->
+  <script src="i18n-core.js?v=20260807-1"></script>
+  <script src="i18n/ca.js?v=20260807-1"></script>
+  <script src="i18n/es.js?v=20260807-1"></script>
+  <script src="i18n/en.js?v=20260807-1"></script>
+  <script src="i18n/fr.js?v=20260807-1"></script>
   <script src="js/core.js?v=20260807-1"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260806-3"></script>

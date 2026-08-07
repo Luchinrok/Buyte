@@ -1123,7 +1123,7 @@ function cookmeIngredientDisplay(name) {
 }
 
 // ── Display-only de receptes (Pas 4). Claus 'recipe_<id>_name/_steps/_tip' a
-// i18n.js; fallback al text real de recipes-data.js. PUR: ids intactes, res
+// i18n.source.js (regenera amb tools/split-i18n.ps1); fallback al text real de recipes-data.js. PUR: ids intactes, res
 // persistit tocat. Receptes custom (sense clau) → text de l'usuari tal qual.
 function recipeName(recipe) {
   if (!recipe || !recipe.id) return (recipe && recipe.name) || '';

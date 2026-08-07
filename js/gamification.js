@@ -585,7 +585,7 @@ function _buildRewardToast(opts) {
 
 // Display-only: nom/descripció d'insígnia traduïts. Mirall de categoryLabel
 // (categories.js) i recipeCategoryLabel (cookme.js): les claus
-// 'badge_<id>_name' / 'badge_<id>_desc' viuen a i18n.js; si no hi són,
+// 'badge_<id>_name' / 'badge_<id>_desc' viuen a i18n.source.js (regenera amb tools/split-i18n.ps1); si no hi són,
 // fallback al text original de badges-data.js. PUR: no toca res persistit,
 // l'id és intacte.
 function badgeLabel(badge) {
@@ -601,7 +601,7 @@ function badgeDesc(badge) {
   return (v === k) ? (badge.description || '') : v;
 }
 // Display-only: etiqueta de categoria d'insígnia traduïda. Clau
-// 'badgeCat_<id>' a i18n.js; fallback al label original de BADGE_CATEGORIES.
+// 'badgeCat_<id>' a i18n.source.js (regenera amb tools/split-i18n.ps1); fallback al label original de BADGE_CATEGORIES.
 // PUR: l'id de categoria és intacte (el filtratge segueix per cat.id).
 function badgeCategoryLabel(cat) {
   if (!cat || !cat.id) return (cat && cat.label) || '';
