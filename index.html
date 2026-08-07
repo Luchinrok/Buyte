@@ -1413,6 +1413,32 @@
     </div>
   </div>
 
+  <!-- Guarda anti-flaix d'onboarding. #screen-launcher porta class="screen active"
+       estàtic, així que es pintaria de seguida encara que l'usuari no hagi fet
+       l'onboarding; després el JS el reemplaçaria per la pantalla d'idioma (el
+       flaix del launcher que es veu en fer hard reload, ara que el JS triga més).
+       Aquest <script> INLINE i síncron (sense dependre de cap fitxer, per no
+       reintroduir el retard), col·locat DESPRÉS de #screen-welcome perquè tots
+       dos elements ja existeixin, fa ABANS del primer pintat: si l'onboarding no
+       està completat, treu `active` del launcher i l'activa a la benvinguda —
+       que ja té contingut estàtic sense text traduïble (👋 + "Festuc") — perquè
+       la primera obertura mostri la marca en comptes de res mentre carrega el JS.
+       Un cop el JS arrenca, showScreen('welcome') sobre una pantalla que ja és
+       activa és inofensiu (treu active de totes i la torna a posar) i
+       renderWelcomeStep n'omple el contingut. Defensiu: try/catch per si
+       localStorage està bloquejat → si peta, no fa res i el launcher es comporta
+       com abans. NO toca res per a l'usuari ja onboardat (99% de les obertures). -->
+  <script>
+    try {
+      if (localStorage.getItem('eatmefirst_onboarded') !== 'true') {
+        var _launcherEl = document.getElementById('screen-launcher');
+        if (_launcherEl) _launcherEl.classList.remove('active');
+        var _welcomeEl = document.getElementById('screen-welcome');
+        if (_welcomeEl) _welcomeEl.classList.add('active');
+      }
+    } catch (e) {}
+  </script>
+
   <!-- PANTALLA SELECCIONAR PAÍS (des de configuració) -->
   <div id="screen-country" class="screen">
     <header class="top-bar">
