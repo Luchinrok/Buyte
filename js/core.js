@@ -817,6 +817,12 @@ function showScreen(name) {
 
   // Engranatge del launcher: gira un cop quan s'entra a la pantalla inicial
   if (name === 'launcher') {
+    // Guarda anti-flaix d'onboarding (index.html <head>): en mostrar el launcher,
+    // treu SEMPRE la marca `pre-onboarding` de l'arrel, sigui quin sigui el camí
+    // que hi arriba (finishWelcome, moure producte a un altre espai, acció de
+    // notificació…). Si no, la regla inline `.pre-onboarding #screen-launcher
+    // { display:none !important }` deixaria el launcher amagat tota la sessió.
+    document.documentElement.classList.remove('pre-onboarding');
     const gear = document.querySelector('#launcher-menu-btn .gear-spin');
     if (gear) {
       gear.classList.remove('gear-spin-once');

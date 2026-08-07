@@ -21,6 +21,30 @@
   <link rel="stylesheet" href="vendor/swiper-bundle.min.css?v=20260807-1" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="vendor/swiper-bundle.min.css?v=20260807-1"></noscript>
   <link rel="stylesheet" href="styles.css?v=20260807-2">
+
+  <!-- Guarda anti-flaix d'onboarding — DECISIÓ AL <head>, abans que es pinti res.
+       #screen-launcher porta class="screen active" estàtic; si l'usuari no ha
+       completat l'onboarding es pintaria de seguida i el JS el reemplaçaria per
+       la pantalla d'idioma (el flaix). Aquí NO toquem cap element (cap del <body>
+       existeix encara): només marquem l'arrel amb `pre-onboarding`, i l'estil
+       inline (no styles.css, que arriba després) amaga el launcher i ensenya la
+       benvinguda —que té contingut estàtic sense text traduïble (👋 + "Festuc")—
+       perquè no es pinti mai el launcher ni un buit. El `display` de
+       #screen-welcome iguala el de .screen.active (flex + column). Defensiu:
+       try/catch per si localStorage està bloquejat. La classe es treu a
+       finishWelcome() abans de tornar al launcher (si no, el !important el
+       seguiria amagant per sempre). NO afecta l'usuari ja onboardat (99%). -->
+  <script>
+    try {
+      if (localStorage.getItem('eatmefirst_onboarded') !== 'true') {
+        document.documentElement.classList.add('pre-onboarding');
+      }
+    } catch (e) {}
+  </script>
+  <style>
+    .pre-onboarding #screen-launcher { display: none !important; }
+    .pre-onboarding #screen-welcome { display: flex; flex-direction: column; }
+  </style>
 </head>
 <body>
 
@@ -1413,32 +1437,6 @@
     </div>
   </div>
 
-  <!-- Guarda anti-flaix d'onboarding. #screen-launcher porta class="screen active"
-       estàtic, així que es pintaria de seguida encara que l'usuari no hagi fet
-       l'onboarding; després el JS el reemplaçaria per la pantalla d'idioma (el
-       flaix del launcher que es veu en fer hard reload, ara que el JS triga més).
-       Aquest <script> INLINE i síncron (sense dependre de cap fitxer, per no
-       reintroduir el retard), col·locat DESPRÉS de #screen-welcome perquè tots
-       dos elements ja existeixin, fa ABANS del primer pintat: si l'onboarding no
-       està completat, treu `active` del launcher i l'activa a la benvinguda —
-       que ja té contingut estàtic sense text traduïble (👋 + "Festuc") — perquè
-       la primera obertura mostri la marca en comptes de res mentre carrega el JS.
-       Un cop el JS arrenca, showScreen('welcome') sobre una pantalla que ja és
-       activa és inofensiu (treu active de totes i la torna a posar) i
-       renderWelcomeStep n'omple el contingut. Defensiu: try/catch per si
-       localStorage està bloquejat → si peta, no fa res i el launcher es comporta
-       com abans. NO toca res per a l'usuari ja onboardat (99% de les obertures). -->
-  <script>
-    try {
-      if (localStorage.getItem('eatmefirst_onboarded') !== 'true') {
-        var _launcherEl = document.getElementById('screen-launcher');
-        if (_launcherEl) _launcherEl.classList.remove('active');
-        var _welcomeEl = document.getElementById('screen-welcome');
-        if (_welcomeEl) _welcomeEl.classList.add('active');
-      }
-    } catch (e) {}
-  </script>
-
   <!-- PANTALLA SELECCIONAR PAÍS (des de configuració) -->
   <div id="screen-country" class="screen">
     <header class="top-bar">
@@ -2269,7 +2267,7 @@
   <script src="firebase-sync.js?v=20260619-1"></script>
   <script src="notifications.js?v=20260707-1"></script>
   <script src="i18n.js?v=20260806-1"></script>
-  <script src="js/core.js?v=20260806-3"></script>
+  <script src="js/core.js?v=20260807-1"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260806-3"></script>
   <script src="js/shops.js?v=20260807-2"></script>
