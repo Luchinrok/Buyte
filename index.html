@@ -13,7 +13,7 @@
        puguin fer `new Swiper(...)` quan s'invoqui openSection /
        openSupermarket. -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <link rel="stylesheet" href="styles.css?v=20260728-1">
+  <link rel="stylesheet" href="styles.css?v=20260807-2">
 </head>
 <body>
 
@@ -1375,28 +1375,33 @@
     </button>
   </div>
 
-  <!-- PANTALLA BENVINGUDA (primer cop) -->
+  <!-- PANTALLA BENVINGUDA (primer cop) — 2 passos: 1) idioma, 2) país.
+       Un sol toc avança a cada pas (cap botó de continuar). L'estat el porta la
+       variable welcomeStep (shops.js); renderWelcomeStep mostra/amaga els dos
+       blocs interns. NO són dues .screen separades: així _rerenderActiveScreen
+       (cas screen-welcome) repinta el pas ACTIU en canviar d'idioma sense fer
+       saltar l'usuari al pas 1. -->
   <div id="screen-welcome" class="screen">
     <div class="welcome-content">
       <div class="welcome-emoji">👋</div>
       <h1 class="welcome-title">Festuc</h1>
       <p class="welcome-subtitle" data-i18n="welcomeSubtitle"></p>
 
-      <!-- Idioma: mateixa prominència visual que el país. Reutilitza el
-           selector de Configuració (renderLangListInto → .lang-item) via
-           renderWelcomeLangList() (shops.js). Precarregat amb l'idioma
-           detectat del navegador (_resolveLang); en triar-ne un, setLanguage()
-           re-tradueix la resta de l'onboarding a l'instant sense perdre el
-           país destacat. -->
-      <p class="welcome-question" data-i18n="welcomeLangQuestion"></p>
-      <div class="lang-list welcome-lang-list" id="welcome-lang-list">
-        <!-- Es genera dinàmicament (renderLangListInto) -->
+      <!-- PAS 1 — IDIOMA (selector complet; un toc avança al pas 2) -->
+      <div id="welcome-step-lang">
+        <p class="welcome-question" data-i18n="welcomeLangQuestion"></p>
+        <div class="lang-list welcome-lang-list" id="welcome-lang-list">
+          <!-- Es genera dinàmicament (renderLangListInto) -->
+        </div>
       </div>
 
-      <p class="welcome-question" data-i18n="welcomeCountryQuestion"></p>
-
-      <div class="welcome-country-list" id="welcome-country-list">
-        <!-- Es genera dinàmicament -->
+      <!-- PAS 2 — PAÍS (un toc finalitza; Enrere torna al pas 1) -->
+      <div id="welcome-step-country" style="display:none">
+        <p class="welcome-question" data-i18n="welcomeCountryQuestion"></p>
+        <div class="welcome-country-list" id="welcome-country-list">
+          <!-- Es genera dinàmicament -->
+        </div>
+        <button type="button" class="welcome-back-btn" id="welcome-back-btn" data-i18n="back"></button>
       </div>
     </div>
   </div>
@@ -2227,14 +2232,14 @@
   <script src="js/core.js?v=20260806-3"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260806-3"></script>
-  <script src="js/shops.js?v=20260806-1"></script>
+  <script src="js/shops.js?v=20260807-2"></script>
   <script src="js/buyme.js?v=20260806-2"></script>
   <script src="js/populars.js?v=20260806-5"></script>
   <script src="js/categories.js?v=20260714-1"></script>
   <script src="js/purchase-history.js?v=20260706-2"></script>
   <script src="js/recent-purchases.js?v=20260715-1"></script>
   <script src="js/special-lists.js?v=20260803-1"></script>
-  <script src="js/settings.js?v=20260806-1"></script>
+  <script src="js/settings.js?v=20260807-1"></script>
   <script src="js/backup.js?v=20260508-2"></script>
   <script src="js/spaces.js?v=20260508-4"></script>
   <script src="js/spaces-ui.js?v=20260619-3"></script>

@@ -137,35 +137,68 @@ function getSupermarketById(id) {
   return supermarkets.find(s => s.id === id);
 }
 
+// ===== ONBOARDING EN 2 PASSOS: 1) idioma, 2) país =====
+// Un sol toc avança a cada pas (cap botó de continuar). L'estat el porta
+// welcomeStep sobre una sola .screen, així _rerenderActiveScreen (cas
+// screen-welcome) repinta el pas ACTIU en canviar d'idioma sense fer saltar
+// l'usuari al pas 1.
+let welcomeStep = 1;   // 1 = idioma · 2 = país
+
 function showWelcomeIfNeeded() {
   const onboarded = localStorage.getItem('eatmefirst_onboarded');
   if (onboarded === 'true') return false;
 
-  // Detecta país per defecte segons l'idioma
-  const lang = (typeof getCurrentLang === 'function') ? getCurrentLang() : 'ca';
-  const langToCountry = { ca: 'ES', es: 'ES', en: 'GB', fr: 'FR', it: 'IT', de: 'DE', pt: 'PT', nl: 'NL', ja: 'JP', zh: 'CN', ko: 'KR' };
-  currentCountry = langToCountry[lang] || 'ES';
-
-  renderWelcomeCountryList();
-  renderWelcomeLangList();
+  welcomeStep = 1;
+  _wireWelcomeButtons();
+  renderWelcomeStep();
   showScreen('welcome');
   return true;
 }
 
-// Selector d'idioma de la benvinguda: MATEIXA prominència visual que el país
-// (mateixes targetes .lang-item, 4 opcions visibles). Reutilitza el selector
-// de Configuració (renderLangListInto) — NO en duplica ni markup ni lògica.
-// Precarregat amb l'idioma actiu (detectat del navegador via _resolveLang).
-// En triar-ne un, renderLangListInto crida setLanguage() (persisteix +
-// re-tradueix) i _rerenderActiveScreen() repinta la resta de l'onboarding
-// (llista de països + aquest selector) a l'instant. NO recalcula
-// currentCountry des de l'idioma: el país destacat es manté intacte.
+// Cablatge (idempotent via onclick=) del botó Enrere (pas 2 → pas 1).
+function _wireWelcomeButtons() {
+  const back = document.getElementById('welcome-back-btn');
+  if (back) back.onclick = welcomeBackToLang;
+}
+
+// Mostra el pas actiu i repinta la seva llista. _rerenderActiveScreen (cas
+// screen-welcome) l'invoca en canviar d'idioma: com que welcomeStep es manté,
+// l'usuari NO salta al pas 1.
+function renderWelcomeStep() {
+  const stepLang = document.getElementById('welcome-step-lang');
+  const stepCountry = document.getElementById('welcome-step-country');
+  if (stepLang) stepLang.style.display = (welcomeStep === 1) ? '' : 'none';
+  if (stepCountry) stepCountry.style.display = (welcomeStep === 2) ? '' : 'none';
+
+  if (welcomeStep === 1) {
+    renderWelcomeLangList();
+  } else {
+    renderWelcomeCountryList();
+  }
+}
+
+// Pas 1 — selector d'idioma complet (4 targetes .lang-item). Reutilitza el
+// selector de Configuració (renderLangListInto): en tocar un idioma, el seu
+// handler crida setLanguage() (persisteix + re-tradueix). Un listener delegat
+// en fase de CAPTURA avança al pas 2: com que fixa welcomeStep=2 ABANS que el
+// handler de renderLangListInto dispari _rerenderActiveScreen, el re-render per
+// canvi d'idioma ja pinta el pas 2 (país) i no torna a pintar el pas 1.
 function renderWelcomeLangList() {
   const container = document.getElementById('welcome-lang-list');
   if (!container) return;
   if (typeof renderLangListInto === 'function') renderLangListInto(container);
+  if (!container.dataset.welcomeHook) {
+    container.dataset.welcomeHook = '1';
+    container.addEventListener('click', (e) => {
+      if (e.target && e.target.closest && e.target.closest('.lang-item')) {
+        welcomeStep = 2;
+        renderWelcomeStep();
+      }
+    }, true);   // captura: abans del handler de renderLangListInto
+  }
 }
 
+// Pas 2 — llista de països (ja traduïda a l'idioma triat). Un toc finalitza.
 function renderWelcomeCountryList() {
   const container = document.getElementById('welcome-country-list');
   if (!container) return;
@@ -173,22 +206,27 @@ function renderWelcomeCountryList() {
 
   COUNTRIES.forEach(c => {
     const btn = document.createElement('button');
-    btn.className = 'country-card' + (c.code === currentCountry ? ' selected' : '');
+    btn.className = 'country-card';
     btn.innerHTML = `
       <span class="country-flag">${c.flag}</span>
       <span class="country-name">${t(c.nameKey)}</span>
-      ${c.code === currentCountry ? '<span class="country-check">✓</span>' : ''}
     `;
-    btn.addEventListener('click', () => selectCountryFromWelcome(c.code));
+    btn.addEventListener('click', () => finishWelcome(c.code));
     container.appendChild(btn);
   });
 }
 
-function selectCountryFromWelcome(countryCode) {
-  // Inicialitza supermercats per al país triat
-  initSupermarketsForCountry(countryCode);
+// Enrere (pas 2 → pas 1).
+function welcomeBackToLang() {
+  welcomeStep = 1;
+  renderWelcomeStep();
+}
+
+// Final: en tocar un país, supermercats del país + onboarded + launcher + toast.
+function finishWelcome(countryCode) {
+  const country = countryCode || currentCountry;
+  if (typeof initSupermarketsForCountry === 'function') initSupermarketsForCountry(country);
   localStorage.setItem('eatmefirst_onboarded', 'true');
-  // Va al launcher
   showScreen('launcher');
   setTimeout(() => showToast('🎉 ' + t('welcomeReady')), 300);
 }

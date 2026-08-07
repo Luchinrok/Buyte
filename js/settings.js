@@ -2982,9 +2982,10 @@ function _rerenderActiveScreen() {
       // t()/getCurrentLang() i cal repintar-los perquè segueixin l'idioma nou.
       // renderWelcomeCountryList llegeix currentCountry tal qual: no es perd
       // el país destacat.
+      // Onboarding en 2 passos: renderWelcomeStep repinta el pas ACTIU
+      // (welcomeStep es manté) → l'usuari no salta al pas 1 en canviar d'idioma.
       case 'screen-welcome':
-        call('renderWelcomeCountryList');
-        call('renderWelcomeLangList');
+        call('renderWelcomeStep');
         break;
       // screen-language, screen-settings*, etc.: coberts per data-i18n.
       default: break;
