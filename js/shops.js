@@ -148,6 +148,11 @@ function showWelcomeIfNeeded() {
   const onboarded = localStorage.getItem('eatmefirst_onboarded');
   if (onboarded === 'true') return false;
 
+  // Precarrega (no bloquejant) els blocs d'idioma no actius: el pas 1 és triar
+  // idioma i l'usuari triga segons, així quan en toqui un ja el tindrà i el
+  // canvi serà instantani, sense el flaix de la llista de països re-traduint-se.
+  if (typeof _preloadOtherLangBlocks === 'function') _preloadOtherLangBlocks();
+
   welcomeStep = 1;
   _wireWelcomeButtons();
   renderWelcomeStep();

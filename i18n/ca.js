@@ -588,6 +588,7 @@ TRANSLATIONS.ca = {
     welcomeLangQuestion: 'En quin idioma vols l\'app?',
     welcomeCountryQuestion: 'On vius? Et mostrarem els supermercats del teu país',
     welcomeReady: 'Tot a punt! Comencem!',
+    langLoadError: "No s'ha pogut carregar l'idioma. Torna-ho a provar.",
     countryES: 'Espanya',
     countryFR: 'França',
     countryIT: 'Itàlia',

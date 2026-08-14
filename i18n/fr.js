@@ -1427,6 +1427,7 @@ TRANSLATIONS.fr = {
     changeCountrySub: "Les supermarchés actuels seront désactivés et ceux du nouveau pays apparaîtront. Rien n'est perdu, tu pourras les réactiver plus tard.",
     changeCountryConfirm: 'Oui, changer',
     welcomeReady: "Tout est prêt ! C'est parti !",
+    langLoadError: 'Impossible de charger la langue. Réessaie.',
     welcomeSubtitle: "L'appli qui te rappelle ce que tu as et ce que tu dois acheter",
     welcomeLangQuestion: "Dans quelle langue veux-tu l'appli ?",
     welcomeCountryQuestion: "Où habites-tu ? Nous te montrerons les supermarchés de ton pays",

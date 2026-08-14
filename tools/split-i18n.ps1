@@ -81,4 +81,20 @@ $core = ($HDR -join "`n") + "`n" + 'const TRANSLATIONS = {};' + "`n`n" + $tailTe
 Write-Output ('Claus top-level: ' + (($langs | ForEach-Object { $_ + '=' + $counts[$_] }) -join '  '))
 $uniq = @($counts.Values | Select-Object -Unique)
 if ($uniq.Count -ne 1) { Write-Output '!! PARITAT DESIGUAL entre idiomes -> AVORTAT'; exit 1 }
+
+# --- Estampa I18N_V a index.html (data + increment) ---------------------------
+# Generar i bumpar han de ser la MATEIXA accio: aixi no es pot oblidar el
+# cache-bust dels blocs (URL construida en runtime pel detector inline).
+$idx = Join-Path $root 'index.html'
+if (-not (Test-Path $idx)) { Write-Output "!! No trobo index.html"; exit 1 }
+$html = [System.IO.File]::ReadAllText($idx, $enc)
+$today = (Get-Date).ToString('yyyyMMdd')
+$vm = [regex]::Match($html, "var I18N_V = '(\d{8})-(\d+)'")
+if (-not $vm.Success) { Write-Output "!! No trobo ""var I18N_V = 'YYYYMMDD-N'"" a index.html (afegeix el detector inline primer)"; exit 1 }
+if ($vm.Groups[1].Value -eq $today) { $newN = [int]$vm.Groups[2].Value + 1 } else { $newN = 1 }
+$newV = $today + '-' + $newN
+$html = [regex]::Replace($html, "var I18N_V = '\d{8}-\d+'", "var I18N_V = '$newV'")
+[System.IO.File]::WriteAllText($idx, $html, $enc)
+
 Write-Output ('OK: paritat ' + $uniq[0] + ' x4. Generats: i18n-core.js + i18n/{ca,es,en,fr}.js')
+Write-Output ('I18N_V estampat a index.html: ' + $newV)

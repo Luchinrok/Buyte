@@ -5535,6 +5535,23 @@ body.selection-mode-active #shops-slider .arrow-btn {
   gap: 14px;
 }
 
+/* Canvi d'idioma asíncron: mentre el bloc està en vol, les targetes es
+   deshabiliten (dim) i la triada mostra un spinner a la dreta. */
+.lang-item:disabled { opacity: 0.5; cursor: default; }
+.lang-item-loading { opacity: 1; }
+.lang-item-loading::after {
+  content: '';
+  margin-left: auto;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: langItemSpin 0.6s linear infinite;
+}
+@keyframes langItemSpin { to { transform: rotate(360deg); } }
+
 .lang-item:active {
   transform: scale(0.98);
   background: var(--bg-secondary);

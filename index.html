@@ -20,7 +20,7 @@
        (fora el DNS+TLS de jsDelivr del camí crític). <noscript> com a fallback. -->
   <link rel="stylesheet" href="vendor/swiper-bundle.min.css?v=20260807-1" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="vendor/swiper-bundle.min.css?v=20260807-1"></noscript>
-  <link rel="stylesheet" href="styles.css?v=20260807-2">
+  <link rel="stylesheet" href="styles.css?v=20260811-1">
 
   <!-- Guarda anti-flaix d'onboarding — DECISIÓ AL <head>, abans que es pinti res.
        #screen-launcher porta class="screen active" estàtic; si l'usuari no ha
@@ -2266,28 +2266,71 @@
   <script defer src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script src="firebase-sync.js?v=20260619-1"></script>
   <script src="notifications.js?v=20260707-1"></script>
-  <!-- i18n partit (font única: i18n.source.js, no servida; regenera amb
-       tools/split-i18n.ps1). i18n-core.js defineix
-       TRANSLATIONS={} + el runtime (t/setLanguage/translatePage…); cada
-       i18n/{lang}.js pobla TRANSLATIONS.{lang}. Sub-pas 1: encara es carreguen
-       els 4 estàticament (cap canvi de comportament). core PRIMER, després els
-       blocs; tots ABANS de core.js/app.js, que usen t(). -->
-  <script src="i18n-core.js?v=20260807-1"></script>
-  <script src="i18n/ca.js?v=20260807-1"></script>
-  <script src="i18n/es.js?v=20260807-1"></script>
-  <script src="i18n/en.js?v=20260807-1"></script>
-  <script src="i18n/fr.js?v=20260807-1"></script>
+  <!-- i18n partit per idioma. Font única: i18n.source.js (no servida); regenera
+       amb tools/split-i18n.ps1, que TAMBÉ estampa I18N_V aquí sota. i18n-core.js
+       porta el runtime (TRANSLATIONS={} + t/setLanguage/translatePage…); cada
+       i18n/{lang}.js pobla TRANSLATIONS.{lang}. Es carrega NOMÉS el bloc de
+       l'idioma actiu (detector); setLanguage carrega la resta sota demanda. -->
+  <script>
+    // I18N_V: versió compartida de i18n-core.js i tots els blocs. L'ESTAMPA
+    // tools/split-i18n.ps1 en regenerar (NO la toquis a mà). Global perquè
+    // setLanguage/_preloadOtherLangBlocks la reusin per construir les URLs.
+    var I18N_V = '20260811-2';
+    (function () {
+      // ⚠️ MATEIXA LÒGICA EXACTA que _resolveLang() a i18n.source.js. Si divergeix,
+      //    es carregaria un bloc i getCurrentLang() en resoldria un altre. El
+      //    detector desa el resultat a window.__I18N_LANG i _resolveLang l'usa com
+      //    a font primària. Mantingueu-los sincronitzats: clau 'eatmefirst_lang',
+      //    validació contra ['ca','es','en','fr'], navigator.language(s), 'ca'.
+      var SUPPORTED = ['ca', 'es', 'en', 'fr'];
+      var KEY = 'eatmefirst_lang';
+      var L = 'ca';
+      try {
+        var saved = localStorage.getItem(KEY);
+        if (saved && SUPPORTED.indexOf(saved) !== -1) {
+          L = saved;
+        } else {
+          var cands = [];
+          if (navigator.languages && navigator.languages.length) cands = cands.concat(navigator.languages);
+          if (navigator.language) cands.push(navigator.language);
+          for (var i = 0; i < cands.length; i++) {
+            var base = String(cands[i] || '').split('-')[0].toLowerCase();
+            if (SUPPORTED.indexOf(base) !== -1) { L = base; break; }
+          }
+        }
+      } catch (e) {}
+      window.__I18N_LANG = L;
+      // Síncron, durant el parse, ABANS de core.js: primer el runtime, després
+      // NOMÉS el bloc de l'idioma actiu.
+      document.write('<script src="i18n-core.js?v=' + I18N_V + '"><\/script>');
+      document.write('<script src="i18n/' + L + '.js?v=' + I18N_V + '"><\/script>');
+    })();
+  </script>
+  <script>
+    // Xarxa de seguretat: aquest script corre DESPRÉS dels blocs escrits amunt
+    // (encara durant el parse). Si el bloc actiu no ha carregat (404 / xarxa /
+    // I18N_V mal estampat) TRANSLATIONS queda buit i l'app mostraria claus
+    // crues → carreguem 'ca' com a últim recurs (síncron), perquè el fallback
+    // de t() mostri català en comptes de claus.
+    (function () {
+      try {
+        if (typeof TRANSLATIONS !== 'undefined' && Object.keys(TRANSLATIONS).length === 0) {
+          document.write('<script src="i18n/ca.js?v=' + I18N_V + '"><\/script>');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <script src="js/core.js?v=20260807-1"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
   <script src="js/biteme.js?v=20260806-3"></script>
-  <script src="js/shops.js?v=20260807-2"></script>
+  <script src="js/shops.js?v=20260811-1"></script>
   <script src="js/buyme.js?v=20260806-2"></script>
   <script src="js/populars.js?v=20260806-5"></script>
   <script src="js/categories.js?v=20260714-1"></script>
   <script src="js/purchase-history.js?v=20260706-2"></script>
   <script src="js/recent-purchases.js?v=20260715-1"></script>
   <script src="js/special-lists.js?v=20260803-1"></script>
-  <script src="js/settings.js?v=20260807-1"></script>
+  <script src="js/settings.js?v=20260811-1"></script>
   <script src="js/backup.js?v=20260508-2"></script>
   <script src="js/spaces.js?v=20260508-4"></script>
   <script src="js/spaces-ui.js?v=20260619-3"></script>

@@ -1427,6 +1427,7 @@ TRANSLATIONS.es = {
     changeCountrySub: 'Se desactivarán los supermercados actuales y aparecerán los del nuevo país. No se pierde nada, puedes volver a activarlos más tarde.',
     changeCountryConfirm: 'Sí, cambiar',
     welcomeReady: '¡Todo listo! ¡Empezamos!',
+    langLoadError: 'No se ha podido cargar el idioma. Inténtalo de nuevo.',
     welcomeSubtitle: 'La app que te recuerda qué tienes y qué debes comprar',
     welcomeLangQuestion: '¿En qué idioma quieres la app?',
     welcomeCountryQuestion: '¿Dónde vives? Te mostraremos los supermercados de tu país',

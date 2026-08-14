@@ -1427,6 +1427,7 @@ TRANSLATIONS.en = {
     changeCountrySub: "Your current supermarkets will be turned off and the new country's will appear. Nothing is lost — you can turn them back on later.",
     changeCountryConfirm: 'Yes, change',
     welcomeReady: "All set! Let's go!",
+    langLoadError: "Couldn't load the language. Please try again.",
     welcomeSubtitle: 'The app that reminds you what you have and what to buy',
     welcomeLangQuestion: 'Which language do you want the app in?',
     welcomeCountryQuestion: "Where do you live? We'll show you the supermarkets in your country",

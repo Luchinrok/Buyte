@@ -2171,9 +2171,26 @@ function renderLangListInto(container) {
 
     btn.addEventListener('click', () => {
       if (lang === getCurrentLang()) return;
-      if (typeof setLanguage === 'function') setLanguage(lang);
-      renderLangListInto(container);   // repinta amb el nou actiu
-      showToast('✓ ' + ((typeof LANGUAGE_NAMES !== 'undefined' && LANGUAGE_NAMES[lang]) || lang));
+      if (typeof setLanguage !== 'function') return;
+      const nameOf = (typeof LANGUAGE_NAMES !== 'undefined' && LANGUAGE_NAMES[lang]) || lang;
+      // Si el bloc encara no hi és (canvi asíncron), feedback de càrrega: marca
+      // aquesta targeta com a "carregant" i deshabilita totes (no re-picar mentre
+      // està en vol). Amb el bloc ja carregat (immediat / precàrrega) no es mostra.
+      const instant = (typeof isLangBlockLoaded === 'function') ? isLangBlockLoaded(lang) : true;
+      if (!instant) {
+        btn.classList.add('lang-item-loading');
+        container.querySelectorAll('.lang-item').forEach(b => { b.disabled = true; });
+      }
+      setLanguage(lang, (status) => {
+        if (status === 'superseded') return;                 // un altre canvi el gestiona
+        if (status === 'applied') {
+          renderLangListInto(container);                     // repinta (reactiva + treu loading)
+          showToast('✓ ' + nameOf);
+        } else {                                             // 'error'
+          renderLangListInto(container);                     // repinta amb l'idioma ACTUAL
+          showToast('⚠️ ' + (typeof t === 'function' ? t('langLoadError') : 'Error'));
+        }
+      });
     });
 
     container.appendChild(btn);
