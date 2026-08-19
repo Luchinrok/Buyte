@@ -5,6 +5,27 @@
 // ============================================================================
 
 TRANSLATIONS.en = {
+    // ===== Receptes · plat-unic (Pas 4, sub-lot 5) =====
+    'recipe_pizza-margherita_name': 'Margherita pizza',
+    'recipe_pizza-margherita_steps': ['Spread the dough out on baking paper.', 'Brush it with tomato and spread the mozzarella over it.', 'Oven at 220° for 12 minutes and garnish with fresh basil.'],
+    'recipe_wrap-pollastre_name': 'Chicken wrap',
+    'recipe_wrap-pollastre_steps': ['Cook the chicken cut into strips.', 'Spread out the wrap and add lettuce and chicken.', 'Add a little mayonnaise and roll it up.'],
+    'recipe_entrepa-vegetal_name': 'Veggie sandwich',
+    'recipe_entrepa-vegetal_steps': ['Cut the bread and spread a little mayonnaise.', 'Add lettuce, tomato and cheese.', 'Close the sandwich and cut it in half.'],
+    'recipe_hamburguesa-completa_name': 'Loaded burger',
+    'recipe_hamburguesa-completa_steps': ['Cook the burger on the griddle.', 'Assemble it inside the bun with lettuce, tomato and cheese.', 'Finish with onion rings if you like.'],
+    'recipe_empanada_name': 'Empanada',
+    'recipe_empanada_steps': ['Sauté the onion with the mince for 10 min.', 'Roll out the dough, add the filling and close.', 'Brush with beaten egg and oven 30 min at 190°.'],
+    'recipe_coca-recapte_name': 'Coca de recapte',
+    'recipe_coca-recapte_steps': ['Spread the thin dough out on the oven tray.', 'Spread the roasted vegetables in strips.', 'Oven at 200° for 25 minutes.'],
+    'recipe_quiche-verdures_name': 'Vegetable quiche',
+    'recipe_quiche-verdures_steps': ['Sauté the chopped vegetables until tender.', 'Beat the eggs with the cream and the cheese.', 'Pour it all into the tin and oven 30 min at 180°.'],
+    'recipe_tortilla-mexicana_name': 'Mexican tortilla',
+    'recipe_tortilla-mexicana_steps': ['Cook the meat and season it to taste.', 'Spread out the tortilla with cheese and the meat.', 'Add the sliced avocado and roll it up.'],
+    'recipe_entrepa-calamars_name': 'Squid sandwich',
+    'recipe_entrepa-calamars_steps': ['Fry the battered squid.', 'Cut the bread open down the middle.', 'Fill with the squid, drizzle with lemon and finish with mayonnaise.'],
+    'recipe_entrepa-tonyina_name': 'Tuna sandwich',
+    'recipe_entrepa-tonyina_steps': ['Cut the bread open in half.', 'Add the drained tuna and sliced tomato.', 'Finish with a little mayonnaise and close.'],
     // ===== Receptes · carn-peix (Pas 4, sub-lot 4) =====
     'recipe_pollastre-rostit_name': 'Roast chicken',
     'recipe_pollastre-rostit_steps': ['Season the chicken with salt and pepper inside and out.', 'Put it in the tray with the potatoes and onion in quarters.', 'Oven at 200° for 60 min, basting it with its juices.'],

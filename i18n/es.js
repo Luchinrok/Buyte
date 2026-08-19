@@ -5,6 +5,27 @@
 // ============================================================================
 
 TRANSLATIONS.es = {
+    // ===== Receptes · plat-unic (Pas 4, sub-lot 5) =====
+    'recipe_pizza-margherita_name': 'Pizza margarita',
+    'recipe_pizza-margherita_steps': ['Extiende la masa sobre papel de horno.', 'Píntala con tomate y reparte la mozzarella.', 'Horno a 220° 12 minutos y decora con albahaca fresca.'],
+    'recipe_wrap-pollastre_name': 'Wrap de pollo',
+    'recipe_wrap-pollastre_steps': ['Cocina el pollo cortado en tiras.', 'Extiende el wrap y pon lechuga y pollo.', 'Añade un poco de mayonesa y enrolla.'],
+    'recipe_entrepa-vegetal_name': 'Bocadillo vegetal',
+    'recipe_entrepa-vegetal_steps': ['Corta el pan y unta un poco de mayonesa.', 'Pon lechuga, tomate y queso.', 'Cierra el bocadillo y córtalo por la mitad.'],
+    'recipe_hamburguesa-completa_name': 'Hamburguesa completa',
+    'recipe_hamburguesa-completa_steps': ['Cocina la hamburguesa a la plancha.', 'Móntala dentro del pan con lechuga, tomate y queso.', 'Acaba con aros de cebolla si quieres.'],
+    'recipe_empanada_name': 'Empanada',
+    'recipe_empanada_steps': ['Sofríe la cebolla con la carne 10 min.', 'Extiende la masa, pon el relleno y cierra.', 'Pinta con huevo batido y horno 30 min a 190°.'],
+    'recipe_coca-recapte_name': 'Coca de recapte',
+    'recipe_coca-recapte_steps': ['Extiende la masa fina sobre la bandeja del horno.', 'Reparte las verduras asadas en tiras.', 'Horno a 200° durante 25 minutos.'],
+    'recipe_quiche-verdures_name': 'Quiche de verduras',
+    'recipe_quiche-verdures_steps': ['Saltea las verduras cortadas hasta que estén tiernas.', 'Bate los huevos con la nata y el queso.', 'Viértelo todo en el molde y horno 30 min a 180°.'],
+    'recipe_tortilla-mexicana_name': 'Wrap mexicano',
+    'recipe_tortilla-mexicana_steps': ['Cocina la carne y adóbala al gusto.', 'Extiende el wrap con queso y la carne.', 'Añade el aguacate cortado y enrolla.'],
+    'recipe_entrepa-calamars_name': 'Bocadillo de calamares',
+    'recipe_entrepa-calamars_steps': ['Fríe los calamares rebozados.', 'Abre el pan por el medio.', 'Rellena con los calamares, riega con limón y acaba con mayonesa.'],
+    'recipe_entrepa-tonyina_name': 'Bocadillo de atún',
+    'recipe_entrepa-tonyina_steps': ['Abre el pan por la mitad.', 'Pon el atún escurrido y tomate en rodajas.', 'Acaba con un poco de mayonesa y cierra.'],
     // ===== Receptes · carn-peix (Pas 4, sub-lot 4) =====
     'recipe_pollastre-rostit_name': 'Pollo asado',
     'recipe_pollastre-rostit_steps': ['Salpimienta el pollo por dentro y por fuera.', 'Ponlo en la bandeja con las patatas y la cebolla en cuartos.', 'Horno a 200° durante 60 min, regándolo con su jugo.'],

@@ -12,6 +12,27 @@ const TRANSLATIONS = {
 
   // ============ CATALÀ ============
   ca: {
+    // ===== Receptes · plat-unic (Pas 4, sub-lot 5) =====
+    'recipe_pizza-margherita_name': 'Pizza margherita',
+    'recipe_pizza-margherita_steps': ['Estén la massa sobre paper de forn.', 'Pinta-la amb tomàquet i reparteix-hi la mozzarella.', 'Forn a 220° 12 minuts i decora amb alfàbrega fresca.'],
+    'recipe_wrap-pollastre_name': 'Wrap de pollastre',
+    'recipe_wrap-pollastre_steps': ['Cuina el pollastre tallat a tires.', 'Estén el wrap i posa-hi enciam i pollastre.', 'Afegeix una mica de maionesa i enrotlla.'],
+    'recipe_entrepa-vegetal_name': 'Entrepà vegetal',
+    'recipe_entrepa-vegetal_steps': ['Talla el pa i unta una mica de maionesa.', 'Posa enciam, tomàquet i formatge.', "Tanca l'entrepà i talla'l per la meitat."],
+    'recipe_hamburguesa-completa_name': 'Hamburguesa completa',
+    'recipe_hamburguesa-completa_steps': ['Cuina la hamburguesa a la planxa.', 'Munta-la dins el pa amb enciam, tomàquet i formatge.', 'Acaba amb anelles de ceba si vols.'],
+    'recipe_empanada_name': 'Empanada',
+    'recipe_empanada_steps': ['Sofregeix la ceba amb la carn 10 min.', 'Estén la massa, posa-hi el farciment i tanca.', 'Pinta amb ou batut i forn 30 min a 190°.'],
+    'recipe_coca-recapte_name': 'Coca de recapte',
+    'recipe_coca-recapte_steps': ['Estén la massa fina sobre la safata del forn.', 'Reparteix les verdures escalivades a tires.', 'Forn a 200° durant 25 minuts.'],
+    'recipe_quiche-verdures_name': 'Quiche de verdures',
+    'recipe_quiche-verdures_steps': ['Saltejat les verdures tallades fins que estiguin tendres.', 'Bat els ous amb la nata i el formatge.', 'Aboca-ho tot al motlle i forn 30 min a 180°.'],
+    'recipe_tortilla-mexicana_name': 'Tortilla mexicana',
+    'recipe_tortilla-mexicana_steps': ['Cuina la carn i adoba-la al gust.', 'Estén la tortilla amb formatge i la carn.', "Afegeix l'alvocat tallat i enrotlla."],
+    'recipe_entrepa-calamars_name': 'Entrepà de calamars',
+    'recipe_entrepa-calamars_steps': ['Fregeix els calamars arrebossats.', 'Obre el pa pel mig.', 'Omple amb els calamars, banya amb llimona i acaba amb maionesa.'],
+    'recipe_entrepa-tonyina_name': 'Entrepà de tonyina',
+    'recipe_entrepa-tonyina_steps': ['Obre el pa per la meitat.', 'Posa-hi la tonyina escorreguda i tomàquet a rodanxes.', 'Acaba amb una mica de maionesa i tanca.'],
     // ===== Receptes · carn-peix (Pas 4, sub-lot 4) =====
     'recipe_pollastre-rostit_name': 'Pollastre rostit',
     'recipe_pollastre-rostit_steps': ['Salpebra el pollastre per dins i per fora.', "Posa'l a la safata amb les patates i la ceba a quarts.", 'Forn a 200° durant 60 min, regant-lo amb el seu suc.'],
@@ -1502,6 +1523,27 @@ const TRANSLATIONS = {
   // Pas 3 — traducció per blocs. Les claus que falten cauen a `ca` via el
   // fallback de t(). Bloc Menja'm/BiteMe traduït (ES/EN/FR).
   es: {
+    // ===== Receptes · plat-unic (Pas 4, sub-lot 5) =====
+    'recipe_pizza-margherita_name': 'Pizza margarita',
+    'recipe_pizza-margherita_steps': ['Extiende la masa sobre papel de horno.', 'Píntala con tomate y reparte la mozzarella.', 'Horno a 220° 12 minutos y decora con albahaca fresca.'],
+    'recipe_wrap-pollastre_name': 'Wrap de pollo',
+    'recipe_wrap-pollastre_steps': ['Cocina el pollo cortado en tiras.', 'Extiende el wrap y pon lechuga y pollo.', 'Añade un poco de mayonesa y enrolla.'],
+    'recipe_entrepa-vegetal_name': 'Bocadillo vegetal',
+    'recipe_entrepa-vegetal_steps': ['Corta el pan y unta un poco de mayonesa.', 'Pon lechuga, tomate y queso.', 'Cierra el bocadillo y córtalo por la mitad.'],
+    'recipe_hamburguesa-completa_name': 'Hamburguesa completa',
+    'recipe_hamburguesa-completa_steps': ['Cocina la hamburguesa a la plancha.', 'Móntala dentro del pan con lechuga, tomate y queso.', 'Acaba con aros de cebolla si quieres.'],
+    'recipe_empanada_name': 'Empanada',
+    'recipe_empanada_steps': ['Sofríe la cebolla con la carne 10 min.', 'Extiende la masa, pon el relleno y cierra.', 'Pinta con huevo batido y horno 30 min a 190°.'],
+    'recipe_coca-recapte_name': 'Coca de recapte',
+    'recipe_coca-recapte_steps': ['Extiende la masa fina sobre la bandeja del horno.', 'Reparte las verduras asadas en tiras.', 'Horno a 200° durante 25 minutos.'],
+    'recipe_quiche-verdures_name': 'Quiche de verduras',
+    'recipe_quiche-verdures_steps': ['Saltea las verduras cortadas hasta que estén tiernas.', 'Bate los huevos con la nata y el queso.', 'Viértelo todo en el molde y horno 30 min a 180°.'],
+    'recipe_tortilla-mexicana_name': 'Wrap mexicano',
+    'recipe_tortilla-mexicana_steps': ['Cocina la carne y adóbala al gusto.', 'Extiende el wrap con queso y la carne.', 'Añade el aguacate cortado y enrolla.'],
+    'recipe_entrepa-calamars_name': 'Bocadillo de calamares',
+    'recipe_entrepa-calamars_steps': ['Fríe los calamares rebozados.', 'Abre el pan por el medio.', 'Rellena con los calamares, riega con limón y acaba con mayonesa.'],
+    'recipe_entrepa-tonyina_name': 'Bocadillo de atún',
+    'recipe_entrepa-tonyina_steps': ['Abre el pan por la mitad.', 'Pon el atún escurrido y tomate en rodajas.', 'Acaba con un poco de mayonesa y cierra.'],
     // ===== Receptes · carn-peix (Pas 4, sub-lot 4) =====
     'recipe_pollastre-rostit_name': 'Pollo asado',
     'recipe_pollastre-rostit_steps': ['Salpimienta el pollo por dentro y por fuera.', 'Ponlo en la bandeja con las patatas y la cebolla en cuartos.', 'Horno a 200° durante 60 min, regándolo con su jugo.'],
@@ -2973,6 +3015,27 @@ const TRANSLATIONS = {
   },
 
   en: {
+    // ===== Receptes · plat-unic (Pas 4, sub-lot 5) =====
+    'recipe_pizza-margherita_name': 'Margherita pizza',
+    'recipe_pizza-margherita_steps': ['Spread the dough out on baking paper.', 'Brush it with tomato and spread the mozzarella over it.', 'Oven at 220° for 12 minutes and garnish with fresh basil.'],
+    'recipe_wrap-pollastre_name': 'Chicken wrap',
+    'recipe_wrap-pollastre_steps': ['Cook the chicken cut into strips.', 'Spread out the wrap and add lettuce and chicken.', 'Add a little mayonnaise and roll it up.'],
+    'recipe_entrepa-vegetal_name': 'Veggie sandwich',
+    'recipe_entrepa-vegetal_steps': ['Cut the bread and spread a little mayonnaise.', 'Add lettuce, tomato and cheese.', 'Close the sandwich and cut it in half.'],
+    'recipe_hamburguesa-completa_name': 'Loaded burger',
+    'recipe_hamburguesa-completa_steps': ['Cook the burger on the griddle.', 'Assemble it inside the bun with lettuce, tomato and cheese.', 'Finish with onion rings if you like.'],
+    'recipe_empanada_name': 'Empanada',
+    'recipe_empanada_steps': ['Sauté the onion with the mince for 10 min.', 'Roll out the dough, add the filling and close.', 'Brush with beaten egg and oven 30 min at 190°.'],
+    'recipe_coca-recapte_name': 'Coca de recapte',
+    'recipe_coca-recapte_steps': ['Spread the thin dough out on the oven tray.', 'Spread the roasted vegetables in strips.', 'Oven at 200° for 25 minutes.'],
+    'recipe_quiche-verdures_name': 'Vegetable quiche',
+    'recipe_quiche-verdures_steps': ['Sauté the chopped vegetables until tender.', 'Beat the eggs with the cream and the cheese.', 'Pour it all into the tin and oven 30 min at 180°.'],
+    'recipe_tortilla-mexicana_name': 'Mexican tortilla',
+    'recipe_tortilla-mexicana_steps': ['Cook the meat and season it to taste.', 'Spread out the tortilla with cheese and the meat.', 'Add the sliced avocado and roll it up.'],
+    'recipe_entrepa-calamars_name': 'Squid sandwich',
+    'recipe_entrepa-calamars_steps': ['Fry the battered squid.', 'Cut the bread open down the middle.', 'Fill with the squid, drizzle with lemon and finish with mayonnaise.'],
+    'recipe_entrepa-tonyina_name': 'Tuna sandwich',
+    'recipe_entrepa-tonyina_steps': ['Cut the bread open in half.', 'Add the drained tuna and sliced tomato.', 'Finish with a little mayonnaise and close.'],
     // ===== Receptes · carn-peix (Pas 4, sub-lot 4) =====
     'recipe_pollastre-rostit_name': 'Roast chicken',
     'recipe_pollastre-rostit_steps': ['Season the chicken with salt and pepper inside and out.', 'Put it in the tray with the potatoes and onion in quarters.', 'Oven at 200° for 60 min, basting it with its juices.'],
@@ -4444,6 +4507,27 @@ const TRANSLATIONS = {
   },
 
   fr: {
+    // ===== Receptes · plat-unic (Pas 4, sub-lot 5) =====
+    'recipe_pizza-margherita_name': 'Pizza margherita',
+    'recipe_pizza-margherita_steps': ['Étale la pâte sur du papier de cuisson.', 'Badigeonne-la de tomate et répartis la mozzarella.', 'Four à 220° 12 minutes et décore de basilic frais.'],
+    'recipe_wrap-pollastre_name': 'Wrap au poulet',
+    'recipe_wrap-pollastre_steps': ['Cuis le poulet coupé en lanières.', 'Étale le wrap et mets de la laitue et du poulet.', 'Ajoute un peu de mayonnaise et roule.'],
+    'recipe_entrepa-vegetal_name': 'Sandwich végétarien',
+    'recipe_entrepa-vegetal_steps': ['Coupe le pain et étale un peu de mayonnaise.', 'Ajoute laitue, tomate et fromage.', 'Ferme le sandwich et coupe-le en deux.'],
+    'recipe_hamburguesa-completa_name': 'Hamburger complet',
+    'recipe_hamburguesa-completa_steps': ['Cuis le hamburger à la plancha.', 'Monte-le dans le pain avec laitue, tomate et fromage.', "Termine avec des rondelles d'oignon si tu veux."],
+    'recipe_empanada_name': 'Empanada',
+    'recipe_empanada_steps': ["Fais revenir l'oignon avec la viande 10 min.", 'Étale la pâte, mets la garniture et ferme.', "Badigeonne d'œuf battu et four 30 min à 190°."],
+    'recipe_coca-recapte_name': 'Coca de recapte',
+    'recipe_coca-recapte_steps': ['Étale la pâte fine sur la plaque du four.', 'Répartis les légumes grillés en lanières.', 'Four à 200° pendant 25 minutes.'],
+    'recipe_quiche-verdures_name': 'Quiche aux légumes',
+    'recipe_quiche-verdures_steps': ["Fais sauter les légumes coupés jusqu'à ce qu'ils soient tendres.", 'Bats les œufs avec la crème et le fromage.', 'Verse le tout dans le moule et four 30 min à 180°.'],
+    'recipe_tortilla-mexicana_name': 'Tortilla mexicaine',
+    'recipe_tortilla-mexicana_steps': ['Cuis la viande et assaisonne-la à ton goût.', 'Étale la tortilla avec du fromage et la viande.', "Ajoute l'avocat coupé et roule."],
+    'recipe_entrepa-calamars_name': 'Sandwich aux calamars',
+    'recipe_entrepa-calamars_steps': ['Fais frire les calamars.', 'Ouvre le pain au milieu.', 'Garnis de calamars, arrose de citron et termine avec de la mayonnaise.'],
+    'recipe_entrepa-tonyina_name': 'Sandwich au thon',
+    'recipe_entrepa-tonyina_steps': ['Ouvre le pain en deux.', 'Mets le thon égoutté et de la tomate en rondelles.', 'Termine avec un peu de mayonnaise et ferme.'],
     // ===== Receptes · carn-peix (Pas 4, sub-lot 4) =====
     'recipe_pollastre-rostit_name': 'Poulet rôti',
     'recipe_pollastre-rostit_steps': ["Sale et poivre le poulet à l'intérieur et à l'extérieur.", "Mets-le sur la plaque avec les pommes de terre et l'oignon en quartiers.", "Four à 200° pendant 60 min, en l'arrosant de son jus."],

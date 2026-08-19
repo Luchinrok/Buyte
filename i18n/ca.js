@@ -5,6 +5,27 @@
 // ============================================================================
 
 TRANSLATIONS.ca = {
+    // ===== Receptes · plat-unic (Pas 4, sub-lot 5) =====
+    'recipe_pizza-margherita_name': 'Pizza margherita',
+    'recipe_pizza-margherita_steps': ['Estén la massa sobre paper de forn.', 'Pinta-la amb tomàquet i reparteix-hi la mozzarella.', 'Forn a 220° 12 minuts i decora amb alfàbrega fresca.'],
+    'recipe_wrap-pollastre_name': 'Wrap de pollastre',
+    'recipe_wrap-pollastre_steps': ['Cuina el pollastre tallat a tires.', 'Estén el wrap i posa-hi enciam i pollastre.', 'Afegeix una mica de maionesa i enrotlla.'],
+    'recipe_entrepa-vegetal_name': 'Entrepà vegetal',
+    'recipe_entrepa-vegetal_steps': ['Talla el pa i unta una mica de maionesa.', 'Posa enciam, tomàquet i formatge.', "Tanca l'entrepà i talla'l per la meitat."],
+    'recipe_hamburguesa-completa_name': 'Hamburguesa completa',
+    'recipe_hamburguesa-completa_steps': ['Cuina la hamburguesa a la planxa.', 'Munta-la dins el pa amb enciam, tomàquet i formatge.', 'Acaba amb anelles de ceba si vols.'],
+    'recipe_empanada_name': 'Empanada',
+    'recipe_empanada_steps': ['Sofregeix la ceba amb la carn 10 min.', 'Estén la massa, posa-hi el farciment i tanca.', 'Pinta amb ou batut i forn 30 min a 190°.'],
+    'recipe_coca-recapte_name': 'Coca de recapte',
+    'recipe_coca-recapte_steps': ['Estén la massa fina sobre la safata del forn.', 'Reparteix les verdures escalivades a tires.', 'Forn a 200° durant 25 minuts.'],
+    'recipe_quiche-verdures_name': 'Quiche de verdures',
+    'recipe_quiche-verdures_steps': ['Saltejat les verdures tallades fins que estiguin tendres.', 'Bat els ous amb la nata i el formatge.', 'Aboca-ho tot al motlle i forn 30 min a 180°.'],
+    'recipe_tortilla-mexicana_name': 'Tortilla mexicana',
+    'recipe_tortilla-mexicana_steps': ['Cuina la carn i adoba-la al gust.', 'Estén la tortilla amb formatge i la carn.', "Afegeix l'alvocat tallat i enrotlla."],
+    'recipe_entrepa-calamars_name': 'Entrepà de calamars',
+    'recipe_entrepa-calamars_steps': ['Fregeix els calamars arrebossats.', 'Obre el pa pel mig.', 'Omple amb els calamars, banya amb llimona i acaba amb maionesa.'],
+    'recipe_entrepa-tonyina_name': 'Entrepà de tonyina',
+    'recipe_entrepa-tonyina_steps': ['Obre el pa per la meitat.', 'Posa-hi la tonyina escorreguda i tomàquet a rodanxes.', 'Acaba amb una mica de maionesa i tanca.'],
     // ===== Receptes · carn-peix (Pas 4, sub-lot 4) =====
     'recipe_pollastre-rostit_name': 'Pollastre rostit',
     'recipe_pollastre-rostit_steps': ['Salpebra el pollastre per dins i per fora.', "Posa'l a la safata amb les patates i la ceba a quarts.", 'Forn a 200° durant 60 min, regant-lo amb el seu suc.'],

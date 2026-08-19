@@ -5,6 +5,27 @@
 // ============================================================================
 
 TRANSLATIONS.fr = {
+    // ===== Receptes · plat-unic (Pas 4, sub-lot 5) =====
+    'recipe_pizza-margherita_name': 'Pizza margherita',
+    'recipe_pizza-margherita_steps': ['Étale la pâte sur du papier de cuisson.', 'Badigeonne-la de tomate et répartis la mozzarella.', 'Four à 220° 12 minutes et décore de basilic frais.'],
+    'recipe_wrap-pollastre_name': 'Wrap au poulet',
+    'recipe_wrap-pollastre_steps': ['Cuis le poulet coupé en lanières.', 'Étale le wrap et mets de la laitue et du poulet.', 'Ajoute un peu de mayonnaise et roule.'],
+    'recipe_entrepa-vegetal_name': 'Sandwich végétarien',
+    'recipe_entrepa-vegetal_steps': ['Coupe le pain et étale un peu de mayonnaise.', 'Ajoute laitue, tomate et fromage.', 'Ferme le sandwich et coupe-le en deux.'],
+    'recipe_hamburguesa-completa_name': 'Hamburger complet',
+    'recipe_hamburguesa-completa_steps': ['Cuis le hamburger à la plancha.', 'Monte-le dans le pain avec laitue, tomate et fromage.', "Termine avec des rondelles d'oignon si tu veux."],
+    'recipe_empanada_name': 'Empanada',
+    'recipe_empanada_steps': ["Fais revenir l'oignon avec la viande 10 min.", 'Étale la pâte, mets la garniture et ferme.', "Badigeonne d'œuf battu et four 30 min à 190°."],
+    'recipe_coca-recapte_name': 'Coca de recapte',
+    'recipe_coca-recapte_steps': ['Étale la pâte fine sur la plaque du four.', 'Répartis les légumes grillés en lanières.', 'Four à 200° pendant 25 minutes.'],
+    'recipe_quiche-verdures_name': 'Quiche aux légumes',
+    'recipe_quiche-verdures_steps': ["Fais sauter les légumes coupés jusqu'à ce qu'ils soient tendres.", 'Bats les œufs avec la crème et le fromage.', 'Verse le tout dans le moule et four 30 min à 180°.'],
+    'recipe_tortilla-mexicana_name': 'Tortilla mexicaine',
+    'recipe_tortilla-mexicana_steps': ['Cuis la viande et assaisonne-la à ton goût.', 'Étale la tortilla avec du fromage et la viande.', "Ajoute l'avocat coupé et roule."],
+    'recipe_entrepa-calamars_name': 'Sandwich aux calamars',
+    'recipe_entrepa-calamars_steps': ['Fais frire les calamars.', 'Ouvre le pain au milieu.', 'Garnis de calamars, arrose de citron et termine avec de la mayonnaise.'],
+    'recipe_entrepa-tonyina_name': 'Sandwich au thon',
+    'recipe_entrepa-tonyina_steps': ['Ouvre le pain en deux.', 'Mets le thon égoutté et de la tomate en rondelles.', 'Termine avec un peu de mayonnaise et ferme.'],
     // ===== Receptes · carn-peix (Pas 4, sub-lot 4) =====
     'recipe_pollastre-rostit_name': 'Poulet rôti',
     'recipe_pollastre-rostit_steps': ["Sale et poivre le poulet à l'intérieur et à l'extérieur.", "Mets-le sur la plaque avec les pommes de terre et l'oignon en quartiers.", "Four à 200° pendant 60 min, en l'arrosant de son jus."],
