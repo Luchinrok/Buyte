@@ -44,7 +44,10 @@ function Find-Block($lines, $lang) {
   if ($end -lt 0) { throw "Tancament del bloc '$lang' no trobat" }
   return @($start, $end)
 }
-function Key-Count($arr) { ($arr | Where-Object { $_ -match '^    [A-Za-z_][A-Za-z0-9_]*:' }).Count }
+# Compta claus top-level (4 espais): identificadors NUS (welcomeReady:) I claus
+# ENTRECOMETADES ('recipe_..._steps':). Sense les entrecometades, el gate no
+# comptava les traduccions de recepta/insígnia (el gruix de la feina).
+function Key-Count($arr) { ($arr | Where-Object { $_ -match "^    (?:'[^']+'|[A-Za-z_][A-Za-z0-9_]*)\s*:" }).Count }
 
 $i18ndir = Join-Path $root 'i18n'
 if (-not (Test-Path $i18ndir)) { New-Item -ItemType Directory -Path $i18ndir | Out-Null }
