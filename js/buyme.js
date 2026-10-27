@@ -1871,18 +1871,18 @@ function showAlreadyHaveModal(itemName, existingProducts, onConfirm) {
       </div>
     </div>
   `;
-  document.body.appendChild(overlay);
+  // Neteja: només l'overlay (ni listeners de document ni pickers a destruir).
+  openModal(overlay, () => { if (overlay.parentNode) document.body.removeChild(overlay); });
+  const close = () => dismissModal(overlay);
 
-  overlay.querySelector('#modal-no-btn').addEventListener('click', () => {
-    document.body.removeChild(overlay);
-  });
+  overlay.querySelector('#modal-no-btn').addEventListener('click', close);
+  // onConfirm NAVEGA als dos cridadors (saveShoppingItem → openSupermarket;
+  // escàner del BiteMe → proceedToForm → openShoppingItemEdit) → ha d'anar per
+  // onSettled, no després d'un close() pelat. Vegeu dismissModal a core.js.
   overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
-    document.body.removeChild(overlay);
-    onConfirm();
+    dismissModal(overlay, onConfirm);
   });
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) document.body.removeChild(overlay);
-  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 // Modal de duplicat al BuyMe (Opció B). Germà de showAlreadyHaveModal però
@@ -1903,10 +1903,11 @@ function showDuplicateShoppingModal(existingItem, onMerge, onCreateAnyway) {
       </div>
     </div>
   `;
-  document.body.appendChild(overlay);
-  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
-  overlay.querySelector('#dup-merge-btn').addEventListener('click', () => { close(); onMerge(); });
-  overlay.querySelector('#dup-create-btn').addEventListener('click', () => { close(); onCreateAnyway(); });
+  openModal(overlay, () => { if (overlay.parentNode) document.body.removeChild(overlay); });
+  const close = () => dismissModal(overlay);
+  // mergeQty i createNew acaben tots dos a openSupermarket → via onSettled.
+  overlay.querySelector('#dup-merge-btn').addEventListener('click', () => dismissModal(overlay, onMerge));
+  overlay.querySelector('#dup-create-btn').addEventListener('click', () => dismissModal(overlay, onCreateAnyway));
   overlay.querySelector('#dup-cancel-btn').addEventListener('click', close);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
@@ -2642,24 +2643,25 @@ function showAddToShoppingModal(product) {
       </div>
     </div>
   `;
-  document.body.appendChild(overlay);
+  openModal(overlay, () => { if (overlay.parentNode) document.body.removeChild(overlay); });
+  const close = () => dismissModal(overlay);
 
-  overlay.querySelector('#modal-no-btn').addEventListener('click', () => {
-    document.body.removeChild(overlay);
-  });
+  overlay.querySelector('#modal-no-btn').addEventListener('click', close);
 
   overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
-    document.body.removeChild(overlay);
+    // Cadena A→B dins del mateix gest → replaceModal (primer ús real; el pilot
+    // cookme no l'exercitava). NO pot ser close() + obrir B: el history.back()
+    // del dismiss és asíncron i el pushState de l'openModal de B s'executaria
+    // amb la traversal pendent, trepitjant-se. B pren l'entrada d'A, així el
+    // gest enrere des de B torna a la pantalla — el mateix que el seu Cancel·la.
     // Sempre mostrem el modal complet (qty + selector de super amb tots
     // els actius, preferits i no preferits). Així l'usuari pot ajustar
     // la quantitat abans d'afegir, no només el super.
-    showManualAddToBuyMeModal(product);
+    showManualAddToBuyMeModal(product, { replacing: overlay });
   });
 
   // Click fora del modal el tanca (= cancel·lar)
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) document.body.removeChild(overlay);
-  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 function addToShoppingList(supermarketId, product, qty, weight) {
@@ -2720,7 +2722,10 @@ function manualAddToBuyMe(product) {
   showManualAddToBuyMeModal(product);
 }
 
-function showManualAddToBuyMeModal(product) {
+// opts.replacing: overlay del modal que l'encadena (showAddToShoppingModal) →
+// aquest li PREN l'entrada d'historial via replaceModal en lloc d'empènyer-ne
+// una de nova. Sense opts: obertura normal (manualAddToBuyMe).
+function showManualAddToBuyMeModal(product, opts) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   // qty d'ENVASOS + contingut per-envàs (no l'agregat de l'EatMe). Vegeu
@@ -2782,7 +2787,10 @@ function showManualAddToBuyMeModal(product) {
       <button class="modal-cancel" id="modal-cancel-btn" style="margin-top:10px">${t('cancel')}</button>
     </div>
   `;
-  document.body.appendChild(overlay);
+  const _teardown = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  if (opts && opts.replacing) replaceModal(opts.replacing, overlay, _teardown);
+  else openModal(overlay, _teardown);
+  const close = () => dismissModal(overlay);
 
   overlay.querySelectorAll('.modal-supermarket-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2791,18 +2799,16 @@ function showManualAddToBuyMeModal(product) {
       const content = (overlay.querySelector('#modal-content-input').value || '').trim();
       const sm = getSupermarketById(smId);
       addToShoppingList(smId, product, qty, content || _derived.content);
-      document.body.removeChild(overlay);
+      // Sense onSettled: afegir al BuyMe no navega (només toast). dismissModal
+      // fa la neteja síncronament → l'ordre respecte al toast es manté.
+      close();
       showToast('🛒 ' + t('addedToShopping', sm ? sm.name : ''));
     });
   });
 
-  overlay.querySelector('#modal-cancel-btn').addEventListener('click', () => {
-    document.body.removeChild(overlay);
-  });
+  overlay.querySelector('#modal-cancel-btn').addEventListener('click', close);
 
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) document.body.removeChild(overlay);
-  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 
