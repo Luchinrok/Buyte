@@ -380,14 +380,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Prioritat: (−1) no-op d'un dismiss d'usuari; (0) aterratge de collapse;
   // (0.5) tancar el modal MIGRAT superior; (1) onboarding pas 2 → 1; (2) pantalla
   // no-launcher → data-back; (3) launcher = arrel → l'app es tanca.
-  // Sub-pas 2 EN CURS (pilot cookme): només els modals migrats (registrats a
+  // Sub-pas 2 EN CURS (fets: cookme, settings, buyme): només els migrats (registrats a
   // _modalStack via openModal) intercepten el gest. Els NO migrats no toquen ni
   // la pila ni l'historial → amb un modal no migrat obert, el gest navega la
   // pantalla de sota, exactament com al sub-pas 1 (cap regressió).
   window.addEventListener('popstate', () => {
     // (−1) Pop no-op: un dismissModal (tancament d'usuari) ha fet history.back()
     // només per treure la seva entrada; aquest popstate no és un "enrere" real.
-    if (_modalNoopPops > 0) { _modalNoopPops--; return; }
+    // Si el dismiss portava onSettled (callback que NAVEGA), és ARA que toca
+    // executar-lo: ja hem aterrat a l'entrada de sota del modal, així que amb
+    // _navFromPop el showScreen del callback la reutilitza en lloc d'empènyer-ne
+    // una de nova. Fer-ho síncronament al dismiss trepitjaria aquesta traversal
+    // (vegeu dismissModal a core.js). Mateix patró que (0) amb _navPendingRoot.
+    if (_modalNoopPops > 0) {
+      _modalNoopPops--;
+      const after = _modalPendingAfter;
+      _modalPendingAfter = null;
+      if (after) {
+        _navFromPop = true;
+        try { after(); } catch (e) { console.error(e); } finally { _navFromPop = false; }
+      }
+      return;
+    }
     // (0) Aterratge de navCollapseToRoot: acabem de consumir el residu amb un
     // history.go(-d) i som a l'arrel. Executa el callback pendent (si n'hi ha) i
     // atura aquí — no interpretem aquest pop com un "enrere" d'usuari.

@@ -824,7 +824,8 @@ function daysText(days) {
 //     no divergeixen.
 //   · La URL NO es toca MAI: push/replaceState sense argument d'URL → path i hash
 //     intactes.
-// (Sub-pas 2, encara no fet: el popstate tancarà primer modals/pickers oberts.)
+// (Sub-pas 2, en curs: el popstate tanca primer el modal MIGRAT superior —
+//  vegeu la pila de modals just a sota i la branca (0.5) del popstate a app.js.)
 // Cada entrada porta {d} = la seva profunditat real dins la MEVA pila (arrel=0).
 // La derivo de l'entrada actual (+1) a cada push, no d'un comptador lliure, perquè
 // history.go(-d) de navCollapseToRoot aterri sempre exactament a l'arrel.
@@ -861,6 +862,7 @@ function navCollapseToRoot(onRoot) {
 // segueixen funcionant exactament com abans (vegeu dismissModal i el popstate).
 const _modalStack = [];       // { overlay, close }  (close = neteja real del modal)
 let _modalNoopPops = 0;       // popstates que cal ignorar (venen d'un dismiss d'usuari)
+let _modalPendingAfter = null; // callback a executar quan el pop del dismiss aterri
 
 // Obertura: afegeix l'overlay i empeny 1 entrada d'historial (com una pantalla
 // més profunda). d = profunditat real + 1, igual que showScreen. No toca la URL.
@@ -877,19 +879,43 @@ function openModal(overlay, closeFn) {
 // neteja SÍNCRONAMENT (l'ordre respecte a onConfirm/toasts posteriors es manté) i
 // després treu l'entrada d'historial amb un history.back() que el popstate
 // reconeixerà com a no-op (via _modalNoopPops). Idempotent.
-function dismissModal(overlay) {
+//
+// ⚠️ onSettled: OBLIGATORI si el callback de tancament NAVEGA (showScreen i
+// derivats: openSupermarket, openMealPlanner, proceedToForm…). history.back() és
+// ASÍNCRON: encola la traversal i torna de seguida. Si just després cridem
+// showScreen, el seu pushState SÍNCRON s'executa amb la traversal encara pendent
+// i les dues es trepitgen — queda una entrada fantasma (i navCollapseToRoot fa
+// go(-d) una de més → surt de l'app) o es filtra _modalNoopPops (i el següent
+// gest enrere no fa res). Passant el callback aquí, s'executa DINS del popstate
+// sota _navFromPop (vegeu la branca (−1) a app.js), així showScreen NO empeny i
+// la pantalla destí reutilitza l'entrada de sota del modal: profunditat correcta.
+// Conseqüència volguda: el modal consumeix la seva capa, igual que el botó de
+// tancar — confirmar no deixa el flux ja confirmat darrere del gest enrere.
+// Si NO navega, no cal onSettled: crida'l i fes la teva feina tot seguit.
+function dismissModal(overlay, onSettled) {
   const i = _modalStack.findIndex(function (m) { return m.overlay === overlay; });
-  if (i === -1) return;                          // ja tancat o no registrat: res a fer
+  if (i === -1) {                                // ja tancat o no registrat (modal no
+    if (typeof onSettled === 'function') onSettled();   // migrat): el callback s'ha
+    return;                                      // d'executar igualment
+  }
   const entry = _modalStack.splice(i, 1)[0];
   entry.close();                                 // neteja REAL
   _modalNoopPops++;
-  try { history.back(); } catch (e) { _modalNoopPops--; }
+  if (typeof onSettled === 'function') _modalPendingAfter = onSettled;
+  try {
+    history.back();
+  } catch (e) {
+    _modalNoopPops--;                            // history no disponible: executa'l ja
+    const cb = _modalPendingAfter;
+    _modalPendingAfter = null;
+    if (cb) cb();
+  }
 }
 
 // Substitució A→B (cadenes: un modal que en tanca un i n'obre un altre al mateix
 // gest). Tanca A (neteja real, sense history.back) i obre B REEMPLAÇANT l'entrada
-// d'A → B queda al seu lloc, sense deixar residu d'historial darrere. (No
-// s'exercita al pilot cookme; es validarà en migrar buyme, que sí té cadenes.)
+// d'A → B queda al seu lloc, sense deixar residu d'historial darrere.
+// En ús a buyme: showAddToShoppingModal → showManualAddToBuyMeModal(.., {replacing}).
 function replaceModal(oldOverlay, newOverlay, newCloseFn) {
   const i = _modalStack.findIndex(function (m) { return m.overlay === oldOverlay; });
   if (i !== -1) { _modalStack[i].close(); _modalStack.splice(i, 1); }

@@ -361,6 +361,10 @@ function _showSyncJoinConfirm(code) {
     setTimeout(() => _showSyncJoinConfirm(code), 350);
   });
   overlay.querySelector('#sync-join-yes').addEventListener('click', () => {
+    // Sense onSettled a propòsit: _completeSyncJoin és async i el seu
+    // showScreen('sync') passa DESPRÉS de l'await de connectToList, o sigui molt
+    // més tard que el pop del dismiss → no hi ha cursa. Posar-l'hi no ajudaria:
+    // _navFromPop es desactiva en tornar del primer await, abans del showScreen.
     close();
     _completeSyncJoin(code);
   });
@@ -2578,9 +2582,10 @@ function showConfirmModal(emoji, title, message, opts, onConfirm) {
   openModal(overlay, () => { if (overlay.parentNode) document.body.removeChild(overlay); });
   const close = () => dismissModal(overlay);
   overlay.querySelector('#modal-no-btn').addEventListener('click', close);
+  // onConfirm va per onSettled, no després d'un close() pelat: és genèric i hi ha
+  // cridadors que naveguen (showScreen/openX) → vegeu dismissModal a core.js.
   overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
-    close();
-    try { onConfirm(); } catch (e) { console.error(e); }
+    dismissModal(overlay, () => { try { onConfirm(); } catch (e) { console.error(e); } });
   });
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
@@ -2649,8 +2654,7 @@ function showInputModal(emoji, title, message, placeholder, onConfirm, options) 
         return;
       }
     }
-    close();
-    try { onConfirm(value); } catch (e) { console.error(e); }
+    dismissModal(overlay, () => { try { onConfirm(value); } catch (e) { console.error(e); } });
   };
 
   overlay.querySelector('#modal-no-btn').addEventListener('click', close);
@@ -2686,9 +2690,9 @@ function showConfirmDangerModal(emoji, title, message, onConfirm) {
   openModal(overlay, () => { if (overlay.parentNode) document.body.removeChild(overlay); });
   const close = () => dismissModal(overlay);
   overlay.querySelector('#modal-no-btn').addEventListener('click', close);
+  // Via onSettled: deleteShoppingItem (buyme.js) hi navega amb openSupermarket.
   overlay.querySelector('#modal-yes-btn').addEventListener('click', () => {
-    close();
-    try { onConfirm(); } catch (e) { console.error(e); }
+    dismissModal(overlay, () => { try { onConfirm(); } catch (e) { console.error(e); } });
   });
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
@@ -2733,8 +2737,7 @@ function showSelectModal(emoji, title, message, options, currentValue, onConfirm
   overlay.querySelectorAll('.modal-zone-option').forEach((btn, i) => {
     btn.addEventListener('click', () => {
       const value = opts[i].value;   // del closure → preserva el tipus (number)
-      close();
-      try { onConfirm(value); } catch (e) { console.error(e); }
+      dismissModal(overlay, () => { try { onConfirm(value); } catch (e) { console.error(e); } });
     });
   });
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
