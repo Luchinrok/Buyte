@@ -1620,12 +1620,13 @@ function _confirmModal(message, onConfirm, options) {
         '<button class="modal-confirm' + (danger ? ' modal-confirm-danger' : '') + '" id="cm-confirm">' + escapeHtml(confirmLabel) + '</button>' +
       '</div>' +
     '</div>';
-  document.body.appendChild(overlay);
-  const close = () => { if (overlay.parentNode) document.body.removeChild(overlay); };
+  openModal(overlay, () => { if (overlay.parentNode) document.body.removeChild(overlay); });
+  const close = () => dismissModal(overlay);
   overlay.querySelector('#cm-cancel').addEventListener('click', close);
+  // L'únic cridador és _deleteLot i el seu callback NAVEGA (navigateAfterAction
+  // si el producte es queda sense lots, openProduct si no) → via onSettled.
   overlay.querySelector('#cm-confirm').addEventListener('click', () => {
-    close();
-    if (typeof onConfirm === 'function') onConfirm();
+    dismissModal(overlay, () => { if (typeof onConfirm === 'function') onConfirm(); });
   });
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
@@ -1747,7 +1748,9 @@ function openLotConsumeModal(product, lot, action) {
     + '<button class="modal-confirm" id="lot-consume-confirm">' + escapeHtml(t('lotConsumeConfirm')) + '</button>'
     + '</div></div>';
 
-  document.body.appendChild(overlay);
+  // Neteja: només l'overlay (sense pickers ni listeners de document).
+  openModal(overlay, () => { if (overlay.parentNode) document.body.removeChild(overlay); });
+  const close = () => dismissModal(overlay);
 
   const remainingAfterEl = overlay.querySelector('#lot-remaining-after');
   let selectedAmount;
@@ -1822,9 +1825,7 @@ function openLotConsumeModal(product, lot, action) {
     });
   }
 
-  overlay.querySelector('#lot-consume-cancel').addEventListener('click', () => {
-    document.body.removeChild(overlay);
-  });
+  overlay.querySelector('#lot-consume-cancel').addEventListener('click', close);
   overlay.querySelector('#lot-consume-confirm').addEventListener('click', () => {
     const amount = selectedAmount;
     if (lot.consumptionMode === 'quantity') {
@@ -1842,12 +1843,13 @@ function openLotConsumeModal(product, lot, action) {
         return;
       }
     }
-    document.body.removeChild(overlay);
-    _confirmLotConsume(product, lot, action, amount);
+    // Les validacions de sobre fan return SENSE tancar (l'usuari corregeix), per
+    // això el tancament va aquí i no al principi del handler.
+    // _confirmLotConsume NAVEGA (navigateAfterAction si s'acaba el producte,
+    // openProduct si no) → via onSettled.
+    dismissModal(overlay, () => _confirmLotConsume(product, lot, action, amount));
   });
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) document.body.removeChild(overlay);
-  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 function _confirmLotConsume(product, lot, action, amount) {
@@ -2027,7 +2029,21 @@ function openLotEditModal(product, lot) {
     + '<button class="modal-confirm" id="lot-edit-confirm">' + escapeHtml(t('lotSaveChanges')) + '</button>'
     + '</div></div>';
 
-  document.body.appendChild(overlay);
+  // Neteja REAL consolidada: el picker de supermercat s'ha de destruir sempre,
+  // i abans vivia repetit als 3 camins de tancament. Ara és la funció que rep
+  // openModal, així que el gest enrere (branca 0.5) executa exactament el mateix
+  // que el botó de cancel·lar — un removeChild pelat deixaria el picker penjat.
+  // No-op inicial (mateix idioma que destroySpacePicker al modal de moure): el
+  // picker es construeix més avall, perquè _buildPickerDropdown busca els
+  // elements per id i necessita l'overlay ja al DOM. Així la neteja mai depèn
+  // d'un binding sense assignar.
+  let destroySmPicker = function () {};
+  const _lotEditTeardown = () => {
+    destroySmPicker();
+    if (overlay.parentNode) document.body.removeChild(overlay);
+  };
+  openModal(overlay, _lotEditTeardown);
+  const close = () => dismissModal(overlay);
 
   // Validació del weight de l'overlay dinàmic: blur (vora vermella +
   // toast) + passada inicial perquè un lot amb weight invàlid preexistent
@@ -2060,17 +2076,14 @@ function openLotEditModal(product, lot) {
   });
 
   // Picker supermarket (helper genèric, mateix patró que category-picker)
-  const destroySmPicker = _buildPickerDropdown(
+  destroySmPicker = _buildPickerDropdown(
     'lot-edit-supermarket-picker-btn',
     'lot-edit-supermarket-picker-dropdown',
     smPickerOptions,
     currentSmId
   );
 
-  overlay.querySelector('#lot-edit-cancel').addEventListener('click', () => {
-    destroySmPicker();
-    document.body.removeChild(overlay);
-  });
+  overlay.querySelector('#lot-edit-cancel').addEventListener('click', close);
   overlay.querySelector('#lot-edit-confirm').addEventListener('click', () => {
     const smBtn = overlay.querySelector('#lot-edit-supermarket-picker-btn');
     // Validem el weight ABANS de tancar l'overlay: si és invàlid, vora
@@ -2088,16 +2101,11 @@ function openLotEditModal(product, lot) {
       weightRaw: wv.normalized,
       supermarketId: smBtn ? (smBtn.dataset.value || '') : ''
     };
-    destroySmPicker();
-    document.body.removeChild(overlay);
-    _confirmLotEdit(product, lot, values);
+    // _confirmLotEdit NAVEGA (openProduct) → via onSettled. El destroySmPicker
+    // ja el fa la neteja que té registrada openModal.
+    dismissModal(overlay, () => _confirmLotEdit(product, lot, values));
   });
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-      destroySmPicker();
-      document.body.removeChild(overlay);
-    }
-  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 function _confirmLotEdit(product, lot, v) {
@@ -2182,6 +2190,16 @@ function _confirmLotEdit(product, lot, v) {
   _evaluateLowStock(realProduct, prevBase);
 }
 
+// ⚠️ NO MIGRAT a la pila del gest enrere (sub-pas 2), a diferència dels altres
+// 4 modals d'aquest fitxer. Motiu: el botó d'emoji el tanca i obre la PANTALLA
+// del picker d'emojis (openEmojiPicker), i en tornar es reconstrueix el modal
+// des de _editProductModalState amb un listener propi al botó enrere
+// (_editProductModalBackListener). És un modal↔pantalla d'anada i tornada amb
+// estat, no una capa simple: amb onSettled la pantalla del picker no empenyaria
+// entrada (reutilitzaria la de sota del modal) i el retorn quedaria una capa
+// massa amunt — pitjor que la premuda morta, perquè trauria l'usuari de l'app
+// abans d'hora. Cal decidir primer com es modela el round-trip. Mentrestant,
+// com que no toca ni la pila ni l'historial, es comporta igual que al sub-pas 1.
 function openProductEditModal(product, restoreState) {
   if (!product) return;
   const overlay = document.createElement('div');
@@ -2419,10 +2437,19 @@ function _openMoveLotModal(product, lot) {
     + '<button class="modal-confirm" id="move-lot-confirm" disabled>' + escapeHtml(t('moveLotConfirm')) + '</button>'
     + '</div></div>';
 
-  document.body.appendChild(overlay);
-
   let destroySpacePicker = function () {};
   let destroyLocPicker = function () {};
+
+  // Neteja REAL: els DOS pickers (espai i ubicació) + l'overlay. És la que rep
+  // openModal, així que el gest enrere (branca 0.5) els destrueix igual que el
+  // botó de cancel·lar. Els pickers es construeixen més avall (necessiten
+  // l'overlay al DOM), però els no-ops de sobre fan que la neteja sigui segura
+  // en qualsevol moment.
+  openModal(overlay, () => {
+    destroySpacePicker();
+    destroyLocPicker();
+    if (overlay.parentNode) document.body.removeChild(overlay);
+  });
   let currentTargetSpaceId = (activeSpace && activeSpace.id) || null;
   let currentTargetLocationId = null;
 
@@ -2524,21 +2551,17 @@ function _openMoveLotModal(product, lot) {
 
   populateLocationPicker(currentTargetSpaceId);
 
-  const close = () => {
-    destroySpacePicker();
-    destroyLocPicker();
-    if (overlay.parentNode) document.body.removeChild(overlay);
-  };
+  const close = () => dismissModal(overlay);
   overlay.querySelector('#move-lot-cancel').addEventListener('click', close);
   overlay.querySelector('#move-lot-confirm').addEventListener('click', () => {
     const tSpace = currentTargetSpaceId;
     const tLoc = currentTargetLocationId;
-    close();
-    _executeMoveLot(product, lot, tSpace, tLoc);
+    // El camí same-space d'_executeMoveLot navega SÍNCRONAMENT
+    // (navigateAfterAction o openProduct) → via onSettled. El camí cross-space
+    // navega després dels awaits de FBSync, molt més tard que el pop.
+    dismissModal(overlay, () => _executeMoveLot(product, lot, tSpace, tLoc));
   });
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) close();
-  });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
@@ -2615,6 +2638,9 @@ async function _executeMoveLot(product, lot, targetSpaceId, targetLocationId) {
     return;
   }
 
+  // ⚠️ Overlay de PROGRÉS, deliberadament FORA de la pila del gest enrere: no és
+  // descartable per l'usuari i el gest no ha de poder-lo tancar, perquè hi ha una
+  // escriptura FBSync al destí en vol. Per això appendChild i no openModal.
   const progressOv = document.createElement('div');
   progressOv.className = 'modal-overlay';
   progressOv.innerHTML = '<div class="modal-content"><p class="modal-title">' + t('moveLotProgressTitle') + '</p>'
