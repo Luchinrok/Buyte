@@ -385,11 +385,11 @@ function renderManageSupermarkets() {
         <div class="manage-sm-emoji">${sm.emoji}</div>
         <div class="manage-sm-name">${escapeHtml(sm.name)}</div>
         <div class="manage-sm-arrows">
-          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
-          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
+          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="${t('ariaMoveUp')}">▲</button>
+          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" ${isLast ? 'disabled' : ''} aria-label="${t('ariaMoveDown')}">▼</button>
         </div>
-        <button class="manage-sm-edit" aria-label="Edit">✏️</button>
-        <button class="manage-sm-delete" aria-label="Delete">✕</button>
+        <button class="manage-sm-edit" aria-label="${t('ariaEdit')}">✏️</button>
+        <button class="manage-sm-delete" aria-label="${t('delete')}">✕</button>
       `;
       row.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
         sm.enabled = e.target.checked;

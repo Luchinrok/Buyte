@@ -753,6 +753,25 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+// Un <div> clicable (files de llista que no són <button> per no trencar-ne
+// l'estil) també ha de funcionar amb teclat i lector de pantalla: role=button,
+// entra amb Tab, Enter/Espai fan el mateix que el clic. NO fer-lo servir dins
+// dels sliders de Swiper (cub): un element enfocable dins una cara pot fer que
+// el navegador desplaci el contenidor per ensenyar-lo (vegeu NOTES.md, iOS).
+function makeKeyboardClickable(el) {
+  if (!el) return el;
+  el.setAttribute('role', 'button');
+  el.tabIndex = 0;
+  el.addEventListener('keydown', (e) => {
+    if (e.target !== el) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      el.click();
+    }
+  });
+  return el;
+}
+
 // Renderitza "nom + quantitat" amb separació visual neta (sense punt mig
 // ni símbol ×). Si la qty és buida retorna només el nom escapat.
 function formatProductLine(name, qty) {

@@ -353,6 +353,13 @@ TRANSLATIONS.en = {
     ariaMenu: 'Menu',
     ariaPickIcon: 'Choose icon',
     ariaMoreInfo: 'More information',
+    ariaEdit: 'Edit',
+    ariaDone: 'Done',
+    ariaIncrease: 'Increase',
+    ariaDecrease: 'Decrease',
+    ariaMoveUp: 'Move up',
+    ariaMoveDown: 'Move down',
+    ariaRemove: 'Remove',
     phCategoryExample: 'E.g. Gluten-free',
     phItemExample: 'Yoghurts, milk...',
     // ===== Bloc Comú (Pas 3) =====

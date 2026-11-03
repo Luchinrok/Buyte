@@ -169,6 +169,7 @@ function renderSpecialLists() {
         + '<span class="special-list-count">' + list.items.length + ' ' + t('items') + '</span>';
       card.style.cursor = 'pointer';
       card.addEventListener('click', () => openSpecialDetail(list, false));
+      makeKeyboardClickable(card);
     }
     container.appendChild(card);
   });

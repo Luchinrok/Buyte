@@ -353,6 +353,13 @@ TRANSLATIONS.fr = {
     ariaMenu: 'Menu',
     ariaPickIcon: 'Choisir une icône',
     ariaMoreInfo: 'Plus d\'informations',
+    ariaEdit: 'Modifier',
+    ariaDone: 'Terminé',
+    ariaIncrease: 'Augmenter',
+    ariaDecrease: 'Diminuer',
+    ariaMoveUp: 'Monter',
+    ariaMoveDown: 'Descendre',
+    ariaRemove: 'Retirer',
     phCategoryExample: 'Ex : Sans gluten',
     phItemExample: 'Yaourts, lait…',
     // ===== Bloc Comú (Pas 3) =====

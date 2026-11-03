@@ -752,7 +752,7 @@ function updateRecipeEditModeBtn() {
   if (!btn) return;
   btn.textContent = recipeEditMode ? '✓' : '✏️';
   btn.classList.toggle('is-active', recipeEditMode);
-  btn.setAttribute('aria-label', recipeEditMode ? 'Done' : 'Edit');
+  btn.setAttribute('aria-label', t(recipeEditMode ? 'ariaDone' : 'ariaEdit'));
 }
 
 // Canvia el filtre actiu (all / available / used / mine / edited). Si el
@@ -1051,9 +1051,9 @@ function buildCookMeCard(r) {
   // Accions inline quan estem en mode edició
   let actionsHtml = '';
   if (recipeEditMode) {
-    let actions = '<button type="button" class="recipe-edit-pencil" data-action="edit" aria-label="Edit">✏️</button>';
+    let actions = '<button type="button" class="recipe-edit-pencil" data-action="edit" aria-label="' + t('ariaEdit') + '">✏️</button>';
     if (isCustom) {
-      actions += '<button type="button" class="recipe-delete-btn" data-action="delete" aria-label="Delete">✕</button>';
+      actions += '<button type="button" class="recipe-delete-btn" data-action="delete" aria-label="' + t('delete') + '">✕</button>';
     } else if (isEdited) {
       actions += '<button type="button" class="recipe-restore-btn" data-action="restore" aria-label="Restore">🔄</button>';
     }
@@ -1673,7 +1673,7 @@ function renderRecipeEditIngredients() {
         'aria-pressed="' + (ing.required ? 'true' : 'false') + '">' +
         (ing.required ? '⭐' : '☆') +
       '</button>' +
-      '<button type="button" class="ingredient-remove-btn" data-action="remove" aria-label="Remove">✕</button>' +
+      '<button type="button" class="ingredient-remove-btn" data-action="remove" aria-label="' + t('ariaRemove') + '">✕</button>' +
       '<div class="ingredient-suggestions autocomplete-suggestions"></div>';
     container.appendChild(row);
   });
@@ -1778,9 +1778,9 @@ function renderRecipeEditSteps() {
       '<span class="step-number-bubble">' + (idx + 1) + '</span>' +
       '<textarea class="step-input-text" rows="2" placeholder="' + escapeHtml(t('addStep')) + '">' + escapeHtml(step || '') + '</textarea>' +
       '<div class="step-actions">' +
-        '<button type="button" class="step-action-btn" data-action="up" aria-label="Up"' + (idx === 0 ? ' disabled' : '') + '>↑</button>' +
-        '<button type="button" class="step-action-btn" data-action="down" aria-label="Down"' + (idx === total - 1 ? ' disabled' : '') + '>↓</button>' +
-        '<button type="button" class="step-action-btn step-action-remove" data-action="remove" aria-label="Remove">✕</button>' +
+        '<button type="button" class="step-action-btn" data-action="up" aria-label="' + t('ariaMoveUp') + '"' + (idx === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button type="button" class="step-action-btn" data-action="down" aria-label="' + t('ariaMoveDown') + '"' + (idx === total - 1 ? ' disabled' : '') + '>↓</button>' +
+        '<button type="button" class="step-action-btn step-action-remove" data-action="remove" aria-label="' + t('ariaRemove') + '">✕</button>' +
       '</div>';
     container.appendChild(row);
   });

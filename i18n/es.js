@@ -353,6 +353,13 @@ TRANSLATIONS.es = {
     ariaMenu: 'Menú',
     ariaPickIcon: 'Elegir icono',
     ariaMoreInfo: 'Más información',
+    ariaEdit: 'Editar',
+    ariaDone: 'Hecho',
+    ariaIncrease: 'Aumentar',
+    ariaDecrease: 'Reducir',
+    ariaMoveUp: 'Subir',
+    ariaMoveDown: 'Bajar',
+    ariaRemove: 'Quitar',
     phCategoryExample: 'Ej: Sin gluten',
     phItemExample: 'Yogures, leche...',
     // ===== Bloc Comú (Pas 3) =====

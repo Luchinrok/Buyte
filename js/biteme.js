@@ -3361,6 +3361,7 @@ function renderAlerts() {
     item.querySelector('.product-item-name').innerHTML = formatProductLine(window.productDisplayNameFor ? window.productDisplayNameFor(p) : p.name, _displayProductQty(p.qty));
     item.querySelector('.product-item-days').textContent = locLabel + daysText(p.days);
     item.addEventListener('click', () => { productDetailBack = 'alerts'; openProduct(p.id); });
+    makeKeyboardClickable(item);
     list.appendChild(item);
   });
 }

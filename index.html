@@ -182,7 +182,7 @@
 
   <div id="screen-home" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="launcher" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="launcher" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <div class="top-info">
         <h1 class="launcher-title">Festuc</h1>
         <p id="top-summary">...</p>
@@ -402,7 +402,7 @@
   <!-- PANTALLA VEURE-HO TOT -->
   <div id="screen-view-all" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="home" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="allProducts"></h1>
       <div style="width:40px"></div>
     </header>
@@ -436,7 +436,7 @@
        js/recent-purchases.js. -->
   <div id="screen-recent-purchases" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="home" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="editPurchasesTitle"></h1>
       <div style="width:40px"></div>
     </header>
@@ -466,7 +466,7 @@
        s'actualitzen segons quina pàgina està centrada. -->
   <div id="screen-section" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="home" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="section-title">-</h1>
       <div style="width:40px"></div>
     </header>
@@ -491,7 +491,7 @@
   <!-- PANTALLA D'ALERTES -->
   <div id="screen-alerts" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="home" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="catAlerts"></h1>
       <div style="width:40px"></div>
     </header>
@@ -509,9 +509,9 @@
   <!-- PANTALLA COOKME -->
   <div id="screen-cookme" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="launcher" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="launcher" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1>🍳 <span data-i18n="cookmeTitle"></span></h1>
-      <button id="btn-toggle-recipe-edit" class="header-icon-btn" aria-label="Edit">✏️</button>
+      <button id="btn-toggle-recipe-edit" class="header-icon-btn" aria-label="Editar" data-i18n-aria="ariaEdit">✏️</button>
     </header>
 
     <div class="cookme-controls">
@@ -594,7 +594,7 @@
   <!-- PANTALLA PLANIFICADOR SETMANAL (CookMe) -->
   <div id="screen-meal-planner" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="cookme" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="cookme" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1>📅 <span data-i18n="mealPlanner">Planificador</span></h1>
       <div style="width:40px"></div>
     </header>
@@ -607,9 +607,9 @@
   <!-- PANTALLA DETALL DE LA RECEPTA -->
   <div id="screen-recipe-detail" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="cookme" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="cookme" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="recipe-detail-title">-</h1>
-      <button id="btn-edit-recipe" class="header-icon-btn" aria-label="Edit">✏️</button>
+      <button id="btn-edit-recipe" class="header-icon-btn" aria-label="Editar" data-i18n-aria="ariaEdit">✏️</button>
     </header>
 
     <div class="recipe-hero">
@@ -617,9 +617,9 @@
       <p class="recipe-hero-name" id="recipe-hero-name"></p>
       <p class="recipe-hero-meta" id="recipe-hero-meta"></p>
       <div class="recipe-servings-editor">
-        <button type="button" id="recipe-serving-minus" class="recipe-serving-btn" aria-label="-">−</button>
+        <button type="button" id="recipe-serving-minus" class="recipe-serving-btn" aria-label="Reduir" data-i18n-aria="ariaDecrease">−</button>
         <span class="recipe-servings-text">🍴 <span id="recipe-servings-count">1</span> <span id="recipe-servings-label">persones</span></span>
-        <button type="button" id="recipe-serving-plus" class="recipe-serving-btn" aria-label="+">+</button>
+        <button type="button" id="recipe-serving-plus" class="recipe-serving-btn" aria-label="Augmentar" data-i18n-aria="ariaIncrease">+</button>
       </div>
     </div>
 
@@ -653,14 +653,14 @@
   <!-- PANTALLA EDITAR / NOVA RECEPTA (custom o override del catàleg) -->
   <div id="screen-recipe-edit" class="screen">
     <header class="top-bar">
-      <button class="back-btn" id="recipe-edit-back-btn" data-back="cookme" aria-label="Back">‹</button>
+      <button class="back-btn" id="recipe-edit-back-btn" data-back="cookme" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="recipe-edit-title">-</h1>
       <div style="width:40px"></div>
     </header>
 
     <!-- HERO: emoji + nom -->
     <div class="recipe-edit-hero">
-      <button type="button" class="recipe-edit-emoji-big" id="btn-pick-recipe-emoji">
+      <button type="button" class="recipe-edit-emoji-big" id="btn-pick-recipe-emoji" aria-label="Triar emoji" data-i18n-aria="chooseEmoji">
         <span id="recipe-emoji-current">🍳</span>
       </button>
       <input type="text" class="recipe-edit-name-big" id="recipe-edit-name" autocomplete="off">
@@ -673,9 +673,9 @@
       <div class="recipe-edit-detail-row">
         <span class="recipe-edit-detail-label">🍴 <span data-i18n="recipeServings"></span></span>
         <div class="recipe-edit-stepper">
-          <button type="button" id="recipe-edit-servings-minus" class="recipe-edit-stepper-btn" aria-label="-">−</button>
+          <button type="button" id="recipe-edit-servings-minus" class="recipe-edit-stepper-btn" aria-label="Reduir" data-i18n-aria="ariaDecrease">−</button>
           <span class="recipe-edit-stepper-value" id="recipe-edit-servings-display">2</span>
-          <button type="button" id="recipe-edit-servings-plus" class="recipe-edit-stepper-btn" aria-label="+">+</button>
+          <button type="button" id="recipe-edit-servings-plus" class="recipe-edit-stepper-btn" aria-label="Augmentar" data-i18n-aria="ariaIncrease">+</button>
         </div>
       </div>
 
@@ -764,7 +764,7 @@
        Tranquil / Atenció / Urgent / Alerta — del mateix zone). -->
   <div id="screen-list" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="section" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="section" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="list-title">-</h1>
       <div style="width:40px"></div>
     </header>
@@ -804,7 +804,7 @@
   <!-- PANTALLA DETALL DE PRODUCTE -->
   <div id="screen-product" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="list" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="list" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="product"></h1>
       <div style="width:40px"></div>
     </header>
@@ -882,7 +882,7 @@
   <!-- PANTALLA EDITAR/AFEGIR PRODUCTE POPULAR -->
   <div id="screen-popular-edit" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="popular" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="popular" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="popular-edit-title">-</h1>
       <div style="width:40px"></div>
     </header>
@@ -971,7 +971,7 @@
        l'ajusta openManageCategories(origin) a js/populars.js. -->
   <div id="screen-manage-categories" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="popular" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="popular" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1>🏷️ <span data-i18n="catMgmtTitle"></span></h1>
       <div style="width:40px"></div>
     </header>
@@ -1000,7 +1000,7 @@
        editar i mai per a la "Altres" (catch-all). -->
   <div id="screen-category-edit" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="manage-categories" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="manage-categories" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="category-edit-title" data-i18n="catEditTitleDefault"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1022,7 +1022,7 @@
   <!-- PANTALLA SELECCIONAR EMOJI -->
   <div id="screen-emoji-picker" class="screen">
     <header class="top-bar">
-      <button class="back-btn" id="emoji-picker-back-btn" data-back="add" aria-label="Back">‹</button>
+      <button class="back-btn" id="emoji-picker-back-btn" data-back="add" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="chooseEmoji"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1036,7 +1036,7 @@
   <!-- PANTALLA ESCÀNER -->
   <div id="screen-scan" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="home" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="home" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="scanning"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1060,7 +1060,7 @@
   <!-- PANTALLA INTRODUIR CODI A MÀ -->
   <div id="screen-manual-code" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="scan" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="scan" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="manualCode"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1078,9 +1078,9 @@
   <!-- PANTALLA AFEGIR PRODUCTE (manual o després d'escanejar) -->
   <div id="screen-add" class="screen">
     <header class="top-bar">
-      <button class="back-btn" id="screen-add-back" data-back="home" aria-label="Back">‹</button>
+      <button class="back-btn" id="screen-add-back" data-back="home" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="screen-add-title" data-i18n="addProductTitle"></h1>
-      <button class="header-icon-btn" id="add-scan-btn" type="button">📷</button>
+      <button class="header-icon-btn" id="add-scan-btn" type="button" aria-label="Escanejar codi de barres" data-i18n-aria="scanBarcode">📷</button>
     </header>
 
     <div id="scan-warning" class="scan-warning" style="display:none">
@@ -1178,7 +1178,7 @@
   <!-- PANTALLA UBICACIONS (gestió) -->
   <div id="screen-locations" class="screen">
     <header class="top-bar">
-      <button class="back-btn" id="locations-back-btn" data-back="add" aria-label="Back">‹</button>
+      <button class="back-btn" id="locations-back-btn" data-back="add" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="storageZones"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1190,7 +1190,7 @@
   <!-- PANTALLA EDITAR UBICACIÓ -->
   <div id="screen-location-edit" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="locations" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="locations" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="loc-edit-title" data-i18n="editLocation"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1221,9 +1221,9 @@
   <!-- PANTALLA PRODUCTES POPULARS -->
   <div id="screen-popular" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="add" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="add" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="popularProducts"></h1>
-      <button class="header-icon-btn" id="btn-toggle-edit-popular" aria-label="Edit">✏️</button>
+      <button class="header-icon-btn" id="btn-toggle-edit-popular" aria-label="Editar" data-i18n-aria="ariaEdit">✏️</button>
     </header>
     <p class="section-hint" data-i18n="popularHint"></p>
 
@@ -1262,7 +1262,7 @@
   <!-- PANTALLA CONFIGURACIÓ -->
   <div id="screen-settings" class="screen">
     <header class="top-bar">
-      <button class="back-btn" id="settings-back-btn" data-back="home" aria-label="Back">‹</button>
+      <button class="back-btn" id="settings-back-btn" data-back="home" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="menu"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1331,7 +1331,7 @@
   <!-- PANTALLA ESBORRAR DADES -->
   <div id="screen-reset-data" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1>🗑️ <span data-i18n="resetDataScreenTitle"></span></h1>
       <div style="width:40px"></div>
     </header>
@@ -1449,7 +1449,7 @@
   <!-- PANTALLA SELECCIONAR PAÍS (des de configuració) -->
   <div id="screen-country" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="country"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1462,7 +1462,7 @@
   <!-- SUB-PANTALLA REGIONAL (Idioma + País amb pestanyes) -->
   <div id="screen-settings-regional" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="categoryRegional"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1478,9 +1478,9 @@
   <!-- SUB-PANTALLA CONTINGUT (Botigues / Zones / Populars / Receptes) -->
   <div id="screen-settings-content" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="categoryContent"></h1>
-      <button id="settings-content-action-btn" class="header-icon-btn" aria-label="Edit" style="display:none"></button>
+      <button id="settings-content-action-btn" class="header-icon-btn" aria-label="Editar" data-i18n-aria="ariaEdit" style="display:none"></button>
     </header>
 
     <div class="sub-tabs-container" data-tabs="content">
@@ -1497,7 +1497,7 @@
   <!-- SUB-PANTALLA ACTIVITAT (Impacte / Estadístiques) -->
   <div id="screen-settings-activity" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="categoryActivity"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1515,7 +1515,7 @@
   <!-- SUB-PANTALLA APLICACIÓ (Aparença / Notificacions / Sincronització) -->
   <div id="screen-settings-app" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="categoryApp"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1532,7 +1532,7 @@
   <!-- SUB-PANTALLA DADES (Esborrar / Exportar / Importar) -->
   <div id="screen-settings-data" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="categoryData"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1549,7 +1549,7 @@
   <!-- PANTALLA GESTIÓ DE SUPERMERCATS -->
   <div id="screen-manage-supermarkets" class="screen">
     <header class="top-bar">
-      <button class="back-btn" id="manage-supermarkets-back-btn" data-back="shopping" aria-label="Back">‹</button>
+      <button class="back-btn" id="manage-supermarkets-back-btn" data-back="shopping" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="mySupermarkets"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1578,7 +1578,7 @@
   <!-- PANTALLA LLISTES ESPECIALS -->
   <div id="screen-special-lists" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="shopping" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="shopping" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="specialLists"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1603,9 +1603,9 @@
   <!-- PANTALLA DETALL D'UNA LLISTA ESPECIAL -->
   <div id="screen-special-detail" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="special-lists" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="special-lists" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="special-detail-title">-</h1>
-      <button id="btn-toggle-edit-list-items" class="icon-btn" aria-label="Edit" style="font-size:18px">✏️</button>
+      <button id="btn-toggle-edit-list-items" class="icon-btn" aria-label="Editar" data-i18n-aria="ariaEdit" style="font-size:18px">✏️</button>
     </header>
     <div id="special-detail-list"></div>
 
@@ -1622,7 +1622,7 @@
   <!-- PANTALLA EDITAR/AFEGIR ITEM A LLISTA ESPECIAL -->
   <div id="screen-special-item-edit" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="special-detail" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="special-detail" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="special-item-edit-title">-</h1>
       <div style="width:40px"></div>
     </header>
@@ -1650,7 +1650,7 @@
   <!-- PANTALLA SUPERMERCATS (selector tipus home) -->
   <div id="screen-shopping" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="launcher" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="launcher" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="shoppingListTitle"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1681,7 +1681,7 @@
   <!-- PANTALLA "QUÈ TINC A CASA" -->
   <div id="screen-what-i-have" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="shopping" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="shopping" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1>🏠 <span data-i18n="whatIHaveHome"></span></h1>
       <div style="width:40px"></div>
     </header>
@@ -1706,9 +1706,9 @@
   <!-- PANTALLA ITEMS D'UN SUPERMERCAT -->
   <div id="screen-supermarket" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="shopping" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="shopping" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="supermarket-title">-</h1>
-      <button id="supermarket-edit-btn" class="icon-btn" aria-label="Edit" style="font-size:18px">✏️</button>
+      <button id="supermarket-edit-btn" class="icon-btn" aria-label="Editar" data-i18n-aria="ariaEdit" style="font-size:18px">✏️</button>
     </header>
 
     <div class="sm-dots-container" id="supermarket-dots"></div>
@@ -1776,7 +1776,7 @@
   <!-- PANTALLA AFEGIR/EDITAR SUPERMERCAT -->
   <div id="screen-supermarket-edit" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="shopping" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="shopping" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="supermarket-edit-title">-</h1>
       <div style="width:40px"></div>
     </header>
@@ -1800,9 +1800,9 @@
   <!-- PANTALLA AFEGIR/EDITAR ITEM DE LA COMPRA -->
   <div id="screen-shopping-item-edit" class="screen">
     <header class="top-bar">
-      <button class="back-btn" id="shopping-item-back" data-back="supermarket" aria-label="Back">‹</button>
+      <button class="back-btn" id="shopping-item-back" data-back="supermarket" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 id="shopping-item-edit-title">-</h1>
-      <button class="header-icon-btn" id="shopping-scan-btn" type="button">📷</button>
+      <button class="header-icon-btn" id="shopping-scan-btn" type="button" aria-label="Escanejar codi de barres" data-i18n-aria="scanBarcode">📷</button>
     </header>
 
     <button id="shopping-popular-btn" class="popular-btn">
@@ -1894,7 +1894,7 @@
   <!-- PANTALLA NOTIFICACIONS -->
   <div id="screen-notifications" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="notifications"></h1>
       <div style="width:40px"></div>
     </header>
@@ -1958,7 +1958,7 @@
 
   <div id="screen-sync" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="syncTitle"></h1>
       <div style="width:40px"></div>
     </header>
@@ -2008,7 +2008,7 @@
   <!-- PANTALLA INTRODUIR CODI -->
   <div id="screen-sync-join" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="sync" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="sync" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="syncJoin"></h1>
       <div style="width:40px"></div>
     </header>
@@ -2031,7 +2031,7 @@
   <!-- PANTALLA ESTADÍSTIQUES -->
   <div id="screen-stats" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="stats"></h1>
       <div style="width:40px"></div>
     </header>
@@ -2050,7 +2050,7 @@
        Vegeu js/expenses.js. -->
   <div id="screen-expenses" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1>💰 <span data-i18n="expensesTitle">Despeses</span></h1>
       <div style="width:40px"></div>
     </header>
@@ -2072,7 +2072,7 @@
   <!-- PANTALLA EL MEU IMPACTE -->
   <div id="screen-impact" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1>📊 <span data-i18n="impactTitle"></span></h1>
       <div style="width:40px"></div>
     </header>
@@ -2106,7 +2106,7 @@
 
       <!-- CARD 1: DINERS DEL MENJAR -->
       <div class="impact-card-v2 impact-card-money">
-        <button class="impact-card-info-btn" data-info="money" aria-label="Info">
+        <button class="impact-card-info-btn" data-info="money" aria-label="Més informació" data-i18n-aria="ariaMoreInfo">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.7"/>
             <circle cx="12" cy="7.5" r="1.2" fill="currentColor"/>
@@ -2136,7 +2136,7 @@
 
       <!-- CARD 2: IMPACTE AMBIENTAL -->
       <div class="impact-card-v2 impact-card-co2-v2">
-        <button class="impact-card-info-btn" data-info="co2" aria-label="Info">
+        <button class="impact-card-info-btn" data-info="co2" aria-label="Més informació" data-i18n-aria="ariaMoreInfo">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.7"/>
             <circle cx="12" cy="7.5" r="1.2" fill="currentColor"/>
@@ -2182,7 +2182,7 @@
   <!-- PANTALLA ELS MEUS ÈXITS (gamificació) -->
   <div id="screen-achievements" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="impact" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="impact" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1>🏆 <span data-i18n="achievementsTitle"></span></h1>
       <div style="width:40px"></div>
     </header>
@@ -2217,7 +2217,7 @@
        Platja, Feina...). -->
   <div id="screen-spaces" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="launcher" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="launcher" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1>📍 <span data-i18n="mySpacesTitle"></span></h1>
       <div style="width:40px"></div>
     </header>
@@ -2236,7 +2236,7 @@
   <!-- PANTALLA IDIOMES -->
   <div id="screen-language" class="screen">
     <header class="top-bar">
-      <button class="back-btn" data-back="settings" aria-label="Back">‹</button>
+      <button class="back-btn" data-back="settings" aria-label="Enrere" data-i18n-aria="back">‹</button>
       <h1 data-i18n="language"></h1>
       <div style="width:40px"></div>
     </header>
@@ -2258,7 +2258,7 @@
     <button type="button" class="selection-toolbar-buy" id="btn-selection-buy-all" style="display:none">✅ <span data-i18n="buyAll">Comprar tots</span></button>
   </div>
 
-  <div id="toast" class="toast"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- Recursos de tercers NO necessaris a l'arrencada, carregats amb `defer`:
        l'escàner (html5-qrcode) només s'obre en prémer el botó i Swiper només en
@@ -2284,7 +2284,7 @@
     // I18N_V: versió compartida de i18n-core.js i tots els blocs. L'ESTAMPA
     // tools/split-i18n.ps1 en regenerar (NO la toquis a mà). Global perquè
     // setLanguage/_preloadOtherLangBlocks la reusin per construir les URLs.
-    var I18N_V = '20261103-1';
+    var I18N_V = '20261103-2';
     (function () {
       // ⚠️ MATEIXA LÒGICA EXACTA que _resolveLang() a i18n.source.js. Si divergeix,
       //    es carregaria un bloc i getCurrentLang() en resoldria un altre. El
@@ -2329,25 +2329,25 @@
       } catch (e) {}
     })();
   </script>
-  <script src="js/core.js?v=20261027-1"></script>
+  <script src="js/core.js?v=20261103-1"></script>
   <script src="js/product-data.js?v=20260503-3"></script>
-  <script src="js/biteme.js?v=20261027-2"></script>
-  <script src="js/shops.js?v=20260830-1"></script>
-  <script src="js/buyme.js?v=20261027-1"></script>
-  <script src="js/populars.js?v=20260806-5"></script>
+  <script src="js/biteme.js?v=20261103-1"></script>
+  <script src="js/shops.js?v=20261103-1"></script>
+  <script src="js/buyme.js?v=20261103-1"></script>
+  <script src="js/populars.js?v=20261103-1"></script>
   <script src="js/categories.js?v=20260714-1"></script>
   <script src="js/purchase-history.js?v=20260706-2"></script>
   <script src="js/recent-purchases.js?v=20260715-1"></script>
-  <script src="js/special-lists.js?v=20260803-1"></script>
-  <script src="js/settings.js?v=20261027-1"></script>
+  <script src="js/special-lists.js?v=20261103-1"></script>
+  <script src="js/settings.js?v=20261103-1"></script>
   <script src="js/backup.js?v=20260508-2"></script>
   <script src="js/spaces.js?v=20260508-4"></script>
   <script src="js/spaces-ui.js?v=20260619-3"></script>
-  <script src="js/modals.js?v=20260503-3"></script>
+  <script src="js/modals.js?v=20261103-1"></script>
   <script src="js/impact.js?v=20260730-1"></script>
   <script src="js/expenses.js?v=20260722-2"></script>
   <script src="js/recipes-data.js?v=20260825-1"></script>
-  <script src="js/cookme.js?v=20260902-1"></script>
+  <script src="js/cookme.js?v=20261103-1"></script>
   <script src="js/meal-planner.js?v=20260723-2"></script>
   <script src="js/badges-data.js?v=20260731-1"></script>
   <script src="js/gamification.js?v=20260731-2"></script>

@@ -49,10 +49,10 @@ function showConsumptionSliderModal(product, action, onConfirm, alreadyConsumed)
   // Render del stepper (per a qty grans)
   const unitsStepperHtml = () => `
     <div class="units-selector units-stepper">
-      <button type="button" class="units-stepper-btn" id="units-decr" aria-label="-">−</button>
+      <button type="button" class="units-stepper-btn" id="units-decr" aria-label="${t('ariaDecrease')}">−</button>
       <span class="units-stepper-value" id="units-value">${currentUnits}</span>
       <span class="units-stepper-max">/ ${qtyNum}</span>
-      <button type="button" class="units-stepper-btn" id="units-incr" aria-label="+">+</button>
+      <button type="button" class="units-stepper-btn" id="units-incr" aria-label="${t('ariaIncrease')}">+</button>
     </div>
   `;
 

@@ -675,17 +675,17 @@ function openTimePickerModal(currentTime, onSave) {
         '<div class="time-picker-section">' +
           '<p class="time-picker-label">' + escapeHtml(t('timePickerHour')) + '</p>' +
           '<div class="time-picker-stepper">' +
-            '<button type="button" class="time-picker-step-btn" data-action="hour-down" aria-label="−">−</button>' +
+            '<button type="button" class="time-picker-step-btn" data-action="hour-down" aria-label="' + t('ariaDecrease') + '">−</button>' +
             '<input type="number" class="time-picker-input" data-field="hour" min="0" max="23" inputmode="numeric" value="' + String(hour).padStart(2, '0') + '">' +
-            '<button type="button" class="time-picker-step-btn" data-action="hour-up" aria-label="+">+</button>' +
+            '<button type="button" class="time-picker-step-btn" data-action="hour-up" aria-label="' + t('ariaIncrease') + '">+</button>' +
           '</div>' +
         '</div>' +
         '<div class="time-picker-section">' +
           '<p class="time-picker-label">' + escapeHtml(t('timePickerMinutes')) + '</p>' +
           '<div class="time-picker-stepper">' +
-            '<button type="button" class="time-picker-step-btn" data-action="min-down" aria-label="−">−</button>' +
+            '<button type="button" class="time-picker-step-btn" data-action="min-down" aria-label="' + t('ariaDecrease') + '">−</button>' +
             '<input type="number" class="time-picker-input" data-field="minute" min="0" max="59" inputmode="numeric" value="' + String(minute).padStart(2, '0') + '">' +
-            '<button type="button" class="time-picker-step-btn" data-action="min-up" aria-label="+">+</button>' +
+            '<button type="button" class="time-picker-step-btn" data-action="min-up" aria-label="' + t('ariaIncrease') + '">+</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -937,15 +937,15 @@ function renderLocationsList() {
     const isLast = index === locations.length - 1;
     item.innerHTML = `
       <div class="loc-arrows">
-        <button class="loc-move-btn" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
-        <button class="loc-move-btn" data-action="down" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
+        <button class="loc-move-btn" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="${t('ariaMoveUp')}">▲</button>
+        <button class="loc-move-btn" data-action="down" ${isLast ? 'disabled' : ''} aria-label="${t('ariaMoveDown')}">▼</button>
       </div>
       <span class="loc-item-emoji"></span>
       <div class="loc-item-info">
         <div class="loc-item-name"></div>
         <div class="loc-item-mult"></div>
       </div>
-      <button class="loc-edit-btn" data-action="edit" aria-label="Edit">✏️</button>
+      <button class="loc-edit-btn" data-action="edit" aria-label="${t('ariaEdit')}">✏️</button>
     `;
     item.querySelector('.loc-item-emoji').textContent = loc.emoji;
     item.querySelector('.loc-item-name').textContent = getLocationName(loc);
@@ -1297,7 +1297,7 @@ function _updateSettingsContentActionBtn() {
     btn.dataset.role = 'popular';
     const inEdit = (typeof popularMode !== 'undefined' && popularMode === 'edit');
     btn.textContent = inEdit ? '✓' : '✏️';
-    btn.setAttribute('aria-label', inEdit ? 'Done' : 'Edit');
+    btn.setAttribute('aria-label', t(inEdit ? 'ariaDone' : 'ariaEdit'));
     btn.classList.toggle('is-active', inEdit);
     btn.onclick = () => {
       if (typeof togglePopularEditMode === 'function') togglePopularEditMode();
@@ -1308,7 +1308,7 @@ function _updateSettingsContentActionBtn() {
     btn.dataset.role = 'shops';
     const inEdit = (typeof manageSupermarketsMode !== 'undefined' && manageSupermarketsMode === 'edit');
     btn.textContent = inEdit ? '✓' : '✏️';
-    btn.setAttribute('aria-label', inEdit ? 'Done' : 'Edit');
+    btn.setAttribute('aria-label', t(inEdit ? 'ariaDone' : 'ariaEdit'));
     btn.classList.toggle('is-active', inEdit);
     btn.onclick = () => {
       if (typeof toggleEditShopsMode === 'function') toggleEditShopsMode();
@@ -1319,7 +1319,7 @@ function _updateSettingsContentActionBtn() {
     btn.dataset.role = 'recipes';
     const inEdit = (typeof recipeEditMode !== 'undefined' && recipeEditMode === true);
     btn.textContent = inEdit ? '✓' : '✏️';
-    btn.setAttribute('aria-label', inEdit ? 'Done' : 'Edit');
+    btn.setAttribute('aria-label', t(inEdit ? 'ariaDone' : 'ariaEdit'));
     btn.classList.toggle('is-active', inEdit);
     btn.onclick = () => {
       if (typeof toggleRecipeEditMode === 'function') toggleRecipeEditMode();
@@ -1719,7 +1719,7 @@ function renderBackupsTab(area) {
     ? '<div class="backup-export-reminder">' +
         '<span class="backup-export-reminder-icon">💾</span>' +
         '<span class="backup-export-reminder-text">' + escapeHtml(t('backupsExportReminder', daysSince)) + '</span>' +
-        '<button type="button" class="backup-export-reminder-dismiss" data-backup-action="dismiss-reminder" aria-label="×">×</button>' +
+        '<button type="button" class="backup-export-reminder-dismiss" data-backup-action="dismiss-reminder" aria-label="' + t('close') + '">×</button>' +
       '</div>'
     : '';
 

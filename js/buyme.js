@@ -811,8 +811,8 @@ function _buildShoppingItemRow(item, opts) {
   if (mode === 'edit') {
     const arrowsHtml = showArrows ? `
         <div class="shopping-item-arrows">
-          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" data-item-id="${item.id}" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
-          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" data-item-id="${item.id}" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
+          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" data-item-id="${item.id}" ${isFirst ? 'disabled' : ''} aria-label="${t('ariaMoveUp')}">▲</button>
+          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" data-item-id="${item.id}" ${isLast ? 'disabled' : ''} aria-label="${t('ariaMoveDown')}">▼</button>
         </div>` : '';
     div.innerHTML = `
         <div class="shopping-item-emoji">${item.emoji}</div>
@@ -821,7 +821,7 @@ function _buildShoppingItemRow(item, opts) {
           ${meta}
           ${costHtml}
         </div>${arrowsHtml}
-        <button class="shopping-item-edit" data-action="edit" data-id="${item.id}" data-item-id="${item.id}" aria-label="Edit">✏️</button>
+        <button class="shopping-item-edit" data-action="edit" data-id="${item.id}" data-item-id="${item.id}" aria-label="${t('ariaEdit')}">✏️</button>
       `;
   } else {
     div.innerHTML = `

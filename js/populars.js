@@ -1023,8 +1023,8 @@ function renderPopularList() {
      if (popularMode === 'edit') {
       const arrowsHtml = showArrows ? `
         <div class="popular-arrows">
-          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="Up">▲</button>
-          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" ${isLast ? 'disabled' : ''} aria-label="Down">▼</button>
+          <button class="arrow-btn ${isFirst ? 'arrow-disabled' : ''}" data-action="up" ${isFirst ? 'disabled' : ''} aria-label="${t('ariaMoveUp')}">▲</button>
+          <button class="arrow-btn ${isLast ? 'arrow-disabled' : ''}" data-action="down" ${isLast ? 'disabled' : ''} aria-label="${t('ariaMoveDown')}">▼</button>
         </div>
       ` : '';
       row.innerHTML = `
@@ -1035,8 +1035,8 @@ function renderPopularList() {
           ${daysBadge}
         </button>
         ${arrowsHtml}
-        <button class="popular-edit-btn" aria-label="Edit">✏️</button>
-        <button class="popular-delete-btn" aria-label="Delete">✕</button>
+        <button class="popular-edit-btn" aria-label="${t('ariaEdit')}">✏️</button>
+        <button class="popular-delete-btn" aria-label="${t('delete')}">✕</button>
       `;
       row.querySelector('.popular-item-main').addEventListener('click', onRowClick);
       row.querySelector('.popular-edit-btn').addEventListener('click', () => editPopularItem(realIdx));
@@ -1075,7 +1075,7 @@ function updatePopularButtons() {
     editBtn.style.display = 'flex';
     editBtn.classList.toggle('active', popularMode === 'edit');
     editBtn.textContent = popularMode === 'edit' ? '✓' : '✏️';
-    editBtn.setAttribute('aria-label', popularMode === 'edit' ? 'Done' : 'Edit');
+    editBtn.setAttribute('aria-label', t(popularMode === 'edit' ? 'ariaDone' : 'ariaEdit'));
   }
   if (popularMode === 'edit') {
     if (addBtn) addBtn.style.display = 'flex';
@@ -1097,7 +1097,7 @@ function updatePopularButtons() {
   if (subActionBtn && subActionBtn.dataset.role === 'popular') {
     subActionBtn.textContent = popularMode === 'edit' ? '✓' : '✏️';
     subActionBtn.classList.toggle('is-active', popularMode === 'edit');
-    subActionBtn.setAttribute('aria-label', popularMode === 'edit' ? 'Done' : 'Edit');
+    subActionBtn.setAttribute('aria-label', t(popularMode === 'edit' ? 'ariaDone' : 'ariaEdit'));
   }
 }
 
@@ -1188,8 +1188,8 @@ function renderCategoriesList() {
         '</div>' +
         '<div class="category-row-actions">' +
           moveBtns +
-          '<button type="button" class="cat-edit-btn" data-cat-id="' + escapeHtml(cat.id) + '" aria-label="Editar">✏️</button>' +
-          (isCatchAll ? '' : '<button type="button" class="cat-delete-btn" data-cat-id="' + escapeHtml(cat.id) + '" aria-label="Eliminar">🗑️</button>') +
+          '<button type="button" class="cat-edit-btn" data-cat-id="' + escapeHtml(cat.id) + '" aria-label="' + t('ariaEdit') + '">✏️</button>' +
+          (isCatchAll ? '' : '<button type="button" class="cat-delete-btn" data-cat-id="' + escapeHtml(cat.id) + '" aria-label="' + t('delete') + '">🗑️</button>') +
         '</div>' +
       '</div>'
     );
