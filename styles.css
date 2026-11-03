@@ -11477,3 +11477,20 @@ input[type="date"].is-empty::-webkit-datetime-edit {
     animation-iteration-count: infinite !important;
   }
 }
+
+/* Signe + dels botons d'afegir. Abans era l'emoji ➕, que cada sistema pinta
+   diferent (lila a Windows, negre a iOS) i quedava fosc sobre el verd. Ara és
+   text: pren el color del botó. La mida la marca l'style inline de cada botó. */
+.btn-plus {
+  font-weight: 800;
+  line-height: 1;
+  color: currentColor;
+}
+
+/* Sense codi de sincronització és una frase, no un codi: lletra normal i
+   que pugui fer dues línies en lloc de tallar-se amb «…». */
+.space-row-code.space-row-code-empty {
+  font-family: inherit;
+  letter-spacing: 0;
+  white-space: normal;
+}

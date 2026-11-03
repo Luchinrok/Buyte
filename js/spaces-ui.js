@@ -157,7 +157,7 @@ function renderSpacesList() {
         '<p class="space-row-name">' + escapeHtml(space.name || '') +
           (isActive ? ' <span class="space-active-tag">' + escapeHtml(t('spacesActiveBadge')) + '</span>' : '') +
         '</p>' +
-        '<p class="space-row-code">' + escapeHtml(codeText) + '</p>' +
+        '<p class="space-row-code' + (space.syncCode ? '' : ' space-row-code-empty') + '">' + escapeHtml(codeText) + '</p>' +
       '</div>' +
       '<div class="space-row-actions">' +
         switchBtnHtml +

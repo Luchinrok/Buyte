@@ -29,7 +29,7 @@
        (fora el DNS+TLS de jsDelivr del camí crític). <noscript> com a fallback. -->
   <link rel="stylesheet" href="vendor/swiper-bundle.min.css?v=20260807-1" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="vendor/swiper-bundle.min.css?v=20260807-1"></noscript>
-  <link rel="stylesheet" href="styles.css?v=20261103-1">
+  <link rel="stylesheet" href="styles.css?v=20261103-2">
 
   <!-- Guarda anti-flaix d'onboarding — DECISIÓ AL <head>, abans que es pinti res.
        #screen-launcher porta class="screen active" estàtic; si l'usuari no ha
@@ -528,7 +528,7 @@
          (.shop-actions-bar). -->
     <div class="cookme-actions-bar">
       <button type="button" id="btn-add-recipe" class="cookme-add-recipe-btn">
-        <span style="font-size:20px;margin-right:8px">➕</span>
+        <span class="btn-plus" aria-hidden="true" style="font-size:20px;margin-right:8px">+</span>
         <span data-i18n="addNewRecipe"></span>
       </button>
       <button type="button" id="btn-open-meal-planner" class="cookme-add-recipe-btn">
@@ -721,7 +721,7 @@
       </h3>
       <div id="recipe-edit-ingredients" class="recipe-edit-list"></div>
       <button type="button" id="btn-add-ingredient" class="recipe-edit-add-row">
-        <span style="margin-right:6px">➕</span>
+        <span class="btn-plus" aria-hidden="true" style="margin-right:6px">+</span>
         <span data-i18n="addIngredient"></span>
       </button>
     </section>
@@ -734,7 +734,7 @@
       </h3>
       <div id="recipe-edit-steps" class="recipe-edit-list"></div>
       <button type="button" id="btn-add-step" class="recipe-edit-add-row">
-        <span style="margin-right:6px">➕</span>
+        <span class="btn-plus" aria-hidden="true" style="margin-right:6px">+</span>
         <span data-i18n="addStep"></span>
       </button>
     </section>
@@ -986,7 +986,7 @@
 
     <div id="categories-mgmt-list" class="categories-mgmt-list"></div>
 
-    <button id="btn-create-category" class="primary-btn create-cat-btn">➕ <span data-i18n="catMgmtCreateBtn"></span></button>
+    <button id="btn-create-category" class="primary-btn create-cat-btn"><span class="btn-plus" aria-hidden="true">+</span> <span data-i18n="catMgmtCreateBtn"></span></button>
 
     <div class="categories-advanced-section">
       <button id="btn-rerun-migration" class="secondary-btn">🔄 <span data-i18n="catMgmtRerunBtn"></span></button>
@@ -1245,7 +1245,7 @@
          final d'una llista llarga. -->
     <div class="popular-toolbar" id="popular-toolbar">
       <button class="popular-tool-btn" id="popular-add-custom" style="display:none">
-        ➕ <span data-i18n="addCustomPopular"></span>
+        <span class="btn-plus" aria-hidden="true">+</span> <span data-i18n="addCustomPopular"></span>
       </button>
       <button class="popular-tool-btn" id="popular-sort-alpha" style="display:none">
         🔤 <span data-i18n="sortAlpha"></span>
@@ -1566,7 +1566,7 @@
     </button>
 
     <button class="add-supermarket-btn" id="btn-add-custom-supermarket" style="display:none">
-      <span style="font-size:20px;margin-right:8px">➕</span>
+      <span class="btn-plus" aria-hidden="true" style="font-size:20px;margin-right:8px">+</span>
       <span data-i18n="addCustomShop"></span>
     </button>
 
@@ -1591,7 +1591,7 @@
     </button>
 
     <button class="add-supermarket-btn" id="btn-add-custom-special-list" style="display:none;margin-top:8px">
-      <span style="font-size:20px;margin-right:8px">➕</span>
+      <span class="btn-plus" aria-hidden="true" style="font-size:20px;margin-right:8px">+</span>
       <span data-i18n="addCustomList"></span>
     </button>
 
@@ -1610,7 +1610,7 @@
     <div id="special-detail-list"></div>
 
     <button class="add-supermarket-btn" id="btn-add-list-item" style="display:none;margin-top:8px">
-      <span style="font-size:20px;margin-right:8px">➕</span>
+      <span class="btn-plus" aria-hidden="true" style="font-size:20px;margin-right:8px">+</span>
       <span data-i18n="addItem"></span>
     </button>
 
@@ -1720,7 +1720,7 @@
          s'afegeixen al supermercat actualment visible. -->
     <div class="shop-actions-bar">
       <button class="add-supermarket-btn" id="btn-add-shopping-item">
-        <span style="font-size:22px;margin-right:8px">➕</span>
+        <span class="btn-plus" aria-hidden="true" style="font-size:22px;margin-right:8px">+</span>
         <span data-i18n="addShoppingItem"></span>
       </button>
     </div>
@@ -2342,7 +2342,7 @@
   <script src="js/settings.js?v=20261103-1"></script>
   <script src="js/backup.js?v=20260508-2"></script>
   <script src="js/spaces.js?v=20260508-4"></script>
-  <script src="js/spaces-ui.js?v=20260619-3"></script>
+  <script src="js/spaces-ui.js?v=20261103-1"></script>
   <script src="js/modals.js?v=20261103-1"></script>
   <script src="js/impact.js?v=20260730-1"></script>
   <script src="js/expenses.js?v=20260722-2"></script>
