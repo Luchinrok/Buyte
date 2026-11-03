@@ -41,7 +41,14 @@
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Controls natius (inputs de data/hora, selects, barres de desplaçament)
+     en el mateix tema que l'app. Sense això, en mode fosc el selector de
+     data i les barres sortien en clar. */
+  color-scheme: light dark;
 }
+
+:root[data-theme="light"] { color-scheme: light; }
 
 /* Mode fosc automàtic */
 @media (prefers-color-scheme: dark) {
@@ -61,6 +68,7 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #1A1A1A;
   --bg-card: #2C2C2A;
   --bg-secondary: #222220;
@@ -84,6 +92,18 @@
 html, body {
   height: 100%;
   overscroll-behavior: none;
+}
+
+/* Focus visible per a teclat (Tab, teclat Bluetooth, lector de pantalla).
+   :focus-visible no s'activa en tocar amb el dit, així que al mòbil no canvia
+   res. Va aquí dalt a propòsit: les regles :focus-visible pròpies d'alguns
+   components (punts de nivell, pestanyes de zones, toggle del BuyMe) són més
+   avall i continuen manant. Els inputs de text no hi són: ja marquen el focus
+   amb la vora. */
+:is(button, a[href], [role="button"], [tabindex], summary, select,
+    input[type="checkbox"], input[type="radio"], input[type="range"]):focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
 }
 
 body {
@@ -1500,7 +1520,7 @@ h1 {
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .theme-chip:active { transform: scale(0.96); }
 .theme-chip.active {
@@ -4601,6 +4621,8 @@ body.selection-mode-active #shops-slider .arrow-btn {
   width: 100%;
   max-height: 80vh;
   overflow-y: auto;
+  /* El scroll del modal no passa a la pantalla de sota en arribar al final. */
+  overscroll-behavior: contain;
   box-shadow: 0 10px 40px rgba(0,0,0,0.3);
   animation: slideUp 0.25s;
 }
@@ -9270,7 +9292,7 @@ body.selection-mode-active #shops-slider .arrow-btn {
   align-items: center;
   justify-content: center;
   line-height: 1;
-  transition: all 0.15s;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.15s;
   padding: 0;
 }
 .time-picker-step-btn:hover { border-color: var(--primary); color: var(--primary); }
@@ -11431,3 +11453,27 @@ input[type="date"].is-empty::-webkit-datetime-edit {
 .cook-info-list { text-align: left; margin: 4px 0 0; padding-left: 18px; font-size: 13px; opacity: 0.85; }
 .cook-info-reason { opacity: 0.6; }
 
+
+
+/* ============================================
+   Moviment reduït (preferència del sistema)
+   ============================================
+   Qui té activat «Reduir el moviment» no veu animacions decoratives
+   (campana, pulsacions, flotar, girs). Excepcions deliberades:
+   - .swiper-wrapper / .swiper-slide: el cub de Swiper es mou per JS amb
+     transition-duration inline i depèn del transitionend (vegeu NOTES.md,
+     scroll a iOS dins el cub). No el toquem.
+   - .lang-item-loading: és un indicador de càrrega, no decoració. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.swiper-wrapper):not(.swiper-slide):not(.lang-item-loading),
+  *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .lang-item-loading::after {
+    animation-duration: 0.6s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
