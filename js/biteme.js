@@ -2849,8 +2849,8 @@ function formatFrozenInfo(product) {
 //                          (#FFA000 → #F57C00) — sense tirar a vermell
 //   red    → vermells — alineat amb .shelf-red
 //                       (#EF5350 → #C62828)
-// Paleta del festuc (mascota). El fruit interior (#nevi-body) i el seu
-// contorn (#nevi-divider) es tenyeixen per estat; la closca beix és fixa.
+// Paleta del festuc (mascota, festuc obert des del 03-11-2026). El fruit (#nevi-body) i la seva pell
+// (#nevi-divider) es tenyeixen per estat; la closca beix (dues meitats) és fixa.
 // Els ulls es mantenen foscos a tots els estats; la boca canvia de forma
 // (somriu → recta → avall → ganyota) segons la urgència.
 // Colors idèntics als 4 botons/pills d'urgència (.levels-dot a styles.css):

@@ -779,14 +779,14 @@
          el nivell actiu. -->
     <div class="nevi-container">
       <svg class="nevi" viewBox="0 0 70 80" xmlns="http://www.w3.org/2000/svg">
-        <!-- Closca beix FIXA (no la toca setNevi) -->
-        <ellipse cx="35" cy="40" rx="30" ry="37" fill="#E7D3A8" stroke="#C9A96A" stroke-width="2.5"/>
-        <!-- Fruit interior: es tenyeix per estat (fill/stroke) -->
-        <path id="nevi-body" d="M 10 22 Q 24 34 35 33 Q 46 34 60 22 Q 55 52 46 66 Q 40 74 35 75 Q 30 74 24 66 Q 15 52 10 22 Z" fill="#8CBE3F" stroke="#639922" stroke-width="2.5"/>
-        <!-- Accent: contorn superior de l'obertura del fruit (rep stroke=m.border) -->
-        <path id="nevi-divider" d="M 10 22 Q 24 34 35 33 Q 46 34 60 22" fill="none" stroke="#639922" stroke-width="2.5" stroke-linecap="round"/>
-        <circle id="nevi-eye-left" cx="27" cy="45" r="3" fill="#173404"/>
-        <circle id="nevi-eye-right" cx="43" cy="45" r="3" fill="#173404"/>
+        <!-- Festuc obert (03-11-2026): la closca beix fixa, en dues meitats; el fruit (#nevi-body) i la seva pell (#nevi-divider) es tenyeixen per estat -->
+        <path d="M19 44 C 20 62 26 74 35 79 C 44 74 50 62 51 44 Z" fill="#C4A16A"/>
+        <ellipse id="nevi-divider" cx="35" cy="42" rx="18.5" ry="30" fill="none" stroke="#639922" stroke-width="2"/>
+        <ellipse id="nevi-body" cx="35" cy="42" rx="16.5" ry="28" fill="#8CBE3F" stroke="#639922" stroke-width="2.5"/>
+        <path d="M35 79 C 16 79 5 64 5 44 C 5 26 13 13 24 9 C 20 20 18 32 19 44 C 20 60 25 72 35 79 Z" fill="#EAD7AE" stroke="#B48C52" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M35 79 C 54 79 65 64 65 44 C 65 26 57 13 46 9 C 50 20 52 32 51 44 C 50 60 45 72 35 79 Z" fill="#D8BD86" stroke="#B48C52" stroke-width="2.2" stroke-linejoin="round"/>
+        <circle id="nevi-eye-left" cx="29" cy="42" r="3" fill="#173404"/>
+        <circle id="nevi-eye-right" cx="41" cy="42" r="3" fill="#173404"/>
         <path id="nevi-mouth" d="M 26 55 Q 35 66 44 55" stroke="#173404" stroke-width="2.5" fill="none" stroke-linecap="round"/>
       </svg>
       <p id="nevi-message"></p>
