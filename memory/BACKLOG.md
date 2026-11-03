@@ -22,6 +22,8 @@ Aquest fitxer és la **font de veritat del backlog viu** del projecte. Conté í
 
 Llista neta del que queda OBERT. El detall històric i els ítems resolts són més avall.
 
+**PER PROVAR (03/11/26) — branca `millores-disseny` (sense fusionar a `main`)**: accessibilitat i retocs visuals. Abans de fusionar, provar a l'**iPhone real**: (1) scroll de la llista dins el cub de Compra'm a les cares 2-4 i el toggle Cronològic/Per categoria (no s'ha tocat cap regla de layout del `#screen-supermarket`, però és la zona fràgil, vegeu NOTES.md); (2) amb «Reduir moviment» activat a iOS, el cub de Swiper ha de girar igual (està exclòs de la regla); (3) mode fosc: selector de data i caselles ara surten foscos (`color-scheme`). No s'ha tocat el `maximum-scale=1` del viewport (treure'l faria zoom en enfocar inputs de 15px a iOS).
+
 **PROPER (a 27/10/26)**: acabar el **sub-pas 2 del gest enrere** (queden 5 fitxers de modals; vegeu la secció del gest enrere més avall) i després els **3 bloquejants de Google Play** (migració a l'arrel de `luchinrok.github.io` · `assetlinks.json` amb el SHA-256 real · generar el TWA). Els **Passos 1–4 de traducció són ✅ COMPLETS**, i la PWA ja és instal·lable.
 
 _(Històric del fil de traducció, ja tancat:)_ **Pas 4 — contingut de dades** ✅ COMPLET (insígnies, llistes especials, 80/80 receptes, catàleg). El **Pas 3 — Traduir la UI** ✅ **COMPLET (30/07)**: tota la interfície de Festuc als 4 idiomes. Passos 1 (Rebranding), Mascota Festuc i 2 (Motor multi-idioma) ✅ FETS. _(Nota: [Despeses v2] Cistella exacta ✅ COMPLET (06/07) va tancar l'antic backlog de features; el "Refactor de lots E/F/G/final" segueix APARCAT.)_
