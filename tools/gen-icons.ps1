@@ -1,3 +1,4 @@
+# OBSOLET (03-11-2026): el logo ha canviat; ara les icones es generen amb `node tools/fes-icones.mjs` a partir dels SVG d'/icons/'.
 # =============================================================================
 #  gen-icons.ps1 — regenera totes les icones de marca de Festuc
 # =============================================================================
