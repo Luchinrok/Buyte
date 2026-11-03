@@ -5935,15 +5935,19 @@ body.selection-mode-active #shops-slider .arrow-btn {
 .section-pantry .section-title,
 .section-alerts .section-title {
   color: #FFFFFF;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  /* Ombra més marcada que abans (0.2): el blanc sobre el blau i el groc
+     clars de dalt del degradat gairebé no es llegia. */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.32);
 }
 
 .section-fridge .section-count,
 .section-freezer .section-count,
 .section-pantry .section-count,
 .section-alerts .section-count {
-  color: rgba(255,255,255,0.92);
+  color: #FFFFFF;
   font-weight: 600;
+  font-size: 12px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 /* La pantilla on les alertes són cridanera */
