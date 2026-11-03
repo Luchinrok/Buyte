@@ -845,7 +845,7 @@ TRANSLATIONS.en = {
     daysLeft: (n) => n === 1 ? '1 day left' : n + ' days left',
     expiresToday: 'Expires today!',
     expiresTomorrow: 'Expires tomorrow',
-    expiredDays: (n) => 'Expired ' + n + ' days ago',
+    expiredDays: (n) => 'Expired ' + n + (n === 1 ? ' day ago' : ' days ago'),
     whatToDo: 'What do you want to do?',
     consumed: 'I consumed it',
     trashed: 'I threw it away',

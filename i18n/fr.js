@@ -845,7 +845,7 @@ TRANSLATIONS.fr = {
     daysLeft: (n) => n === 1 ? 'reste 1 jour' : 'restent ' + n + ' jours',
     expiresToday: "Périme aujourd'hui !",
     expiresTomorrow: 'Périme demain',
-    expiredDays: (n) => 'Périmé il y a ' + n + ' jours',
+    expiredDays: (n) => 'Périmé il y a ' + n + (n === 1 ? ' jour' : ' jours'),
     whatToDo: 'Que veux-tu faire ?',
     consumed: "Je l'ai consommé",
     trashed: "Je l'ai jeté",

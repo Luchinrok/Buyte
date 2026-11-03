@@ -1172,11 +1172,17 @@ function renderSmartNotifBanners() {
     const seeBtn = action
       ? '<button type="button" class="smart-notif-banner-see" data-action="see">' + escapeHtml(t('notifBannerSee')) + '</button>'
       : '';
-    const closeBtn = '<button type="button" class="smart-notif-banner-close" data-action="close" aria-label="Close">✕</button>';
+    const closeBtn = '<button type="button" class="smart-notif-banner-close" data-action="close" aria-label="' + escapeHtml(t('close')) + '">✕</button>';
+
+    // El cos (b.body) també serveix per a la notificació del sistema, on la
+    // icona va dins el text. Al banner la icona ja té la seva columna: si el
+    // text comença amb el mateix emoji, el traiem perquè no surti dues vegades.
+    let msg = b.body || '';
+    if (b.emoji && msg.indexOf(b.emoji) === 0) msg = msg.slice(b.emoji.length).trim();
 
     card.innerHTML =
-      '<div class="smart-notif-banner-icon">' + (b.emoji || '🔔') + '</div>' +
-      '<div class="smart-notif-banner-msg">' + escapeHtml(b.body || '') + '</div>' +
+      '<div class="smart-notif-banner-icon" aria-hidden="true">' + (b.emoji || '🔔') + '</div>' +
+      '<div class="smart-notif-banner-msg">' + escapeHtml(msg) + '</div>' +
       seeBtn +
       closeBtn;
     container.appendChild(card);

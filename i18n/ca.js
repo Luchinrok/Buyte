@@ -440,7 +440,7 @@ TRANSLATIONS.ca = {
     expiresInDay: 'Caduca demà',
     expiresInDays: (n) => (n === 1 ? 'Caduca demà' : 'Caduca en ' + n + ' dies'),
     daysLeft: (n) => n === 1 ? 'Queda 1 dia' : 'Queden ' + n + ' dies',
-    expiredDays: (n) => 'Caducat fa ' + n + ' dies',
+    expiredDays: (n) => 'Caducat fa ' + n + (n === 1 ? ' dia' : ' dies'),
     error: 'Error',
     nameRequired: "Cal posar-li un nom",
     needDate: "Cal posar una data o marcar 'No caduca'",

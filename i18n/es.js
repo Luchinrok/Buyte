@@ -845,7 +845,7 @@ TRANSLATIONS.es = {
     daysLeft: (n) => n === 1 ? 'Queda 1 día' : 'Quedan ' + n + ' días',
     expiresToday: '¡Caduca hoy!',
     expiresTomorrow: 'Caduca mañana',
-    expiredDays: (n) => 'Caducado hace ' + n + ' días',
+    expiredDays: (n) => 'Caducado hace ' + n + (n === 1 ? ' día' : ' días'),
     whatToDo: '¿Qué quieres hacer?',
     consumed: 'Lo he consumido',
     trashed: 'Lo he tirado',
